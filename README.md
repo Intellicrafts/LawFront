@@ -2,7 +2,7 @@
 # LawFront Service
 React Application For Showing BakilApp Frontend Ui 
 
-Step 1 - git clone https://github.com/YourUsername/LawFront.git
-Step 2 - cd LawFront
-step 3 - npm install 
-step 4 - npm start
+Step 1 - git clone https://github.com/Intellicrafts/LawFront
+Step 2 - cd LawFront 
+step 3 - npm install  
+step 4 - npm start 
