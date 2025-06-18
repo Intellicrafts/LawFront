@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, Volume2, Square, MessageCircle } from 'lucide-react';
 
 const VoiceModal = ({ isOpen, onClose, onVoiceResult }) => {
@@ -8,6 +8,10 @@ const VoiceModal = ({ isOpen, onClose, onVoiceResult }) => {
   const [conversation, setConversation] = useState([]);
   const [currentTranscript, setCurrentTranscript] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  
+  // Create a ref for the modal content
+  const modalContentRef = useRef(null);
 
   // Simulate audio level animation
   useEffect(() => {
@@ -30,6 +34,22 @@ const VoiceModal = ({ isOpen, onClose, onVoiceResult }) => {
       setIsProcessing(false);
       // Keep conversation history for user reference
     }
+  }, [isOpen]);
+  
+  // Add keyboard event listener for Escape key
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && isOpen) {
+        handleCloseWithAnimation();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    
+    // Clean up event listener on component unmount
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isOpen]);
 
   // Simulate conversation flow
@@ -103,29 +123,62 @@ const VoiceModal = ({ isOpen, onClose, onVoiceResult }) => {
   };
 
   const handleCloseModal = () => {
-  setShowModal(false);
-};
-  const [showModal, setShowModal] = useState(true);
+    // Call the onClose prop to properly close the modal and return to chatbot
+    if (onClose) {
+      onClose();
+    }
+    // Reset state
+    setIsListening(false);
+    setIsSpeaking(false);
+    setCurrentTranscript('');
+    setIsProcessing(false);
+  };
+
+  // We don't need this state since we're using the isOpen prop
+  // const [showModal, setShowModal] = useState(true);
+
+  // Enhanced close handler with animation
+  const handleCloseWithAnimation = () => {
+    setIsClosing(true);
+    // Wait for animation to complete before actually closing
+    setTimeout(() => {
+      handleCloseModal();
+      setIsClosing(false);
+    }, 300); // Match this with the CSS transition duration
+  };
+  
+  // Handle click outside
+  const handleBackdropClick = (e) => {
+    // Only close if clicking on the backdrop, not the modal content
+    if (modalContentRef.current && !modalContentRef.current.contains(e.target)) {
+      handleCloseWithAnimation();
+    }
+  };
 
   if (!isOpen) return null;
 
   return (
     
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F8F9FA] dark:bg-[#0F172A] bg-opacity-80 p-4">
-   <div className="relative w-full h-[95vh] max-w-6xl mx-auto rounded-2xl bg-[#F8F9FA] dark:bg-[#0F172A] flex items-center justify-center">
-
-
-    {/* Close Button */}
-    <button
-      onClick={handleCloseModal}
-      className="absolute top-12 mt-60 right-4 text-gray-400 hover:text-gray-600 transition duration-200"
-      aria-label="Close"
+    <div 
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-[#F8F9FA] dark:bg-[#0F172A] bg-opacity-80 p-4 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}
+      onClick={handleBackdropClick}
     >
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
+   <div 
+      ref={modalContentRef}
+      className={`relative w-full h-[95vh] max-w-6xl mx-auto rounded-2xl bg-[#F8F9FA] dark:bg-[#0F172A] flex items-center justify-center transition-all duration-300 ${isClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}`}
+    >
 
+
+
+
+    {/* Modal Title */}
+    <div className="absolute top-4 left-4 flex items-center">
+      <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Voice Assistant</h2>
+      <span className="ml-4 text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">
+        Press ESC to close
+      </span>
+    </div>
+    
     {/* Mic Interface */}
     <div className="flex flex-col items-center justify-center space-y-6">
 
@@ -179,8 +232,6 @@ const VoiceModal = ({ isOpen, onClose, onVoiceResult }) => {
           </div>
         )}
 
-   
-
         {/* Audio Bars */}
         {isListening && (
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-1">
@@ -197,8 +248,21 @@ const VoiceModal = ({ isOpen, onClose, onVoiceResult }) => {
         )}
       </div>
 
+
+
       {/* Status */}
-      <div className="text-center">
+      <div className="mt-4 text-center">
+
+      <button
+        onClick={handleCloseWithAnimation}
+        className="absolute top-39 right-90 p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 hover:text-gray-800 dark:hover:text-white transition-all duration-200 shadow-md z-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transform hover:rotate-90"
+        aria-label="Close Voice Assistant"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
         {isListening ? (
           <p className="text-blue-700 font-medium text-base animate-pulse">Listening...</p>
         ) : isSpeaking ? (
@@ -210,6 +274,9 @@ const VoiceModal = ({ isOpen, onClose, onVoiceResult }) => {
         )}
       </div>
 
+ 
+    
+
       {/* Transcript */}
       {/* {currentTranscript && (
         <div className="px-4 py-2 text-center bg-blue-600 text-white rounded-xl max-w-xs shadow-md">
@@ -218,32 +285,46 @@ const VoiceModal = ({ isOpen, onClose, onVoiceResult }) => {
       )} */}
 
       {/* Controls */}
-      <div className="flex space-x-4 mt-4">
-        {!isListening ? (
-          <button
-            onClick={handleStartListening}
-            disabled={isSpeaking || isProcessing}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-medium shadow-sm transition duration-200"
-          >
-            Start Speaking
-          </button>
-        ) : (
-          <button
-            onClick={handleStopListening}
-            className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-full text-sm font-medium shadow-sm transition duration-200"
-          >
-            Stop
-          </button>
-        )}
+      <div className="flex flex-col items-center space-y-4 mt-4">
+        <div className="flex space-x-4">
+          {!isListening ? (
+            <button
+              onClick={handleStartListening}
+              disabled={isSpeaking || isProcessing}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-medium shadow-sm transition duration-200"
+            >
+              Start Speaking
+            </button>
+          ) : (
+            <button
+              onClick={handleStopListening}
+              className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-full text-sm font-medium shadow-sm transition duration-200"
+            >
+              Stop
+            </button>
+          )}
 
-        {conversation.length > 0 && (
-          <button
-            onClick={handleClearConversation}
-            className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-full text-sm font-medium transition"
-          >
-            Clear
-          </button>
-        )}
+          {conversation.length > 0 && (
+            <button
+              onClick={handleClearConversation}
+              className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-full text-sm font-medium transition"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        
+        {/* Return to Chatbot button */}
+        {/* <button
+          onClick={handleCloseWithAnimation}
+          className="px-4 py-2 mt-4 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 hover:text-gray-800 dark:hover:text-white transition-all duration-200 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center"
+          aria-label="Return to Chatbot"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Return to Chatbot
+        </button> */}
       </div>
     </div>
   </div>
