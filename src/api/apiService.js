@@ -103,6 +103,41 @@ export const tokenManager = {
 
 // API Services
 export const apiServices = {
+  // Notifications API
+  getUserNotifications: async (userId) => {
+    try {
+      // Using the exact endpoint format you specified
+      const response = await apiClient.get(`http://127.0.0.1:8000/api/notifications/user/${userId}`);
+      console.log('Notifications API response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Notifications API error:', error.response || error);
+      throw error;
+    }
+  },
+  
+  markNotificationAsRead: async (notificationId) => {
+    try {
+      const response = await apiClient.post(`http://127.0.0.1:8000/api/notifications/${notificationId}/mark-as-read`);
+      console.log('Mark notification as read response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Mark notification as read error:', error.response || error);
+      throw error;
+    }
+  },
+  
+  markAllNotificationsAsRead: async (userId) => {
+    try {
+      const response = await apiClient.post(`http://127.0.0.1:8000/api/notifications/user/${userId}/mark-all-read`);
+      console.log('Mark all notifications as read response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Mark all notifications as read error:', error.response || error);
+      throw error;
+    }
+  },
+
   // Authentication APIs
   register: async (userData) => {
     try {
