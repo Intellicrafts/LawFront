@@ -270,7 +270,7 @@ const VoiceModal = ({ isOpen, onClose, onVoiceResult }) => {
         ) : isProcessing ? (
           <p className="text-blue-700 font-medium text-base">Processing...</p>
         ) : (
-          <p className="text-blue-700 font-medium text-base">Tap mic to start</p>
+          <p className="text-blue-700 font-medium text-base"></p>
         )}
       </div>
 

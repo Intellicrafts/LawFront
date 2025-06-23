@@ -180,7 +180,7 @@ export const apiServices = {
   // Get authenticated user
   getUser: async () => {
     try {
-      const response = await apiClient.get('/user');
+      const response = await apiClient.get('/user/profile');
       return response.data;
     } catch (error) {
       throw error;
@@ -279,6 +279,162 @@ export const apiServices = {
       const response = await apiClient.post('/refresh');
       return response.data;
     } catch (error) {
+      throw error;
+    }
+  },
+  
+  // User Profile APIs
+  getUserProfile: async () => {
+    try {
+      const response = await apiClient.get('/user/profile');
+      console.log('User profile response:', response.data);
+      
+      // Extract the actual user data from the response
+      const userData = response.data.data || response.data;
+      
+      // Store user profile data in localStorage for offline access
+      if (userData) {
+        // If avatar is present, store it separately to avoid large localStorage objects
+        const avatarUrl = userData.avatar;
+        if (avatarUrl && !avatarUrl.startsWith('data:')) {
+          try {
+            // Check if it's a relative path and prepend API base URL if needed
+            const fullAvatarUrl = avatarUrl.startsWith('http') 
+              ? avatarUrl 
+              : `${process.env.REACT_APP_API_URL || ''}/${avatarUrl}`;
+              
+            // Fetch the image and convert to base64 for localStorage
+            const imageResponse = await fetch(fullAvatarUrl);
+            const blob = await imageResponse.blob();
+            const reader = new FileReader();
+            
+            reader.onloadend = function() {
+              localStorage.setItem('user_avatar', reader.result);
+              console.log('Avatar stored in localStorage');
+            };
+            
+            reader.readAsDataURL(blob);
+          } catch (imgError) {
+            console.error('Failed to store avatar in localStorage:', imgError);
+          }
+        } else if (avatarUrl && avatarUrl.startsWith('data:')) {
+          // If it's already a data URL, store directly
+          localStorage.setItem('user_avatar', avatarUrl);
+        }
+        
+        // Store the rest of the profile data
+        localStorage.setItem('user_profile', JSON.stringify(userData));
+      }
+      
+      return userData;
+    } catch (error) {
+      console.error('Get user profile error:', error.response || error);
+      
+      // Try to get profile from localStorage if API fails
+      const cachedProfile = localStorage.getItem('user_profile');
+      if (cachedProfile) {
+        const profile = JSON.parse(cachedProfile);
+        const avatar = localStorage.getItem('user_avatar');
+        if (avatar) {
+          profile.avatar = avatar;
+        }
+        return profile;
+      }
+      
+      throw error;
+    }
+  },
+  
+  updateUserProfile: async (userData) => {
+    try {
+      // Create a copy of userData without the avatar if it's a data URL
+      // to avoid sending large payloads
+      const dataToSend = { ...userData };
+      if (dataToSend.avatar && dataToSend.avatar.startsWith('data:')) {
+        // Don't send the data URL in the JSON payload
+        delete dataToSend.avatar;
+      }
+      
+      const response = await apiClient.put('/user/profile', dataToSend);
+      console.log('Update profile response:', response.data);
+      
+      // Extract the actual user data from the response
+      const updatedUserData = response.data.data || response.data;
+      
+      // Update localStorage
+      if (updatedUserData) {
+        localStorage.setItem('user_profile', JSON.stringify(updatedUserData));
+        
+        // Update user in localStorage if it exists
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          try {
+            const parsedUser = JSON.parse(storedUser);
+            const updatedUser = {
+              ...parsedUser,
+              name: updatedUserData.name || userData.name,
+              email: updatedUserData.email || userData.email,
+              phone: updatedUserData.phone || userData.phone,
+              address: updatedUserData.address || userData.address
+            };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+          } catch (e) {
+            console.error('Error updating user in localStorage:', e);
+          }
+        }
+      }
+      
+      return updatedUserData;
+    } catch (error) {
+      console.error('Update profile error:', error.response || error);
+      throw error;
+    }
+  },
+  
+  uploadAvatar: async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      
+      const response = await apiClient.post('/user/profile/avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      console.log('Upload avatar response:', response.data);
+      
+      // Extract the actual user data from the response
+      const userData = response.data.data || response.data;
+      
+      // Store avatar in localStorage
+      if (userData && userData.avatar) {
+        try {
+          // Convert the file to base64 for localStorage
+          const reader = new FileReader();
+          reader.onloadend = function() {
+            localStorage.setItem('user_avatar', reader.result);
+            
+            // Also update the avatar in the user object if it exists
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+              try {
+                const parsedUser = JSON.parse(storedUser);
+                parsedUser.avatar = reader.result;
+                localStorage.setItem('user', JSON.stringify(parsedUser));
+              } catch (e) {
+                console.error('Error updating user avatar in localStorage:', e);
+              }
+            }
+          };
+          reader.readAsDataURL(file);
+        } catch (e) {
+          console.error('Error storing avatar in localStorage:', e);
+        }
+      }
+      
+      return userData;
+    } catch (error) {
+      console.error('Upload avatar error:', error.response || error);
       throw error;
     }
   },
