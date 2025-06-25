@@ -103,6 +103,95 @@ export const tokenManager = {
 
 // API Services
 export const apiServices = {
+  // Task Automation API
+  getTasks: async (filters = {}) => {
+    try {
+      const response = await apiClient.get('/api/tasks', { params: filters });
+      console.log('Tasks API response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Tasks API error:', error.response || error);
+      throw error;
+    }
+  },
+  
+  getTask: async (taskId) => {
+    try {
+      const response = await apiClient.get(`/api/tasks/${taskId}`);
+      console.log('Task details response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Task details error:', error.response || error);
+      throw error;
+    }
+  },
+  
+  createTask: async (taskData) => {
+    try {
+      const response = await apiClient.post('/api/tasks', taskData);
+      console.log('Create task response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Create task error:', error.response || error);
+      throw error;
+    }
+  },
+  
+  updateTask: async (taskId, taskData) => {
+    try {
+      const response = await apiClient.put(`/api/tasks/${taskId}`, taskData);
+      console.log('Update task response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Update task error:', error.response || error);
+      throw error;
+    }
+  },
+  
+  updateTaskStatus: async (taskId, status) => {
+    try {
+      const response = await apiClient.patch(`/api/tasks/${taskId}/status`, { status });
+      console.log('Update task status response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Update task status error:', error.response || error);
+      throw error;
+    }
+  },
+  
+  deleteTask: async (taskId) => {
+    try {
+      const response = await apiClient.delete(`/api/tasks/${taskId}`);
+      console.log('Delete task response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Delete task error:', error.response || error);
+      throw error;
+    }
+  },
+  
+  getTaskCategories: async () => {
+    try {
+      const response = await apiClient.get('/api/task-categories');
+      console.log('Task categories response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Task categories error:', error.response || error);
+      throw error;
+    }
+  },
+  
+  getTaskStatistics: async () => {
+    try {
+      const response = await apiClient.get('/api/tasks/statistics');
+      console.log('Task statistics response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Task statistics error:', error.response || error);
+      throw error;
+    }
+  },
+  
   // Notifications API
   getUserNotifications: async (userId) => {
     try {

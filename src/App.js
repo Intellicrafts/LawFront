@@ -1,8 +1,12 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { setTheme } from './redux/themeSlice';
+import { initializeTheme } from './utils/theme';
+import FloatingThemeToggle from './components/common/FloatingThemeToggle';
 import './App.css';
 import './index.css';
+import './styles/darkMode.css';
 
 
 // Components
@@ -34,17 +38,37 @@ import PersonalRoom from './components/PersonalRoom';
 import LawyerAdmin from './components/Lawyer/LawyerAdmin';
 
 const App = () => {
-  const darkMode = useSelector((state) => state.theme.darkMode);
+  const { mode } = useSelector((state) => state.theme);
+  const dispatch = useDispatch();
   const isAuthenticated = tokenManager.isAuthenticated();
 
-  // Apply dark mode to body
+  // Initialize theme on app load
   useEffect(() => {
-    if (darkMode) {
-      document.body.classList.add('dark-mode');
+    // Get theme from localStorage or system preference
+    const storedTheme = localStorage.getItem('theme');
+    if (storedTheme) {
+      dispatch(setTheme(storedTheme));
     } else {
-      document.body.classList.remove('dark-mode');
+      // Check system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      dispatch(setTheme(prefersDark ? 'dark' : 'light'));
     }
+    
+    // Initialize theme by applying the class to document
+    initializeTheme();
+  }, [dispatch]);
 
+  // Apply dark mode to document element
+  useEffect(() => {
+    if (mode === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [mode]);
+
+  // Initialize chat widget
+  useEffect(() => {
     // Initialize Tawk.to chat widget
     var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
     (function () {
@@ -56,11 +80,15 @@ const App = () => {
       s1.setAttribute('crossorigin', '*');
       s0.parentNode.insertBefore(s1, s0);
     })();
-  }, [darkMode]);
+  }, []);
 
   return (
     <Router>
-      <div className={`app-container ${darkMode ? 'dark-mode bg-gray-900 text-white' : 'bg-white text-gray-900'} transition-colors duration-300`}>
+      <div className={`app-container min-h-screen transition-colors duration-300 ${
+        mode === 'dark' 
+          ? 'dark bg-gray-900 text-gray-100' 
+          : 'bg-white text-gray-900'
+      }`}>
         <Navbar />
         <ScrollToTop />
 
@@ -109,6 +137,7 @@ const App = () => {
         </Routes>
 
         <Footer />
+        <FloatingThemeToggle />
       </div>
     </Router>
   );

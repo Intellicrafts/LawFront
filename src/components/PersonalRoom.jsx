@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { toggleTheme } from '../redux/themeSlice';
 import { 
   Video, 
   VideoOff, 
@@ -34,10 +36,17 @@ import {
   BookOpen,
   Bell,
   BellOff,
-  Loader2
+  Loader2,
+  Moon,
+  Sun
 } from 'lucide-react';
 
 export default function PersonalRoom() {
+  // Use Redux theme state
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
+  const dispatch = useDispatch();
+  
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [isAudioOn, setIsAudioOn] = useState(true);
   const [showChat, setShowChat] = useState(true);
@@ -203,150 +212,235 @@ export default function PersonalRoom() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50">
+    <div className={`min-h-screen transition-colors duration-300 ${
+      isDarkMode 
+        ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
+        : 'bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50'
+    }`}>
       <div className="h-4"></div>
       <div className="flex flex-col h-[calc(100vh-1rem)]">
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between px-6 py-3">
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-3">
-                
-               
+                <h1 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                  Personal Consultation Room
+                </h1>
               </div>
               
            {/* ====================Top timer left ========================== */}
             </div>
             {/* ================== Profile top right corner ================ */}
-            
+            <button
+              onClick={() => dispatch(toggleTheme())}
+              className={`p-2 rounded-full transition-colors ${
+                isDarkMode 
+                  ? 'bg-slate-700 hover:bg-slate-600 text-yellow-300' 
+                  : 'bg-gray-100 hover:bg-gray-200 text-blue-600'
+              }`}
+              aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
           </div>
        
         <div className="flex-1 flex relative">
           <div className="flex-1 flex flex-col">
-            <div className="flex-1 relative bg-gray-100 overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-gray-50"></div>
+            <div className={`flex-1 relative overflow-hidden transition-colors duration-300 ${
+              isDarkMode ? 'bg-slate-800' : 'bg-gray-100'
+            }`}>
+              <div className={`absolute inset-0 ${
+                isDarkMode 
+                  ? 'bg-gradient-to-br from-slate-800 to-slate-900' 
+                  : 'bg-gradient-to-br from-blue-50 to-gray-50'
+              }`}></div>
               <div className="relative w-full h-full flex items-center justify-center p-8">
-                <div className="relative bg-white rounded-3xl shadow-md border border-gray-200 p-8 max-w-2xl w-full ">
+                <div className={`relative rounded-3xl shadow-lg p-8 max-w-2xl w-full transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'bg-slate-800 border border-slate-700' 
+                    : 'bg-white border border-gray-200'
+                }`}>
                   <div className="text-center">
                     <div className="relative mb-6">
-                      <div className="w-40 h-40 bg-blue-500 rounded-full mx-auto flex items-center justify-center shadow-xl ring-8 ring-blue-100">
+                      <div className={`w-40 h-40 rounded-full mx-auto flex items-center justify-center shadow-xl ${
+                        isDarkMode 
+                          ? 'bg-blue-600 ring-8 ring-blue-900/30' 
+                          : 'bg-blue-500 ring-8 ring-blue-100'
+                      }`}>
                         <span className="text-6xl">👩‍💼</span>
                       </div>
                       <div className="absolute -bottom-2 -right-2 p-2 bg-green-600 rounded-full shadow-md">
                         <Video className="w-4 h-4 text-white" />
                       </div>
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-800 mb-2">Advocate Sarah Wilson</h3>
-                    <p className="text-blue-600 text-lg mb-4">Senior Legal Counsel</p>
+                    <h3 className={`text-2xl font-bold mb-2 transition-colors duration-300 ${
+                      isDarkMode ? 'text-white' : 'text-gray-800'
+                    }`}>Advocate Sarah Wilson</h3>
+                    <p className={`text-lg mb-4 ${
+                      isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                    }`}>Senior Legal Counsel</p>
                     <div className="flex items-center justify-center space-x-4 mb-6">
                       <div className="flex items-center space-x-1">
                         <Award className="w-5 h-5 text-yellow-500" />
-                        <span className="text-gray-800 font-semibold">15+ Years</span>
+                        <span className={`font-semibold ${
+                          isDarkMode ? 'text-gray-200' : 'text-gray-800'
+                        }`}>15+ Years</span>
                       </div>
-                      <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                      <div className={`w-1 h-1 rounded-full ${
+                        isDarkMode ? 'bg-gray-600' : 'bg-gray-400'
+                      }`}></div>
                       <div className="flex items-center space-x-1">
                         <Star className="w-5 h-5 text-yellow-500 fill-current" />
-                        <span className="text-gray-800 font-semibold">4.9 Rating</span>
+                        <span className={`font-semibold ${
+                          isDarkMode ? 'text-gray-200' : 'text-gray-800'
+                        }`}>4.9 Rating</span>
                       </div>
-                      <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                      <div className={`w-1 h-1 rounded-full ${
+                        isDarkMode ? 'bg-gray-600' : 'bg-gray-400'
+                      }`}></div>
                       <div className="flex items-center space-x-1">
                         <CheckCircle className="w-5 h-5 text-green-600" />
-                        <span className="text-gray-800 font-semibold">150+ Wins</span>
+                        <span className={`font-semibold ${
+                          isDarkMode ? 'text-gray-200' : 'text-gray-800'
+                        }`}>150+ Wins</span>
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center justify-center gap-2">
-                      <div className="px-4 py-2 bg-blue-100 border border-blue-200 rounded-full">
-                        <span className="text-blue-600 text-sm font-medium">Corporate Law</span>
+                      <div className={`px-4 py-2 rounded-full transition-colors duration-300 ${
+                        isDarkMode 
+                          ? 'bg-blue-900/40 border border-blue-800' 
+                          : 'bg-blue-100 border border-blue-200'
+                      }`}>
+                        <span className={`text-sm font-medium ${
+                          isDarkMode ? 'text-blue-300' : 'text-blue-600'
+                        }`}>Corporate Law</span>
                       </div>
-                      <div className="px-4 py-2 bg-blue-100 border border-blue-200 rounded-full">
-                        <span className="text-blue-600 text-sm font-medium">Contract Disputes</span>
+                      <div className={`px-4 py-2 rounded-full transition-colors duration-300 ${
+                        isDarkMode 
+                          ? 'bg-blue-900/40 border border-blue-800' 
+                          : 'bg-blue-100 border border-blue-200'
+                      }`}>
+                        <span className={`text-sm font-medium ${
+                          isDarkMode ? 'text-blue-300' : 'text-blue-600'
+                        }`}>Contract Disputes</span>
                       </div>
-                      <div className="px-4 py-2 bg-blue-100 border border-blue-200 rounded-full">
-                        <span className="text-blue-600 text-sm font-medium">Litigation</span>
+                      <div className={`px-4 py-2 rounded-full transition-colors duration-300 ${
+                        isDarkMode 
+                          ? 'bg-blue-900/40 border border-blue-800' 
+                          : 'bg-blue-100 border border-blue-200'
+                      }`}>
+                        <span className={`text-sm font-medium ${
+                          isDarkMode ? 'text-blue-300' : 'text-blue-600'
+                        }`}>Litigation</span>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="absolute top-6 left-6 flex items-center space-x-2 px-4 py-2 mt-10 bg-gray-90 rounded-full shadow-md">
-                  <Share2 className="w-4 h-4 text-gray-500" />
-                  <span className="text-gray-500 font-medium">Screen Sharing</span>
-                     <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 px-3 py-1 bg-gray-100 rounded-full">
-                  <Clock className="w-4 h-4 text-blue-500" />
-                  <span className="text-sm text-gray-600 font-mono">{formatTime(sessionTime)}</span>
-                </div>
-                <div className="flex items-center space-x-2 px-3 py-1 bg-gray-100 rounded-full">
-                  <div className={`w-2 h-2 rounded-full ${connectionQuality === 'excellent' ? 'bg-green-600' : connectionQuality === 'good' ? 'bg-yellow-600' : 'bg-orange-600'} animate-pulse`}></div>
-                  <span className={`text-sm font-medium ${getConnectionColor()}`}>
-                    {connectionQuality.charAt(0).toUpperCase() + connectionQuality.slice(1)}
-                  </span>
-                </div>
-                {isRecording && (
-                  <div className="flex items-center space-x-2 px-3 py-1 bg-red-100 border border-red-200 rounded-full">
-                    <CircleDot className="w-4 h-4 text-red-600 animate-pulse" />
-                    <span className="text-sm text-red-600 font-medium">Recording</span>
+                <div className={`absolute top-6 left-6 flex items-center space-x-2 px-4 py-2 mt-10 rounded-full shadow-md transition-colors duration-300 ${
+                  isDarkMode ? 'bg-slate-700/80 backdrop-blur-sm' : 'bg-white/90 backdrop-blur-sm'
+                }`}>
+                  <Share2 className={`w-4 h-4 ${isDarkMode ? 'text-blue-400' : 'text-gray-500'}`} />
+                  <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Screen Sharing</span>
+                  <div className="flex items-center space-x-4">
+                    <div className={`flex items-center space-x-2 px-3 py-1 rounded-full transition-colors duration-300 ${
+                      isDarkMode ? 'bg-slate-800/80' : 'bg-gray-100'
+                    }`}>
+                      <Clock className={`w-4 h-4 ${isDarkMode ? 'text-blue-400' : 'text-blue-500'}`} />
+                      <span className={`text-sm font-mono ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{formatTime(sessionTime)}</span>
+                    </div>
+                    <div className={`flex items-center space-x-2 px-3 py-1 rounded-full transition-colors duration-300 ${
+                      isDarkMode ? 'bg-slate-800/80' : 'bg-gray-100'
+                    }`}>
+                      <div className={`w-2 h-2 rounded-full animate-pulse ${
+                        connectionQuality === 'excellent' ? 'bg-green-600' : connectionQuality === 'good' ? 'bg-yellow-600' : 'bg-orange-600'
+                      }`}></div>
+                      <span className={`text-sm font-medium ${getConnectionColor()}`}>
+                        {connectionQuality.charAt(0).toUpperCase() + connectionQuality.slice(1)}
+                      </span>
+                    </div>
+                    {isRecording && (
+                      <div className={`flex items-center space-x-2 px-3 py-1 rounded-full transition-colors duration-300 ${
+                        isDarkMode ? 'bg-red-900/30 border border-red-800' : 'bg-red-100 border border-red-200'
+                      }`}>
+                        <CircleDot className="w-4 h-4 text-red-600 animate-pulse" />
+                        <span className="text-sm text-red-600 font-medium">Recording</span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
                 </div>
                 
-                <div className="absolute top-6 right-6 flex items-center space-x-2 px-3 py-2 mt-10 bg-gray-200 rounded-full">
+                <div className={`absolute top-6 right-6 flex items-center space-x-2 px-3 py-2 mt-10 rounded-full transition-colors duration-300 ${
+                  isDarkMode ? 'bg-slate-700/80 backdrop-blur-sm' : 'bg-gray-200'
+                }`}>
                   <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setNotifications(!notifications)}
-                aria-label={notifications ? "Disable notifications" : "Enable notifications"}
-                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-all duration-200"
-              >
-                {notifications ? 
-                  <Bell className="w-5 h-5 text-blue-500" /> : 
-                  <BellOff className="w-5 h-5 text-gray-500" />
-                }
-              </button>
-              <div className="text-right">
-                <div className="flex items-center space-x-2">
-                  <p className="text-sm font-semibold text-gray-800">Advocate Sarah Wilson</p>
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                </div>
-                <div className="flex items-center space-x-2 text-xs">
-                  <div className="flex items-center space-x-1">
-                    <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                    <span className="text-yellow-500 font-medium">4.9</span>
+                    <button
+                      onClick={() => setNotifications(!notifications)}
+                      aria-label={notifications ? "Disable notifications" : "Enable notifications"}
+                      className={`p-2 rounded-lg transition-all duration-200 ${
+                        isDarkMode 
+                          ? 'bg-slate-800 hover:bg-slate-700' 
+                          : 'bg-gray-100 hover:bg-gray-200'
+                      }`}
+                    >
+                      {notifications ? 
+                        <Bell className={`w-5 h-5 ${isDarkMode ? 'text-blue-400' : 'text-blue-500'}`} /> : 
+                        <BellOff className={`w-5 h-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                      }
+                    </button>
+                    <div className="text-right">
+                      <div className="flex items-center space-x-2">
+                        <p className={`text-sm font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Advocate Sarah Wilson</p>
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                      </div>
+                      <div className="flex items-center space-x-2 text-xs">
+                        <div className="flex items-center space-x-1">
+                          <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                          <span className="text-yellow-500 font-medium">4.9</span>
+                        </div>
+                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>•</span>
+                        <span className="text-green-600 font-medium">150+ cases won</span>
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <div className={`w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md ${
+                        isDarkMode ? 'ring-4 ring-blue-900/50' : 'ring-4 ring-blue-100'
+                      }`}>
+                        SW
+                      </div>
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-600 rounded-full border-2 border-white animate-pulse"></div>
+                    </div>
                   </div>
-                  <span className="text-gray-500">•</span>
-                  <span className="text-green-600 font-medium">150+ cases won</span>
-                </div>
-              </div>
-              <div className="relative">
-                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md ring-4 ring-blue-100">
-                  SW
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-600 rounded-full border-2 border-white animate-pulse"></div>
-              </div>
-            </div>
                   <Zap className={`w-4 h-4 ${getConnectionColor()}`} />
                   <span className={`text-sm font-medium ${getConnectionColor()}`}>
                     {connectionQuality}
                   </span>
                 </div>
               </div>
-              <div className="absolute bottom-6 right-6 w-64 h-40 bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-md">
+              <div className={`absolute bottom-6 right-6 w-64 h-40 rounded-2xl overflow-hidden shadow-md transition-colors duration-300 ${
+                isDarkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-200'
+              }`}>
                 <div className="w-full h-full relative">
-                 <div
-  className="absolute inset-0 bg-pink-50 bg-cover bg-center"
-  style={{ backgroundImage: "url('https://t4.ftcdn.net/jpg/09/70/14/35/360_F_970143501_JklW6K2we4ML4Dsx6PR7AeWVA8VXcDvs.jpg')" }}
-></div>
+                  <div
+                    className="absolute inset-0 bg-cover bg-center opacity-80"
+                    style={{ backgroundImage: "url('https://t4.ftcdn.net/jpg/09/70/14/35/360_F_970143501_JklW6K2we4ML4Dsx6PR7AeWVA8VXcDvs.jpg')" }}
+                  ></div>
 
                   <div className="w-full h-full flex items-center justify-center">
                     <div className="text-center">
-                      <div className="w-16 h-16 bg-blue-500 rounded-full mx-auto mb-2 flex items-center justify-center shadow-md">
+                      <div className={`w-16 h-16 rounded-full mx-auto mb-2 flex items-center justify-center shadow-md ${
+                        isDarkMode ? 'bg-blue-600' : 'bg-blue-500'
+                      }`}>
                         <span className="text-2xl">👤</span>
                       </div>
-                      <p className="text-gray-800 font-medium">You</p>
-                      <p className="text-xs text-gray-500">Client</p>
+                      <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>You</p>
+                      <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Client</p>
                     </div>
                   </div>
                   {!isVideoOn && (
-                    <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
-                      <VideoOff className="w-8 h-8 text-gray-500" />
+                    <div className={`absolute inset-0 flex items-center justify-center transition-colors duration-300 ${
+                      isDarkMode ? 'bg-slate-700/90' : 'bg-gray-200'
+                    }`}>
+                      <VideoOff className={`w-8 h-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                     </div>
                   )}
                   <div className="absolute bottom-2 left-2">
@@ -363,17 +457,25 @@ export default function PersonalRoom() {
                   <button 
                     onClick={() => setIsFullscreen(!isFullscreen)}
                     aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                    className="absolute bottom-2 right-2 p-1 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors"
+                    className={`absolute bottom-2 right-2 p-1 rounded-full transition-colors ${
+                      isDarkMode 
+                        ? 'bg-slate-700 hover:bg-slate-600 text-gray-300' 
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-600'
+                    }`}
                   >
                     {isFullscreen ? 
-                      <Minimize2 className="w-3 h-3 text-gray-600" /> : 
-                      <Maximize2 className="w-3 h-3 text-gray-600" />
+                      <Minimize2 className="w-3 h-3" /> : 
+                      <Maximize2 className="w-3 h-3" />
                     }
                   </button>
                 </div>
               </div>
             </div>
-            <div className="bg-white border-t border-gray-200 px-6 py-2 shadow-sm">
+            <div className={`px-6 py-3 shadow-sm transition-colors duration-300 ${
+              isDarkMode 
+                ? 'bg-slate-800 border-t border-slate-700' 
+                : 'bg-white border-t border-gray-200'
+            }`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <button
@@ -381,12 +483,14 @@ export default function PersonalRoom() {
                     aria-label={isVideoOn ? "Turn off camera" : "Turn on camera"}
                     className={`group relative p-4 rounded-xl transition-all duration-300 ${
                       isVideoOn 
-                        ? 'bg-gray-100 hover:bg-gray-200 text-gray-600 shadow-sm' 
+                        ? isDarkMode 
+                          ? 'bg-slate-700 hover:bg-slate-600 text-gray-300 shadow-sm' 
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-600 shadow-sm'
                         : 'bg-red-500 hover:bg-red-600 text-white shadow-md shadow-red-200/50'
                     }`}
                   >
                     {isVideoOn ? <Video className="w-6 h-6" /> : <VideoOff className="w-6 h-6" />}
-                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       {isVideoOn ? 'Turn off camera' : 'Turn on camera'}
                     </div>
                   </button>
@@ -395,32 +499,42 @@ export default function PersonalRoom() {
                     aria-label={isAudioOn ? "Mute microphone" : "Unmute microphone"}
                     className={`group relative p-4 rounded-xl transition-all duration-300 ${
                       isAudioOn 
-                        ? 'bg-gray-100 hover:bg-gray-200 text-gray-600 shadow-sm' 
+                        ? isDarkMode 
+                          ? 'bg-slate-700 hover:bg-slate-600 text-gray-300 shadow-sm' 
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-600 shadow-sm'
                         : 'bg-red-500 hover:bg-red-600 text-white shadow-md shadow-red-200/50'
                     }`}
                   >
                     {isAudioOn ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
-                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       {isAudioOn ? 'Mute' : 'Unmute'}
                     </div>
                   </button>
                   <button
                     onClick={() => setIsSpeakerOn(!isSpeakerOn)}
                     aria-label={isSpeakerOn ? "Mute speaker" : "Unmute speaker"}
-                    className="group relative p-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 transition-all duration-300 shadow-sm"
+                    className={`group relative p-4 rounded-xl transition-all duration-300 ${
+                      isDarkMode 
+                        ? 'bg-slate-700 hover:bg-slate-600 text-gray-300 shadow-sm' 
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-600 shadow-sm'
+                    }`}
                   >
                     {isSpeakerOn ? <Volume2 className="w-6 h-6" /> : <VolumeX className="w-6 h-6" />}
-                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       {isSpeakerOn ? 'Mute speaker' : 'Unmute speaker'}
                     </div>
                   </button>
                   <button
                     onClick={handleShareScreen}
                     aria-label="Share screen"
-                    className="group relative p-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 transition-all duration-300 shadow-sm"
+                    className={`group relative p-4 rounded-xl transition-all duration-300 ${
+                      isDarkMode 
+                        ? 'bg-slate-700 hover:bg-slate-600 text-gray-300 shadow-sm' 
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-600 shadow-sm'
+                    }`}
                   >
                     <Share2 className="w-6 h-6" />
-                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       Share screen
                     </div>
                   </button>
@@ -430,21 +544,27 @@ export default function PersonalRoom() {
                     className={`group relative p-4 rounded-xl transition-all duration-300 ${
                       isRecording 
                         ? 'bg-red-500 hover:bg-red-600 text-white shadow-md shadow-red-200/50' 
-                        : 'bg-gray-100 hover:bg-gray-200 text-gray-600 shadow-sm'
+                        : isDarkMode 
+                          ? 'bg-slate-700 hover:bg-slate-600 text-gray-300 shadow-sm' 
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-600 shadow-sm'
                     }`}
                   >
                     <CircleDot className={`w-6 h-6 ${isRecording ? 'animate-pulse' : ''}`} />
-                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       {isRecording ? 'Stop recording' : 'Start recording'}
                     </div>
                   </button>
                   <button
                     onClick={handleDocuments}
                     aria-label="Open documents"
-                    className="group relative p-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 transition-all duration-300 shadow-sm"
+                    className={`group relative p-4 rounded-xl transition-all duration-300 ${
+                      isDarkMode 
+                        ? 'bg-slate-700 hover:bg-slate-600 text-gray-300 shadow-sm' 
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-600 shadow-sm'
+                    }`}
                   >
                     <FileText className="w-6 h-6" />
-                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       Documents
                     </div>
                   </button>
@@ -453,20 +573,24 @@ export default function PersonalRoom() {
                   <button
                     onClick={() => setShowParticipants(!showParticipants)}
                     aria-label="Show participants"
-                    className="group relative p-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 transition-all duration-300 shadow-sm"
+                    className={`group relative p-4 rounded-xl transition-all duration-300 ${
+                      isDarkMode 
+                        ? 'bg-slate-700 hover:bg-slate-600 text-gray-300 shadow-sm' 
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-600 shadow-sm'
+                    }`}
                   >
                     <Users className="w-6 h-6" />
                     <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
                       {participants.filter(p => p.active).length}
                     </span>
-                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       Participants
                     </div>
                   </button>
                   <button
                     onClick={() => setShowChat(!showChat)}
                     aria-label="Toggle chat"
-                    className="group relative p-4 rounded-xl bg-blue-500 hover:bg-blue-600 text-white transition-all duration-300 shadow-md shadow-blue-200/50"
+                    className="group relative p-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all duration-300 shadow-md shadow-blue-200/50"
                   >
                     <MessageCircle className="w-6 h-6" />
                     {messages.length > 0 && (
@@ -474,17 +598,21 @@ export default function PersonalRoom() {
                         {messages.length}
                       </span>
                     )}
-                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       Chat
                     </div>
                   </button>
                   <button
                     onClick={() => setShowSettings(!showSettings)}
                     aria-label="Open settings"
-                    className="group relative p-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 transition-all duration-300 shadow-sm"
+                    className={`group relative p-4 rounded-xl transition-all duration-300 ${
+                      isDarkMode 
+                        ? 'bg-slate-700 hover:bg-slate-600 text-gray-300 shadow-sm' 
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-600 shadow-sm'
+                    }`}
                   >
                     <Settings className="w-6 h-6" />
-                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       Settings
                     </div>
                   </button>
@@ -495,7 +623,7 @@ export default function PersonalRoom() {
                   >
                     <Phone className="w-5 h-5" />
                     <span>End Session</span>
-                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       End consultation
                     </div>
                   </button>
@@ -506,18 +634,32 @@ export default function PersonalRoom() {
 
           {/* Enhanced Chat Sidebar */}
           {showChat && (
-            <div className="w-full sm:w-96 bg-white border-l border-gray-200 flex flex-col shadow-sm">
+            <div className={`w-full sm:w-96 flex flex-col shadow-sm transition-colors duration-300 ${
+              isDarkMode 
+                ? 'bg-slate-800 border-l border-slate-700' 
+                : 'bg-white border-l border-gray-200'
+            }`}>
               {/* Chat Header */}
-              <div className="p-6 border-b border-gray-200">
+              <div className={`p-6 transition-colors duration-300 ${
+                isDarkMode 
+                  ? 'border-b border-slate-700' 
+                  : 'border-b border-gray-200'
+              }`}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
-                    <MessageSquare className="w-6 h-6 text-blue-500" />
+                  <h3 className={`text-xl font-bold flex items-center space-x-2 ${
+                    isDarkMode ? 'text-white' : 'text-gray-800'
+                  }`}>
+                    <MessageSquare className={`w-6 h-6 ${isDarkMode ? 'text-blue-400' : 'text-blue-500'}`} />
                     <span>Consultation Chat</span>
                   </h3>
                   <button 
                     onClick={() => setShowChat(false)}
                     aria-label="Close chat"
-                    className="text-gray-500 hover:text-gray-800 transition-colors p-1 rounded-lg hover:bg-gray-100"
+                    className={`p-1 rounded-lg transition-colors ${
+                      isDarkMode 
+                        ? 'text-gray-400 hover:text-white hover:bg-slate-700' 
+                        : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+                    }`}
                   >
                     <span className="text-xl">×</span>
                   </button>
@@ -525,23 +667,41 @@ export default function PersonalRoom() {
                 
                 {/* Participants in Chat Header */}
                 <div className="space-y-3">
-                  <div className="flex items-center text-sm text-blue-600 mb-3">
+                  <div className={`flex items-center text-sm mb-3 ${
+                    isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                  }`}>
                     <Users className="w-4 h-4 mr-2" />
                     <span className="font-medium">Active Participants ({participants.filter(p => p.active).length})</span>
                   </div>
                   {participants.map(participant => (
-                    <div key={participant.id} className="flex items-center space-x-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all duration-200">
+                    <div key={participant.id} className={`flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 ${
+                      isDarkMode 
+                        ? 'bg-slate-700 hover:bg-slate-600' 
+                        : 'bg-gray-50 hover:bg-gray-100'
+                    }`}>
                       <div className="relative">
                         <span className="text-2xl">{participant.avatar}</span>
-                        <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${participant.active ? 'bg-green-600' : 'bg-gray-500'}`}></div>
+                        <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full ${
+                          isDarkMode 
+                            ? `border-2 border-slate-700 ${participant.active ? 'bg-green-600' : 'bg-gray-500'}` 
+                            : `border-2 border-white ${participant.active ? 'bg-green-600' : 'bg-gray-500'}`
+                        }`}></div>
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-semibold text-gray-800">{participant.name}</p>
-                        <p className="text-xs text-gray-500">{participant.role}</p>
+                        <p className={`text-sm font-semibold ${
+                          isDarkMode ? 'text-white' : 'text-gray-800'
+                        }`}>{participant.name}</p>
+                        <p className={`text-xs ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                        }`}>{participant.role}</p>
                         {participant.expertise && (
                           <div className="flex space-x-1 mt-1">
                             {participant.expertise.slice(0, 2).map((skill, idx) => (
-                              <span key={idx} className="text-xs px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full">
+                              <span key={idx} className={`text-xs px-2 py-0.5 rounded-full ${
+                                isDarkMode 
+                                  ? 'bg-blue-900/40 text-blue-300' 
+                                  : 'bg-blue-100 text-blue-600'
+                              }`}>
                                 {skill}
                               </span>
                             ))}
@@ -554,7 +714,9 @@ export default function PersonalRoom() {
                             <Star className="w-3 h-3 text-yellow-500 fill-current" />
                             <span className="text-xs text-yellow-500 font-bold">{participant.rating}</span>
                           </div>
-                          <p className="text-xs text-gray-500">{participant.cases} cases</p>
+                          <p className={`text-xs ${
+                            isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                          }`}>{participant.cases} cases</p>
                         </div>
                       )}
                     </div>
@@ -563,21 +725,35 @@ export default function PersonalRoom() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${
+                isDarkMode ? 'scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800' : ''
+              }`}>
                 {messages.map((msg) => (
                   <div key={msg.id} className={`flex ${msg.isAdvocate ? 'justify-start' : 'justify-end'}`}>
-                    <div className={`max-w-xs sm:max-w-md px-4 py-2 rounded-lg ${
+                    <div className={`max-w-xs sm:max-w-md px-4 py-2 rounded-lg shadow-sm transition-colors duration-300 ${
                       msg.isAdvocate 
-                        ? 'bg-gray-200 text-gray-800' 
-                        : 'bg-blue-500 text-white'
+                        ? isDarkMode 
+                          ? 'bg-slate-700 text-gray-200' 
+                          : 'bg-gray-200 text-gray-800'
+                        : isDarkMode
+                          ? 'bg-blue-600 text-white' 
+                          : 'bg-blue-500 text-white'
                     }`}>
-                      <p className="text-sm font-medium mb-1">{msg.sender}</p>
+                      <p className={`text-sm font-medium mb-1 ${
+                        msg.isAdvocate 
+                          ? isDarkMode ? 'text-blue-300' : 'text-blue-600'
+                          : 'text-white'
+                      }`}>{msg.sender}</p>
                       {msg.type === 'text' ? (
                         <p className="text-sm">{msg.message}</p>
                       ) : (
                         <div className="flex items-center space-x-2">
                           <FileText className="w-4 h-4" />
-                          <a href="#" className="text-sm underline hover:text-blue-400">{msg.message}</a>
+                          <a href="#" className={`text-sm underline ${
+                            isDarkMode 
+                              ? 'hover:text-blue-300' 
+                              : 'hover:text-blue-400'
+                          }`}>{msg.message}</a>
                         </div>
                       )}
                       <p className="text-xs opacity-70 mt-1">{msg.time}</p>
@@ -586,12 +762,24 @@ export default function PersonalRoom() {
                 ))}
                 {isTyping && (
                   <div className="flex justify-start">
-                    <div className="max-w-xs sm:max-w-md px-4 py-2 rounded-lg bg-gray-200 text-gray-800">
-                      <p className="text-sm font-medium mb-1">Advocate Sarah Wilson</p>
+                    <div className={`max-w-xs sm:max-w-md px-4 py-2 rounded-lg shadow-sm transition-colors duration-300 ${
+                      isDarkMode 
+                        ? 'bg-slate-700 text-gray-200' 
+                        : 'bg-gray-200 text-gray-800'
+                    }`}>
+                      <p className={`text-sm font-medium mb-1 ${
+                        isDarkMode ? 'text-blue-300' : 'text-blue-600'
+                      }`}>Advocate Sarah Wilson</p>
                       <div className="flex space-x-1">
-                        <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></span>
-                        <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-100"></span>
-                        <span className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-200"></span>
+                        <span className={`w-2 h-2 rounded-full animate-bounce ${
+                          isDarkMode ? 'bg-gray-400' : 'bg-gray-500'
+                        }`}></span>
+                        <span className={`w-2 h-2 rounded-full animate-bounce delay-100 ${
+                          isDarkMode ? 'bg-gray-400' : 'bg-gray-500'
+                        }`}></span>
+                        <span className={`w-2 h-2 rounded-full animate-bounce delay-200 ${
+                          isDarkMode ? 'bg-gray-400' : 'bg-gray-500'
+                        }`}></span>
                       </div>
                     </div>
                   </div>
@@ -600,9 +788,20 @@ export default function PersonalRoom() {
               </div>
 
               {/* Message Input */}
-              <div className="p-4 border-t border-gray-200">
+              <div className={`p-4 transition-colors duration-300 ${
+                isDarkMode 
+                  ? 'border-t border-slate-700' 
+                  : 'border-t border-gray-200'
+              }`}>
                 <div className="flex items-center space-x-2">
-                  <button className="p-2 text-gray-500 hover:text-gray-800 transition-colors" aria-label="Attach file">
+                  <button 
+                    className={`p-2 rounded-lg transition-colors ${
+                      isDarkMode 
+                        ? 'text-gray-400 hover:text-white hover:bg-slate-700' 
+                        : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+                    }`} 
+                    aria-label="Attach file"
+                  >
                     <Paperclip className="w-4 h-4" />
                   </button>
                   <div className="flex-1 relative">
@@ -612,19 +811,25 @@ export default function PersonalRoom() {
                       onChange={(e) => setMessage(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                       placeholder="Type your message..."
-                      className="w-full bg-gray-100 text-gray-800 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-300 ${
+                        isDarkMode 
+                          ? 'bg-slate-700 text-white placeholder-gray-400 border border-slate-600' 
+                          : 'bg-gray-100 text-gray-800 placeholder-gray-500'
+                      }`}
                       aria-label="Type your message"
                     />
                   </div>
                   <button
                     onClick={handleSendMessage}
                     aria-label="Send message"
-                    className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                    className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm"
                   >
                     <Send className="w-4 h-4" />
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className={`text-xs mt-2 transition-colors duration-300 ${
+                  isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                }`}>
                   All communications are encrypted and confidential
                 </p>
               </div>
@@ -633,46 +838,74 @@ export default function PersonalRoom() {
 
           {/* Settings Modal */}
           {showSettings && (
-            <div className="fixed inset-0 bg-gray-800/50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-2xl p-6 max-w-md w-full border border-gray-200 shadow-md">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className={`rounded-2xl p-6 max-w-md w-full shadow-lg transition-colors duration-300 ${
+                isDarkMode 
+                  ? 'bg-slate-800 border border-slate-700' 
+                  : 'bg-white border border-gray-200'
+              }`}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
-                    <Settings className="w-6 h-6 text-blue-500" />
+                  <h3 className={`text-xl font-bold flex items-center space-x-2 ${
+                    isDarkMode ? 'text-white' : 'text-gray-800'
+                  }`}>
+                    <Settings className={`w-6 h-6 ${isDarkMode ? 'text-blue-400' : 'text-blue-500'}`} />
                     <span>Settings</span>
                   </h3>
                   <button 
                     onClick={() => setShowSettings(false)}
                     aria-label="Close settings"
-                    className="text-gray-500 hover:text-gray-800 transition-colors"
+                    className={`p-2 rounded-lg transition-colors ${
+                      isDarkMode 
+                        ? 'text-gray-400 hover:text-white hover:bg-slate-700' 
+                        : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+                    }`}
                   >
                     <span className="text-xl">×</span>
                   </button>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-800">Notifications</span>
+                    <span className={isDarkMode ? 'text-gray-200' : 'text-gray-800'}>Theme</span>
+                    <button
+                      onClick={() => dispatch(toggleTheme())}
+                      aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+                      className={`p-2 rounded-lg transition-colors ${
+                        isDarkMode 
+                          ? 'bg-slate-700 text-yellow-300' 
+                          : 'bg-gray-200 text-blue-600'
+                      }`}
+                    >
+                      {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={isDarkMode ? 'text-gray-200' : 'text-gray-800'}>Notifications</span>
                     <button
                       onClick={() => setNotifications(!notifications)}
                       aria-label={notifications ? "Disable notifications" : "Enable notifications"}
-                      className={`p-2 rounded-lg ${notifications ? 'bg-green-600' : 'bg-gray-500'}`}
+                      className={`p-2 rounded-lg ${notifications ? 'bg-green-600' : isDarkMode ? 'bg-slate-600' : 'bg-gray-500'}`}
                     >
                       {notifications ? <Bell className="w-5 h-5 text-white" /> : <BellOff className="w-5 h-5 text-white" />}
                     </button>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-800">Speaker</span>
+                    <span className={isDarkMode ? 'text-gray-200' : 'text-gray-800'}>Speaker</span>
                     <button
                       onClick={() => setIsSpeakerOn(!isSpeakerOn)}
                       aria-label={isSpeakerOn ? "Mute speaker" : "Unmute speaker"}
-                      className={`p-2 rounded-lg ${isSpeakerOn ? 'bg-green-600' : 'bg-gray-500'}`}
+                      className={`p-2 rounded-lg ${isSpeakerOn ? 'bg-green-600' : isDarkMode ? 'bg-slate-600' : 'bg-gray-500'}`}
                     >
                       {isSpeakerOn ? <Volume2 className="w-5 h-5 text-white" /> : <VolumeX className="w-5 h-5 text-white" />}
                     </button>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-800">Video Quality</span>
+                    <span className={isDarkMode ? 'text-gray-200' : 'text-gray-800'}>Video Quality</span>
                     <select
-                      className="bg-gray-100 text-gray-800 rounded-lg px-2 py-1 focus:outline-none"
+                      className={`rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-300 ${
+                        isDarkMode 
+                          ? 'bg-slate-700 text-white border border-slate-600' 
+                          : 'bg-gray-100 text-gray-800 border border-gray-200'
+                      }`}
                       aria-label="Select video quality"
                     >
                       <option>High</option>
@@ -687,35 +920,59 @@ export default function PersonalRoom() {
 
           {/* Participants Modal */}
           {showParticipants && (
-            <div className="fixed inset-0 bg-gray-800/50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-2xl p-6 max-w-md w-full border border-gray-200 shadow-md">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className={`rounded-2xl p-6 max-w-md w-full shadow-lg transition-colors duration-300 ${
+                isDarkMode 
+                  ? 'bg-slate-800 border border-slate-700' 
+                  : 'bg-white border border-gray-200'
+              }`}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold text-gray-800 flex items-center space-x-2">
-                    <Users className="w-6 h-6 text-blue-500" />
+                  <h3 className={`text-xl font-bold flex items-center space-x-2 ${
+                    isDarkMode ? 'text-white' : 'text-gray-800'
+                  }`}>
+                    <Users className={`w-6 h-6 ${isDarkMode ? 'text-blue-400' : 'text-blue-500'}`} />
                     <span>Participants</span>
                   </h3>
                   <button 
                     onClick={() => setShowParticipants(false)}
                     aria-label="Close participants"
-                    className="text-gray-500 hover:text-gray-800 transition-colors"
+                    className={`p-2 rounded-lg transition-colors ${
+                      isDarkMode 
+                        ? 'text-gray-400 hover:text-white hover:bg-slate-700' 
+                        : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+                    }`}
                   >
                     <span className="text-xl">×</span>
                   </button>
                 </div>
                 <div className="space-y-4">
                   {participants.map(participant => (
-                    <div key={participant.id} className="flex items-center space-x-3 p-3 rounded-xl bg-gray-50">
+                    <div key={participant.id} className={`flex items-center space-x-3 p-3 rounded-xl transition-colors duration-300 ${
+                      isDarkMode ? 'bg-slate-700' : 'bg-gray-50'
+                    }`}>
                       <div className="relative">
                         <span className="text-2xl">{participant.avatar}</span>
-                        <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${participant.active ? 'bg-green-600' : 'bg-gray-500'}`}></div>
+                        <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full ${
+                          isDarkMode 
+                            ? `border-2 border-slate-700 ${participant.active ? 'bg-green-600' : 'bg-gray-500'}` 
+                            : `border-2 border-white ${participant.active ? 'bg-green-600' : 'bg-gray-500'}`
+                        }`}></div>
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-semibold text-gray-800">{participant.name}</p>
-                        <p className="text-xs text-gray-500">{participant.role}</p>
+                        <p className={`text-sm font-semibold ${
+                          isDarkMode ? 'text-white' : 'text-gray-800'
+                        }`}>{participant.name}</p>
+                        <p className={`text-xs ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                        }`}>{participant.role}</p>
                         {participant.expertise && (
-                          <div className="flex space-x-1 mt-1">
+                          <div className="flex flex-wrap gap-1 mt-1">
                             {participant.expertise.map((skill, idx) => (
-                              <span key={idx} className="text-xs px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full">
+                              <span key={idx} className={`text-xs px-2 py-0.5 rounded-full ${
+                                isDarkMode 
+                                  ? 'bg-blue-900/40 text-blue-300' 
+                                  : 'bg-blue-100 text-blue-600'
+                              }`}>
                                 {skill}
                               </span>
                             ))}
@@ -728,7 +985,9 @@ export default function PersonalRoom() {
                             <Star className="w-3 h-3 text-yellow-500 fill-current" />
                             <span className="text-xs text-yellow-500 font-bold">{participant.rating}</span>
                           </div>
-                          <p className="text-xs text-gray-500">{participant.cases} cases</p>
+                          <p className={`text-xs ${
+                            isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                          }`}>{participant.cases} cases</p>
                         </div>
                       )}
                     </div>

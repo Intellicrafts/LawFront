@@ -95,7 +95,7 @@ const VirtualBakil = () => {
   };
 
   return (
-    <div className="pt-28 pb-10 px-4 w-full max-w-4xl mx-auto">
+    <div className="pt-20 pb-10 px-4 w-full max-w-4xl mx-auto">
       <div className="bg-white shadow-2xl rounded-2xl border border-gray-200 p-6 h-[75vh] flex flex-col">
         {/* Message List */}
         <div className="flex-1 overflow-y-auto pr-2 space-y-4">

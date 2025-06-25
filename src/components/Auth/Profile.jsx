@@ -5,10 +5,13 @@ import {
   AlertCircle, CheckCircle, Loader, Code, FileText, MessageSquare, Verified,
   Building, Pencil, Check, Image, Upload, ChevronDown, ChevronUp, Eye, EyeOff,
   Trash2, RefreshCw, Link, Clipboard, Github, Twitter, Linkedin, Facebook,
-  Laptop
+  Laptop, AlertTriangle
 } from 'lucide-react';
 import { apiServices } from '../../api/apiService';
 import { useSelector } from 'react-redux';
+import Toast from '../common/Toast';
+import useToast from '../../hooks/useToast';
+import ProfileSkeleton from '../common/ProfileSkeleton';
 
 const UserProfile = () => {
   // Get theme from Redux store
@@ -22,14 +25,23 @@ const UserProfile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
-  const [message, setMessage] = useState({ type: '', text: '' });
   const [errors, setErrors] = useState({});
   const [activeSection, setActiveSection] = useState('personal'); // For mobile accordion
   const [skillInput, setSkillInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   
+  // Toast notifications
+  const { 
+    toast, 
+    showToast, 
+    hideToast, 
+    showSuccess, 
+    showError, 
+    showWarning, 
+    showInfo 
+  } = useToast();
+  
   // Refs
-  const messageTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
   const skillInputRef = useRef(null);
 
@@ -68,18 +80,30 @@ const UserProfile = () => {
   const [userInfo, setUserInfo] = useState(null);
   const [editForm, setEditForm] = useState({});
 
-  // Show message
+  // Show message - updated to use our toast system
   const showMessage = useCallback((type, text, duration = 5000) => {
-    setMessage({ type, text });
-    if (messageTimeoutRef.current) clearTimeout(messageTimeoutRef.current);
-    if (duration > 0) {
-      messageTimeoutRef.current = setTimeout(() => {
-        setMessage({ type: '', text: '' });
-      }, duration);
+    const title = type === 'success' ? 'Success!' : 
+                 type === 'error' ? 'Error!' : 
+                 type === 'warning' ? 'Warning!' : 'Information';
+    
+    switch(type) {
+      case 'success':
+        showSuccess(title, text, duration);
+        break;
+      case 'error':
+        showError(title, text, duration);
+        break;
+      case 'warning':
+        showWarning(title, text, duration);
+        break;
+      case 'info':
+      default:
+        showInfo(title, text, duration);
+        break;
     }
-  }, []);
+  }, [showSuccess, showError, showWarning, showInfo]);
 
-  // Fetch user data from API
+  // Fetch user data from API - improved with better error handling
   const fetchUserData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -87,56 +111,83 @@ const UserProfile = () => {
       let userData;
       try {
         userData = await apiServices.getUserProfile();
+        console.log('Profile data fetched successfully:', userData);
       } catch (profileError) {
-        // If profile endpoint fails, try general user endpoint
-        console.log('Profile endpoint failed, trying user endpoint');
-        userData = await apiServices.getUser();
+        console.log('Profile endpoint failed, trying user endpoint', profileError);
+        try {
+          userData = await apiServices.getUser();
+          console.log('User data fetched successfully:', userData);
+        } catch (userError) {
+          console.error('Both profile and user endpoints failed:', userError);
+          throw new Error('Failed to fetch profile data from server');
+        }
       }
       
       // Check for cached avatar in localStorage
       const cachedAvatar = localStorage.getItem('user_avatar');
       
-      // Transform API data to match our component structure based on your API response
+      // Extract skills from API response if available
+      let skills = [];
+      if (userData.skills) {
+        if (Array.isArray(userData.skills)) {
+          skills = userData.skills;
+        } else if (typeof userData.skills === 'string') {
+          // If skills is a comma-separated string
+          skills = userData.skills.split(',').map(skill => skill.trim()).filter(Boolean);
+        } else if (typeof userData.skills === 'object') {
+          // If skills is an object with values
+          skills = Object.values(userData.skills).filter(Boolean);
+        }
+      }
+      
+      // Extract social links if available
+      const social = {
+        twitter: userData.twitter_url || userData.social?.twitter || '',
+        linkedin: userData.linkedin_url || userData.social?.linkedin || '',
+        github: userData.github_url || userData.social?.github || '',
+        facebook: userData.facebook_url || userData.social?.facebook || ''
+      };
+      
+      // Transform API data to match our component structure
       const transformedData = {
         id: userData.id,
-        name: userData.name || '',
-        last_name: userData.last_name || '',
+        name: userData.name || userData.first_name || '',
+        last_name: userData.last_name || userData.surname || '',
         email: userData.email || '',
-        phone: userData.phone || '',
+        phone: userData.phone || userData.phone_number || '',
         location: userData.address || '',
         city: userData.city || '',
         state: userData.state || '',
         country: userData.country || '',
-        zip_code: userData.zip_code || '',
+        zip_code: userData.zip_code || userData.postal_code || '',
         website: userData.website || '',
         joinDate: userData.created_at ? new Date(userData.created_at).toLocaleDateString('en-US', { 
           year: 'numeric', 
           month: 'long', 
           day: 'numeric' 
         }) : 'Not available',
-        company: userData.company || '',
-        bio: userData.bio || 'No bio available',
-        title: userData.title || '',
+        company: userData.company || userData.organization || '',
+        bio: userData.bio || userData.about || 'No bio available',
+        title: userData.title || userData.job_title || userData.profession || '',
         // Use cached avatar from localStorage if available, otherwise use from API
-        avatar: cachedAvatar || userData.avatar || null,
-        account_type: userData.user_type === 1 ? 'User' : 'Lawyer',
-        is_verified: userData.is_verified,
+        avatar: cachedAvatar || userData.avatar || userData.profile_picture || null,
+        account_type: userData.user_type === 1 ? 'User' : 
+                     userData.user_type === 2 ? 'Lawyer' : 
+                     userData.account_type || 'User',
+        is_verified: userData.is_verified || userData.verified || false,
         email_verified_at: userData.email_verified_at,
-        active: userData.active,
+        active: userData.active || userData.is_active || true,
         stats: {
-          appointments: userData.appointments?.length || 0,
-          queries: userData.legal_queries?.length || 0,
-          reviews: userData.reviews?.length || 0
+          appointments: userData.appointments?.length || userData.appointment_count || 0,
+          queries: userData.legal_queries?.length || userData.query_count || 0,
+          reviews: userData.reviews?.length || userData.review_count || 0
         },
-        // Initialize these with empty arrays if not provided by API
-        skills: [],
-        achievements: [],
-        social: {
-          twitter: '',
-          linkedin: '',
-          github: '',
-          facebook: ''
-        },
+        // Use extracted skills or initialize with empty array
+        skills: skills,
+        // Use achievements from API or initialize with empty array
+        achievements: userData.achievements || [],
+        // Use extracted social links
+        social: social,
         // Use actual data from API if available
         appointments: userData.appointments || [],
         legal_queries: userData.legal_queries || [],
@@ -145,7 +196,7 @@ const UserProfile = () => {
 
       setUserInfo(transformedData);
       setEditForm(transformedData);
-      showMessage('success', 'Profile loaded successfully');
+      showSuccess('Profile Loaded', 'Your profile information has been loaded successfully');
       
       // Store the transformed data in localStorage for offline access
       localStorage.setItem('user_profile_transformed', JSON.stringify(transformedData));
@@ -159,28 +210,26 @@ const UserProfile = () => {
           const parsedProfile = JSON.parse(cachedProfile);
           setUserInfo(parsedProfile);
           setEditForm(parsedProfile);
-          showMessage('info', 'Using cached profile data');
+          showInfo('Offline Mode', 'Using cached profile data. Some features may be limited.');
         } catch (parseError) {
           console.error('Error parsing cached profile:', parseError);
           setUserInfo(demoProfile);
           setEditForm(demoProfile);
-          showMessage('error', 'Failed to load profile. Using demo data.');
+          showError('Profile Error', 'Failed to load your profile. Using demo data instead.');
         }
       } else {
         setUserInfo(demoProfile);
         setEditForm(demoProfile);
-        showMessage('error', 'Failed to load profile. Using demo data.');
+        showError('Connection Error', 'Could not connect to the server. Using demo profile data.');
       }
     } finally {
       setIsLoading(false);
     }
-  }, [showMessage]);
+  }, [showSuccess, showInfo, showError]);
 
   useEffect(() => {
     fetchUserData();
-    return () => {
-      if (messageTimeoutRef.current) clearTimeout(messageTimeoutRef.current);
-    };
+    // No need for cleanup as our toast component handles its own timeouts
   }, [fetchUserData]);
 
   // Validate form
@@ -209,26 +258,36 @@ const UserProfile = () => {
     return Object.keys(newErrors).length === 0;
   }, [editForm]);
 
-  // Handle image upload
+  // Handle image upload - enhanced with better error handling and UX
   const handleImageUpload = useCallback(async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     // Validate file size (2MB limit)
-    if (file.size > 2 * 1024 * 1024) {
-      showMessage('error', 'Image size must be less than 2MB');
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (file.size > maxSize) {
+      showError(
+        'File Too Large', 
+        `Image size must be less than 2MB. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`
+      );
       return;
     }
 
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      showMessage('error', 'Please select a valid image file (JPEG, PNG, GIF, WebP)');
+      showError(
+        'Invalid File Type', 
+        `Please select a valid image file (JPEG, PNG, GIF, WebP). You uploaded: ${file.type}`
+      );
       return;
     }
 
     try {
       setIsUploadingAvatar(true);
+      
+      // Show a loading toast
+      showInfo('Uploading Avatar', 'Please wait while we upload your profile picture...', 0);
       
       // Create a local preview immediately for better UX
       const reader = new FileReader();
@@ -256,6 +315,9 @@ const UserProfile = () => {
       // Upload to server
       const result = await apiServices.uploadAvatar(file);
       
+      // Hide the loading toast
+      hideToast();
+      
       // Get the avatar URL from the response
       const avatarUrl = result.avatar_url || result.url || result.path || result.avatar;
       
@@ -275,37 +337,50 @@ const UserProfile = () => {
         }
       }
       
-      showMessage('success', 'Avatar updated successfully!');
+      showSuccess('Avatar Updated', 'Your profile picture has been updated successfully!');
     } catch (error) {
       console.error('Avatar upload failed:', error);
+      
+      // Hide the loading toast
+      hideToast();
       
       // Even if the upload fails, keep the local preview
       if (imagePreview) {
         setUserInfo(prev => ({ ...prev, avatar: imagePreview }));
         setEditForm(prev => ({ ...prev, avatar: imagePreview }));
-        showMessage('warning', 'Avatar saved locally but failed to upload to server. It will be synced when connection is restored.');
+        showWarning(
+          'Offline Mode', 
+          'Your avatar has been saved locally but failed to upload to the server. It will be synced when your connection is restored.'
+        );
       } else {
-        showMessage('error', 'Failed to upload avatar. Please try again.');
+        showError(
+          'Upload Failed', 
+          'We couldn\'t upload your profile picture. Please check your connection and try again.'
+        );
       }
     } finally {
       setIsUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
-  }, [showMessage, imagePreview]);
+  }, [showSuccess, showError, showWarning, showInfo, hideToast, imagePreview]);
 
-  // Save profile changes
+  // Save profile changes - enhanced with better error handling and UX
   const handleSave = useCallback(async () => {
     if (!validateForm()) {
-      showMessage('error', 'Please fix the errors in the form');
+      showError('Validation Error', 'Please fix the errors in the form before saving.');
       return;
     }
 
     try {
       setIsSaving(true);
       
+      // Show a loading toast
+      showInfo('Saving Profile', 'Please wait while we update your profile information...', 0);
+      
       // Prepare data for API based on your API structure
       const updateData = {
         name: editForm.name,
+        last_name: editForm.last_name,
         email: editForm.email,
         phone: editForm.phone,
         address: editForm.location,
@@ -317,10 +392,17 @@ const UserProfile = () => {
         company: editForm.company,
         bio: editForm.bio,
         title: editForm.title,
-        avatar: editForm.avatar,
-        // Include these if your API supports them
-        skills: editForm.skills,
-        social: editForm.social
+        // Don't send avatar in the JSON payload if it's a data URL
+        avatar: editForm.avatar && editForm.avatar.startsWith('data:') ? undefined : editForm.avatar,
+        // Format skills based on API expectations
+        skills: Array.isArray(editForm.skills) ? editForm.skills : [],
+        // Format social links based on API expectations
+        social: editForm.social || {
+          twitter: '',
+          linkedin: '',
+          github: '',
+          facebook: ''
+        }
       };
 
       // Save to localStorage first for offline capability
@@ -337,7 +419,7 @@ const UserProfile = () => {
             name: updateData.name,
             last_name: updateData.last_name,
             email: updateData.email,
-            avatar: updateData.avatar
+            avatar: editForm.avatar // Use the avatar from editForm to include data URLs
           };
           localStorage.setItem('user', JSON.stringify(updatedUser));
         } catch (e) {
@@ -348,15 +430,24 @@ const UserProfile = () => {
       // Send to server
       const updatedProfile = await apiServices.updateUserProfile(updateData);
       
+      // Hide the loading toast
+      hideToast();
+      
       // Transform the response back to our component structure
       const transformedData = {
         ...editForm,
         ...updatedProfile,
         name: updatedProfile.name || updatedProfile.first_name || editForm.name,
         last_name: updatedProfile.last_name || updatedProfile.surname || editForm.last_name,
-        social: updatedProfile.social || editForm.social,
+        // Handle social links
+        social: updatedProfile.social || {
+          twitter: updatedProfile.twitter_url || editForm.social?.twitter || '',
+          linkedin: updatedProfile.linkedin_url || editForm.social?.linkedin || '',
+          github: updatedProfile.github_url || editForm.social?.github || '',
+          facebook: updatedProfile.facebook_url || editForm.social?.facebook || ''
+        },
         // Preserve the avatar if it's not in the response
-        avatar: updatedProfile.avatar || editForm.avatar
+        avatar: updatedProfile.avatar || updatedProfile.profile_picture || editForm.avatar
       };
 
       // Update state
@@ -367,32 +458,70 @@ const UserProfile = () => {
       // Update localStorage with the server response
       localStorage.setItem('user_profile_transformed', JSON.stringify(transformedData));
       
-      showMessage('success', 'Profile updated successfully!');
+      showSuccess('Profile Updated', 'Your profile has been updated successfully!');
     } catch (error) {
       console.error('Profile update failed:', error);
+      
+      // Hide the loading toast
+      hideToast();
       
       // Even if the server update fails, keep the local changes
       setUserInfo(prev => ({ ...prev, ...editForm }));
       setIsEditing(false);
       setImagePreview(null);
       
-      showMessage('warning', 'Profile saved locally but failed to update on server. Changes will be synced when connection is restored.');
+      // Check if it's a validation error from the server
+      if (error.response?.data?.errors) {
+        const serverErrors = error.response.data.errors;
+        const errorMessage = Object.values(serverErrors).flat().join(', ');
+        showError('Validation Error', errorMessage);
+      } else if (error.response?.status === 401) {
+        showError('Authentication Error', 'Your session has expired. Please log in again.');
+      } else if (error.response?.status === 403) {
+        showError('Permission Denied', 'You don\'t have permission to update this profile.');
+      } else if (!navigator.onLine) {
+        showWarning(
+          'Offline Mode', 
+          'Your profile has been saved locally but couldn\'t be updated on the server. Changes will be synced when your connection is restored.'
+        );
+      } else {
+        showError(
+          'Update Failed', 
+          'We couldn\'t update your profile on the server. Please try again later.'
+        );
+      }
     } finally {
       setIsSaving(false);
     }
-  }, [editForm, validateForm, showMessage, userInfo]);
+  }, [editForm, validateForm, showSuccess, showError, showWarning, showInfo, hideToast, userInfo]);
 
-  // Cancel editing
+  // Cancel editing - improved with confirmation for unsaved changes
   const handleCancel = useCallback(() => {
+    // Check if there are unsaved changes
+    const hasChanges = JSON.stringify(editForm) !== JSON.stringify(userInfo);
+    
+    if (hasChanges && isEditing) {
+      // Show confirmation toast
+      showWarning(
+        'Unsaved Changes', 
+        'You have unsaved changes. Are you sure you want to cancel?',
+        10000
+      );
+      
+      // We could implement a proper confirmation dialog here,
+      // but for now we'll just show a warning toast and proceed
+    }
+    
     setEditForm(userInfo);
     setImagePreview(null);
     setIsEditing(false);
     setErrors({});
-    setMessage({ type: '', text: '' });
+    hideToast(); // Hide any active toasts
+    
     if (fileInputRef.current) fileInputRef.current.value = '';
-  }, [userInfo]);
+  }, [userInfo, isEditing, editForm, hideToast, showWarning]);
 
-  // Handle share
+  // Handle share - improved with better error handling and UX
   const handleShare = useCallback(async () => {
     try {
       const shareData = {
@@ -402,41 +531,71 @@ const UserProfile = () => {
       };
 
       if (navigator.share) {
+        showInfo('Sharing', 'Opening share dialog...', 2000);
         await navigator.share(shareData);
-        showMessage('success', 'Profile shared successfully!');
+        showSuccess('Shared', 'Profile shared successfully!');
       } else if (navigator.clipboard) {
         await navigator.clipboard.writeText(window.location.href);
-        showMessage('success', 'Profile link copied to clipboard!');
+        showSuccess('Link Copied', 'Profile link copied to clipboard!');
       } else {
-        showMessage('error', 'Sharing not supported on this device');
+        showError(
+          'Sharing Not Supported', 
+          'Your device or browser doesn\'t support sharing. Try copying the URL manually.'
+        );
       }
     } catch (error) {
+      console.error('Share error:', error);
       if (error.name !== 'AbortError') {
-        showMessage('error', 'Failed to share profile');
+        if (error.name === 'NotAllowedError') {
+          showWarning('Share Cancelled', 'You cancelled the share operation.');
+        } else {
+          showError('Share Failed', 'We couldn\'t share your profile. Please try again.');
+        }
       }
     }
-  }, [userInfo, showMessage]);
+  }, [userInfo, showSuccess, showError, showWarning, showInfo]);
 
-  // Handle export
+  // Handle export - improved with better error handling and UX
   const handleExport = useCallback(() => {
     try {
+      showInfo('Preparing Export', 'Preparing your profile data for export...', 2000);
+      
       const exportData = {
         ...userInfo,
         exportDate: new Date().toISOString(),
-        exportVersion: '1.0'
+        exportVersion: '1.0',
+        exportSource: 'MeraBakil Legal Solutions'
       };
       
-      const dataStr = JSON.stringify(exportData, null, 2);
+      // Remove any circular references or large data
+      const sanitizedData = {
+        ...exportData,
+        avatar: exportData.avatar && exportData.avatar.startsWith('data:') 
+          ? '[Base64 Image Data Removed]' 
+          : exportData.avatar
+      };
+      
+      const dataStr = JSON.stringify(sanitizedData, null, 2);
       const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
       const linkElement = document.createElement('a');
       linkElement.setAttribute('href', dataUri);
-      linkElement.setAttribute('download', `${userInfo.name}_${userInfo.last_name}_profile.json`);
+      
+      // Format filename with date for better organization
+      const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      const safeFileName = `${userInfo.name || 'User'}_${userInfo.last_name || ''}_Profile_${date}`.replace(/\s+/g, '_');
+      
+      linkElement.setAttribute('download', `${safeFileName}.json`);
       linkElement.click();
-      showMessage('success', 'Profile exported successfully!');
+      
+      showSuccess('Export Complete', 'Your profile data has been exported successfully!');
     } catch (error) {
-      showMessage('error', 'Failed to export profile');
+      console.error('Export error:', error);
+      showError(
+        'Export Failed', 
+        'We couldn\'t export your profile data. Please try again later.'
+      );
     }
-  }, [userInfo, showMessage]);
+  }, [userInfo, showSuccess, showError, showInfo]);
 
   // Handle form input changes
   const handleInputChange = useCallback((field, value) => {
@@ -495,19 +654,57 @@ const UserProfile = () => {
     }
   }, [handleAddSkill]);
 
-  // Loading state
+  // Loading state - improved with skeleton loading
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="text-center p-8 rounded-xl bg-white dark:bg-gray-800 shadow-xl max-w-md w-full">
-          <div className="relative w-20 h-20 mx-auto mb-6">
-            <div className="absolute inset-0 rounded-full border-t-4 border-blue-500 animate-spin"></div>
-            <div className="absolute inset-3 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center">
-              <Loader className="w-8 h-8 text-blue-500 animate-pulse" />
+      <div className="min-h-screen pt-20 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8">
+            <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-1/4 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-2/5 mt-2 animate-pulse"></div>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column - Profile Card Skeleton */}
+            <div className="lg:col-span-1">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+                <ProfileSkeleton />
+              </div>
+            </div>
+            
+            {/* Right Column - Details Skeleton */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Contact Information Skeleton */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden animate-pulse">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                  <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/3"></div>
+                </div>
+                
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Skills Skeleton */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden animate-pulse">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                  <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/4"></div>
+                </div>
+                
+                <div className="p-6">
+                  <div className="flex flex-wrap gap-2">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Loading Profile</h2>
-          <p className="text-gray-500 dark:text-gray-400">Please wait while we fetch your information...</p>
         </div>
       </div>
     );
@@ -516,16 +713,26 @@ const UserProfile = () => {
   if (!userInfo) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="text-center p-8 rounded-xl bg-white dark:bg-gray-800 shadow-xl max-w-md w-full">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Failed to Load Profile</h2>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">We couldn't load your profile information. Please try again.</p>
-          <button 
-            onClick={fetchUserData}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md flex items-center justify-center mx-auto"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" /> Retry
-          </button>
+        <div className="text-center p-8 rounded-xl bg-white dark:bg-gray-800 shadow-xl max-w-md w-full animate-bounce-in">
+          <div className="bg-red-100 dark:bg-red-900/30 p-4 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+            <AlertCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-3">Failed to Load Profile</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">We couldn't load your profile information. This could be due to a network issue or server problem.</p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button 
+              onClick={fetchUserData}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md flex items-center justify-center"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" /> Retry
+            </button>
+            <button 
+              onClick={() => window.history.back()}
+              className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors shadow-md flex items-center justify-center"
+            >
+              <X className="w-4 h-4 mr-2" /> Go Back
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -534,30 +741,17 @@ const UserProfile = () => {
   // Main UI
   return (
     <div className={`min-h-screen pt-20 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} transition-colors duration-300 relative`}>
+      {/* Toast Notification */}
+      <Toast toast={toast} onClose={hideToast} />
+      
       {/* Close Button */}
       <button 
         onClick={() => window.history.back()}
-        className="fixed top-24 right-6 z-50 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 group"
+        className="fixed top-24 right-6 z-40 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 group"
         aria-label="Close profile"
       >
         <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
       </button>
-      
-      {/* Message Alert */}
-      {message.text && (
-        <div className={`fixed top-20 right-4 max-w-sm w-full p-4 rounded-lg shadow-lg flex items-center space-x-2 z-50 ${
-          message.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-        }`} role="alert">
-          {message.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-          <span className="flex-1">{message.text}</span>
-          <button 
-            onClick={() => setMessage({ type: '', text: '' })} 
-            className="ml-auto p-1 rounded-full hover:bg-white hover:bg-opacity-20"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">

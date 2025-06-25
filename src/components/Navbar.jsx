@@ -35,7 +35,8 @@ import {
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  // We keep scrolled state for potential future use but it no longer affects navbar appearance
+  const [scrolled, setScrolled] = useState(true);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -177,6 +178,9 @@ const Navbar = () => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
     };
+    
+    // Initial check on mount
+    handleScroll();
     
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -429,13 +433,9 @@ const Navbar = () => {
   return (
     <>
       <nav 
-        className={`fixed top-0 w-full z-40 transition-all duration-300 ${
-          scrolled 
-            ? 'py-2 bg-white/95 backdrop-blur-sm shadow-lg dark:bg-gray-900/95 dark:shadow-gray-800/30' 
-            : 'py-4 bg-white dark:bg-gray-900'
-        }`}
+        className="fixed top-0 w-full z-40 transition-all duration-300 py-3 bg-white/95 backdrop-blur-sm shadow-md dark:bg-gray-900/95 dark:shadow-gray-800/30"
         style={{
-          borderBottom: scrolled ? '1px solid rgba(82, 152, 219, 0.1)' : 'none',
+          borderBottom: '1px solid rgba(82, 152, 219, 0.1)',
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -537,13 +537,14 @@ const Navbar = () => {
 
             {/* Desktop Right Side - Auth & Theme */}
             <div className="hidden lg:flex lg:items-center lg:space-x-3">
+              {/* Theme Toggle Button */}
               <button
                 className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200
                           dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 focus:outline-none"
                 onClick={() => dispatch(toggleTheme())}
                 aria-label="Toggle dark mode"
               >
-                {mode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                {mode === 'dark' ? <Sun size={20} className="text-yellow-300" /> : <Moon size={20} />}
               </button>
 
               {isAuthenticated ? (
@@ -763,7 +764,7 @@ const Navbar = () => {
 
       {/* Mobile Menu - Fixed at top with no layout shifting */}
       <div 
-        className={`lg:hidden fixed  inset-0 z-30 ${isMenuOpen ? 'block' : 'hidden'}`}
+        className={`lg:hidden fixed inset-0 z-30 ${isMenuOpen ? 'block' : 'hidden'}`}
       >
         {/* Backdrop */}
         <div 
@@ -774,11 +775,12 @@ const Navbar = () => {
         {/* Side drawer menu - Improved with rounded corners and better spacing */}
         <div 
           ref={mobileMenuRef}
-          className={`fixed top-0 right-0 h-full max-h-screen pb-24 w-4/5 max-w-xs bg-white dark:bg-gray-900 shadow-xl transform transition-transform duration-300 ease-in-out ${
+          className={`fixed top-0 right-0 h-full w-4/5 max-w-xs bg-white dark:bg-gray-900 shadow-xl transform transition-transform duration-300 ease-in-out ${
             isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-          } overflow-y-auto rounded-l-2xl mt-16`}
+          } overflow-y-auto rounded-l-2xl`}
           style={{ 
-            maxHeight: 'calc(100% - 4rem)',
+            paddingTop: '4rem',
+            paddingBottom: '2rem',
             boxShadow: mode === 'dark' ? '0 0 20px rgba(0, 0, 0, 0.5)' : '-10px 0 30px rgba(0, 0, 0, 0.1)'
           }}
         >

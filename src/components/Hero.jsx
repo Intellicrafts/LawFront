@@ -434,6 +434,7 @@ const Hero = () => {
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
+      /* Light mode scrollbar */
       .overflow-y-auto::-webkit-scrollbar {
         width: 5px;
         background-color: transparent;
@@ -459,9 +460,26 @@ const Hero = () => {
         background: rgba(14, 165, 233, 0.6);
       }
       
+      /* Dark mode scrollbar */
+      .dark .overflow-y-auto::-webkit-scrollbar-thumb {
+        background: rgba(56, 189, 248, 0.2);
+      }
+      
+      .dark .overflow-y-auto:hover::-webkit-scrollbar-thumb {
+        background: rgba(56, 189, 248, 0.4);
+      }
+      
+      .dark .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+        background: rgba(56, 189, 248, 0.6);
+      }
+      
       .overflow-y-auto {
         scrollbar-width: thin;
-        scrollbar-color: rgba(255, 253, 253, 0.4) transparent;
+        scrollbar-color: rgba(14, 165, 233, 0.4) transparent;
+      }
+      
+      .dark .overflow-y-auto {
+        scrollbar-color: rgba(56, 189, 248, 0.4) transparent;
       }
     `;
     
@@ -568,7 +586,7 @@ const Hero = () => {
   );
 
   return (
-    <div id="hero-section" className="pt-16 bg-[#F8F9FA] dark:bg-[#0F172A] min-h-screen flex flex-col items-center justify-center px-4 h-6 transition-all duration-500">
+    <div id="hero-section" className="pt-20 bg-[#F8F9FA] dark:bg-[#0F172A] min-h-screen flex flex-col items-center justify-center px-4 transition-all duration-500">
       <LimitWarning />
       
       <div className="relative w-full max-w-[800px] mx-auto">

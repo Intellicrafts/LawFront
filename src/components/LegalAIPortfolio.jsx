@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { toggleTheme } from '../redux/themeSlice';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   MessageSquare,
@@ -33,7 +35,9 @@ import {
   Scan,
   FileCheck,
   UserCheck,
-  Lightbulb
+  Lightbulb,
+  Moon,
+  Sun
 } from 'lucide-react';
 
 // Custom Link component that scrolls to top before navigation
@@ -61,7 +65,11 @@ const ScrollToTopLink = ({ to, children, ...props }) => {
 };
 
 const LegalAIPortfolio = () => {
-  const [darkMode, setDarkMode] = useState(false);
+  // Use Redux theme state
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
+  const dispatch = useDispatch();
+  
   const [activeService, setActiveService] = useState(0);
   const [scanningProgress, setScanningProgress] = useState(0);
   const [chatMessageIndex, setChatMessageIndex] = useState(0);
@@ -135,7 +143,8 @@ const LegalAIPortfolio = () => {
       textSecondary: '#64748B',
       accent: '#0EA5E9',
       cardBg: '#FFFFFF',
-      cardBorder: '#E2E8F0'
+      cardBorder: '#E2E8F0',
+      gradient: 'from-blue-50 via-indigo-50 to-purple-50'
     },
     dark: {
       bg: '#0F172A',
@@ -143,11 +152,12 @@ const LegalAIPortfolio = () => {
       textSecondary: '#94A3B8',
       accent: '#38BDF8',
       cardBg: '#1E293B',
-      cardBorder: '#334155'
+      cardBorder: '#334155',
+      gradient: 'from-slate-900 via-slate-800 to-slate-900'
     }
   }), []);
 
-  const currentTheme = darkMode ? theme.dark : theme.light;
+  const currentTheme = isDarkMode ? theme.dark : theme.light;
 
   // Memoized services configuration
   const services = useMemo(() => [
@@ -235,14 +245,20 @@ const LegalAIPortfolio = () => {
     
     return (
       <div className="relative h-64 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-2xl">
+        <div className={`absolute inset-0 bg-gradient-to-br rounded-2xl transition-colors duration-300 ${
+          isDarkMode 
+            ? 'from-blue-900/20 to-purple-900/20 shadow-lg shadow-blue-900/10' 
+            : 'from-blue-500/10 to-purple-500/10 shadow-md'
+        }`}>
           <div className="p-6 h-full flex flex-col justify-end">
             <div className="space-y-3">
               <div className={`flex ${currentMessage.isUser ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-xs px-4 py-2 rounded-2xl text-sm transition-all duration-500 transform ${
                   currentMessage.isUser 
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white ml-4' 
-                    : 'bg-white dark:bg-gray-800 mr-4 shadow-lg'
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white ml-4 shadow-lg' 
+                    : isDarkMode 
+                      ? 'bg-slate-800 border border-slate-700 text-white mr-4 shadow-lg' 
+                      : 'bg-white mr-4 shadow-lg'
                 } animate-fade-in-up`}>
                   {currentMessage.text}
                 </div>
@@ -260,20 +276,28 @@ const LegalAIPortfolio = () => {
         </div>
       </div>
     );
-  }, [chatMessages, chatMessageIndex]);
+  }, [chatMessages, chatMessageIndex, isDarkMode]);
 
   // Optimized Document Scanning Animation
   const DocumentScanAnimation = useCallback(() => (
     <div className="relative h-64 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 rounded-2xl">
+      <div className={`absolute inset-0 bg-gradient-to-br rounded-2xl transition-colors duration-300 ${
+        isDarkMode 
+          ? 'from-emerald-900/20 to-cyan-900/20 shadow-lg shadow-emerald-900/10' 
+          : 'from-emerald-500/10 to-cyan-500/10 shadow-md'
+      }`}>
         <div className="p-6 h-full flex flex-col items-center justify-center">
-          <div className="relative w-32 h-40 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border-2 border-gray-200 dark:border-gray-700 transform hover:scale-105 transition-transform duration-300">
+          <div className={`relative w-32 h-40 rounded-lg shadow-2xl border-2 transform hover:scale-105 transition-all duration-300 ${
+            isDarkMode 
+              ? 'bg-slate-800 border-slate-700' 
+              : 'bg-white border-gray-200'
+          }`}>
             <div className="absolute inset-2 space-y-2">
-              <div className="h-2 bg-gray-300 dark:bg-gray-600 rounded animate-pulse"></div>
-              <div className="h-2 bg-gray-300 dark:bg-gray-600 rounded w-3/4 animate-pulse" style={{ animationDelay: '0.1s' }}></div>
-              <div className="h-2 bg-gray-300 dark:bg-gray-600 rounded w-1/2 animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-              <div className="h-2 bg-gray-300 dark:bg-gray-600 rounded w-5/6 animate-pulse" style={{ animationDelay: '0.3s' }}></div>
-              <div className="h-2 bg-gray-300 dark:bg-gray-600 rounded w-2/3 animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+              <div className={`h-2 rounded animate-pulse ${isDarkMode ? 'bg-slate-600' : 'bg-gray-300'}`}></div>
+              <div className={`h-2 rounded w-3/4 animate-pulse ${isDarkMode ? 'bg-slate-600' : 'bg-gray-300'}`} style={{ animationDelay: '0.1s' }}></div>
+              <div className={`h-2 rounded w-1/2 animate-pulse ${isDarkMode ? 'bg-slate-600' : 'bg-gray-300'}`} style={{ animationDelay: '0.2s' }}></div>
+              <div className={`h-2 rounded w-5/6 animate-pulse ${isDarkMode ? 'bg-slate-600' : 'bg-gray-300'}`} style={{ animationDelay: '0.3s' }}></div>
+              <div className={`h-2 rounded w-2/3 animate-pulse ${isDarkMode ? 'bg-slate-600' : 'bg-gray-300'}`} style={{ animationDelay: '0.4s' }}></div>
             </div>
             
             {/* Enhanced scanning line animation */}
@@ -289,12 +313,16 @@ const LegalAIPortfolio = () => {
           
           <div className="mt-6 flex items-center space-x-3">
             <Scan className="w-6 h-6 text-emerald-500 animate-pulse" />
-            <div className="text-sm font-medium">
+            <div className={`text-sm font-medium transition-colors duration-300 ${
+              isDarkMode ? 'text-white' : ''
+            }`}>
               Scanning Document... {Math.floor(scanningProgress)}%
             </div>
           </div>
           
-          <div className="mt-3 w-48 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className={`mt-3 w-48 h-2 rounded-full overflow-hidden transition-colors duration-300 ${
+            isDarkMode ? 'bg-slate-700' : 'bg-gray-200'
+          }`}>
             <div 
               className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all duration-200 ease-out"
               style={{ width: `${scanningProgress}%` }}
@@ -303,12 +331,16 @@ const LegalAIPortfolio = () => {
         </div>
       </div>
     </div>
-  ), [scanningProgress]);
+  ), [scanningProgress, isDarkMode]);
 
   // Optimized Appointment Flow Animation
   const AppointmentAnimation = useCallback(() => (
     <div className="relative h-64 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-pink-500/10 rounded-2xl">
+      <div className={`absolute inset-0 bg-gradient-to-br rounded-2xl transition-colors duration-300 ${
+        isDarkMode 
+          ? 'from-orange-900/20 to-pink-900/20 shadow-lg shadow-orange-900/10' 
+          : 'from-orange-500/10 to-pink-500/10 shadow-md'
+      }`}>
         <div className="p-6 h-full flex flex-col items-center justify-center">
           <div className="flex items-center justify-between w-full max-w-sm mb-8">
             {appointmentSteps.map((step, idx) => (
@@ -316,17 +348,25 @@ const LegalAIPortfolio = () => {
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-700 ease-out ${
                   step.active 
                     ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white scale-110 shadow-lg shadow-orange-500/30' 
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-400 hover:scale-105'
+                    : isDarkMode
+                      ? 'bg-slate-700 text-gray-400 hover:scale-105'
+                      : 'bg-gray-200 text-gray-400 hover:scale-105'
                 }`}>
                   {step.icon}
                 </div>
                 <div className={`text-xs mt-2 transition-all duration-700 ${
-                  step.active ? 'text-orange-500 font-semibold transform scale-110' : 'text-gray-400'
+                  step.active 
+                    ? 'text-orange-500 font-semibold transform scale-110' 
+                    : isDarkMode 
+                      ? 'text-gray-400' 
+                      : 'text-gray-400'
                 }`}>
                   {step.title}
                 </div>
                 {idx < appointmentSteps.length - 1 && (
-                  <div className="absolute top-6 left-1/2 w-16 h-0.5 bg-gray-300 dark:bg-gray-600 -translate-y-1/2 translate-x-6">
+                  <div className={`absolute top-6 left-1/2 w-16 h-0.5 -translate-y-1/2 translate-x-6 transition-colors duration-300 ${
+                    isDarkMode ? 'bg-slate-600' : 'bg-gray-300'
+                  }`}>
                     <div 
                       className={`h-full bg-gradient-to-r from-orange-500 to-pink-500 transition-all duration-700 ${
                         appointmentStep > idx ? 'w-full' : 'w-0'
@@ -339,27 +379,31 @@ const LegalAIPortfolio = () => {
           </div>
           
           <div className="text-center">
-            <div className="text-lg font-semibold mb-2 transition-all duration-500">
+            <div className={`text-lg font-semibold mb-2 transition-all duration-500 ${
+              isDarkMode ? 'text-white' : ''
+            }`}>
               {appointmentSteps[appointmentStep].title}
             </div>
-            <div className="text-sm text-gray-500">
+            <div className={`text-sm transition-colors duration-300 ${
+              isDarkMode ? 'text-gray-400' : 'text-gray-500'
+            }`}>
               Step {appointmentStep + 1} of 4
             </div>
           </div>
         </div>
       </div>
     </div>
-  ), [appointmentSteps, appointmentStep]);
+  ), [appointmentSteps, appointmentStep, isDarkMode]);
 
   // Optimized service change handler
   const handleServiceChange = useCallback((index) => {
     setActiveService(index);
   }, []);
 
-  // Optimized theme toggle
-  const toggleTheme = useCallback(() => {
-    setDarkMode(prev => !prev);
-  }, []);
+  // Optimized theme toggle using Redux
+  const handleToggleTheme = useCallback(() => {
+    dispatch(toggleTheme());
+  }, [dispatch]);
 
   return (
     <div style={{ backgroundColor: currentTheme.bg, color: currentTheme.text }} className="min-h-screen transition-colors duration-300">
@@ -370,7 +414,7 @@ const LegalAIPortfolio = () => {
       }}>
         {/* <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center transform hover:scale-110 transition-transform duration-200">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center transform hover:scale-110 transition-transform duration-200 shadow-lg shadow-blue-500/20">
               <Scale className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -380,21 +424,33 @@ const LegalAIPortfolio = () => {
           </div>
           
           <button
-            onClick={toggleTheme}
-            className="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
+            onClick={handleToggleTheme}
+            className="p-2 rounded-lg transition-colors"
+            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
             style={{ backgroundColor: `${currentTheme.accent}20` }}
           >
-            <div className="text-2xl">{darkMode ? '☀️' : '🌙'}</div>
+            {isDarkMode ? 
+              <Sun className="w-5 h-5 text-yellow-300" /> : 
+              <Moon className="w-5 h-5 text-blue-600" />
+            }
           </button>
         </div> */}
       </div>
 
       {/* Hero Section */}
       <section className="relative overflow-hidden py-12 mt-4 lg:py-20">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-blue-950/50 dark:via-purple-950/50 dark:to-pink-950/50 transition-colors duration-500"></div>
+        <div className={`absolute inset-0 bg-gradient-to-br transition-colors duration-500 ${
+          isDarkMode 
+            ? 'from-blue-950/50 via-purple-950/50 to-pink-950/50' 
+            : 'from-blue-50 via-purple-50 to-pink-50'
+        }`}></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <div className="inline-flex items-center px-6 py-3 rounded-full text-sm font-semibold mb-8 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-200 dark:border-blue-800 animate-fade-in-up">
+            <div className={`inline-flex items-center px-6 py-3 rounded-full text-sm font-semibold mb-8 bg-gradient-to-r transition-colors duration-300 ${
+              isDarkMode 
+                ? 'from-blue-500/10 to-purple-500/10 border border-blue-800 shadow-lg shadow-blue-900/10' 
+                : 'from-blue-500/10 to-purple-500/10 border border-blue-200 shadow-md'
+            } animate-fade-in-up`}>
               <Sparkles className="w-5 h-5 mr-2 text-blue-500 animate-pulse" />
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 AI Legal Revolution
@@ -406,10 +462,10 @@ const LegalAIPortfolio = () => {
                 Smart Legal
               </span>
               <br />
-              <span>Solutions</span>
+              <span className={`transition-colors duration-300 ${isDarkMode ? 'text-white' : ''}`}>Solutions</span>
             </h1>
             
-            <p className="text-xl md:text-2xl mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in-up" 
+            <p className="text-xl md:text-2xl mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in-up transition-colors duration-300" 
                style={{ color: currentTheme.textSecondary, animationDelay: '0.2s' }}>
               Experience the future of legal services with our AI chatbot, intelligent document review, 
               and expert lawyer consultations. Making legal help accessible, instant, and powerful.
@@ -422,7 +478,9 @@ const LegalAIPortfolio = () => {
                 <ArrowRight className="w-6 h-6 ml-3 group-hover:translate-x-1 transition-transform duration-300" />
               </button>
               
-              <button className="flex items-center px-10 py-5 rounded-2xl font-semibold text-lg border-2 transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg" style={{
+              <button className={`flex items-center px-10 py-5 rounded-2xl font-semibold text-lg border-2 transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg ${
+                isDarkMode ? 'shadow-blue-900/10' : 'shadow-blue-500/10'
+              }`} style={{
                 borderColor: currentTheme.accent,
                 color: currentTheme.accent
               }}>

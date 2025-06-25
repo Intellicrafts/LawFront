@@ -1,39 +1,38 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Volume2, Square, MessageCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useSelector } from 'react-redux';
+import { X } from 'lucide-react';
 
-const VoiceModal = ({ isOpen, onClose, onVoiceResult }) => {
-  const [isListening, setIsListening] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [audioLevel, setAudioLevel] = useState(0);
-  const [conversation, setConversation] = useState([]);
-  const [currentTranscript, setCurrentTranscript] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
+const VoiceModal = ({ isOpen, onClose }) => {
+  // Get theme from Redux
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
+
+  // State management
+  const [animationState, setAnimationState] = useState('initial'); // 'initial', 'entering', 'entered', 'exiting'
   const [isClosing, setIsClosing] = useState(false);
+  const [buttonHover, setButtonHover] = useState(false);
   
-  // Create a ref for the modal content
+  // Create ref
   const modalContentRef = useRef(null);
-
-  // Simulate audio level animation
+  
+  // Handle modal opening animation
   useEffect(() => {
-    if (isListening) {
-      const interval = setInterval(() => {
-        setAudioLevel(Math.random() * 100);
-      }, 100);
-      return () => clearInterval(interval);
+    if (isOpen) {
+      // Prevent body scrolling when modal is open
+      document.body.style.overflow = 'hidden';
+      setAnimationState('entering');
+      setTimeout(() => {
+        setAnimationState('entered');
+      }, 50); // Small delay to ensure CSS transition works
     } else {
-      setAudioLevel(0);
+      // Re-enable body scrolling when modal is closed
+      document.body.style.overflow = 'auto';
     }
-  }, [isListening]);
-
-  // Reset state when modal closes
-  useEffect(() => {
-    if (!isOpen) {
-      setIsListening(false);
-      setIsSpeaking(false);
-      setCurrentTranscript('');
-      setIsProcessing(false);
-      // Keep conversation history for user reference
-    }
+    
+    // Cleanup function to ensure body scrolling is re-enabled
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
   }, [isOpen]);
   
   // Add keyboard event listener for Escape key
@@ -52,285 +51,86 @@ const VoiceModal = ({ isOpen, onClose, onVoiceResult }) => {
     };
   }, [isOpen]);
 
-  // Simulate conversation flow
-  const handleStartListening = () => {
-    setIsListening(true);
-    setCurrentTranscript('');
-    
-    // Simulate real-time transcription
-    setTimeout(() => {
-      setCurrentTranscript('What are the legal implications of...');
-    }, 1000);
-    setTimeout(() => {
-      setCurrentTranscript('What are the legal implications of contract breach?');
-    }, 2500);
-    
-    // Auto stop after 5 seconds and respond
-    setTimeout(() => {
-      setIsListening(false);
-      handleAIResponse();
-    }, 5000);
-  };
-
-  const handleStopListening = () => {
-    setIsListening(false);
-    if (currentTranscript) {
-      handleAIResponse();
-    }
-  };
-
-  const handleAIResponse = () => {
-    if (!currentTranscript) return;
-    
-    setIsProcessing(true);
-    
-    // Add user message
-    const userMessage = currentTranscript;
-    setConversation(prev => [...prev, { type: 'user', text: userMessage, timestamp: new Date() }]);
-    
-    // Optional: Send transcript back to parent component
-    if (onVoiceResult) {
-      onVoiceResult(currentTranscript);
-    }
-    
-    setCurrentTranscript('');
-    
-    // AI response simulation
-    setTimeout(() => {
-      setIsProcessing(false);
-      setIsSpeaking(true);
-      
-      const aiResponses = [
-        "Contract breach occurs when one party fails to fulfill their obligations. The legal implications include potential damages, specific performance remedies, and possible termination rights. Would you like me to elaborate on any specific aspect?",
-        "Based on your question about legal implications, I can provide detailed guidance on contract law, liability issues, and potential remedies available to you.",
-        "That's an excellent legal question. Let me break down the key considerations and provide you with actionable legal insights."
-      ];
-      
-      const aiResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
-      
-      setConversation(prev => [...prev, { type: 'ai', text: aiResponse, timestamp: new Date() }]);
-      
-      // Simulate speaking duration based on text length
-      const speakingDuration = Math.max(3000, aiResponse.length * 50);
-      setTimeout(() => {
-        setIsSpeaking(false);
-      }, speakingDuration);
-    }, 1500);
-  };
-
-  const handleClearConversation = () => {
-    setConversation([]);
-  };
-
-  const handleCloseModal = () => {
-    // Call the onClose prop to properly close the modal and return to chatbot
+  const handleCloseModal = useCallback(() => {
+    // Call the onClose prop to properly close the modal
     if (onClose) {
       onClose();
     }
-    // Reset state
-    setIsListening(false);
-    setIsSpeaking(false);
-    setCurrentTranscript('');
-    setIsProcessing(false);
-  };
-
-  // We don't need this state since we're using the isOpen prop
-  // const [showModal, setShowModal] = useState(true);
+  }, [onClose]);
 
   // Enhanced close handler with animation
-  const handleCloseWithAnimation = () => {
+  const handleCloseWithAnimation = useCallback(() => {
+    setAnimationState('exiting');
     setIsClosing(true);
     // Wait for animation to complete before actually closing
     setTimeout(() => {
       handleCloseModal();
       setIsClosing(false);
-    }, 300); // Match this with the CSS transition duration
-  };
+    }, 400); // Match this with the CSS transition duration
+  }, [handleCloseModal]);
   
   // Handle click outside
-  const handleBackdropClick = (e) => {
+  const handleBackdropClick = useCallback((e) => {
     // Only close if clicking on the backdrop, not the modal content
     if (modalContentRef.current && !modalContentRef.current.contains(e.target)) {
       handleCloseWithAnimation();
     }
-  };
+  }, [handleCloseWithAnimation]);
 
   if (!isOpen) return null;
 
   return (
-    
     <div 
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-[#F8F9FA] dark:bg-[#0F172A] bg-opacity-80 p-4 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}
+      className={`fixed inset-0 z-[9999] flex items-center justify-center transition-all duration-500 ${
+        animationState === 'entering' ? 'opacity-0' : 
+        animationState === 'entered' ? 'opacity-100' : 
+        animationState === 'exiting' ? 'opacity-0' : 'opacity-0'
+      } ${isDarkMode ? 'bg-[#0F172A]/95' : 'bg-[#F8F9FA]/95'}`}
       onClick={handleBackdropClick}
+      style={{ backdropFilter: 'blur(10px)' }}
     >
-   <div 
-      ref={modalContentRef}
-      className={`relative w-full h-[95vh] max-w-6xl mx-auto rounded-2xl bg-[#F8F9FA] dark:bg-[#0F172A] flex items-center justify-center transition-all duration-300 ${isClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}`}
-    >
-
-
-
-
-    {/* Modal Title */}
-    <div className="absolute top-4 left-4 flex items-center">
-      <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Voice Assistant</h2>
-      <span className="ml-4 text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">
-        Press ESC to close
-      </span>
-    </div>
-    
-    {/* Mic Interface */}
-    <div className="flex flex-col items-center justify-center space-y-6">
-
-      {/* Mic Button with Animation */}
-      <div
-  className={`relative w-45 h-45 rounded-full border-1 flex items-center justify-center transition-all duration-500 ease-in-out
-    ${
-      isListening
-        ? 'bg-blue-100 border-blue-300 animate-pulse ring-2 ring-blue-200'
-        : isSpeaking
-        ? 'bg-indigo-100 border-indigo-300'
-        : isProcessing
-        ? 'bg-green-100 border-green-300'
-        : 'bg-blue-200 border-blue-300'
-    }`}
->
-    <img
-    src="https://i.pinimg.com/originals/54/58/a1/5458a14ae4c8f07055b7441ff0f234cf.gif"
-    alt="Voice activity"
-    className="w-80 h-80 object-cover rounded-full"
-
-  />
-  {/* Icon */}
-  {/* <div className="relative z-10 flex items-center justify-center">
-    {isListening ? (
-      <Mic size={48} className="text-black" />
-    ) : isSpeaking ? (
-      <Volume2 size={48} className="text-black" />
-    ) : isProcessing ? (
-      <div className="animate-spin">
-        <MessageCircle size={48} className="text-black" />
-      </div>
-    ) : (
-      <Mic size={48} className="text-black" />
-    )}
-  </div> */}
-
-        {/* Ping Animation */}
-        {(isListening || isSpeaking) && (
-          <div className="absolute inset-0 rounded-full">
-            {[...Array(3)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute inset-0 rounded-full border-2 animate-ping border-blue-300"
-                style={{
-                  animationDelay: `${i * 0.5}s`,
-                  animationDuration: '2s',
-                }}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Audio Bars */}
-        {isListening && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-1">
-            {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className="w-1 bg-white rounded-full transition-all duration-100"
-                style={{
-                  height: `${Math.max(4, (audioLevel + i * 10) % 20)}px`,
-                }}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-
-
-      {/* Status */}
-      <div className="mt-4 text-center">
-
-      <button
-        onClick={handleCloseWithAnimation}
-        className="absolute top-39 right-90 p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 hover:text-gray-800 dark:hover:text-white transition-all duration-200 shadow-md z-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transform hover:rotate-90"
-        aria-label="Close Voice Assistant"
+      <div 
+        ref={modalContentRef}
+        className={`relative flex items-center justify-center transition-all duration-500 ease-out ${
+          animationState === 'entering' ? 'scale-95 opacity-0 translate-y-4' : 
+          animationState === 'entered' ? 'scale-100 opacity-100 translate-y-0' : 
+          animationState === 'exiting' ? 'scale-95 opacity-0 translate-y-4' : 'scale-95 opacity-0 translate-y-4'
+        }`}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-
-        {isListening ? (
-          <p className="text-blue-700 font-medium text-base animate-pulse">Listening...</p>
-        ) : isSpeaking ? (
-          <p className="text-blue-700 font-medium text-base animate-pulse">Speaking...</p>
-        ) : isProcessing ? (
-          <p className="text-blue-700 font-medium text-base">Processing...</p>
-        ) : (
-          <p className="text-blue-700 font-medium text-base"></p>
-        )}
-      </div>
-
- 
-    
-
-      {/* Transcript */}
-      {/* {currentTranscript && (
-        <div className="px-4 py-2 text-center bg-blue-600 text-white rounded-xl max-w-xs shadow-md">
-          <p className="italic">"{currentTranscript}"</p>
+        {/* Main visualization */}
+        <div className={`relative w-[85vw] h-[90vw] sm:w-[550px] sm:h-[550px] md:w-[600px] md:h-[600px] rounded-full overflow-hidden shadow-0xl ${
+          isDarkMode ? 'bg-[#0F172A]' : 'bg-[#F8F9FA]'
+        }`}>
+          <img
+            src="/modal.gif"
+            alt="Voice activity visualization"
+            className={`w-full h-full object-cover ${isDarkMode ? 'opacity-90 contrast-125 brightness-75' : 'opacity-100'}`}
+          />
+          
+          {/* Enhanced close button with hover effects */}
+          <button
+            onClick={handleCloseWithAnimation}
+            onMouseEnter={() => setButtonHover(true)}
+            onMouseLeave={() => setButtonHover(false)}
+            className={`absolute bottom-24 left-1/2 transform -translate-x-1/2 w-12 h-12 rounded-full z-50 
+              transition-all duration-300 flex items-center justify-center
+              ${isDarkMode 
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500' 
+                : 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-400 hover:to-indigo-400'
+              } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 
+              shadow-lg hover:shadow-xl hover:scale-110`}
+            style={{
+              boxShadow: buttonHover 
+                ? '0 0 20px rgba(59, 130, 246, 0.5), 0 0 0 2px rgba(59, 130, 246, 0.3)' 
+                : '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+            }}
+            aria-label="Close Voice Assistant"
+          >
+            <X className={`w-5 h-5 transition-transform duration-300 ${buttonHover ? 'rotate-90' : ''}`} />
+          </button>
         </div>
-      )} */}
-
-      {/* Controls */}
-      <div className="flex flex-col items-center space-y-4 mt-4">
-        <div className="flex space-x-4">
-          {!isListening ? (
-            <button
-              onClick={handleStartListening}
-              disabled={isSpeaking || isProcessing}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-medium shadow-sm transition duration-200"
-            >
-              Start Speaking
-            </button>
-          ) : (
-            <button
-              onClick={handleStopListening}
-              className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-full text-sm font-medium shadow-sm transition duration-200"
-            >
-              Stop
-            </button>
-          )}
-
-          {conversation.length > 0 && (
-            <button
-              onClick={handleClearConversation}
-              className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-full text-sm font-medium transition"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-        
-        {/* Return to Chatbot button */}
-        {/* <button
-          onClick={handleCloseWithAnimation}
-          className="px-4 py-2 mt-4 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 hover:text-gray-800 dark:hover:text-white transition-all duration-200 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center"
-          aria-label="Return to Chatbot"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Return to Chatbot
-        </button> */}
       </div>
     </div>
-  </div>
-</div>
-
-
   );
 };
 
