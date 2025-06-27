@@ -760,7 +760,7 @@ const Hero = () => {
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyPress={handleKeyPress}
                         placeholder="Type your legal question..."
-                        className="w-full px-5 py-4 pr-14 rounded-full border border-[#E2E8F0] dark:border-[#334155] shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#38BDF8] 
+                        className="w-full px-5 py-4 pr-14 rounded-full border-[0.1px] border-[#E2E8F0] dark:border-[#334155] shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#38BDF8] 
                                   bg-[#F8F9FA] dark:bg-[#334155] dark:text-[#E2E8F0] text-[#1E293B]"
                         autoFocus
                       />

@@ -12,6 +12,7 @@ import { useSelector } from 'react-redux';
 import Toast from '../common/Toast';
 import useToast from '../../hooks/useToast';
 import ProfileSkeleton from '../common/ProfileSkeleton';
+import Avatar from '../common/Avatar';
 
 const UserProfile = () => {
   // Get theme from Redux store
@@ -102,29 +103,36 @@ const UserProfile = () => {
         break;
     }
   }, [showSuccess, showError, showWarning, showInfo]);
+  
+  // Simple function to get avatar URL from API response
+  const getAvatarUrl = useCallback((userData) => {
+    // Directly use avatar_url if available (preferred method)
+    if (userData && userData.avatar_url) {
+      console.log('Using avatar_url from API response:', userData.avatar_url);
+      return userData.avatar_url;
+    }
+    
+    // Fallback to avatar if avatar_url is not available
+    if (userData && userData.avatar) {
+      console.log('Using avatar from API response:', userData.avatar);
+      return userData.avatar;
+    }
+    
+    // Return null if no avatar is found
+    return null;
+  }, []);
 
-  // Fetch user data from API - improved with better error handling
+  // Fetch user data from API - simplified with direct avatar_url usage
   const fetchUserData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Try to get user profile first
-      let userData;
-      try {
-        userData = await apiServices.getUserProfile();
-        console.log('Profile data fetched successfully:', userData);
-      } catch (profileError) {
-        console.log('Profile endpoint failed, trying user endpoint', profileError);
-        try {
-          userData = await apiServices.getUser();
-          console.log('User data fetched successfully:', userData);
-        } catch (userError) {
-          console.error('Both profile and user endpoints failed:', userError);
-          throw new Error('Failed to fetch profile data from server');
-        }
-      }
+      // Get user profile data
+      const response = await apiServices.getUserProfile();
+      console.log('Profile data fetched successfully:', response);
       
-      // Check for cached avatar in localStorage
-      const cachedAvatar = localStorage.getItem('user_avatar');
+      // Extract the user data from the response
+      // API returns data in format: { status: "success", data: {...}, message: "..." }
+      const userData = response.data || response;
       
       // Extract skills from API response if available
       let skills = [];
@@ -148,6 +156,9 @@ const UserProfile = () => {
         facebook: userData.facebook_url || userData.social?.facebook || ''
       };
       
+      // Get the avatar URL using our helper function
+      const avatarUrl = getAvatarUrl(userData);
+      
       // Transform API data to match our component structure
       const transformedData = {
         id: userData.id,
@@ -169,34 +180,35 @@ const UserProfile = () => {
         company: userData.company || userData.organization || '',
         bio: userData.bio || userData.about || 'No bio available',
         title: userData.title || userData.job_title || userData.profession || '',
-        // Use cached avatar from localStorage if available, otherwise use from API
-        avatar: cachedAvatar || userData.avatar || userData.profile_picture || null,
-        account_type: userData.user_type === 1 ? 'User' : 
+        // Use the avatar URL directly from our helper function
+        avatar: avatarUrl,
+        account_type: userData.user_type === 1 ? 'Client' : 
                      userData.user_type === 2 ? 'Lawyer' : 
-                     userData.account_type || 'User',
+                     userData.user_type_name || userData.account_type || 'User',
         is_verified: userData.is_verified || userData.verified || false,
         email_verified_at: userData.email_verified_at,
         active: userData.active || userData.is_active || true,
         stats: {
-          appointments: userData.appointments?.length || userData.appointment_count || 0,
-          queries: userData.legal_queries?.length || userData.query_count || 0,
-          reviews: userData.reviews?.length || userData.review_count || 0
+          appointments: userData.recent_activity?.appointment_summary?.total || 0,
+          queries: userData.recent_activity?.legal_queries?.length || 0,
+          reviews: userData.recent_activity?.reviews?.length || 0
         },
-        // Use extracted skills or initialize with empty array
         skills: skills,
-        // Use achievements from API or initialize with empty array
         achievements: userData.achievements || [],
-        // Use extracted social links
         social: social,
-        // Use actual data from API if available
-        appointments: userData.appointments || [],
-        legal_queries: userData.legal_queries || [],
-        reviews: userData.reviews || []
+        appointments: userData.recent_activity?.appointments || [],
+        legal_queries: userData.recent_activity?.legal_queries || [],
+        reviews: userData.recent_activity?.reviews || []
       };
 
       setUserInfo(transformedData);
       setEditForm(transformedData);
-      showSuccess('Profile Loaded', 'Your profile information has been loaded successfully');
+      // showSuccess('Profile Loaded', 'Your profile information has been loaded successfully');
+      
+      // Store the avatar URL in localStorage for offline access
+      if (avatarUrl) {
+        localStorage.setItem('user_avatar', avatarUrl);
+      }
       
       // Store the transformed data in localStorage for offline access
       localStorage.setItem('user_profile_transformed', JSON.stringify(transformedData));
@@ -225,12 +237,34 @@ const UserProfile = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [showSuccess, showInfo, showError]);
+  }, [showSuccess, showInfo, showError, getAvatarUrl]);
+
+  // Function to ensure avatar is loaded - simplified
+  const ensureAvatarLoaded = useCallback(() => {
+    // This function is now much simpler since we're using avatar_url directly
+    if (userInfo && !userInfo.avatar) {
+      // If no avatar in userInfo, try to get from localStorage
+      const cachedAvatar = localStorage.getItem('user_avatar');
+      
+      if (cachedAvatar) {
+        console.log('Restoring avatar from localStorage:', cachedAvatar);
+        setUserInfo(prev => ({ ...prev, avatar: cachedAvatar }));
+        setEditForm(prev => ({ ...prev, avatar: cachedAvatar }));
+      }
+    }
+  }, [userInfo]);
 
   useEffect(() => {
     fetchUserData();
     // No need for cleanup as our toast component handles its own timeouts
   }, [fetchUserData]);
+  
+  // Additional effect to ensure avatar is loaded after profile data is fetched
+  useEffect(() => {
+    if (!isLoading && userInfo) {
+      ensureAvatarLoaded();
+    }
+  }, [isLoading, userInfo, ensureAvatarLoaded]);
 
   // Validate form
   const validateForm = useCallback(() => {
@@ -258,7 +292,40 @@ const UserProfile = () => {
     return Object.keys(newErrors).length === 0;
   }, [editForm]);
 
-  // Handle image upload - enhanced with better error handling and UX
+  // Helper function to update localStorage with the new avatar - simplified
+  const updateLocalStorageWithAvatar = useCallback((avatarUrl) => {
+    if (!avatarUrl) return;
+    
+    // Store the avatar URL in localStorage
+    localStorage.setItem('user_avatar', avatarUrl);
+    console.log('Avatar URL stored in localStorage:', avatarUrl);
+    
+    // Update the user object if it exists
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        parsedUser.avatar = avatarUrl;
+        localStorage.setItem('user', JSON.stringify(parsedUser));
+      } catch (e) {
+        console.error('Error updating user avatar in localStorage:', e);
+      }
+    }
+    
+    // Update the transformed profile data if it exists
+    const storedTransformedProfile = localStorage.getItem('user_profile_transformed');
+    if (storedTransformedProfile) {
+      try {
+        const parsedProfile = JSON.parse(storedTransformedProfile);
+        parsedProfile.avatar = avatarUrl;
+        localStorage.setItem('user_profile_transformed', JSON.stringify(parsedProfile));
+      } catch (e) {
+        console.error('Error updating profile avatar in localStorage:', e);
+      }
+    }
+  }, []);
+
+  // Handle image upload - simplified to use avatar_url directly
   const handleImageUpload = useCallback(async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -294,21 +361,6 @@ const UserProfile = () => {
       reader.onloadend = () => {
         const previewUrl = reader.result;
         setImagePreview(previewUrl);
-        
-        // Store in localStorage immediately for offline access
-        localStorage.setItem('user_avatar', previewUrl);
-        
-        // Update user object in localStorage if it exists
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          try {
-            const parsedUser = JSON.parse(storedUser);
-            parsedUser.avatar = previewUrl;
-            localStorage.setItem('user', JSON.stringify(parsedUser));
-          } catch (e) {
-            console.error('Error updating user avatar in localStorage:', e);
-          }
-        }
       };
       reader.readAsDataURL(file);
       
@@ -318,26 +370,80 @@ const UserProfile = () => {
       // Hide the loading toast
       hideToast();
       
-      // Get the avatar URL from the response
-      const avatarUrl = result.avatar_url || result.url || result.path || result.avatar;
+      // Get the avatar URL from the response using our helper function
+      // First check if result has data property (API response format)
+      const responseData = result.data || result;
       
-      // Update state with the server URL
-      setUserInfo(prev => ({ ...prev, avatar: avatarUrl }));
-      setEditForm(prev => ({ ...prev, avatar: avatarUrl }));
+      // Try to get avatar_url directly from the response
+      let avatarUrl = responseData.avatar_url;
       
-      // Update the transformed profile in localStorage
-      const storedProfile = localStorage.getItem('user_profile_transformed');
-      if (storedProfile) {
-        try {
-          const parsedProfile = JSON.parse(storedProfile);
-          parsedProfile.avatar = avatarUrl;
-          localStorage.setItem('user_profile_transformed', JSON.stringify(parsedProfile));
-        } catch (e) {
-          console.error('Error updating profile avatar in localStorage:', e);
-        }
+      if (avatarUrl) {
+        console.log('Using avatar_url from upload response:', avatarUrl);
+      } else {
+        // If no avatar_url, try to get avatar
+        avatarUrl = responseData.avatar;
+        console.log('Using avatar from upload response:', avatarUrl);
       }
       
-      showSuccess('Avatar Updated', 'Your profile picture has been updated successfully!');
+      if (avatarUrl) {
+        // Update localStorage with the new avatar URL
+        updateLocalStorageWithAvatar(avatarUrl);
+        
+        // Update the UI with the new avatar
+        setUserInfo(prev => ({ ...prev, avatar: avatarUrl }));
+        setEditForm(prev => ({ ...prev, avatar: avatarUrl }));
+        
+        showSuccess('Avatar Updated', 'Your profile picture has been updated successfully!');
+      } else {
+        // If no avatar URL was returned, try to fetch the profile to get it
+        console.log('No avatar URL in upload response, fetching profile');
+        try {
+          const profileResponse = await apiServices.getUserProfile();
+          const profileData = profileResponse.data || profileResponse;
+          
+          // Try to get avatar_url from profile
+          const profileAvatarUrl = profileData.avatar_url || profileData.avatar;
+          
+          if (profileAvatarUrl) {
+            console.log('Using avatar URL from profile:', profileAvatarUrl);
+            // Update localStorage with the new avatar URL
+            updateLocalStorageWithAvatar(profileAvatarUrl);
+            
+            // Update the UI with the new avatar
+            setUserInfo(prev => ({ ...prev, avatar: profileAvatarUrl }));
+            setEditForm(prev => ({ ...prev, avatar: profileAvatarUrl }));
+            
+            showSuccess('Avatar Updated', 'Your profile picture has been updated successfully!');
+          } else {
+            // If still no avatar URL, use the local preview
+            console.warn('No avatar URL returned from server, using local preview');
+            if (imagePreview) {
+              updateLocalStorageWithAvatar(imagePreview);
+              setUserInfo(prev => ({ ...prev, avatar: imagePreview }));
+              setEditForm(prev => ({ ...prev, avatar: imagePreview }));
+              
+              showWarning(
+                'Partial Success', 
+                'Your avatar has been saved locally but we couldn\'t get the server URL. It will be synced when you refresh.'
+              );
+            }
+          }
+        } catch (profileError) {
+          console.error('Failed to fetch profile after avatar upload:', profileError);
+          
+          // Use the local preview as fallback
+          if (imagePreview) {
+            updateLocalStorageWithAvatar(imagePreview);
+            setUserInfo(prev => ({ ...prev, avatar: imagePreview }));
+            setEditForm(prev => ({ ...prev, avatar: imagePreview }));
+            
+            showWarning(
+              'Partial Success', 
+              'Your avatar has been uploaded but we couldn\'t verify it. It will appear correctly when you refresh.'
+            );
+          }
+        }
+      }
     } catch (error) {
       console.error('Avatar upload failed:', error);
       
@@ -362,7 +468,7 @@ const UserProfile = () => {
       setIsUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
-  }, [showSuccess, showError, showWarning, showInfo, hideToast, imagePreview]);
+  }, [showSuccess, showError, showWarning, showInfo, hideToast, imagePreview, updateLocalStorageWithAvatar]);
 
   // Save profile changes - enhanced with better error handling and UX
   const handleSave = useCallback(async () => {
@@ -865,20 +971,11 @@ const UserProfile = () => {
                 {/* Avatar */}
                 <div className="relative -mt-16 px-6">
                   <div className="relative inline-block">
-                    <img
-                      src={imagePreview || userInfo.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo.name + ' ' + userInfo.last_name)}&size=150&background=0ea5e9&color=ffffff`}
-                      alt="Profile"
-                      className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 object-cover shadow-md transition-all duration-300 hover:shadow-lg"
-                      onError={(e) => {
-                        // If the image fails to load, try getting it from localStorage
-                        const cachedAvatar = localStorage.getItem('user_avatar');
-                        if (cachedAvatar) {
-                          e.target.src = cachedAvatar;
-                        } else {
-                          // If no cached avatar, use the UI Avatars service
-                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo.name + ' ' + userInfo.last_name)}&size=150&background=0ea5e9&color=ffffff`;
-                        }
-                      }}
+                    <Avatar
+                      src={imagePreview || userInfo.avatar}
+                      alt={`${userInfo.name} ${userInfo.last_name}`}
+                      size={128}
+                      className="border-4 border-white dark:border-gray-800 shadow-md transition-all duration-300 hover:shadow-lg"
                       style={{
                         objectFit: 'cover',
                         boxShadow: '0 4px 14px rgba(0, 0, 0, 0.1)'

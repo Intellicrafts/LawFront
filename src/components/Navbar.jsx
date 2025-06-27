@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { toggleTheme } from '../redux/themeSlice';
 import { Link } from 'react-router-dom';
 import { authAPI, tokenManager, apiServices } from '../api/apiService';
+import Avatar from './common/Avatar';
 import { 
   Menu, 
   X, 
@@ -62,12 +63,20 @@ const Navbar = () => {
   const checkAuthStatus = () => {
     const token = localStorage.getItem('auth_token');
     const userData = localStorage.getItem('user');
-    console.log('User :', userData , 'token:', token);
+    const userAvatar = localStorage.getItem('user_avatar');
+    console.log('User:', userData, 'token:', token, 'avatar:', userAvatar);
     
     if (token && userData) {
       setIsAuthenticated(true);
       try {
         const parsedUser = JSON.parse(userData);
+        
+        // Add avatar URL to user object if available in localStorage
+        if (userAvatar) {
+          parsedUser.avatar = userAvatar;
+          console.log('Added avatar URL to user object:', userAvatar);
+        }
+        
         setUser(parsedUser);
         
         // Fetch notifications if user is authenticated and has an ID
@@ -231,11 +240,17 @@ const Navbar = () => {
         { name: 'Virtual Assistant', path: '/', icon: <HelpCircle size={16} className="mr-2" /> },
         { name: 'Virtual Bakil', path: '/virtual-bakil', icon: <Users size={16} className="mr-2" /> },
         { name: 'Legal Consultations', path: '/legal-consoltation', icon: <Scale size={16} className="mr-2" /> },
+        { name: 'Find Lawyers', path: '/lawyers', icon: <Users size={16} className="mr-2" /> },
         { name: 'Legal Task Automation', path: '/task-automation', icon: <Clock size={16} className="mr-2" /> },
         { name: 'Document Review', path: '/legal-documents-review', icon: <FileText size={16} className="mr-2" /> },
         { name: 'Personal Appointments', path: '/personal-room', icon: <Calendar size={16} className="mr-2" /> },
         { name: 'Information Hub', path: '/information-hub', icon: <HelpCircle size={16} className="mr-2" /> },
       ]
+    },
+    { 
+      name: 'Find Lawyers', 
+      path: '/lawyers',
+      icon: <Users size={18} className="mr-2" /> 
     },
     { 
       name: 'Portfolio', 
@@ -670,9 +685,18 @@ const Navbar = () => {
                         onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                         className="flex items-center space-x-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 focus:outline-none"
                       >
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
-                          {getUserInitials(user?.name)}
-                        </div>
+                        {user?.avatar ? (
+                          <Avatar 
+                            src={user.avatar} 
+                            alt={user.name || 'User'} 
+                            size={32} 
+                            className="border-2 border-white dark:border-gray-800"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
+                            {getUserInitials(user?.name)}
+                          </div>
+                        )}
                         <ChevronDown size={16} className="text-gray-500 dark:text-gray-400" />
                       </button>
 
@@ -798,9 +822,18 @@ const Navbar = () => {
             <div className="flex items-center space-x-3 py-3 border-b border-gray-100 dark:border-gray-800 mb-2">
               {isAuthenticated ? (
                 <>
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg font-medium">
-                    {getUserInitials(user?.name)}
-                  </div>
+                  {user?.avatar ? (
+                    <Avatar 
+                      src={user.avatar} 
+                      alt={user.name || 'User'} 
+                      size={48} 
+                      className="border-2 border-white dark:border-gray-800"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg font-medium">
+                      {getUserInitials(user?.name)}
+                    </div>
+                  )}
                   <div>
                     <h4 className="font-medium text-gray-900 dark:text-white">{user?.name || 'User'}</h4>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>

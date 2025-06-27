@@ -1,12 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { lawyerAPI } from '../api/apiService';
-import { MdLocationOn, MdMyLocation, MdLocationSearching } from 'react-icons/md';
-import Lottie from 'react-lottie-player';
-
-// Import animation files
-import locationSearchAnimation from '../assets/animations/location-search.json';
-import lawyerSearchAnimation from '../assets/animations/lawyer-search.json';
+import axios from 'axios';
 import {
   FaFilter,
   FaUserTie,
@@ -154,12 +148,12 @@ const timeSlots = [
 ];
 
 /**
- * LegalCosultation Component
+ * LawyerListing Component
  * 
  * This component fetches and displays a list of lawyers from the API,
- * with filtering, pagination, location-based search, and detailed view functionality.
+ * with filtering, pagination, and detailed view functionality.
  */
-const LegalCosultation = () => {
+const LawyerListing = () => {
   // Get dark mode state from Redux
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
@@ -190,21 +184,13 @@ const LegalCosultation = () => {
   const [bookingStep, setBookingStep] = useState(1);
   const [bookingComplete, setBookingComplete] = useState(false);
   
-  // Location-based search state
-  const [userLocation, setUserLocation] = useState(null);
-  const [locationSearching, setLocationSearching] = useState(false);
-  const [locationError, setLocationError] = useState(null);
-  const [locationEnabled, setLocationEnabled] = useState(false);
-  const [nearbyLoading, setNearbyLoading] = useState(false);
-  const [topRatedLoading, setTopRatedLoading] = useState(false);
-  
-  // Refs for scrolling
-  const contentRef = useRef(null);
+  // API base URL - should be configured in your environment
+  const baseUrl = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
   
   // Fetch lawyers from API
   useEffect(() => {
     fetchLawyers();
-  }, [currentPage, selectedCategory, locationEnabled, userLocation]);
+  }, [currentPage, selectedCategory]);
 
   /**
    * Fetch lawyers from the API with optional filtering
@@ -214,80 +200,70 @@ const LegalCosultation = () => {
     setError(null);
     
     try {
-      // Prepare parameters for API call
-      const params = {
-        page: currentPage,
-        per_page: 6
-      };
+      // In a real implementation, this would be an API call
+      // For now, we'll use the sample data
+      console.log('Fetching lawyers with category:', selectedCategory, 'and page:', currentPage);
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Filter the sample data based on category and search query
+      let filteredData = [...sampleLawyers];
       
       if (selectedCategory !== 'All') {
-        params.specialization = selectedCategory;
+        filteredData = filteredData.filter(lawyer => 
+          lawyer.specialization === selectedCategory
+        );
       }
       
       if (searchQuery) {
-        params.search = searchQuery;
+        const query = searchQuery.toLowerCase();
+        filteredData = filteredData.filter(lawyer => 
+          lawyer.full_name.toLowerCase().includes(query) || 
+          lawyer.specialization.toLowerCase().includes(query)
+        );
       }
       
-      // Add location parameters if location is enabled
-      if (locationEnabled && userLocation) {
-        params.latitude = userLocation.latitude;
-        params.longitude = userLocation.longitude;
-        params.radius = 50; // Search radius in kilometers
+      // Paginate the data
+      const perPage = 6;
+      const totalItems = filteredData.length;
+      const totalPagesCount = Math.ceil(totalItems / perPage);
+      
+      // Get the current page of data
+      const startIndex = (currentPage - 1) * perPage;
+      const paginatedData = filteredData.slice(startIndex, startIndex + perPage);
+      
+      // Set the data in state
+      setLawyers(paginatedData);
+      setTotalPages(totalPagesCount);
+      
+      // In a real implementation with a backend API, you would do something like:
+      /*
+      const params = new URLSearchParams();
+      if (currentPage > 1) {
+        params.append('page', currentPage);
+      }
+      if (selectedCategory !== 'All') {
+        params.append('specialization', selectedCategory);
+      }
+      if (searchQuery) {
+        params.append('search', searchQuery);
       }
       
-      console.log('Fetching lawyers with params:', params);
+      const response = await axios.get(`${baseUrl}/api/lawyers?${params.toString()}`);
       
-      try {
-        // Call the API using lawyerAPI service
-        const response = await lawyerAPI.getLawyers(params);
+      if (response.data && response.data.success) {
+        const responseData = response.data.data;
+        setLawyers(responseData.data || []);
+        setTotalPages(Math.ceil((responseData.total || responseData.data.length) / (responseData.per_page || 10)));
         
-        if (response && response.success) {
-          const responseData = response.data;
-          setLawyers(responseData.data || []);
-          setTotalPages(Math.ceil((responseData.total || responseData.data.length) / (responseData.per_page || 6)));
-          
-          if (responseData.current_page) {
-            setCurrentPage(responseData.current_page);
-          }
-        } else {
-          throw new Error('Failed to fetch lawyers data');
+        if (responseData.current_page) {
+          setCurrentPage(responseData.current_page);
         }
-      } catch (apiError) {
-        console.error('API Error:', apiError);
-        
-        // Fallback to sample data if API fails
-        console.log('Falling back to sample data');
-        
-        // Filter the sample data based on category and search query
-        let filteredData = [...sampleLawyers];
-        
-        if (selectedCategory !== 'All') {
-          filteredData = filteredData.filter(lawyer => 
-            lawyer.specialization === selectedCategory
-          );
-        }
-        
-        if (searchQuery) {
-          const query = searchQuery.toLowerCase();
-          filteredData = filteredData.filter(lawyer => 
-            lawyer.full_name.toLowerCase().includes(query) || 
-            lawyer.specialization.toLowerCase().includes(query)
-          );
-        }
-        
-        // Paginate the data
-        const perPage = 6;
-        const totalItems = filteredData.length;
-        const totalPagesCount = Math.ceil(totalItems / perPage);
-        
-        // Get the current page of data
-        const startIndex = (currentPage - 1) * perPage;
-        const paginatedData = filteredData.slice(startIndex, startIndex + perPage);
-        
-        // Set the data in state
-        setLawyers(paginatedData);
-        setTotalPages(totalPagesCount);
+      } else {
+        throw new Error('Failed to fetch lawyers data');
       }
+      */
     } catch (err) {
       console.error('Error fetching lawyers:', err);
       setError('Failed to load lawyers. Please try again later.');
@@ -302,140 +278,6 @@ const LegalCosultation = () => {
     e.preventDefault();
     setCurrentPage(1); // Reset to first page when searching
     fetchLawyers();
-  };
-  
-  /**
-   * Get user's current location
-   */
-  const getUserLocation = () => {
-    if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported by your browser');
-      return;
-    }
-    
-    setLocationSearching(true);
-    setLocationError(null);
-    
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setUserLocation({ latitude, longitude });
-        setLocationEnabled(true);
-        setLocationSearching(false);
-        
-        // Fetch lawyers with the new location
-        setCurrentPage(1);
-        fetchLawyers();
-      },
-      (error) => {
-        setLocationSearching(false);
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            setLocationError('Location permission denied. Please enable location services.');
-            break;
-          case error.POSITION_UNAVAILABLE:
-            setLocationError('Location information is unavailable.');
-            break;
-          case error.TIMEOUT:
-            setLocationError('The request to get user location timed out.');
-            break;
-          default:
-            setLocationError('An unknown error occurred while getting location.');
-            break;
-        }
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-    );
-  };
-  
-  /**
-   * Toggle location-based search
-   */
-  const toggleLocationSearch = () => {
-    if (locationEnabled) {
-      setLocationEnabled(false);
-      setCurrentPage(1);
-      fetchLawyers();
-    } else {
-      getUserLocation();
-    }
-  };
-  
-  /**
-   * Fetch nearby lawyers
-   */
-  const fetchNearbyLawyers = async () => {
-    if (!userLocation) {
-      getUserLocation();
-      return;
-    }
-    
-    setNearbyLoading(true);
-    
-    try {
-      const params = {
-        latitude: userLocation.latitude,
-        longitude: userLocation.longitude,
-        radius: 25, // 25km radius
-        sort: 'distance',
-        per_page: 6
-      };
-      
-      try {
-        const response = await lawyerAPI.getLawyers(params);
-        
-        if (response && response.success) {
-          setLawyers(response.data.data || []);
-          setTotalPages(Math.ceil((response.data.total || response.data.data.length) / (response.data.per_page || 6)));
-        } else {
-          throw new Error('Failed to fetch nearby lawyers');
-        }
-      } catch (apiError) {
-        console.error('API Error:', apiError);
-        // Fallback to sample data
-        setLawyers(sampleLawyers.slice(0, 6));
-        setTotalPages(Math.ceil(sampleLawyers.length / 6));
-      }
-    } catch (err) {
-      console.error('Error fetching nearby lawyers:', err);
-    } finally {
-      setNearbyLoading(false);
-    }
-  };
-  
-  /**
-   * Fetch top-rated lawyers
-   */
-  const fetchTopRatedLawyers = async () => {
-    setTopRatedLoading(true);
-    
-    try {
-      const params = {
-        sort: 'rating',
-        per_page: 6
-      };
-      
-      try {
-        const response = await lawyerAPI.getLawyers(params);
-        
-        if (response && response.success) {
-          setLawyers(response.data.data || []);
-          setTotalPages(Math.ceil((response.data.total || response.data.data.length) / (response.data.per_page || 6)));
-        } else {
-          throw new Error('Failed to fetch top-rated lawyers');
-        }
-      } catch (apiError) {
-        console.error('API Error:', apiError);
-        // Sort sample data by reviews_count (as a proxy for rating)
-        const sortedLawyers = [...sampleLawyers].sort((a, b) => b.reviews_count - a.reviews_count);
-        setLawyers(sortedLawyers.slice(0, 6));
-        setTotalPages(Math.ceil(sampleLawyers.length / 6));
-      }
-    } catch (err) {
-      console.error('Error fetching top-rated lawyers:', err);
-    } finally {
-      setTopRatedLoading(false);
-    }
   };
 
   // Handle sticky filter bar
@@ -461,25 +303,16 @@ const LegalCosultation = () => {
     }
   };
 
-  /**
-   * Scroll to top of the content
-   */
-  const scrollToTop = () => {
-    if (contentRef.current) {
-      contentRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-    }
-  };
-
   // Function to view lawyer details
   const viewLawyerDetails = (lawyer) => {
     setSelectedLawyer(lawyer);
     setView('detail');
-    scrollToTop();
+    
+    // Scroll to top when viewing details
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
   };
 
   // Function to start booking process
@@ -488,14 +321,18 @@ const LegalCosultation = () => {
     setView('booking');
     setBookingStep(1);
     setBookingComplete(false);
-    scrollToTop();
+    
+    // Scroll to top when starting booking
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
   };
 
   // Function to go back to previous view
   const goBack = () => {
     if (view === 'detail') {
       setView('lawyers');
-      scrollToTop();
     } else if (view === 'booking') {
       if (bookingStep > 1 && !bookingComplete) {
         setBookingStep(bookingStep - 1);
@@ -503,10 +340,8 @@ const LegalCosultation = () => {
         setView('lawyers');
         setBookingComplete(false);
         setBookingStep(1);
-        scrollToTop();
       } else {
         setView('detail');
-        scrollToTop();
       }
     }
   };
@@ -573,90 +408,17 @@ const LegalCosultation = () => {
     if (view === 'lawyers') {
       return (
         <>
-          {/* Quick Action Buttons */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <button 
-              onClick={fetchNearbyLawyers}
-              disabled={nearbyLoading}
-              className={`relative flex flex-col items-center justify-center p-6 rounded-2xl shadow-md border transition-all duration-200 ${
-                isDarkMode 
-                  ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' 
-                  : 'bg-white border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              {nearbyLoading ? (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Lottie
-                    loop
-                    animationData={locationSearchAnimation}
-                    play
-                    style={{ width: 80, height: 80 }}
-                  />
-                </div>
-              ) : (
-                <>
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center mb-3 shadow-lg">
-                    <MdLocationOn className="text-white text-2xl" />
-                  </div>
-                  <h3 className={`font-semibold text-lg ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
-                    Nearby Lawyers
-                  </h3>
-                  <p className={`text-sm mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Find lawyers in your area
-                  </p>
-                </>
-              )}
-            </button>
-            
-            <button 
-              onClick={fetchTopRatedLawyers}
-              disabled={topRatedLoading}
-              className={`relative flex flex-col items-center justify-center p-6 rounded-2xl shadow-md border transition-all duration-200 ${
-                isDarkMode 
-                  ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' 
-                  : 'bg-white border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              {topRatedLoading ? (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Lottie
-                    loop
-                    animationData={lawyerSearchAnimation}
-                    play
-                    style={{ width: 80, height: 80 }}
-                  />
-                </div>
-              ) : (
-                <>
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center mb-3 shadow-lg">
-                    <FaStar className="text-white text-2xl" />
-                  </div>
-                  <h3 className={`font-semibold text-lg ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
-                    Top Rated
-                  </h3>
-                  <p className={`text-sm mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Best reviewed lawyers
-                  </p>
-                </>
-              )}
-            </button>
-          </div>
-          
           {/* Enhanced Filter Bar */}
           <div
-            className={`rounded-2xl border p-5 mb-6 transition-all duration-300 backdrop-blur-sm ${
+            className={`rounded-2xl border p-3 mb-4 mt-0 transition-all duration-300 backdrop-blur-sm ${
               isDarkMode 
-                ? `bg-slate-800/95 border-slate-700 ${isFilterSticky ? 'sticky z-30 shadow-2xl border-sky-700 rounded-t-none border-t-0' : ''}` 
-                : `bg-white border-slate-200 ${isFilterSticky ? 'sticky z-30 shadow-2xl border-sky-200 rounded-t-none border-t-0' : ''}`
+                ? `bg-slate-800/90 border-slate-700 ${isFilterSticky ? 'sticky z-30 shadow-2xl border-sky-700 rounded-t-none border-t-0' : ''}` 
+                : `bg-gray-100 border-slate-200 ${isFilterSticky ? 'sticky z-30 shadow-2xl border-sky-200 rounded-t-none border-t-0' : ''}`
             }`}
             style={{ top: isFilterSticky ? '60px' : '0' }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between mb-3">
-              <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
-                Find Your Lawyer
-              </h2>
-              
+            <div className="flex items-center justify-between mb-1">
               <div className="md:hidden">
                 <button
                   onClick={() => setShowFilters(!showFilters)}
@@ -700,41 +462,6 @@ const LegalCosultation = () => {
                 </button>
               </form>
 
-              {/* Location Toggle */}
-              <div className="w-full md:w-auto">
-                <button
-                  type="button"
-                  onClick={toggleLocationSearch}
-                  className={`w-full px-4 py-3 border rounded-xl shadow-sm transition-all duration-200 flex items-center justify-center gap-2 ${
-                    locationEnabled
-                      ? isDarkMode 
-                        ? 'bg-sky-600 text-white border-sky-700' 
-                        : 'bg-sky-500 text-white border-sky-600'
-                      : isDarkMode 
-                        ? 'bg-slate-700 text-slate-300 border-slate-600' 
-                        : 'bg-white text-slate-600 border-slate-300'
-                  }`}
-                >
-                  {locationSearching ? (
-                    <>
-                      <div className="animate-spin mr-2">
-                        <FaRegClock />
-                      </div>
-                      <span>Getting location...</span>
-                    </>
-                  ) : (
-                    <>
-                      {locationEnabled ? <MdMyLocation className="text-lg" /> : <MdLocationSearching className="text-lg" />}
-                      <span>{locationEnabled ? 'Location On' : 'Use My Location'}</span>
-                    </>
-                  )}
-                </button>
-                
-                {locationError && (
-                  <p className="text-red-500 text-xs mt-1 px-2">{locationError}</p>
-                )}
-              </div>
-
               {/* Enhanced Category Buttons */}
               <div className="w-full mb-6 md:w-auto overflow-x-auto">
                 <div className="flex gap-3 py-2 min-w-max">
@@ -763,16 +490,8 @@ const LegalCosultation = () => {
 
           {/* Loading State */}
           {loading && (
-            <div className="flex flex-col justify-center items-center py-12">
-              <Lottie
-                loop
-                animationData={lawyerSearchAnimation}
-                play
-                style={{ width: 120, height: 120 }}
-              />
-              <p className={`mt-4 font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                Finding the best lawyers for you...
-              </p>
+            <div className="flex justify-center items-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sky-500"></div>
             </div>
           )}
 
@@ -893,16 +612,7 @@ const LegalCosultation = () => {
                         isDarkMode ? 'text-slate-400' : 'text-slate-600'
                       }`}>
                         <FaMapMarkerAlt className={isDarkMode ? 'text-sky-400 text-sm' : 'text-sky-500 text-sm'} />
-                        <span className="text-sm">{lawyer.location || lawyer.bar_association}</span>
-                        
-                        {/* Show distance if location is enabled and distance is available */}
-                        {locationEnabled && lawyer.distance && (
-                          <span className="ml-auto px-2 py-0.5 bg-sky-100 text-sky-700 text-xs rounded-full font-medium">
-                            {lawyer.distance < 1 
-                              ? `${(lawyer.distance * 1000).toFixed(0)}m away` 
-                              : `${lawyer.distance.toFixed(1)}km away`}
-                          </span>
-                        )}
+                        <span className="text-sm">{lawyer.bar_association}</span>
                       </div>
                       <div className={`flex items-center gap-2 ${
                         isDarkMode ? 'text-slate-400' : 'text-slate-600'
@@ -1550,14 +1260,14 @@ const LegalCosultation = () => {
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-slate-900' : 'bg-slate-50'} transition-colors duration-300`}>
-      <div className="container mx-auto px-4 py-8" ref={contentRef}>
-        <div className="mb-8 mt-2">
-          {/* <h1 className={`text-3xl md:text-4xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className={`text-3xl md:text-4xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
             Find Your Legal Expert
           </h1>
           <p className={`text-lg ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
             Connect with experienced lawyers specialized in various legal domains
-          </p> */}
+          </p>
         </div>
         
         {renderView()}
@@ -1566,4 +1276,4 @@ const LegalCosultation = () => {
   );
 };
 
-export default LegalCosultation;
+export default LawyerListing;
