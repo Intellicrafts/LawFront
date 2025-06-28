@@ -574,7 +574,7 @@ const LegalCosultation = () => {
       return (
         <>
           {/* Quick Action Buttons - More Compact */}
-          <div className="flex gap-3 mb-4">
+          <div className="flex gap-3 mb-4 mt-14">
             <button 
               onClick={fetchNearbyLawyers}
               disabled={nearbyLoading}
