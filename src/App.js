@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setTheme } from './redux/themeSlice';
 import { initializeTheme } from './utils/theme';
 import FloatingThemeToggle from './components/common/FloatingThemeToggle';
+import { ToastProvider } from './context/ToastContext';
 import './App.css';
 import './index.css';
 import './styles/darkMode.css';
@@ -84,13 +85,14 @@ const App = () => {
 
   return (
     <Router>
-      <div className={`app-container min-h-screen transition-colors duration-300 ${
-        mode === 'dark' 
-          ? 'dark bg-gray-900 text-gray-100' 
-          : 'bg-white text-gray-900'
-      }`}>
-        <Navbar />
-        <ScrollToTop />
+      <ToastProvider>
+        <div className={`app-container min-h-screen transition-colors duration-300 ${
+          mode === 'dark' 
+            ? 'dark bg-gray-900 text-gray-100' 
+            : 'bg-white text-gray-900'
+        }`}>
+          <Navbar />
+          <ScrollToTop />
 
         <Routes>
           {/* Home Route */}
@@ -139,6 +141,7 @@ const App = () => {
         <Footer />
         <FloatingThemeToggle />
       </div>
+      </ToastProvider>
     </Router>
   );
 };

@@ -5,6 +5,7 @@ import { toggleTheme } from '../redux/themeSlice';
 import { Link } from 'react-router-dom';
 import { authAPI, tokenManager, apiServices } from '../api/apiService';
 import Avatar from './common/Avatar';
+import NotificationDropdown from './NotificationDropdown';
 import { 
   Menu, 
   X, 
@@ -372,6 +373,7 @@ const Navbar = () => {
       console.log(`Marking notification ${notification.id} as read`);
       
       try {
+        // Use the updated endpoint for marking a notification as read
         await apiServices.markNotificationAsRead(notification.id);
         
         // Update local state to mark this notification as read
@@ -419,8 +421,10 @@ const Navbar = () => {
     if (notifications.length === 0) return;
     
     console.log(`Marking all notifications as read for user ID: ${userId}`);
+    setNotificationsLoading(true);
     
     try {
+      // Call the updated endpoint
       await apiServices.markAllNotificationsAsRead(userId);
       
       // Update local state
@@ -442,6 +446,8 @@ const Navbar = () => {
       } else {
         console.error('Error message:', error.message);
       }
+    } finally {
+      setNotificationsLoading(false);
     }
   };
 
@@ -564,9 +570,21 @@ const Navbar = () => {
 
               {isAuthenticated ? (
                   <>
-                    {/* Notifications Dropdown */}
-                    <div className="relative" ref={notificationsDropdownRef}>
-                      <button 
+                    {/* Enhanced Notifications Dropdown */}
+                    <div ref={notificationsDropdownRef}>
+                      <NotificationDropdown 
+                        notifications={notifications}
+                        notificationsCount={notificationsCount}
+                        notificationsLoading={notificationsLoading}
+                        notificationsError={notificationsError}
+                        isOpen={notificationsDropdownOpen}
+                        onToggle={() => setNotificationsDropdownOpen(!notificationsDropdownOpen)}
+                        onMarkAllAsRead={markAllAsRead}
+                        onRefresh={fetchUserNotifications}
+                        onNotificationClick={handleNotificationClick}
+                        userId={user?.id || 18}
+                      />
+                      {/* <button 
                         className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 focus:outline-none relative"
                         onClick={() => setNotificationsDropdownOpen(!notificationsDropdownOpen)}
                       >
@@ -583,101 +601,8 @@ const Navbar = () => {
                       </button>
                       
                       {/* Notification Panel */}
-                      <div 
-                        className={`absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-lg z-50 transform transition-all duration-200 origin-top-right
-                        ${notificationsDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
-                      >
-                        <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                          <p className="text-sm font-semibold text-gray-800 dark:text-white">Notifications</p>
-                          <div className="flex items-center space-x-2">
-                            {notificationsCount > 0 && (
-                              <button 
-                                onClick={markAllAsRead}
-                                className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                                disabled={notificationsLoading}
-                              >
-                                Mark all read
-                              </button>
-                            )}
-                            {notificationsLoading && (
-                              <Loader size={14} className="animate-spin text-blue-500" />
-                            )}
-                          </div>
-                        </div>
-                        
-                        {notificationsError ? (
-                          <div className="px-4 py-6 text-center">
-                            <AlertCircle size={24} className="mx-auto mb-2 text-red-500" />
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{notificationsError}</p>
-                            <button 
-                              onClick={() => user?.id && fetchUserNotifications(user.id)}
-                              className="mt-2 text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                            >
-                              Try again
-                            </button>
-                          </div>
-                        ) : notifications.length === 0 ? (
-                          <div className="px-4 py-6 text-center">
-                            <Bell size={24} className="mx-auto mb-2 text-gray-400" />
-                            <p className="text-sm text-gray-600 dark:text-gray-400">No notifications yet</p>
-                          </div>
-                        ) : (
-                          <ul className="max-h-60 overflow-y-auto">
-                            {notifications.map((notification) => (
-                              <li 
-                                key={notification.id} 
-                                className={`px-4 py-3 flex items-start hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer
-                                  ${!notification.read_at ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
-                                onClick={() => handleNotificationClick(notification)}
-                              >
-                                <div className={`p-2 rounded-full 
-                                  ${notification.type === 'success' ? 'bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400' : 
-                                    notification.type === 'warning' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-500/20 dark:text-yellow-400' : 
-                                    notification.type === 'error' ? 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400' : 
-                                    'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400'}`}
-                                >
-                                  {notification.type === 'success' ? <Settings size={18} /> : 
-                                   notification.type === 'warning' ? <AlertCircle size={18} /> : 
-                                   notification.type === 'error' ? <AlertCircle size={18} /> : 
-                                   <Bell size={18} />}
-                                </div>
-                                <div className="ml-3 text-sm flex-1">
-                                  <p className="text-gray-800 dark:text-gray-200 font-medium">{notification.message || notification.title}</p>
-                                  <div className="flex justify-between items-center mt-1">
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                      {new Date(notification.created_at).toLocaleString()}
-                                    </p>
-                                    {!notification.read_at && (
-                                      <span className="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
-                                    )}
-                                  </div>
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        
-                        <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-700 text-sm flex justify-between items-center">
-                          <button 
-                            onClick={() => user?.id && fetchUserNotifications(user.id)}
-                            className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center"
-                            disabled={notificationsLoading}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            Refresh
-                          </button>
-                          <Link 
-                            to="/notifications" 
-                            className="text-blue-600 dark:text-blue-400 hover:underline" 
-                            onClick={() => setNotificationsDropdownOpen(false)}
-                          >
-                            View all
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
+                      
+                    </div> 
 
                     {/* User Dropdown */}
                     <div className="relative" ref={userDropdownRef}>

@@ -1072,15 +1072,21 @@ const UserProfile = () => {
                   {/* Stats */}
                   <div className="mt-6 grid grid-cols-3 gap-4 border-t border-gray-200 dark:border-gray-700 pt-4">
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{userInfo.stats.appointments.toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {(userInfo?.stats?.appointments || 0).toLocaleString()}
+                      </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Appointments</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{userInfo.stats.queries.toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {(userInfo?.stats?.queries || 0).toLocaleString()}
+                      </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Queries</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{userInfo.stats.reviews.toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {(userInfo?.stats?.reviews || 0).toLocaleString()}
+                      </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Reviews</p>
                     </div>
                   </div>

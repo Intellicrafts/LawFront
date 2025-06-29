@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { lawyerAPI } from '../api/apiService';
+import { lawyerAPI, apiServices } from '../api/apiService';
 import { MdLocationOn, MdMyLocation, MdLocationSearching } from 'react-icons/md';
 import Lottie from 'react-lottie-player';
+import { useToast } from '../context/ToastContext';
+import { getLawyerBackgroundImage, preloadLawyerBackgroundImages } from '../utils/unsplashService';
 
 // Import animation files
 import locationSearchAnimation from '../assets/animations/location-search.json';
@@ -34,7 +36,8 @@ import {
   FaBolt,
   FaHeart,
   FaStarHalfAlt,
-  FaEnvelope
+  FaEnvelope,
+  FaVideo
 } from 'react-icons/fa';
 
 // Professional color palette
@@ -94,18 +97,18 @@ const categories = [
 const sampleLawyers = Array.from({ length: 12 }).map((_, i) => ({
   id: i + 1,
   full_name: [
-    'Rajesh Kumar',
-    'Priya Sharma',
-    'Vikram Singh',
-    'Ananya Patel',
-    'Arjun Mehta',
-    'Neha Gupta',
-    'Sanjay Verma',
-    'Divya Joshi',
-    'Rahul Malhotra',
-    'Meera Kapoor',
-    'Aditya Reddy',
-    'Kavita Nair'
+    'Rajesh Kumar Demo Data',
+    'Priya Sharma Demo Data',
+    'Vikram Singh Demo Data',
+    'Ananya Patel Demo Data',
+    'Arjun Mehta Demo Data',
+    'Neha Gupta Demo Data',
+    'Sanjay Verma Demo Data',
+    'Divya Joshi Demo Data',
+    'Rahul Malhotra Demo Data',
+    'Meera Kapoor Demo Data',
+    'Aditya Reddy Demo Data',
+    'Kavita Nair Demo Data'
   ][i],
   specialization: [
     'Criminal',
@@ -168,7 +171,10 @@ const LegalCosultation = () => {
   // State for lawyers data
   const [lawyers, setLawyers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
+  const [backgroundImages, setBackgroundImages] = useState({});
+  const [hasMore, setHasMore] = useState(true);
   
   // State for UI controls
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -188,7 +194,166 @@ const LegalCosultation = () => {
     caseDetails: '',
   });
   const [bookingStep, setBookingStep] = useState(1);
+  
+  // Auto-fill form data with user details when component mounts
+  useEffect(() => {
+    // Check if user is logged in
+    const isAuthenticated = localStorage.getItem('auth_token');
+    
+    if (isAuthenticated) {
+      try {
+        // Try to get user data from different possible sources
+        let userData = null;
+        
+        // First try the 'user' key which is set during login
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          userData = JSON.parse(userStr);
+        }
+        
+        // If not found, try the 'user_profile' key which might have more details
+        if (!userData || !userData.name) {
+          const profileStr = localStorage.getItem('user_profile');
+          if (profileStr) {
+            userData = JSON.parse(profileStr);
+          }
+        }
+        
+        // If we have user data, pre-fill the form
+        if (userData) {
+          setBookingFormData({
+            name: userData.name || userData.full_name || '',
+            email: userData.email || '',
+            phone: userData.phone || userData.phone_number || '',
+            caseDetails: `I would like to schedule a legal consultation regarding my case. I need professional advice on legal matters.`
+          });
+          console.log('Pre-filled form with user data on component mount');
+        }
+      } catch (error) {
+        console.error('Error pre-filling form with user data:', error);
+      }
+    }
+  }, []);
   const [bookingComplete, setBookingComplete] = useState(false);
+  
+  // Function to handle booking with Rodger Prosacco
+  const bookWithRodgerProsacco = () => {
+    // Find Rodger Prosacco in the lawyers list
+    const rodgerProsacco = lawyers.find(lawyer => lawyer.full_name === 'Rodger Prosacco');
+    
+    // If not found in the current list, create a sample lawyer object
+    const defaultRodgerProsacco = {
+      id: 999, // Use a unique ID
+      full_name: 'Rodger Prosacco',
+      specialization: 'Corporate',
+      years_of_experience: 15,
+      bar_association: 'Delhi Bar Association',
+      consultation_fee: 3000,
+      phone_number: '+91 98765 43210',
+      email: 'rodger.prosacco@example.com',
+      license_number: 'BCI/100999/2015',
+      is_verified: true,
+      profile_picture_url: null,
+      reviews_count: 25,
+      appointments_count: 120,
+      bio: 'Experienced Corporate lawyer with 15 years of practice. Specializing in complex cases with a high success rate.'
+    };
+    
+    // Set the selected lawyer
+    const selectedLawyerData = rodgerProsacco || defaultRodgerProsacco;
+    setSelectedLawyer(selectedLawyerData);
+    
+    // Generate background image for this lawyer if not already in state
+    if (!backgroundImages[selectedLawyerData.id]) {
+      setBackgroundImages(prev => ({
+        ...prev,
+        [selectedLawyerData.id]: getLawyerBackgroundImage(selectedLawyerData)
+      }));
+    }
+    
+    // Set view to booking
+    setView('booking');
+    
+    // Pre-fill form with user data if logged in
+    const isAuthenticated = localStorage.getItem('auth_token');
+    
+    if (isAuthenticated) {
+      try {
+        // Try to get user data from different possible sources
+        let userData = null;
+        
+        // First try the 'user' key which is set during login
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          userData = JSON.parse(userStr);
+        }
+        
+        // If not found, try the 'user_profile' key which might have more details
+        if (!userData || !userData.name) {
+          const profileStr = localStorage.getItem('user_profile');
+          if (profileStr) {
+            userData = JSON.parse(profileStr);
+          }
+        }
+        
+        // If we have user data, pre-fill the form
+        if (userData) {
+          setBookingFormData({
+            name: userData.name || userData.full_name || '',
+            email: userData.email || '',
+            phone: userData.phone || userData.phone_number || '',
+            caseDetails: 'I would like to book a consultation with Rodger Prosacco.' // Default case details
+          });
+          console.log('Pre-filled form with user data for Rodger Prosacco consultation');
+        }
+      } catch (error) {
+        console.error('Error pre-filling form with user data:', error);
+      }
+    }
+  };
+  
+  // Pre-fill form data when a user selects Rodger Prosacco for consultation
+  useEffect(() => {
+    if (selectedLawyer && selectedLawyer.full_name === 'Rodger Prosacco') {
+      // Check if user is logged in
+      const isAuthenticated = localStorage.getItem('auth_token');
+      
+      if (isAuthenticated) {
+        // Get user data from localStorage
+        try {
+          // Try to get user data from different possible sources
+          let userData = null;
+          
+          // First try the 'user' key which is set during login
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+            userData = JSON.parse(userStr);
+          }
+          
+          // If not found, try the 'user_profile' key which might have more details
+          if (!userData || !userData.name) {
+            const profileStr = localStorage.getItem('user_profile');
+            if (profileStr) {
+              userData = JSON.parse(profileStr);
+            }
+          }
+          
+          // If we have user data, pre-fill the form
+          if (userData) {
+            setBookingFormData({
+              name: userData.name || userData.full_name || '',
+              email: userData.email || '',
+              phone: userData.phone || userData.phone_number || '',
+              caseDetails: bookingFormData.caseDetails || 'I would like to book a consultation with Rodger Prosacco.' // Keep existing case details if any
+            });
+            console.log('Pre-filled form with user data for Rodger Prosacco consultation');
+          }
+        } catch (error) {
+          console.error('Error pre-filling form with user data:', error);
+        }
+      }
+    }
+  }, [selectedLawyer]);
   
   // Location-based search state
   const [userLocation, setUserLocation] = useState(null);
@@ -200,23 +365,68 @@ const LegalCosultation = () => {
   
   // Refs for scrolling
   const contentRef = useRef(null);
+  const observerRef = useRef(null);
+  const loadMoreRef = useRef(null);
   
-  // Fetch lawyers from API
+  // Set up intersection observer for infinite scrolling
   useEffect(() => {
-    fetchLawyers();
-  }, [currentPage, selectedCategory, locationEnabled, userLocation]);
+    // Only set up observer when in lawyers view
+    if (view !== 'lawyers') return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && hasMore && !loading && !loadingMore) {
+          // Load more data when the user scrolls to the bottom
+          fetchLawyers(currentPage + 1, false);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    
+    // Save observer to ref
+    observerRef.current = observer;
+    
+    // Observe the load more element if it exists
+    const currentLoadMoreRef = loadMoreRef.current;
+    if (currentLoadMoreRef) {
+      observer.observe(currentLoadMoreRef);
+    }
+    
+    // Cleanup
+    return () => {
+      if (currentLoadMoreRef && observer) {
+        observer.unobserve(currentLoadMoreRef);
+      }
+    };
+  }, [view, hasMore, loading, loadingMore, currentPage]);
+  
+  // Fetch lawyers from API - initial load
+  useEffect(() => {
+    // Reset lawyers array and fetch from page 1 when filters change
+    setLawyers([]);
+    setCurrentPage(1);
+    setHasMore(true);
+    fetchLawyers(1, true);
+  }, [selectedCategory, locationEnabled, userLocation, searchQuery]);
 
   /**
    * Fetch lawyers from the API with optional filtering
+   * @param {number} page - The page number to fetch
+   * @param {boolean} isNewSearch - Whether this is a new search (reset data)
    */
-  const fetchLawyers = async () => {
-    setLoading(true);
+  const fetchLawyers = async (page = currentPage, isNewSearch = false) => {
+    if (isNewSearch) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
     setError(null);
     
     try {
       // Prepare parameters for API call
       const params = {
-        page: currentPage,
+        page: page,
         per_page: 6
       };
       
@@ -243,12 +453,35 @@ const LegalCosultation = () => {
         
         if (response && response.success) {
           const responseData = response.data;
-          setLawyers(responseData.data || []);
-          setTotalPages(Math.ceil((responseData.total || responseData.data.length) / (responseData.per_page || 6)));
+          const lawyersData = responseData.data || [];
           
-          if (responseData.current_page) {
-            setCurrentPage(responseData.current_page);
+          // Update state based on whether this is a new search or loading more
+          if (isNewSearch) {
+            setLawyers(lawyersData);
+          } else {
+            setLawyers(prevLawyers => [...prevLawyers, ...lawyersData]);
           }
+          
+          // Calculate total pages
+          const totalPagesCount = Math.ceil((responseData.total || 0) / (responseData.per_page || 6));
+          setTotalPages(totalPagesCount);
+          
+          // Check if we have more data to load
+          setHasMore(page < totalPagesCount);
+          
+          // Update current page
+          setCurrentPage(page);
+          
+          // Preload background images for each lawyer
+          console.log('Fetched lawyers data:', lawyersData);
+          const newImages = preloadLawyerBackgroundImages(lawyersData);
+          console.log('Setting background images:', newImages);
+          
+          // Merge new images with existing ones
+          setBackgroundImages(prevImages => ({
+            ...prevImages,
+            ...newImages
+          }));
         } else {
           throw new Error('Failed to fetch lawyers data');
         }
@@ -275,33 +508,55 @@ const LegalCosultation = () => {
           );
         }
         
-        // Paginate the data
+        // Calculate total pages
         const perPage = 6;
         const totalItems = filteredData.length;
         const totalPagesCount = Math.ceil(totalItems / perPage);
         
         // Get the current page of data
-        const startIndex = (currentPage - 1) * perPage;
+        const startIndex = (page - 1) * perPage;
         const paginatedData = filteredData.slice(startIndex, startIndex + perPage);
         
-        // Set the data in state
-        setLawyers(paginatedData);
+        // Update state based on whether this is a new search or loading more
+        if (isNewSearch) {
+          setLawyers(paginatedData);
+        } else {
+          setLawyers(prevLawyers => [...prevLawyers, ...paginatedData]);
+        }
+        
         setTotalPages(totalPagesCount);
+        setHasMore(page < totalPagesCount);
+        setCurrentPage(page);
+        
+        // Preload background images for sample data
+        const newImages = preloadLawyerBackgroundImages(paginatedData);
+        setBackgroundImages(prevImages => ({
+          ...prevImages,
+          ...newImages
+        }));
       }
     } catch (err) {
       console.error('Error fetching lawyers:', err);
       setError('Failed to load lawyers. Please try again later.');
-      setLawyers([]);
+      if (isNewSearch) {
+        setLawyers([]);
+      }
     } finally {
-      setLoading(false);
+      if (isNewSearch) {
+        setLoading(false);
+      } else {
+        setLoadingMore(false);
+      }
     }
   };
 
   // Handle search form submission
   const handleSearch = (e) => {
     e.preventDefault();
-    setCurrentPage(1); // Reset to first page when searching
-    fetchLawyers();
+    // Reset state for new search - the useEffect will trigger the actual search
+    setLawyers([]);
+    setCurrentPage(1);
+    setHasMore(true);
   };
   
   /**
@@ -373,11 +628,17 @@ const LegalCosultation = () => {
     setNearbyLoading(true);
     
     try {
+      // Reset state for new search
+      setLawyers([]);
+      setCurrentPage(1);
+      setHasMore(true);
+      
       const params = {
         latitude: userLocation.latitude,
         longitude: userLocation.longitude,
         radius: 25, // 25km radius
         sort: 'distance',
+        page: 1,
         per_page: 6
       };
       
@@ -385,8 +646,19 @@ const LegalCosultation = () => {
         const response = await lawyerAPI.getLawyers(params);
         
         if (response && response.success) {
-          setLawyers(response.data.data || []);
-          setTotalPages(Math.ceil((response.data.total || response.data.data.length) / (response.data.per_page || 6)));
+          const lawyersData = response.data.data || [];
+          setLawyers(lawyersData);
+          
+          // Calculate total pages
+          const totalPagesCount = Math.ceil((response.data.total || 0) / (response.data.per_page || 6));
+          setTotalPages(totalPagesCount);
+          
+          // Check if we have more data to load
+          setHasMore(1 < totalPagesCount);
+          
+          // Preload background images for each lawyer
+          const newImages = preloadLawyerBackgroundImages(lawyersData);
+          setBackgroundImages(newImages);
         } else {
           throw new Error('Failed to fetch nearby lawyers');
         }
@@ -395,6 +667,11 @@ const LegalCosultation = () => {
         // Fallback to sample data
         setLawyers(sampleLawyers.slice(0, 6));
         setTotalPages(Math.ceil(sampleLawyers.length / 6));
+        setHasMore(6 < sampleLawyers.length);
+        
+        // Generate background images for sample lawyers
+        const sampleImages = preloadLawyerBackgroundImages(sampleLawyers.slice(0, 6));
+        setBackgroundImages(sampleImages);
       }
     } catch (err) {
       console.error('Error fetching nearby lawyers:', err);
@@ -410,8 +687,14 @@ const LegalCosultation = () => {
     setTopRatedLoading(true);
     
     try {
+      // Reset state for new search
+      setLawyers([]);
+      setCurrentPage(1);
+      setHasMore(true);
+      
       const params = {
         sort: 'rating',
+        page: 1,
         per_page: 6
       };
       
@@ -419,8 +702,19 @@ const LegalCosultation = () => {
         const response = await lawyerAPI.getLawyers(params);
         
         if (response && response.success) {
-          setLawyers(response.data.data || []);
-          setTotalPages(Math.ceil((response.data.total || response.data.data.length) / (response.data.per_page || 6)));
+          const lawyersData = response.data.data || [];
+          setLawyers(lawyersData);
+          
+          // Calculate total pages
+          const totalPagesCount = Math.ceil((response.data.total || 0) / (response.data.per_page || 6));
+          setTotalPages(totalPagesCount);
+          
+          // Check if we have more data to load
+          setHasMore(1 < totalPagesCount);
+          
+          // Preload background images for each lawyer
+          const newImages = preloadLawyerBackgroundImages(lawyersData);
+          setBackgroundImages(newImages);
         } else {
           throw new Error('Failed to fetch top-rated lawyers');
         }
@@ -430,6 +724,11 @@ const LegalCosultation = () => {
         const sortedLawyers = [...sampleLawyers].sort((a, b) => b.reviews_count - a.reviews_count);
         setLawyers(sortedLawyers.slice(0, 6));
         setTotalPages(Math.ceil(sampleLawyers.length / 6));
+        setHasMore(6 < sampleLawyers.length);
+        
+        // Generate background images for sample lawyers
+        const sampleImages = preloadLawyerBackgroundImages(sortedLawyers.slice(0, 6));
+        setBackgroundImages(sampleImages);
       }
     } catch (err) {
       console.error('Error fetching top-rated lawyers:', err);
@@ -449,15 +748,235 @@ const LegalCosultation = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Get toast functions
+  const { showSuccess, showError } = useToast();
+
   // Function to handle booking form submission
-  const handleBookingSubmit = (e) => {
+  const handleBookingSubmit = async (e) => {
     e.preventDefault();
+    
     if (bookingStep === 1) {
       if (bookingDate && bookingTime) {
         setBookingStep(2);
+        
+        // If booking with Rodger Prosacco, pre-fill form data from localStorage
+        if (selectedLawyer && selectedLawyer.full_name === 'Rodger Prosacco') {
+          // Check if user is logged in
+          const isAuthenticated = localStorage.getItem('auth_token');
+          
+          if (isAuthenticated) {
+            // Get user data from localStorage
+            try {
+              // Try to get user data from different possible sources
+              let userData = null;
+              
+              // First try the 'user' key which is set during login
+              const userStr = localStorage.getItem('user');
+              if (userStr) {
+                userData = JSON.parse(userStr);
+              }
+              
+              // If not found, try the 'user_profile' key which might have more details
+              if (!userData || !userData.name) {
+                const profileStr = localStorage.getItem('user_profile');
+                if (profileStr) {
+                  userData = JSON.parse(profileStr);
+                }
+              }
+              
+              // If we have user data, pre-fill the form
+              if (userData) {
+                setBookingFormData({
+                  name: userData.name || userData.full_name || '',
+                  email: userData.email || '',
+                  phone: userData.phone || userData.phone_number || '',
+                  caseDetails: bookingFormData.caseDetails // Keep existing case details if any
+                });
+                console.log('Pre-filled form with user data for Rodger Prosacco consultation');
+              }
+            } catch (error) {
+              console.error('Error pre-filling form with user data:', error);
+            }
+          }
+        }
       }
     } else if (bookingStep === 2) {
-      setBookingComplete(true);
+      try {
+        // Check if user is authenticated
+        const isAuthenticated = localStorage.getItem('auth_token');
+        
+        // Get the current user ID from localStorage if available
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const userId = currentUser.id;
+        
+        // If not authenticated or no user ID, show error
+        if (!isAuthenticated || !userId) {
+          showError('Please log in to book an appointment.');
+          return;
+        }
+        
+        // Format the appointment time as a valid datetime string
+        // Parse the time string (assuming format like "10:00 AM" or "14:00")
+        let hours = 0;
+        let minutes = 0;
+        
+        if (bookingTime.includes(':')) {
+          // Handle time formats like "10:00 AM" or "14:00"
+          const timeParts = bookingTime.replace(/\s+/g, ' ').trim().split(' ');
+          const [hoursStr, minutesStr] = timeParts[0].split(':');
+          
+          hours = parseInt(hoursStr, 10);
+          minutes = parseInt(minutesStr, 10);
+          
+          // Handle AM/PM if present
+          if (timeParts.length > 1 && timeParts[1].toUpperCase() === 'PM' && hours < 12) {
+            hours += 12;
+          } else if (timeParts.length > 1 && timeParts[1].toUpperCase() === 'AM' && hours === 12) {
+            hours = 0;
+          }
+        }
+        
+        // Create a date object with the combined date and time
+        const dateObj = new Date(bookingDate);
+        dateObj.setHours(hours, minutes, 0, 0);
+        
+        // Format as ISO string for the API
+        const formattedDateTime = dateObj.toISOString();
+        
+        // Format the appointment time as required by the API (YYYY-MM-DD HH:MM:SS)
+        const formattedDateTimeStr = dateObj.toISOString().replace('T', ' ').substring(0, 19);
+        
+        // Prepare appointment data according to the sample provided
+        const googleMeetLink = "https://meet.google.com/cbx-twdp-qhm"; // Use the provided Google Meet link
+        const appointmentData = {
+          user_id: userId, // Required field - current logged in user
+          lawyer_id: selectedLawyer.id,
+          appointment_time: formattedDateTimeStr, // Format: "2025-06-29 17:03:02"
+          duration_minutes: "50", // Duration in minutes as a string (as per sample)
+          status: "scheduled", // Use the status from the sample
+          meeting_link: googleMeetLink, // Use the Google Meet link
+          notes: bookingFormData.caseDetails // Additional case details
+        };
+        
+        console.log('Sending appointment data:', appointmentData);
+        
+        // Show loading state
+        setLoading(true);
+        
+        try {
+          // Call the API to book appointment with lawyer
+          // Note: lawyer_id is already in appointmentData, but we still pass it separately
+          // to the function for clarity and to maintain the API function signature
+          const response = await lawyerAPI.bookLawyerAppointment(selectedLawyer.id, appointmentData);
+          console.log('Booking response:', response);
+          
+          // Handle successful response
+          if (response) {
+            showSuccess('Appointment booked successfully!');
+            
+            // Store the appointment response data for reference
+            try {
+              localStorage.setItem('last_appointment', JSON.stringify(response));
+              
+              // Always store the Google Meet link
+              localStorage.setItem('meeting_link', "https://meet.google.com/cbx-twdp-qhm");
+            } catch (e) {
+              console.error('Error storing appointment data:', e);
+            }
+            
+            // Create notifications for both user and lawyer
+            try {
+              const appointmentDate = new Date(appointmentData.appointment_time).toLocaleDateString();
+              const appointmentTime = new Date(appointmentData.appointment_time).toLocaleTimeString();
+              
+              // Create notification for the user
+              const userNotification = {
+                user_id: userId,
+                title: 'Appointment Booked',
+                description: `Your appointment with ${selectedLawyer.name || 'the lawyer'} has been scheduled for ${appointmentDate} at ${appointmentTime}.`,
+                status: 'unread'
+              };
+              
+              // Create notification for the lawyer
+              const lawyerNotification = {
+                user_id: selectedLawyer.id, // Lawyer's user ID
+                title: 'New Appointment',
+                description: `A new appointment has been scheduled for ${appointmentDate} at ${appointmentTime}.`,
+                status: 'unread'
+              };
+              
+              // Send notifications without waiting for response and without showing toasts
+              apiServices.createNotification(userNotification)
+                .then(result => console.log('User notification created:', result))
+                .catch(err => console.error('Failed to create user notification:', err));
+                
+              apiServices.createNotification(lawyerNotification)
+                .then(result => console.log('Lawyer notification created:', result))
+                .catch(err => console.error('Failed to create lawyer notification:', err));
+            } catch (notificationError) {
+              // Just log the error but don't show to user since the appointment was successful
+              console.error('Error creating notifications:', notificationError);
+            }
+            
+            setBookingComplete(true);
+          }
+        } catch (error) {
+          console.error('Error booking appointment:', error);
+          
+          // Even if the API call fails, we can still show the booking confirmation with the Google Meet link
+          // This is a fallback mechanism for development/testing
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Using fallback booking confirmation in development mode');
+            localStorage.setItem('meeting_link', "https://meet.google.com/cbx-twdp-qhm");
+            setBookingComplete(true);
+            showSuccess('Appointment booked successfully (development mode)!');
+            return;
+          }
+          
+          // Handle validation errors from the API
+          if (error.response && error.response.data) {
+            // Check for different error formats
+            if (error.response.data.errors) {
+              const validationErrors = error.response.data.errors;
+              
+              // Format validation errors for display
+              const errorMessages = Object.entries(validationErrors)
+                .map(([field, messages]) => {
+                  if (Array.isArray(messages)) {
+                    return `${field}: ${messages.join(', ')}`;
+                  } else {
+                    return `${field}: ${messages}`;
+                  }
+                })
+                .join('\n');
+              
+              showError(`Validation errors: ${errorMessages}`);
+              
+              // If user_id is missing and required, show a more user-friendly message
+              if (validationErrors.user_id) {
+                showError('You need to be logged in to book an appointment. Please log in and try again.');
+              }
+            } else if (error.response.data.message) {
+              // Direct error message from API
+              showError(error.response.data.message);
+            } else if (typeof error.response.data === 'string') {
+              // Plain string error
+              showError(error.response.data);
+            } else {
+              // Unknown error format but we have a response
+              showError('Failed to book appointment. Please check your information and try again.');
+            }
+          } else {
+            // Generic error message for network or other issues
+            showError(error.message || 'Failed to book appointment. Please try again later.');
+          }
+        } finally {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error in booking process:', error);
+        showError('An unexpected error occurred. Please try again later.');
+      }
     }
   };
 
@@ -478,6 +997,15 @@ const LegalCosultation = () => {
   // Function to view lawyer details
   const viewLawyerDetails = (lawyer) => {
     setSelectedLawyer(lawyer);
+    
+    // Ensure background image is loaded for this lawyer
+    if (!backgroundImages[lawyer.id]) {
+      setBackgroundImages(prev => ({
+        ...prev,
+        [lawyer.id]: getLawyerBackgroundImage(lawyer)
+      }));
+    }
+    
     setView('detail');
     scrollToTop();
   };
@@ -485,6 +1013,15 @@ const LegalCosultation = () => {
   // Function to start booking process
   const startBooking = (lawyer) => {
     setSelectedLawyer(lawyer);
+    
+    // Ensure background image is loaded for this lawyer
+    if (!backgroundImages[lawyer.id]) {
+      setBackgroundImages(prev => ({
+        ...prev,
+        [lawyer.id]: getLawyerBackgroundImage(lawyer)
+      }));
+    }
+    
     setView('booking');
     setBookingStep(1);
     setBookingComplete(false);
@@ -493,6 +1030,7 @@ const LegalCosultation = () => {
 
   // Function to go back to previous view
   const goBack = () => {
+    console.log('Going back from view:', view);
     if (view === 'detail') {
       setView('lawyers');
       scrollToTop();
@@ -839,8 +1377,22 @@ const LegalCosultation = () => {
                   }`}
                 >
                   <div className="relative">
-                    {/* Background Gradient - Smaller Height */}
-                    <div className="w-full h-32 bg-gradient-to-r from-sky-500 to-indigo-600 group-hover:scale-105 transition-transform duration-300"></div>
+                    {/* Professional Background Image */}
+                    <div className="w-full h-32 overflow-hidden relative group-hover:scale-105 transition-transform duration-300">
+                      <img 
+                        src={backgroundImages[lawyer.id] || "https://t4.ftcdn.net/jpg/08/52/61/01/360_F_852610192_mDCPHk42G9qHrROdQYx93eHuk5AMFpQQ.jpg"} 
+                        alt={`${lawyer.specialization} background`}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        loading="lazy"
+                        onError={(e) => {
+                          console.error('Image failed to load:', backgroundImages[lawyer.id]);
+                          e.target.onerror = null; // Prevent infinite loop
+                          e.target.src = "https://t4.ftcdn.net/jpg/08/52/61/01/360_F_852610192_mDCPHk42G9qHrROdQYx93eHuk5AMFpQQ.jpg";
+                        }}
+                      />
+                      {/* Overlay for better text visibility */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    </div>
 
                     {/* Status Badges - More Compact */}
                     <div className="absolute top-2 right-2 flex gap-1.5">
@@ -967,88 +1519,28 @@ const LegalCosultation = () => {
             </div>
           )}
 
-          {/* Compact Professional Pagination */}
-          {!loading && !error && totalPages > 1 && (
-            <div className="flex justify-center items-center gap-1 mb-6">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className={`p-1.5 rounded-md border disabled:opacity-40 transition-all duration-200 ${
-                  isDarkMode 
-                    ? 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700' 
-                    : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
-                }`}
-                aria-label="Previous page"
-              >
-                <FaChevronLeft className="text-xs" />
-              </button>
-              
-              <div className="flex items-center gap-1">
-                {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-                  // Calculate page numbers to show (centered around current page)
-                  let pageNum;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else {
-                    const startPage = Math.max(1, currentPage - 2);
-                    const endPage = Math.min(totalPages, startPage + 4);
-                    pageNum = startPage + i;
-                    
-                    // Adjust if we're at the end
-                    if (pageNum > totalPages) {
-                      return null;
-                    }
-                  }
-                  
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => setCurrentPage(pageNum)}
-                      className={`w-7 h-7 flex items-center justify-center rounded-md text-xs font-medium transition-all duration-200 ${
-                        currentPage === pageNum
-                          ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-sm'
-                          : isDarkMode
-                            ? 'bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700'
-                            : 'text-slate-700 bg-white border border-slate-200 hover:bg-slate-50'
-                      }`}
-                      aria-label={`Page ${pageNum}`}
-                      aria-current={currentPage === pageNum ? 'page' : undefined}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-                
-                {totalPages > 5 && currentPage < totalPages - 2 && (
-                  <>
-                    <span className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>...</span>
-                    <button
-                      onClick={() => setCurrentPage(totalPages)}
-                      className={`w-7 h-7 flex items-center justify-center rounded-md text-xs font-medium transition-all duration-200 ${
-                        isDarkMode
-                          ? 'bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700'
-                          : 'text-slate-700 bg-white border border-slate-200 hover:bg-slate-50'
-                      }`}
-                      aria-label={`Page ${totalPages}`}
-                    >
-                      {totalPages}
-                    </button>
-                  </>
-                )}
-              </div>
-              
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className={`p-1.5 rounded-md border disabled:opacity-40 transition-all duration-200 ${
-                  isDarkMode 
-                    ? 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700' 
-                    : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
-                }`}
-                aria-label="Next page"
-              >
-                <FaChevronRight className="text-xs" />
-              </button>
+          {/* Infinite Scroll Loading Indicator */}
+          {!loading && !error && lawyers.length > 0 && (
+            <div 
+              ref={loadMoreRef} 
+              className="flex justify-center items-center py-6 mb-2"
+            >
+              {loadingMore ? (
+                <div className="flex flex-col items-center">
+                  <div className="w-8 h-8 border-t-2 border-b-2 border-sky-500 rounded-full animate-spin mb-2"></div>
+                  <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                    Loading more lawyers...
+                  </p>
+                </div>
+              ) : hasMore ? (
+                <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                  Scroll for more lawyers
+                </p>
+              ) : (
+                <p className={`text-sm font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                  No more lawyers to load
+                </p>
+              )}
             </div>
           )}
         </>
@@ -1061,18 +1553,31 @@ const LegalCosultation = () => {
             : 'bg-white border-slate-200'
         }`}>
           <div className="relative h-64 md:h-80">
-            {/* Background gradient instead of image */}
-            <div className="w-full h-full bg-gradient-to-r from-sky-500 to-indigo-600"></div>
+            {/* Professional Background Image */}
+            <div className="w-full h-full overflow-hidden">
+              <img 
+                src={backgroundImages[selectedLawyer.id] || "https://t4.ftcdn.net/jpg/08/52/61/01/360_F_852610192_mDCPHk42G9qHrROdQYx93eHuk5AMFpQQ.jpg"} 
+                alt={`${selectedLawyer.specialization} background`}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                onError={(e) => {
+                  console.error('Detail view image failed to load:', backgroundImages[selectedLawyer.id]);
+                  e.target.onerror = null; // Prevent infinite loop
+                  e.target.src = "https://t4.ftcdn.net/jpg/08/52/61/01/360_F_852610192_mDCPHk42G9qHrROdQYx93eHuk5AMFpQQ.jpg";
+                }}
+              />
+            </div>
             
             <button
               onClick={goBack}
-              className={`absolute top-6 left-6 p-3 rounded-full shadow-lg backdrop-blur-sm transition-all duration-200 ${
+              className={`absolute top-6 left-6 p-3 rounded-full shadow-lg backdrop-blur-sm transition-all duration-200 z-10 ${
                 isDarkMode 
-                  ? 'bg-slate-800 bg-opacity-90 hover:bg-opacity-100' 
-                  : 'bg-white bg-opacity-90 hover:bg-opacity-100'
+                  ? 'bg-slate-800 bg-opacity-90 hover:bg-opacity-100 hover:bg-sky-700' 
+                  : 'bg-white bg-opacity-90 hover:bg-opacity-100 hover:bg-sky-50'
               }`}
+              aria-label="Go back to lawyers list"
             >
-              <FaArrowLeft className={isDarkMode ? 'text-slate-300' : 'text-slate-700'} />
+              <FaArrowLeft className={`${isDarkMode ? 'text-sky-400' : 'text-sky-600'} text-lg`} />
             </button>
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-8">
@@ -1277,103 +1782,411 @@ const LegalCosultation = () => {
       );
     } else if (view === 'booking' && selectedLawyer) {
       return (
-        <div className={`rounded-2xl shadow-lg overflow-hidden mb-12 border transition-colors duration-300 ${
+        <div className={`rounded-2xl mt-16 shadow-lg overflow-hidden mb-12 border transition-colors duration-300 ${
           isDarkMode 
             ? 'bg-slate-800 border-slate-700' 
             : 'bg-white border-slate-200'
         }`}>
-          {/* Booking Header */}
-          <div className={`p-6 border-b ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={goBack}
-                className={`p-3 rounded-xl ${
-                  isDarkMode 
-                    ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                } transition-all duration-200`}
-              >
-                <FaArrowLeft />
-              </button>
-              <div>
-                <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                  {bookingComplete ? 'Booking Confirmed' : `Book Consultation with ${selectedLawyer.full_name}`}
-                </h2>
-                <p className={isDarkMode ? 'text-slate-400' : 'text-slate-600'}>
-                  {bookingComplete 
-                    ? 'Your consultation has been scheduled successfully' 
-                    : bookingStep === 1 
-                      ? 'Step 1: Select Date & Time' 
-                      : 'Step 2: Enter Your Details'}
-                </p>
+          {/* Booking Header - Uncomment and fix if needed */}
+          
+          {/* Lawyer Profile Background Image */}
+          <div className="relative h-48 md:h-64 overflow-hidden">
+            {/* Back Button */}
+            <button
+              onClick={goBack}
+              className={`absolute top-6 left-6 p-3 rounded-full shadow-lg backdrop-blur-sm transition-all duration-200 z-10 ${
+                isDarkMode 
+                  ? 'bg-slate-800 bg-opacity-90 hover:bg-opacity-100 hover:bg-sky-700' 
+                  : 'bg-white bg-opacity-90 hover:bg-opacity-100 hover:bg-sky-50'
+              }`}
+              aria-label="Go back"
+            >
+              <FaArrowLeft className={`${isDarkMode ? 'text-sky-400' : 'text-sky-600'} text-lg`} />
+            </button>
+            
+            {/* Professional Background Image */}
+            <div className="w-full h-full overflow-hidden">
+              <img 
+                src={backgroundImages[selectedLawyer.id] || "https://t4.ftcdn.net/jpg/08/52/61/01/360_F_852610192_mDCPHk42G9qHrROdQYx93eHuk5AMFpQQ.jpg"} 
+                alt={`${selectedLawyer.specialization} background`}
+                className="w-full h-full object-cover transition-all duration-1000 hover:scale-105 animate-fadeIn"
+                loading="lazy"
+                onError={(e) => {
+                  console.error('Booking view image failed to load:', backgroundImages[selectedLawyer.id]);
+                  e.target.onerror = null; // Prevent infinite loop
+                  e.target.src = "https://t4.ftcdn.net/jpg/08/52/61/01/360_F_852610192_mDCPHk42G9qHrROdQYx93eHuk5AMFpQQ.jpg";
+                }}
+                style={{
+                  animation: 'fadeIn 1.2s ease-in-out'
+                }}
+              />
+              
+              {/* Gradient overlay for better text visibility */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+              
+              {/* Subtle pattern overlay for added texture */}
+              <div 
+                className="absolute inset-0 opacity-10" 
+                style={{ 
+                  backgroundImage: 'url("data:image/svg+xml,%3Csvg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%23ffffff" fill-opacity="0.4" fill-rule="evenodd"%3E%3Ccircle cx="3" cy="3" r="1"/%3E%3Ccircle cx="13" cy="13" r="1"/%3E%3C/g%3E%3C/svg%3E")',
+                  backgroundSize: '20px 20px'
+                }}
+              ></div>
+              
+              {/* Lawyer info overlay with animation */}
+              <div className="absolute bottom-0 left-0 right-0 p-6 text-white" style={{ animation: 'slideUp 0.8s ease-out 0.4s both' }}>
+                <div className="flex items-center gap-4">
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-sm border-2 border-white/30 shadow-lg transform transition-all duration-500 hover:scale-105`}>
+                    <FaUserTie className="text-3xl" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white drop-shadow-md">{selectedLawyer.full_name}</h3>
+                    <p className="text-white/90 flex items-center gap-1 drop-shadow-md">
+                      <FaBriefcase className="text-xs" />
+                      <span>{selectedLawyer.specialization}</span>
+                      {selectedLawyer.is_verified && (
+                        <FaCheckCircle className="text-sky-400 ml-1" />
+                      )}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="bg-white/20 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                        <FaStar className="text-yellow-400" />
+                        <span>{selectedLawyer.reviews_count ? (selectedLawyer.reviews_count / 5).toFixed(1) : '4.8'}</span>
+                      </span>
+                      <span className="bg-white/20 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                        <FaRegClock />
+                        <span>{selectedLawyer.years_of_experience}+ years</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
           
+          {/* Add CSS animations */}
+          <style jsx>{`
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            
+            @keyframes slideUp {
+              from { 
+                opacity: 0;
+                transform: translateY(20px);
+              }
+              to { 
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+          `}</style>
+          
           {/* Booking Content */}
           <div className="p-6">
             {bookingComplete ? (
-              <div className="text-center py-8">
-                <div className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-6 ${
-                  isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-600'
+              <div className="py-6">
+                {/* Premium Confirmation Card */}
+                <div className={`max-w-4xl mx-auto rounded-xl overflow-hidden shadow-xl border ${
+                  isDarkMode ? 'border-slate-600' : 'border-slate-200'
                 }`}>
-                  <FaCheckCircle className="text-4xl" />
-                </div>
-                <h3 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                  Booking Confirmed!
-                </h3>
-                <p className={`mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                  Your consultation with {selectedLawyer.full_name} has been scheduled for:
-                </p>
-                <div className={`inline-block rounded-xl p-6 mb-8 ${
-                  isDarkMode ? 'bg-slate-700' : 'bg-slate-100'
-                }`}>
-                  <p className={`text-xl font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                    {bookingDate ? new Date(bookingDate).toLocaleDateString('en-US', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    }) : 'Date not selected'}
-                  </p>
-                  <p className={`text-lg ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-                    {bookingTime || 'Time not selected'}
-                  </p>
-                </div>
-                <p className={`mb-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                  You will receive a confirmation email with all the details shortly.
-                </p>
-                <div className="flex justify-center gap-4">
-                  <button
-                    onClick={() => {
-                      setView('lawyers');
-                      setBookingComplete(false);
-                      setBookingStep(1);
-                    }}
-                    className={`px-6 py-3 rounded-xl font-medium ${
-                      isDarkMode 
-                        ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' 
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    } transition-all duration-200`}
-                  >
-                    Back to Lawyers
-                  </button>
-                  <button
-                    onClick={() => {
-                      // Here you would implement calendar integration
-                      alert('Calendar integration would be implemented here');
-                    }}
-                    className="px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-xl shadow-lg transition-all duration-200 font-medium"
-                  >
-                    Add to Calendar
-                  </button>
+                  {/* Header Section */}
+                  <div className={`px-6 py-4 flex items-center ${
+                    isDarkMode ? 'bg-gradient-to-r from-green-900/40 to-sky-900/40' : 'bg-gradient-to-r from-green-50 to-sky-50'
+                  }`}>
+                    <div className={`w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center mr-4 ${
+                      isDarkMode ? 'bg-green-900/50 text-green-400' : 'bg-green-100 text-green-600'
+                    } shadow-md`}>
+                      <FaCheckCircle className="text-2xl" />
+                    </div>
+                    <div>
+                      <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                        Booking Confirmed!
+                      </h3>
+                      <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                        Your consultation with <span className="font-semibold">{selectedLawyer.full_name}</span> is scheduled
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Main Content - Two Column Layout */}
+                  <div className="flex flex-col md:flex-row">
+                    {/* Left Column - Date, Time and Meeting Link */}
+                    <div className={`w-full md:w-1/2 p-6 ${
+                      isDarkMode ? 'bg-slate-800' : 'bg-white'
+                    }`}>
+                      {/* Date and Time */}
+                      <div className={`mb-6 p-4 rounded-lg border ${
+                        isDarkMode ? 'bg-slate-700/50 border-slate-600' : 'bg-slate-50 border-slate-200'
+                      }`}>
+                        <h4 className={`text-lg font-bold mb-4 flex items-center ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                          <FaCalendarCheck className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                          Appointment Schedule
+                        </h4>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <div className="flex items-center mb-1">
+                              <FaCalendarAlt className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                              <span className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Date</span>
+                            </div>
+                            <p className={`font-medium ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                              {bookingDate ? new Date(bookingDate).toLocaleDateString('en-US', { 
+                                weekday: 'short', 
+                                month: 'short', 
+                                day: 'numeric' 
+                              }) : 'Date not selected'}
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <div className="flex items-center mb-1">
+                              <FaRegClock className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                              <span className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Time</span>
+                            </div>
+                            <p className={`font-medium ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                              {bookingTime || 'Time not selected'}
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <div className="flex items-center mb-1">
+                              <FaHourglassHalf className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                              <span className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Duration</span>
+                            </div>
+                            <p className={`font-medium ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                              60 minutes
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <div className="flex items-center mb-1">
+                              <FaBolt className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                              <span className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Status</span>
+                            </div>
+                            <p className="font-medium text-amber-500 flex items-center">
+                              <FaCheckCircle className="mr-1" /> Confirmed
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Video Meeting Link */}
+                      <a 
+                        href="https://meet.google.com/cbx-twdp-qhm" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          window.open("https://meet.google.com/cbx-twdp-qhm", "_blank");
+                          showSuccess("Video meeting link opened. You can now join the consultation.");
+                        }}
+                        className={`block p-4 rounded-lg text-center font-medium shadow-md mb-4 ${
+                          isDarkMode 
+                            ? 'bg-gradient-to-r from-sky-800 to-sky-900 text-white hover:from-sky-700 hover:to-sky-800' 
+                            : 'bg-gradient-to-r from-sky-500 to-sky-600 text-white hover:from-sky-600 hover:to-sky-700'
+                        } transition-all duration-300 transform hover:scale-[1.02]`}
+                      >
+                        <div className="flex items-center justify-center">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
+                            isDarkMode ? 'bg-sky-700 text-white' : 'bg-white/20 text-white'
+                          }`}>
+                            <FaVideo className="text-xl" />
+                          </div>
+                          <span className="text-lg">Join Video Meeting</span>
+                        </div>
+                      </a>
+                    </div>
+                    
+                    {/* Right Column - Lawyer Details */}
+                    <div className={`w-full md:w-1/2 p-6 ${
+                      isDarkMode ? 'bg-slate-800/80' : 'bg-slate-50'
+                    }`}>
+                      <h4 className={`text-lg font-bold mb-4 flex items-center ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                        <FaUserTie className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                        Lawyer Information
+                      </h4>
+                      
+                      <div className="space-y-4">
+                        {/* Lawyer Profile */}
+                        <div className="flex items-center mb-4">
+                          <div className={`w-16 h-16 rounded-full flex items-center justify-center mr-3 ${
+                            isDarkMode ? 'bg-slate-700 text-sky-400' : 'bg-sky-100 text-sky-600'
+                          }`}>
+                            {selectedLawyer.profile_picture_url ? (
+                              <img 
+                                src={selectedLawyer.profile_picture_url} 
+                                alt={selectedLawyer.full_name}
+                                className="w-full h-full rounded-full object-cover"
+                              />
+                            ) : (
+                              <FaUserTie className="text-2xl" />
+                            )}
+                          </div>
+                          <div>
+                            <h5 className={`font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                              {selectedLawyer.full_name}
+                            </h5>
+                            <p className={`text-sm ${isDarkMode ? 'text-sky-400' : 'text-sky-600'}`}>
+                              {selectedLawyer.specialization} Lawyer
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Lawyer Details */}
+                        <div className={`p-3 rounded-lg border ${
+                          isDarkMode ? 'bg-slate-700/50 border-slate-600' : 'bg-white border-slate-200'
+                        }`}>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <FaBriefcase className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                                <span className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Experience:</span>
+                              </div>
+                              <span className={`font-medium ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                                {selectedLawyer.years_of_experience} years
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <FaGraduationCap className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                                <span className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Bar Association:</span>
+                              </div>
+                              <span className={`font-medium text-sm ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                                {selectedLawyer.bar_association}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <FaMoneyBillWave className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                                <span className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Consultation Fee:</span>
+                              </div>
+                              <span className={`font-medium ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                                ₹{selectedLawyer.consultation_fee}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <FaPhoneAlt className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                                <span className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Contact:</span>
+                              </div>
+                              <span className={`font-medium ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                                {selectedLawyer.phone_number}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Email Confirmation */}
+                        <div className={`p-3 rounded-lg border ${
+                          isDarkMode ? 'bg-slate-700/50 border-slate-600' : 'bg-white border-slate-200'
+                        }`}>
+                          <div className="flex items-center mb-2">
+                            <FaEnvelopeOpenText className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                            <span className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                              Confirmation Email
+                            </span>
+                          </div>
+                          <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                            A confirmation email with all details has been sent to <span className="font-medium">{bookingFormData.email}</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Footer with Action Buttons */}
+                  <div className={`px-6 py-4 flex flex-wrap justify-center gap-4 ${
+                    isDarkMode ? 'bg-slate-700' : 'bg-slate-100'
+                  }`}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Create calendar event
+                        const startDate = new Date(bookingDate);
+                        const [hours, minutes] = bookingTime.replace(/\s+/g, ' ').trim().split(' ')[0].split(':');
+                        startDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+                        
+                        const endDate = new Date(startDate);
+                        endDate.setHours(endDate.getHours() + 1);
+                        
+                        const eventTitle = `Legal Consultation with ${selectedLawyer.full_name}`;
+                        const eventDetails = `Video meeting link: https://meet.google.com/cbx-twdp-qhm`;
+                        
+                        // Format dates for Google Calendar
+                        const formatDate = (date) => {
+                          return date.toISOString().replace(/-|:|\.\d+/g, '');
+                        };
+                        
+                        const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventTitle)}&details=${encodeURIComponent(eventDetails)}&dates=${formatDate(startDate)}/${formatDate(endDate)}`;
+                        
+                        window.open(googleCalendarUrl, '_blank');
+                        showSuccess("Event added to your calendar");
+                      }}
+                      className={`px-5 py-2 rounded-lg font-medium shadow-md flex items-center ${
+                        isDarkMode 
+                          ? 'bg-gradient-to-r from-emerald-800 to-emerald-900 text-white hover:from-emerald-700 hover:to-emerald-800' 
+                          : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700'
+                      } transition-all duration-300 transform hover:scale-[1.02]`}
+                    >
+                      <FaCalendarAlt className="mr-2" />
+                      Add to Calendar
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setView('lawyers');
+                        setBookingComplete(false);
+                        setBookingStep(1);
+                      }}
+                      className={`px-5 py-2 rounded-lg font-medium shadow-md flex items-center ${
+                        isDarkMode 
+                          ? 'bg-slate-600 text-slate-300 hover:bg-slate-500' 
+                          : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+                      } transition-all duration-300`}
+                    >
+                      <FaArrowLeft className="mr-2" />
+                      Back to Lawyers
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : bookingStep === 1 ? (
-              <form onSubmit={handleBookingSubmit} className="space-y-8">
+              <form onSubmit={handleBookingSubmit} className="space-y-8 mt-6">
+                {/* Booking Steps Indicator */}
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className={`flex items-center ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
+                        isDarkMode ? 'bg-sky-600 text-white' : 'bg-sky-500 text-white'
+                      }`}>
+                        <FaCalendarAlt />
+                      </div>
+                      <span className="font-medium">Schedule</span>
+                    </div>
+                    <div className={`flex-1 mx-2 h-1 rounded ${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'}`}>
+                      <div className={`h-full w-1/2 rounded ${isDarkMode ? 'bg-sky-600' : 'bg-sky-500'}`}></div>
+                    </div>
+                    <div className={`flex items-center ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
+                        isDarkMode ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-500'
+                      }`}>
+                        <FaUserCheck />
+                      </div>
+                      <span className="font-medium">Details</span>
+                    </div>
+                  </div>
+                </div>
+                
                 {/* Date Selection */}
                 <div>
                   <h3 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                    <FaCalendarAlt className="inline-block mr-2 text-sky-500" />
                     Select Date
                   </h3>
                   <div className="grid grid-cols-3 md:grid-cols-7 gap-3">
@@ -1401,6 +2214,7 @@ const LegalCosultation = () => {
                 {/* Time Selection */}
                 <div>
                   <h3 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                    <FaRegClock className="inline-block mr-2 text-sky-500" />
                     Select Time
                   </h3>
                   <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
@@ -1440,7 +2254,32 @@ const LegalCosultation = () => {
                 </div>
               </form>
             ) : (
-              <form onSubmit={handleBookingSubmit} className="space-y-6">
+              <form onSubmit={handleBookingSubmit} className="space-y-6 mt-6">
+                {/* Booking Steps Indicator */}
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className={`flex items-center ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
+                        isDarkMode ? 'bg-sky-600 text-white' : 'bg-sky-500 text-white'
+                      }`}>
+                        <FaCheckCircle />
+                      </div>
+                      <span className="font-medium">Schedule</span>
+                    </div>
+                    <div className={`flex-1 mx-2 h-1 rounded ${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'}`}>
+                      <div className={`h-full w-full rounded ${isDarkMode ? 'bg-sky-600' : 'bg-sky-500'}`}></div>
+                    </div>
+                    <div className={`flex items-center ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
+                        isDarkMode ? 'bg-sky-600 text-white' : 'bg-sky-500 text-white'
+                      }`}>
+                        <FaUserCheck />
+                      </div>
+                      <span className="font-medium">Details</span>
+                    </div>
+                  </div>
+                </div>
+                
                 {/* Selected Date & Time Summary */}
                 <div className={`p-4 rounded-xl ${
                   isDarkMode ? 'bg-slate-700' : 'bg-slate-100'
@@ -1469,25 +2308,39 @@ const LegalCosultation = () => {
                 </div>
                 
                 {/* Personal Details Form */}
-                <div className="space-y-4">
+                <div className="space-y-5">
+                  <h3 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                    <FaUserTie className="inline-block mr-2 text-sky-500" />
+                    Your Information
+                  </h3>
+                  
                   <div>
                     <label className={`block text-sm font-medium mb-1 ${
                       isDarkMode ? 'text-slate-300' : 'text-slate-700'
                     }`}>
                       Full Name
                     </label>
-                    <input
-                      type="text"
-                      value={bookingFormData.name}
-                      onChange={(e) => setBookingFormData({...bookingFormData, name: e.target.value})}
-                      required
-                      className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200 ${
-                        isDarkMode 
-                          ? 'bg-slate-700 border-slate-600 text-slate-200' 
-                          : 'bg-white border-slate-300 text-slate-800'
-                      }`}
-                      placeholder="Enter your full name"
-                    />
+                    <div className={`relative rounded-xl overflow-hidden border ${
+                      isDarkMode ? 'border-slate-600' : 'border-slate-300'
+                    }`}>
+                      <div className={`absolute inset-y-0 left-0 flex items-center pl-3 ${
+                        isDarkMode ? 'text-slate-400' : 'text-slate-500'
+                      }`}>
+                        <FaUserTie />
+                      </div>
+                      <input
+                        type="text"
+                        value={bookingFormData.name}
+                        onChange={(e) => setBookingFormData({...bookingFormData, name: e.target.value})}
+                        required
+                        className={`w-full pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200 ${
+                          isDarkMode 
+                            ? 'bg-slate-700 text-slate-200' 
+                            : 'bg-white text-slate-800'
+                        } border-0`}
+                        placeholder="Enter your full name"
+                      />
+                    </div>
                   </div>
                   
                   <div>
@@ -1496,18 +2349,27 @@ const LegalCosultation = () => {
                     }`}>
                       Email Address
                     </label>
-                    <input
-                      type="email"
-                      value={bookingFormData.email}
-                      onChange={(e) => setBookingFormData({...bookingFormData, email: e.target.value})}
-                      required
-                      className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200 ${
-                        isDarkMode 
-                          ? 'bg-slate-700 border-slate-600 text-slate-200' 
-                          : 'bg-white border-slate-300 text-slate-800'
-                      }`}
-                      placeholder="Enter your email address"
-                    />
+                    <div className={`relative rounded-xl overflow-hidden border ${
+                      isDarkMode ? 'border-slate-600' : 'border-slate-300'
+                    }`}>
+                      <div className={`absolute inset-y-0 left-0 flex items-center pl-3 ${
+                        isDarkMode ? 'text-slate-400' : 'text-slate-500'
+                      }`}>
+                        <FaEnvelope />
+                      </div>
+                      <input
+                        type="email"
+                        value={bookingFormData.email}
+                        onChange={(e) => setBookingFormData({...bookingFormData, email: e.target.value})}
+                        required
+                        className={`w-full pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200 ${
+                          isDarkMode 
+                            ? 'bg-slate-700 text-slate-200' 
+                            : 'bg-white text-slate-800'
+                        } border-0`}
+                        placeholder="Enter your email address"
+                      />
+                    </div>
                   </div>
                   
                   <div>
@@ -1516,18 +2378,27 @@ const LegalCosultation = () => {
                     }`}>
                       Phone Number
                     </label>
-                    <input
-                      type="tel"
-                      value={bookingFormData.phone}
-                      onChange={(e) => setBookingFormData({...bookingFormData, phone: e.target.value})}
-                      required
-                      className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200 ${
-                        isDarkMode 
-                          ? 'bg-slate-700 border-slate-600 text-slate-200' 
-                          : 'bg-white border-slate-300 text-slate-800'
-                      }`}
-                      placeholder="Enter your phone number"
-                    />
+                    <div className={`relative rounded-xl overflow-hidden border ${
+                      isDarkMode ? 'border-slate-600' : 'border-slate-300'
+                    }`}>
+                      <div className={`absolute inset-y-0 left-0 flex items-center pl-3 ${
+                        isDarkMode ? 'text-slate-400' : 'text-slate-500'
+                      }`}>
+                        <FaPhoneAlt />
+                      </div>
+                      <input
+                        type="tel"
+                        value={bookingFormData.phone}
+                        onChange={(e) => setBookingFormData({...bookingFormData, phone: e.target.value})}
+                        required
+                        className={`w-full pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200 ${
+                          isDarkMode 
+                            ? 'bg-slate-700 text-slate-200' 
+                            : 'bg-white text-slate-800'
+                        } border-0`}
+                        placeholder="Enter your phone number"
+                      />
+                    </div>
                   </div>
                   
                   <div>
@@ -1536,18 +2407,27 @@ const LegalCosultation = () => {
                     }`}>
                       Case Details
                     </label>
-                    <textarea
-                      value={bookingFormData.caseDetails}
-                      onChange={(e) => setBookingFormData({...bookingFormData, caseDetails: e.target.value})}
-                      required
-                      rows={4}
-                      className={`w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200 ${
-                        isDarkMode 
-                          ? 'bg-slate-700 border-slate-600 text-slate-200' 
-                          : 'bg-white border-slate-300 text-slate-800'
-                      }`}
-                      placeholder="Briefly describe your case or legal issue"
-                    ></textarea>
+                    <div className={`relative rounded-xl overflow-hidden border ${
+                      isDarkMode ? 'border-slate-600' : 'border-slate-300'
+                    }`}>
+                      <div className={`absolute top-3 left-0 flex items-start pl-3 ${
+                        isDarkMode ? 'text-slate-400' : 'text-slate-500'
+                      }`}>
+                        <FaEnvelopeOpenText />
+                      </div>
+                      <textarea
+                        value={bookingFormData.caseDetails}
+                        onChange={(e) => setBookingFormData({...bookingFormData, caseDetails: e.target.value})}
+                        required
+                        rows={4}
+                        className={`w-full pl-10 pr-4 py-3 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200 ${
+                          isDarkMode 
+                            ? 'bg-slate-700 text-slate-200' 
+                            : 'bg-white text-slate-800'
+                        } border-0`}
+                        placeholder="Briefly describe your case or legal issue"
+                      ></textarea>
+                    </div>
                   </div>
                 </div>
                 
@@ -1555,10 +2435,22 @@ const LegalCosultation = () => {
                 <div className="flex justify-end pt-4">
                   <button
                     type="submit"
-                    className="px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-xl shadow-lg transition-all duration-200 font-medium flex items-center gap-2"
+                    disabled={loading}
+                    className={`px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-xl shadow-lg transition-all duration-200 font-medium flex items-center gap-2 ${
+                      loading ? 'opacity-70 cursor-not-allowed' : ''
+                    }`}
                   >
-                    Confirm Booking
-                    <FaCalendarCheck />
+                    {loading ? (
+                      <>
+                        <FaHourglassHalf className="animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        Confirm Booking
+                        <FaCalendarCheck />
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

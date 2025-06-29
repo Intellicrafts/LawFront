@@ -9,7 +9,6 @@ const VoiceModal = ({ isOpen, onClose }) => {
 
   // State management
   const [animationState, setAnimationState] = useState('initial'); // 'initial', 'entering', 'entered', 'exiting'
-  const [isClosing, setIsClosing] = useState(false);
   const [buttonHover, setButtonHover] = useState(false);
   
   // Create ref
@@ -61,11 +60,9 @@ const VoiceModal = ({ isOpen, onClose }) => {
   // Enhanced close handler with animation
   const handleCloseWithAnimation = useCallback(() => {
     setAnimationState('exiting');
-    setIsClosing(true);
     // Wait for animation to complete before actually closing
     setTimeout(() => {
       handleCloseModal();
-      setIsClosing(false);
     }, 400); // Match this with the CSS transition duration
   }, [handleCloseModal]);
   
@@ -97,8 +94,8 @@ const VoiceModal = ({ isOpen, onClose }) => {
           animationState === 'exiting' ? 'scale-95 opacity-0 translate-y-4' : 'scale-95 opacity-0 translate-y-4'
         }`}
       >
-        {/* Main visualization */}
-        <div className={`relative w-[85vw] h-[90vw] sm:w-[550px] sm:h-[550px] md:w-[600px] md:h-[600px] rounded-full overflow-hidden shadow-0xl ${
+        {/* Simple visualization */}
+        <div className={`relative w-[85vw] h-[90vw] sm:w-[550px] sm:h-[550px] md:w-[600px] md:h-[600px] rounded-full overflow-hidden shadow-xl ${
           isDarkMode ? 'bg-[#0F172A]' : 'bg-[#F8F9FA]'
         }`}>
           <img
@@ -107,26 +104,20 @@ const VoiceModal = ({ isOpen, onClose }) => {
             className={`w-full h-full object-cover ${isDarkMode ? 'opacity-90 contrast-125 brightness-75' : 'opacity-100'}`}
           />
           
-          {/* Enhanced close button with hover effects */}
+          {/* Close button */}
           <button
             onClick={handleCloseWithAnimation}
             onMouseEnter={() => setButtonHover(true)}
             onMouseLeave={() => setButtonHover(false)}
-            className={`absolute bottom-24 left-1/2 transform -translate-x-1/2 w-12 h-12 rounded-full z-50 
+            className={`absolute top-8 right-8 w-12 h-12 rounded-full z-50 
               transition-all duration-300 flex items-center justify-center
               ${isDarkMode 
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500' 
-                : 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-400 hover:to-indigo-400'
-              } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 
-              shadow-lg hover:shadow-xl hover:scale-110`}
-            style={{
-              boxShadow: buttonHover 
-                ? '0 0 20px rgba(59, 130, 246, 0.5), 0 0 0 2px rgba(59, 130, 246, 0.3)' 
-                : '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
-            }}
-            aria-label="Close Voice Assistant"
+                ? 'bg-gray-800/80 text-white hover:bg-gray-700/80' 
+                : 'bg-white/80 text-gray-800 hover:bg-gray-100/80'
+              } focus:outline-none shadow-lg`}
+            aria-label="Close Voice Modal"
           >
-            <X className={`w-5 h-5 transition-transform duration-300 ${buttonHover ? 'rotate-90' : ''}`} />
+            <X size={24} />
           </button>
         </div>
       </div>

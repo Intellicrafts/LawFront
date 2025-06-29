@@ -50,7 +50,7 @@ apiClient.interceptors.response.use(
 );
 
 /**
- * Lawyer API Service
+ * Lawyer API Service/
  * Handles all lawyer-related API calls
  */
 export const lawyerAPI = {
@@ -65,6 +65,30 @@ export const lawyerAPI = {
       return response.data;
     } catch (error) {
       console.error('Error fetching lawyers:', error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Book an appointment with a lawyer
+   * @param {string} lawyerId - Lawyer ID
+   * @param {Object} appointmentData - Appointment details
+   * @returns {Promise} - API response
+   */
+  bookLawyerAppointment: async (lawyerId, appointmentData) => {
+    try {
+      // Make sure lawyer_id is included in the appointment data
+      const appointmentPayload = {
+        ...appointmentData,
+        lawyer_id: lawyerId // Ensure lawyer_id is in the payload
+      };
+      
+      console.log('Booking appointment with data:', appointmentPayload);
+      const response = await apiClient.post('/appointments/', appointmentPayload);
+      console.log('Booking response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Booking error:', error.response || error);
       throw error;
     }
   },
@@ -96,6 +120,24 @@ export const lawyerAPI = {
       return response.data;
     } catch (error) {
       console.error('Error booking consultation:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Create a new appointment
+   * @param {Object} appointmentData - Appointment details
+   * @returns {Promise} - API response
+   */
+  createAppointment: async (appointmentData) => {
+    try {
+      console.log('Sending appointment data:', appointmentData);
+      const response = await apiClient.post('/appointments/', appointmentData);
+      console.log('Appointment creation response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating appointment:', error);
+      console.error('Error response:', error.response?.data);
       throw error;
     }
   },
@@ -275,9 +317,20 @@ export const apiServices = {
     }
   },
   
+  createNotification: async (notificationData) => {
+    try {
+      const response = await apiClient.post('/notifications/', notificationData);
+      console.log('Create notification response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Create notification error:', error.response || error);
+      throw error;
+    }
+  },
+  
   markNotificationAsRead: async (notificationId) => {
     try {
-      const response = await apiClient.post(`http://127.0.0.1:8000/api/notifications/${notificationId}/mark-as-read`);
+      const response = await apiClient.post(`/notifications/${notificationId}/read`);
       console.log('Mark notification as read response:', response.data);
       return response.data;
     } catch (error) {
@@ -288,7 +341,7 @@ export const apiServices = {
   
   markAllNotificationsAsRead: async (userId) => {
     try {
-      const response = await apiClient.post(`http://127.0.0.1:8000/api/notifications/user/${userId}/mark-all-read`);
+      const response = await apiClient.post(`/notifications/mark-all-read`, { user_id: userId });
       console.log('Mark all notifications as read response:', response.data);
       return response.data;
     } catch (error) {
@@ -841,18 +894,6 @@ export const apiServices = {
       return response.data;
     } catch (error) {
       console.error('Lawyer appointments error:', error.response || error);
-      throw error;
-    }
-  },
-  
-  bookLawyerAppointment: async (lawyerId, appointmentData) => {
-    try {
-      console.log(`Booking appointment with lawyer ID: ${lawyerId}`, appointmentData);
-      const response = await apiClient.post(`/api/lawyers/${lawyerId}/appointments`, appointmentData);
-      console.log('Booking response:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Booking error:', error.response || error);
       throw error;
     }
   },
