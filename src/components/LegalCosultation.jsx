@@ -1380,14 +1380,14 @@ const LegalCosultation = () => {
                     {/* Professional Background Image */}
                     <div className="w-full h-32 overflow-hidden relative group-hover:scale-105 transition-transform duration-300">
                       <img 
-                        src={backgroundImages[lawyer.id] || "https://t4.ftcdn.net/jpg/08/52/61/01/360_F_852610192_mDCPHk42G9qHrROdQYx93eHuk5AMFpQQ.jpg"} 
+                        src={backgroundImages[lawyer.id] || "https://t3.ftcdn.net/jpg/06/07/78/88/360_F_607788897_v79yS23PWXnwx4nF6dV415075ICLOZkn.jpg"} 
                         alt={`${lawyer.specialization} background`}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         loading="lazy"
                         onError={(e) => {
                           console.error('Image failed to load:', backgroundImages[lawyer.id]);
                           e.target.onerror = null; // Prevent infinite loop
-                          e.target.src = "https://t4.ftcdn.net/jpg/08/52/61/01/360_F_852610192_mDCPHk42G9qHrROdQYx93eHuk5AMFpQQ.jpg";
+                          e.target.src = "https://t3.ftcdn.net/jpg/06/07/78/88/360_F_607788897_v79yS23PWXnwx4nF6dV415075ICLOZkn.jpg";
                         }}
                       />
                       {/* Overlay for better text visibility */}
@@ -1782,87 +1782,8 @@ const LegalCosultation = () => {
       );
     } else if (view === 'booking' && selectedLawyer) {
       return (
-        <div className={`rounded-2xl mt-16 shadow-lg overflow-hidden mb-12 border transition-colors duration-300 ${
-          isDarkMode 
-            ? 'bg-slate-800 border-slate-700' 
-            : 'bg-white border-slate-200'
-        }`}>
+        <div className={''}>
           {/* Booking Header - Uncomment and fix if needed */}
-          
-          {/* Lawyer Profile Background Image */}
-          <div className="relative h-48 md:h-64 overflow-hidden">
-            {/* Back Button */}
-            <button
-              onClick={goBack}
-              className={`absolute top-6 left-6 p-3 rounded-full shadow-lg backdrop-blur-sm transition-all duration-200 z-10 ${
-                isDarkMode 
-                  ? 'bg-slate-800 bg-opacity-90 hover:bg-opacity-100 hover:bg-sky-700' 
-                  : 'bg-white bg-opacity-90 hover:bg-opacity-100 hover:bg-sky-50'
-              }`}
-              aria-label="Go back"
-            >
-              <FaArrowLeft className={`${isDarkMode ? 'text-sky-400' : 'text-sky-600'} text-lg`} />
-            </button>
-            
-            {/* Professional Background Image */}
-            <div className="w-full h-full overflow-hidden">
-              <img 
-                src={backgroundImages[selectedLawyer.id] || "https://t4.ftcdn.net/jpg/08/52/61/01/360_F_852610192_mDCPHk42G9qHrROdQYx93eHuk5AMFpQQ.jpg"} 
-                alt={`${selectedLawyer.specialization} background`}
-                className="w-full h-full object-cover transition-all duration-1000 hover:scale-105 animate-fadeIn"
-                loading="lazy"
-                onError={(e) => {
-                  console.error('Booking view image failed to load:', backgroundImages[selectedLawyer.id]);
-                  e.target.onerror = null; // Prevent infinite loop
-                  e.target.src = "https://t4.ftcdn.net/jpg/08/52/61/01/360_F_852610192_mDCPHk42G9qHrROdQYx93eHuk5AMFpQQ.jpg";
-                }}
-                style={{
-                  animation: 'fadeIn 1.2s ease-in-out'
-                }}
-              />
-              
-              {/* Gradient overlay for better text visibility */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
-              
-              {/* Subtle pattern overlay for added texture */}
-              <div 
-                className="absolute inset-0 opacity-10" 
-                style={{ 
-                  backgroundImage: 'url("data:image/svg+xml,%3Csvg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%23ffffff" fill-opacity="0.4" fill-rule="evenodd"%3E%3Ccircle cx="3" cy="3" r="1"/%3E%3Ccircle cx="13" cy="13" r="1"/%3E%3C/g%3E%3C/svg%3E")',
-                  backgroundSize: '20px 20px'
-                }}
-              ></div>
-              
-              {/* Lawyer info overlay with animation */}
-              <div className="absolute bottom-0 left-0 right-0 p-6 text-white" style={{ animation: 'slideUp 0.8s ease-out 0.4s both' }}>
-                <div className="flex items-center gap-4">
-                  <div className={`w-16 h-16 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-sm border-2 border-white/30 shadow-lg transform transition-all duration-500 hover:scale-105`}>
-                    <FaUserTie className="text-3xl" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white drop-shadow-md">{selectedLawyer.full_name}</h3>
-                    <p className="text-white/90 flex items-center gap-1 drop-shadow-md">
-                      <FaBriefcase className="text-xs" />
-                      <span>{selectedLawyer.specialization}</span>
-                      {selectedLawyer.is_verified && (
-                        <FaCheckCircle className="text-sky-400 ml-1" />
-                      )}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="bg-white/20 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                        <FaStar className="text-yellow-400" />
-                        <span>{selectedLawyer.reviews_count ? (selectedLawyer.reviews_count / 5).toFixed(1) : '4.8'}</span>
-                      </span>
-                      <span className="bg-white/20 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                        <FaRegClock />
-                        <span>{selectedLawyer.years_of_experience}+ years</span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
           
           {/* Add CSS animations */}
           <style jsx>{`
@@ -1888,91 +1809,134 @@ const LegalCosultation = () => {
             {bookingComplete ? (
               <div className="py-6">
                 {/* Premium Confirmation Card */}
-                <div className={`max-w-4xl mx-auto rounded-xl overflow-hidden shadow-xl border ${
-                  isDarkMode ? 'border-slate-600' : 'border-slate-200'
+                <div className={`max-w-5xl mx-auto rounded-2xl overflow-hidden shadow-2xl border backdrop-blur-sm transform transition-all duration-500 hover:shadow-3xl ${
+                  isDarkMode ? 'border-slate-600/60 bg-gradient-to-br from-slate-800/90 to-slate-900/90' : 'border-slate-200 bg-white'
                 }`}>
-                  {/* Header Section */}
-                  <div className={`px-6 py-4 flex items-center ${
-                    isDarkMode ? 'bg-gradient-to-r from-green-900/40 to-sky-900/40' : 'bg-gradient-to-r from-green-50 to-sky-50'
+                  {/* Premium Header with Animation */}
+                  <div className={`px-8 py-6 flex items-center gap-5 relative overflow-hidden ${
+                    isDarkMode 
+                      ? 'bg-gradient-to-r from-emerald-900/40 via-sky-900/30 to-indigo-900/40 border-b border-slate-700/80' 
+                      : 'bg-gradient-to-r from-emerald-50 via-sky-50 to-indigo-50 border-b border-slate-200'
                   }`}>
-                    <div className={`w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center mr-4 ${
-                      isDarkMode ? 'bg-green-900/50 text-green-400' : 'bg-green-100 text-green-600'
-                    } shadow-md`}>
-                      <FaCheckCircle className="text-2xl" />
+                    {/* Animated Success Icon */}
+                    <div
+                      className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg transform transition-all duration-500 animate-pulse ${
+                        isDarkMode ? 'bg-gradient-to-br from-emerald-700 to-emerald-900 text-emerald-300 shadow-emerald-900/30' : 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-emerald-200'
+                      }`}
+                    >
+                      <FaCheckCircle className="text-3xl" />
                     </div>
-                    <div>
-                      <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                        Booking Confirmed!
+                    
+                    {/* Decorative Elements */}
+                    <div className="absolute top-0 right-0 w-64 h-64 -mr-32 -mt-32 rounded-full bg-gradient-to-br from-sky-500/10 to-indigo-500/5 blur-3xl"></div>
+                    <div className="absolute bottom-0 left-0 w-64 h-64 -ml-32 -mb-32 rounded-full bg-gradient-to-tr from-emerald-500/10 to-sky-500/5 blur-3xl"></div>
+                    
+                    {/* Header Text */}
+                    <div className="relative z-10">
+                      <h3 className={`text-3xl font-extrabold leading-tight tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                        <span className={isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}>Booking Confirmed</span>
                       </h3>
-                      <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                        Your consultation with <span className="font-semibold">{selectedLawyer.full_name}</span> is scheduled
+                      <p className={`mt-1 text-lg ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                        Your consultation with <span className={`font-semibold ${isDarkMode ? 'text-sky-400' : 'text-sky-600'}`}>{selectedLawyer.full_name}</span> is scheduled
                       </p>
                     </div>
                   </div>
                   
-                  {/* Main Content - Two Column Layout */}
+                  {/* Main Content - Two Column Layout with Premium Styling */}
                   <div className="flex flex-col md:flex-row">
-                    {/* Left Column - Date, Time and Meeting Link */}
-                    <div className={`w-full md:w-1/2 p-6 ${
-                      isDarkMode ? 'bg-slate-800' : 'bg-white'
-                    }`}>
-                      {/* Date and Time */}
-                      <div className={`mb-6 p-4 rounded-lg border ${
-                        isDarkMode ? 'bg-slate-700/50 border-slate-600' : 'bg-slate-50 border-slate-200'
+                    {/* Left Column - Appointment Details */}
+                    <div className={`w-full md:w-1/2 p-8 ${isDarkMode ? 'bg-slate-800/90' : 'bg-white'}`}>
+                      <h4 className={`text-xl font-bold mb-6 flex items-center ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                        <FaCalendarCheck className={`mr-3 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                        Appointment Details
+                      </h4>
+                      
+                      {/* Premium Appointment Card */}
+                      <div className={`rounded-xl overflow-hidden shadow-lg border ${
+                        isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-white'
                       }`}>
-                        <h4 className={`text-lg font-bold mb-4 flex items-center ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                          <FaCalendarCheck className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
-                          Appointment Schedule
-                        </h4>
+                        {/* Card Header */}
+                        <div className={`px-6 py-4 ${
+                          isDarkMode ? 'bg-gradient-to-r from-sky-900/50 to-indigo-900/50 border-b border-slate-700' : 'bg-gradient-to-r from-sky-50 to-indigo-50 border-b border-slate-200'
+                        }`}>
+                          <h5 className={`font-bold flex items-center ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                            <FaRegClock className="mr-2" /> Scheduled Time
+                          </h5>
+                        </div>
                         
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <div className="flex items-center mb-1">
-                              <FaCalendarAlt className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
-                              <span className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Date</span>
+                        {/* Date & Time Details with Premium Styling */}
+                        <div className="p-6 space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            {/* Date */}
+                            <div className={`p-4 rounded-xl ${isDarkMode ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
+                              <div className="flex items-center mb-2">
+                                <FaCalendarAlt className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                                <span className={`text-sm font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Date</span>
+                              </div>
+                              <p className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                                {bookingDate ? new Date(bookingDate).toLocaleDateString('en-US', { 
+                                  weekday: 'long', 
+                                  month: 'short', 
+                                  day: 'numeric' 
+                                }) : 'Date not selected'}
+                              </p>
                             </div>
-                            <p className={`font-medium ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                              {bookingDate ? new Date(bookingDate).toLocaleDateString('en-US', { 
-                                weekday: 'short', 
-                                month: 'short', 
-                                day: 'numeric' 
-                              }) : 'Date not selected'}
-                            </p>
+                            
+                            {/* Time */}
+                            <div className={`p-4 rounded-xl ${isDarkMode ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
+                              <div className="flex items-center mb-2">
+                                <FaRegClock className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                                <span className={`text-sm font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Time</span>
+                              </div>
+                              <p className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                                {bookingTime || 'Time not selected'}
+                              </p>
+                            </div>
                           </div>
                           
-                          <div>
-                            <div className="flex items-center mb-1">
-                              <FaRegClock className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
-                              <span className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Time</span>
+                          {/* Duration & Status */}
+                          <div className="grid grid-cols-2 gap-4">
+                            {/* Duration */}
+                            <div className={`p-4 rounded-xl ${isDarkMode ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
+                              <div className="flex items-center mb-2">
+                                <FaHourglassHalf className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                                <span className={`text-sm font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Duration</span>
+                              </div>
+                              <p className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                                60 minutes
+                              </p>
                             </div>
-                            <p className={`font-medium ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                              {bookingTime || 'Time not selected'}
-                            </p>
+                            
+                            {/* Status with Premium Styling */}
+                            <div className={`p-4 rounded-xl ${isDarkMode ? 'bg-emerald-900/30' : 'bg-emerald-50'}`}>
+                              <div className="flex items-center mb-2">
+                                <FaBolt className={`mr-2 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-500'}`} />
+                                <span className={`text-sm font-medium ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>Status</span>
+                              </div>
+                              <p className={`text-lg font-semibold flex items-center ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                                <FaCheckCircle className="mr-2" /> Confirmed
+                              </p>
+                            </div>
                           </div>
-                          
+                        </div>
+                      </div>
+                      
+                      {/* Email Confirmation Notice with Premium Styling */}
+                      <div className={`mt-6 p-4 rounded-xl border ${
+                        isDarkMode ? 'bg-slate-700/30 border-slate-700' : 'bg-slate-50 border-slate-200'
+                      }`}>
+                        <div className="flex items-start">
+                          <FaEnvelopeOpenText className={`mt-1 mr-3 text-lg ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
                           <div>
-                            <div className="flex items-center mb-1">
-                              <FaHourglassHalf className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
-                              <span className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Duration</span>
-                            </div>
-                            <p className={`font-medium ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                              60 minutes
-                            </p>
-                          </div>
-                          
-                          <div>
-                            <div className="flex items-center mb-1">
-                              <FaBolt className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
-                              <span className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Status</span>
-                            </div>
-                            <p className="font-medium text-amber-500 flex items-center">
-                              <FaCheckCircle className="mr-1" /> Confirmed
+                            <h5 className={`font-medium ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>Confirmation Email</h5>
+                            <p className={`text-sm mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                              A confirmation email with all details has been sent to <span className="font-medium">{bookingFormData.email}</span>
                             </p>
                           </div>
                         </div>
                       </div>
                       
-                      {/* Video Meeting Link */}
+                      {/* Premium Video Meeting Button */}
                       <a 
                         href="https://meet.google.com/cbx-twdp-qhm" 
                         target="_blank" 
@@ -1982,15 +1946,15 @@ const LegalCosultation = () => {
                           window.open("https://meet.google.com/cbx-twdp-qhm", "_blank");
                           showSuccess("Video meeting link opened. You can now join the consultation.");
                         }}
-                        className={`block p-4 rounded-lg text-center font-medium shadow-md mb-4 ${
+                        className={`mt-6 block p-4 rounded-xl text-center font-medium shadow-lg ${
                           isDarkMode 
-                            ? 'bg-gradient-to-r from-sky-800 to-sky-900 text-white hover:from-sky-700 hover:to-sky-800' 
-                            : 'bg-gradient-to-r from-sky-500 to-sky-600 text-white hover:from-sky-600 hover:to-sky-700'
-                        } transition-all duration-300 transform hover:scale-[1.02]`}
+                            ? 'bg-gradient-to-r from-sky-600 to-sky-800 text-white hover:from-sky-500 hover:to-sky-700 shadow-sky-900/30' 
+                            : 'bg-gradient-to-r from-sky-500 to-sky-600 text-white hover:from-sky-400 hover:to-sky-500 shadow-sky-500/20'
+                        } transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl`}
                       >
                         <div className="flex items-center justify-center">
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
-                            isDarkMode ? 'bg-sky-700 text-white' : 'bg-white/20 text-white'
+                            isDarkMode ? 'bg-sky-500/30 text-white' : 'bg-white/20 text-white'
                           }`}>
                             <FaVideo className="text-xl" />
                           </div>
@@ -1999,20 +1963,25 @@ const LegalCosultation = () => {
                       </a>
                     </div>
                     
-                    {/* Right Column - Lawyer Details */}
-                    <div className={`w-full md:w-1/2 p-6 ${
-                      isDarkMode ? 'bg-slate-800/80' : 'bg-slate-50'
+                    {/* Right Column - Lawyer Details with Premium Styling */}
+                    <div className={`w-full md:w-1/2 p-8 ${
+                      isDarkMode ? 'bg-gradient-to-br from-slate-800/90 to-slate-900/90' : 'bg-gradient-to-br from-slate-50 to-white'
                     }`}>
-                      <h4 className={`text-lg font-bold mb-4 flex items-center ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                        <FaUserTie className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                      <h4 className={`text-xl font-bold mb-6 flex items-center ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                        <FaUserTie className={`mr-3 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
                         Lawyer Information
                       </h4>
                       
-                      <div className="space-y-4">
-                        {/* Lawyer Profile */}
-                        <div className="flex items-center mb-4">
-                          <div className={`w-16 h-16 rounded-full flex items-center justify-center mr-3 ${
-                            isDarkMode ? 'bg-slate-700 text-sky-400' : 'bg-sky-100 text-sky-600'
+                      {/* Premium Lawyer Card */}
+                      <div className={`rounded-xl overflow-hidden shadow-lg border mb-6 ${
+                        isDarkMode ? 'border-slate-700 bg-slate-800/80' : 'border-slate-200 bg-white'
+                      }`}>
+                        {/* Lawyer Header with Photo */}
+                        <div className={`p-6 flex items-center ${
+                          isDarkMode ? 'border-b border-slate-700' : 'border-b border-slate-200'
+                        }`}>
+                          <div className={`w-16 h-16 rounded-full flex items-center justify-center mr-4 ${
+                            isDarkMode ? 'bg-slate-700 text-sky-400 shadow-lg shadow-slate-900/50' : 'bg-sky-100 text-sky-600 shadow-md shadow-sky-200/50'
                           }`}>
                             {selectedLawyer.profile_picture_url ? (
                               <img 
@@ -2025,134 +1994,123 @@ const LegalCosultation = () => {
                             )}
                           </div>
                           <div>
-                            <h5 className={`font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                            <h5 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
                               {selectedLawyer.full_name}
                             </h5>
-                            <p className={`text-sm ${isDarkMode ? 'text-sky-400' : 'text-sky-600'}`}>
+                            <p className={`${isDarkMode ? 'text-sky-400' : 'text-sky-600'}`}>
                               {selectedLawyer.specialization} Lawyer
                             </p>
                           </div>
                         </div>
                         
-                        {/* Lawyer Details */}
-                        <div className={`p-3 rounded-lg border ${
-                          isDarkMode ? 'bg-slate-700/50 border-slate-600' : 'bg-white border-slate-200'
-                        }`}>
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center">
-                                <FaBriefcase className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
-                                <span className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Experience:</span>
-                              </div>
-                              <span className={`font-medium ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                                {selectedLawyer.years_of_experience} years
-                              </span>
+                        {/* Lawyer Details with Premium Styling */}
+                        <div className="p-6 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <FaBriefcase className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                              <span className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Experience</span>
                             </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center">
-                                <FaGraduationCap className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
-                                <span className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Bar Association:</span>
-                              </div>
-                              <span className={`font-medium text-sm ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                                {selectedLawyer.bar_association}
-                              </span>
-                            </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center">
-                                <FaMoneyBillWave className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
-                                <span className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Consultation Fee:</span>
-                              </div>
-                              <span className={`font-medium ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                                ₹{selectedLawyer.consultation_fee}
-                              </span>
-                            </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center">
-                                <FaPhoneAlt className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
-                                <span className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Contact:</span>
-                              </div>
-                              <span className={`font-medium ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
-                                {selectedLawyer.phone_number}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Email Confirmation */}
-                        <div className={`p-3 rounded-lg border ${
-                          isDarkMode ? 'bg-slate-700/50 border-slate-600' : 'bg-white border-slate-200'
-                        }`}>
-                          <div className="flex items-center mb-2">
-                            <FaEnvelopeOpenText className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
-                            <span className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                              Confirmation Email
+                            <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                              {selectedLawyer.years_of_experience} years
                             </span>
                           </div>
-                          <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                            A confirmation email with all details has been sent to <span className="font-medium">{bookingFormData.email}</span>
-                          </p>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <FaGraduationCap className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                              <span className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Bar Association</span>
+                            </div>
+                            <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                              {selectedLawyer.bar_association}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <FaMoneyBillWave className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                              <span className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Consultation Fee</span>
+                            </div>
+                            <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                              ₹{selectedLawyer.consultation_fee}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <FaPhoneAlt className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                              <span className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Contact</span>
+                            </div>
+                            <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                              {selectedLawyer.phone_number}
+                            </span>
+                          </div>
                         </div>
                       </div>
+                      
+                      {/* Premium Action Buttons */}
+                      <div className="space-y-4">
+                        {/* Premium Calendar Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // Create calendar event
+                            const startDate = new Date(bookingDate);
+                            const [hours, minutes] = bookingTime.replace(/\s+/g, ' ').trim().split(' ')[0].split(':');
+                            startDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+                            
+                            const endDate = new Date(startDate);
+                            endDate.setHours(endDate.getHours() + 1);
+                            
+                            const eventTitle = `Legal Consultation with ${selectedLawyer.full_name}`;
+                            const eventDetails = `Video meeting link: https://meet.google.com/cbx-twdp-qhm`;
+                            
+                            // Format dates for Google Calendar
+                            const formatDate = (date) => {
+                              return date.toISOString().replace(/-|:|\.\d+/g, '');
+                            };
+                            
+                            const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventTitle)}&details=${encodeURIComponent(eventDetails)}&dates=${formatDate(startDate)}/${formatDate(endDate)}`;
+                            
+                            window.open(googleCalendarUrl, '_blank');
+                            showSuccess("Event added to your calendar");
+                          }}
+                          className={`block w-full p-4 rounded-xl text-center font-medium shadow-lg ${
+                            isDarkMode 
+                              ? 'bg-gradient-to-r from-emerald-700 to-emerald-900 text-white hover:from-emerald-600 hover:to-emerald-800 shadow-emerald-900/30' 
+                              : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-400 hover:to-emerald-500 shadow-emerald-500/20'
+                          } transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl`}
+                        >
+                          <div className="flex items-center justify-center">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
+                              isDarkMode ? 'bg-emerald-500/30 text-white' : 'bg-white/20 text-white'
+                            }`}>
+                              <FaCalendarAlt className="text-xl" />
+                            </div>
+                            <span className="text-lg">Add to Calendar</span>
+                          </div>
+                        </button>
+                        
+                        {/* Back to Lawyers Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setView('lawyers');
+                            setBookingComplete(false);
+                            setBookingStep(1);
+                          }}
+                          className={`block w-full p-4 rounded-xl text-center font-medium ${
+                            isDarkMode 
+                              ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 border border-slate-600' 
+                              : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-md'
+                          } transition-all duration-300`}
+                        >
+                          <div className="flex items-center justify-center">
+                            <FaArrowLeft className="mr-2" />
+                            <span>Back to Lawyers</span>
+                          </div>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  
-                  {/* Footer with Action Buttons */}
-                  <div className={`px-6 py-4 flex flex-wrap justify-center gap-4 ${
-                    isDarkMode ? 'bg-slate-700' : 'bg-slate-100'
-                  }`}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        // Create calendar event
-                        const startDate = new Date(bookingDate);
-                        const [hours, minutes] = bookingTime.replace(/\s+/g, ' ').trim().split(' ')[0].split(':');
-                        startDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
-                        
-                        const endDate = new Date(startDate);
-                        endDate.setHours(endDate.getHours() + 1);
-                        
-                        const eventTitle = `Legal Consultation with ${selectedLawyer.full_name}`;
-                        const eventDetails = `Video meeting link: https://meet.google.com/cbx-twdp-qhm`;
-                        
-                        // Format dates for Google Calendar
-                        const formatDate = (date) => {
-                          return date.toISOString().replace(/-|:|\.\d+/g, '');
-                        };
-                        
-                        const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventTitle)}&details=${encodeURIComponent(eventDetails)}&dates=${formatDate(startDate)}/${formatDate(endDate)}`;
-                        
-                        window.open(googleCalendarUrl, '_blank');
-                        showSuccess("Event added to your calendar");
-                      }}
-                      className={`px-5 py-2 rounded-lg font-medium shadow-md flex items-center ${
-                        isDarkMode 
-                          ? 'bg-gradient-to-r from-emerald-800 to-emerald-900 text-white hover:from-emerald-700 hover:to-emerald-800' 
-                          : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700'
-                      } transition-all duration-300 transform hover:scale-[1.02]`}
-                    >
-                      <FaCalendarAlt className="mr-2" />
-                      Add to Calendar
-                    </button>
-                    
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setView('lawyers');
-                        setBookingComplete(false);
-                        setBookingStep(1);
-                      }}
-                      className={`px-5 py-2 rounded-lg font-medium shadow-md flex items-center ${
-                        isDarkMode 
-                          ? 'bg-slate-600 text-slate-300 hover:bg-slate-500' 
-                          : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
-                      } transition-all duration-300`}
-                    >
-                      <FaArrowLeft className="mr-2" />
-                      Back to Lawyers
-                    </button>
                   </div>
                 </div>
               </div>
