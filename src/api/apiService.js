@@ -2,15 +2,62 @@
 
 import axios from 'axios';
 
-// Create axios instance with default configuration
+/**
+ * Environment Configuration
+ * 
+ * This setup allows switching between local and production environments:
+ * 
+ * 1. Production API: Uses REACT_APP_PROD_API_URL from .env.production
+ *    - Default: https://chambersapi.logicera.in/api
+ * 
+ * 2. Local API: Uses REACT_APP_LOCAL_API_URL from .env.local
+ *    - Default: http://127.0.0.1:8000/api
+ * 
+ * 3. Environment Selection: Uses REACT_APP_USE_PRODUCTION
+ *    - When set to "true" - uses production API
+ *    - When set to "false" or not set - uses local API
+ * 
+ * To switch environments:
+ * - For local development: Set REACT_APP_USE_PRODUCTION=false in .env.local
+ * - For production build: Set REACT_APP_USE_PRODUCTION=true in .env.production
+ */
+
+// Determine which environment to use
+const useProduction = process.env.REACT_APP_USE_PRODUCTION === 'true';
+
+// Get the appropriate base URL based on environment
+const getBaseUrl = () => {
+  if (useProduction) {
+    return process.env.REACT_APP_PROD_API_URL || 'https://chambersapi.logicera.in/api';
+  } else {
+    return process.env.REACT_APP_LOCAL_API_URL || 'http://127.0.0.1:8000/api';
+  }
+};
+
+// Get the base domain for cookies
+const getBaseDomain = () => {
+  if (useProduction) {
+    return 'chambersapi.logicera.in';
+  } else {
+    return 'localhost';
+  }
+};
+
+// Log which environment is being used (helpful for debugging)
+console.log(`API Service using ${useProduction ? 'PRODUCTION' : 'LOCAL'} environment: ${getBaseUrl()}`);
+
+// Create axios instance with environment-aware configuration
 const apiClient = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000', // Changed from 127.0.0.1
-  timeout: 10000,
-  withCredentials: true,
+  baseURL: getBaseUrl(),
+  timeout: 15000, // Increased timeout for slower connections
+  withCredentials: true, // Important for CSRF cookie handling
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
     'X-Requested-With': 'XMLHttpRequest',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   },
 });
 
@@ -21,9 +68,19 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Add a timestamp to prevent caching issues
+    if (config.method === 'get') {
+      config.params = {
+        ...config.params,
+        _t: Date.now()
+      };
+    }
+    
     return config;
   },
   (error) => {
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -37,12 +94,27 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
       // Optionally redirect to login
-    //   window.location.href = '/auth';
+      // window.location.href = '/auth';
+      console.warn('Authentication token expired or invalid. Please log in again.');
+    }
+    
+    // Handle 419 CSRF token mismatch
+    if (error.response?.status === 419) {
+      console.warn('CSRF token mismatch. Refreshing CSRF token...');
+      // Attempt to get a new CSRF token
+      return axios.get(`${getBaseUrl().replace('/api', '')}/sanctum/csrf-cookie`, { 
+        withCredentials: true 
+      })
+      .then(() => {
+        // Retry the original request
+        return apiClient(error.config);
+      });
     }
 
-    // Handle network errors
+    // Handle network errors with more detailed message
     if (!error.response) {
-      error.message = 'Network error. Please check your connection.';
+      error.message = 'Network error. Please check your internet connection and try again.';
+      console.error('Network error details:', error);
     }
 
     return Promise.reject(error);
@@ -50,7 +122,7 @@ apiClient.interceptors.response.use(
 );
 
 /**
- * Lawyer API Service/
+ * Lawyer API Service
  * Handles all lawyer-related API calls
  */
 export const lawyerAPI = {
@@ -84,7 +156,7 @@ export const lawyerAPI = {
       };
       
       console.log('Booking appointment with data:', appointmentPayload);
-      const response = await apiClient.post('/appointments/', appointmentPayload);
+      const response = await apiClient.post('/appointments', appointmentPayload);
       console.log('Booking response:', response.data);
       return response.data;
     } catch (error) {
@@ -100,7 +172,8 @@ export const lawyerAPI = {
    */
   getLawyer: async (id) => {
     try {
-      const response = await apiClient.get(`/api/lawyers/${id}`);
+      // Remove duplicate /api prefix
+      const response = await apiClient.get(`/lawyers/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching lawyer with ID ${id}:`, error);
@@ -116,7 +189,8 @@ export const lawyerAPI = {
    */
   bookConsultation: async (lawyerId, bookingData) => {
     try {
-      const response = await apiClient.post(`/api/lawyers/${lawyerId}/book`, bookingData);
+      // Remove duplicate /api prefix
+      const response = await apiClient.post(`/lawyers/${lawyerId}/book`, bookingData);
       return response.data;
     } catch (error) {
       console.error('Error booking consultation:', error);
@@ -132,7 +206,8 @@ export const lawyerAPI = {
   createAppointment: async (appointmentData) => {
     try {
       console.log('Sending appointment data:', appointmentData);
-      const response = await apiClient.post('/appointments/', appointmentData);
+      // Remove trailing slash
+      const response = await apiClient.post('/appointments', appointmentData);
       console.log('Appointment creation response:', response.data);
       return response.data;
     } catch (error) {
@@ -150,7 +225,8 @@ export const lawyerAPI = {
    */
   getAvailableTimeSlots: async (lawyerId, date) => {
     try {
-      const response = await apiClient.get(`/api/lawyers/${lawyerId}/availability`, {
+      // Remove duplicate /api prefix
+      const response = await apiClient.get(`/lawyers/${lawyerId}/availability`, {
         params: { date }
       });
       return response.data;
@@ -164,22 +240,248 @@ export const lawyerAPI = {
 // API endpoints
 export const authAPI = {
   // Get CSRF cookie for Laravel Sanctum
-  getCsrfCookie: () => apiClient.get('/sanctum/csrf-cookie'),
+  getCsrfCookie: async () => {
+    try {
+      // Use the base URL without /api for CSRF cookie
+      const baseUrl = getBaseUrl().replace('/api', '');
+      console.log('Getting CSRF cookie from:', `${baseUrl}/sanctum/csrf-cookie`);
+      
+      // Create a custom axios instance for this request
+      const csrfAxios = axios.create({
+        withCredentials: true,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      
+      // Add request/response logging
+      csrfAxios.interceptors.request.use(
+        config => {
+          console.log('CSRF request config:', {
+            url: config.url,
+            method: config.method,
+            headers: config.headers,
+            withCredentials: config.withCredentials
+          });
+          return config;
+        },
+        error => {
+          console.error('CSRF request error:', error);
+          return Promise.reject(error);
+        }
+      );
+      
+      csrfAxios.interceptors.response.use(
+        response => {
+          console.log('CSRF response headers:', response.headers);
+          console.log('CSRF response cookies:', document.cookie);
+          return response;
+        },
+        error => {
+          console.error('CSRF response error:', error.response || error);
+          return Promise.reject(error);
+        }
+      );
+      
+      // Make the request
+      const response = await csrfAxios.get(`${baseUrl}/sanctum/csrf-cookie`);
+      console.log('CSRF cookie response:', response);
+      
+      return response;
+    } catch (error) {
+      console.error('Error getting CSRF cookie:', error);
+      throw error;
+    }
+  },
 
   // Register user
-  register: (userData) => apiClient.post('/register', userData),
+  register: async (userData) => {
+    try {
+      console.log('Registering user with data:', userData);
+      
+      // First get CSRF cookie
+      await authAPI.getCsrfCookie();
+      
+      // Create a custom axios instance for registration
+      const registerAxios = axios.create({
+        baseURL: getBaseUrl().replace('/api', ''), // Use base URL without /api
+        withCredentials: true,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      
+      // Add request/response logging
+      registerAxios.interceptors.request.use(
+        config => {
+          console.log('Register request config:', {
+            url: config.url,
+            method: config.method,
+            headers: config.headers,
+            withCredentials: config.withCredentials
+          });
+          return config;
+        },
+        error => {
+          console.error('Register request error:', error);
+          return Promise.reject(error);
+        }
+      );
+      
+      // Then register
+      const response = await registerAxios.post('/register', userData);
+      console.log('Registration API response:', response);
+      
+      // Store token if available
+      if (response.data && response.data.access_token) {
+        localStorage.setItem('auth_token', response.data.access_token);
+        if (response.data.user) {
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+        }
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Registration API error:', error.response || error);
+      throw error;
+    }
+  },
 
   // Login user
-  login: (credentials) => apiClient.post('/login', credentials),
+  login: async (credentials) => {
+    try {
+      console.log('Logging in with credentials:', { email: credentials.email, password: '********' });
+      
+      // First get CSRF cookie
+      await authAPI.getCsrfCookie();
+      
+      // Create a custom axios instance for login
+      const loginAxios = axios.create({
+        baseURL: getBaseUrl().replace('/api', ''), // Use base URL without /api
+        withCredentials: true,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      
+      // Add request/response logging
+      loginAxios.interceptors.request.use(
+        config => {
+          console.log('Login request config:', {
+            url: config.url,
+            method: config.method,
+            headers: config.headers,
+            withCredentials: config.withCredentials
+          });
+          return config;
+        },
+        error => {
+          console.error('Login request error:', error);
+          return Promise.reject(error);
+        }
+      );
+      
+      // Then login
+      const response = await loginAxios.post('/login', credentials);
+      console.log('Login API response:', response);
+      
+      // Store token if available
+      if (response.data && response.data.access_token) {
+        localStorage.setItem('auth_token', response.data.access_token);
+        if (response.data.user) {
+          localStorage.setItem('user', JSON.stringify(response.data.user));
+        }
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Login API error:', error.response || error);
+      throw error;
+    }
+  },
 
   // Logout user
-  logout: () => apiClient.post('/api/logout'),
+  logout: async () => {
+    try {
+      // First get CSRF cookie
+      await authAPI.getCsrfCookie();
+      
+      // Create a custom axios instance for logout
+      const logoutAxios = axios.create({
+        baseURL: getBaseUrl().replace('/api', ''), // Use base URL without /api
+        withCredentials: true,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      
+      // Add auth token to headers if available
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        logoutAxios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      }
+      
+      // Use the correct endpoint
+      const response = await logoutAxios.post('/logout');
+      console.log('Logout API response:', response);
+      
+      // Clear local storage
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('user_profile');
+      localStorage.removeItem('user_avatar');
+      localStorage.removeItem('user_avatar_offline');
+      
+      return response;
+    } catch (error) {
+      console.error('Logout API error:', error.response || error);
+      
+      // Even if the API call fails, clear local storage
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('user_profile');
+      localStorage.removeItem('user_avatar');
+      localStorage.removeItem('user_avatar_offline');
+      
+      throw error;
+    }
+  },
 
   // Get authenticated user
-  getUser: () => apiClient.get('/api/user'),
+  getUser: async () => {
+    try {
+      const response = await apiClient.get('/user/profile');
+      return response;
+    } catch (error) {
+      console.error('Get user API error:', error.response || error);
+      throw error;
+    }
+  },
 
   // Refresh token (if your API supports it)
-  refreshToken: () => apiClient.post('/api/refresh'),
+  refreshToken: async () => {
+    try {
+      const response = await apiClient.post('/refresh');
+      
+      // Update token if available
+      if (response.data && response.data.access_token) {
+        localStorage.setItem('auth_token', response.data.access_token);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Refresh token API error:', error.response || error);
+      throw error;
+    }
+  },
 };
 
 // Utility functions for token management
@@ -218,7 +520,8 @@ export const apiServices = {
   // Task Automation API
   getTasks: async (filters = {}) => {
     try {
-      const response = await apiClient.get('/api/tasks', { params: filters });
+      // Remove duplicate /api prefix
+      const response = await apiClient.get('/tasks', { params: filters });
       console.log('Tasks API response:', response.data);
       return response.data;
     } catch (error) {
@@ -229,7 +532,8 @@ export const apiServices = {
   
   getTask: async (taskId) => {
     try {
-      const response = await apiClient.get(`/api/tasks/${taskId}`);
+      // Remove duplicate /api prefix
+      const response = await apiClient.get(`/tasks/${taskId}`);
       console.log('Task details response:', response.data);
       return response.data;
     } catch (error) {
@@ -240,7 +544,8 @@ export const apiServices = {
   
   createTask: async (taskData) => {
     try {
-      const response = await apiClient.post('/api/tasks', taskData);
+      // Remove duplicate /api prefix
+      const response = await apiClient.post('/tasks', taskData);
       console.log('Create task response:', response.data);
       return response.data;
     } catch (error) {
@@ -251,7 +556,8 @@ export const apiServices = {
   
   updateTask: async (taskId, taskData) => {
     try {
-      const response = await apiClient.put(`/api/tasks/${taskId}`, taskData);
+      // Remove duplicate /api prefix
+      const response = await apiClient.put(`/tasks/${taskId}`, taskData);
       console.log('Update task response:', response.data);
       return response.data;
     } catch (error) {
@@ -262,7 +568,8 @@ export const apiServices = {
   
   updateTaskStatus: async (taskId, status) => {
     try {
-      const response = await apiClient.patch(`/api/tasks/${taskId}/status`, { status });
+      // Remove duplicate /api prefix
+      const response = await apiClient.patch(`/tasks/${taskId}/status`, { status });
       console.log('Update task status response:', response.data);
       return response.data;
     } catch (error) {
@@ -273,7 +580,8 @@ export const apiServices = {
   
   deleteTask: async (taskId) => {
     try {
-      const response = await apiClient.delete(`/api/tasks/${taskId}`);
+      // Remove duplicate /api prefix
+      const response = await apiClient.delete(`/tasks/${taskId}`);
       console.log('Delete task response:', response.data);
       return response.data;
     } catch (error) {
@@ -284,7 +592,8 @@ export const apiServices = {
   
   getTaskCategories: async () => {
     try {
-      const response = await apiClient.get('/api/task-categories');
+      // Remove duplicate /api prefix
+      const response = await apiClient.get('/task-categories');
       console.log('Task categories response:', response.data);
       return response.data;
     } catch (error) {
@@ -295,7 +604,8 @@ export const apiServices = {
   
   getTaskStatistics: async () => {
     try {
-      const response = await apiClient.get('/api/tasks/statistics');
+      // Remove duplicate /api prefix
+      const response = await apiClient.get('/tasks/statistics');
       console.log('Task statistics response:', response.data);
       return response.data;
     } catch (error) {
@@ -307,8 +617,8 @@ export const apiServices = {
   // Notifications API
   getUserNotifications: async (userId) => {
     try {
-      // Using the exact endpoint format you specified
-      const response = await apiClient.get(`http://127.0.0.1:8000/api/notifications/user/${userId}`);
+      // Using relative path instead of hardcoded URL to respect environment settings
+      const response = await apiClient.get(`/notifications/user/${userId}`);
       console.log('Notifications API response:', response.data);
       return response.data;
     } catch (error) {
@@ -350,10 +660,11 @@ export const apiServices = {
     }
   },
 
-  // Authentication APIs
+  // Authentication APIs - These are now handled by authAPI, keeping for backward compatibility
   register: async (userData) => {
+    console.warn('Using deprecated apiServices.register. Please use authAPI.register instead.');
     try {
-      const response = await apiClient.post('/register', userData);
+      const response = await authAPI.register(userData);
       return response.data;
     } catch (error) {
       throw error;
@@ -361,14 +672,12 @@ export const apiServices = {
   },
 
   login: async (credentials) => {
+    console.warn('Using deprecated apiServices.login. Please use authAPI.login instead.');
     try {
-      const response = await apiClient.post('/login', credentials);
+      // Use the improved authAPI.login method
+      const response = await authAPI.login(credentials);
       
-      if (response.data.token) {
-        localStorage.setItem('auth_token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-      }
-      
+      // Return the data part of the response
       return response.data;
     } catch (error) {
       throw error;
@@ -376,12 +685,10 @@ export const apiServices = {
   },
 
   logout: async () => {
+    console.warn('Using deprecated apiServices.logout. Please use authAPI.logout instead.');
     try {
-      const response = await apiClient.post('/logout');
-      
-      // Clear local storage
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user');
+      // Use the improved authAPI.logout method
+      const response = await authAPI.logout();
       
       return response.data;
     } catch (error) {
@@ -391,6 +698,7 @@ export const apiServices = {
 
   // Get authenticated user
   getUser: async () => {
+    console.warn('Using deprecated apiServices.getUser. Please use authAPI.getUser instead.');
     try {
       const response = await apiClient.get('/user/profile');
       return response.data;
@@ -401,6 +709,7 @@ export const apiServices = {
 
   // Get CSRF cookie for Laravel Sanctum
   getCsrfCookie: async () => {
+    console.warn('Using deprecated apiServices.getCsrfCookie. Please use authAPI.getCsrfCookie instead.');
     try {
       const response = await apiClient.get('/sanctum/csrf-cookie');
       return response.data;
@@ -865,7 +1174,8 @@ export const apiServices = {
   getLawyers: async (params = {}) => {
     try {
       console.log('Fetching lawyers with params:', params);
-      const response = await apiClient.get('/api/lawyers/', { params });
+      // Remove duplicate /api prefix and trailing slash
+      const response = await apiClient.get('/lawyers', { params });
       console.log('Lawyers API response:', response.data);
       return response.data;
     } catch (error) {
@@ -877,7 +1187,8 @@ export const apiServices = {
   getLawyerById: async (lawyerId) => {
     try {
       console.log(`Fetching lawyer with ID: ${lawyerId}`);
-      const response = await apiClient.get(`/api/lawyers/${lawyerId}`);
+      // Remove duplicate /api prefix
+      const response = await apiClient.get(`/lawyers/${lawyerId}`);
       console.log('Lawyer details response:', response.data);
       return response.data;
     } catch (error) {
@@ -889,7 +1200,8 @@ export const apiServices = {
   getLawyerAppointments: async (lawyerId) => {
     try {
       console.log(`Fetching appointments for lawyer ID: ${lawyerId}`);
-      const response = await apiClient.get(`/api/lawyers/${lawyerId}/appointments`);
+      // Remove duplicate /api prefix
+      const response = await apiClient.get(`/lawyers/${lawyerId}/appointments`);
       console.log('Lawyer appointments response:', response.data);
       return response.data;
     } catch (error) {
@@ -901,7 +1213,8 @@ export const apiServices = {
   getLawyerReviews: async (lawyerId) => {
     try {
       console.log(`Fetching reviews for lawyer ID: ${lawyerId}`);
-      const response = await apiClient.get(`/api/lawyers/${lawyerId}/reviews`);
+      // Remove duplicate /api prefix
+      const response = await apiClient.get(`/lawyers/${lawyerId}/reviews`);
       console.log('Lawyer reviews response:', response.data);
       return response.data;
     } catch (error) {
@@ -913,7 +1226,8 @@ export const apiServices = {
   submitLawyerReview: async (lawyerId, reviewData) => {
     try {
       console.log(`Submitting review for lawyer ID: ${lawyerId}`, reviewData);
-      const response = await apiClient.post(`/api/lawyers/${lawyerId}/reviews`, reviewData);
+      // Remove duplicate /api prefix
+      const response = await apiClient.post(`/lawyers/${lawyerId}/reviews`, reviewData);
       console.log('Review submission response:', response.data);
       return response.data;
     } catch (error) {
@@ -930,7 +1244,8 @@ export const lawyerAPI2 = {
   // Get all lawyers with optional filtering
   getLawyers: async (params = {}) => {
     try {
-      const response = await apiClient.get('/api/lawyers', { params });
+      // Remove duplicate /api prefix
+      const response = await apiClient.get('/lawyers', { params });
       return response.data;
     } catch (error) {
       console.error('Error fetching lawyers:', error);
@@ -941,7 +1256,8 @@ export const lawyerAPI2 = {
   // Get a specific lawyer by ID
   getLawyerById: async (id) => {
     try {
-      const response = await apiClient.get(`/api/lawyers/${id}`);
+      // Remove duplicate /api prefix
+      const response = await apiClient.get(`/lawyers/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching lawyer with ID ${id}:`, error);
@@ -952,7 +1268,8 @@ export const lawyerAPI2 = {
   // Book an appointment with a lawyer
   bookAppointment: async (lawyerId, appointmentData) => {
     try {
-      const response = await apiClient.post(`/api/lawyers/${lawyerId}/appointments`, appointmentData);
+      // Remove duplicate /api prefix
+      const response = await apiClient.post(`/lawyers/${lawyerId}/appointments`, appointmentData);
       return response.data;
     } catch (error) {
       console.error('Error booking appointment:', error);
@@ -963,7 +1280,8 @@ export const lawyerAPI2 = {
   // Get lawyer reviews
   getLawyerReviews: async (lawyerId) => {
     try {
-      const response = await apiClient.get(`/api/lawyers/${lawyerId}/reviews`);
+      // Remove duplicate /api prefix
+      const response = await apiClient.get(`/lawyers/${lawyerId}/reviews`);
       return response.data;
     } catch (error) {
       console.error('Error fetching lawyer reviews:', error);
@@ -974,7 +1292,8 @@ export const lawyerAPI2 = {
   // Submit a review for a lawyer
   submitReview: async (lawyerId, reviewData) => {
     try {
-      const response = await apiClient.post(`/api/lawyers/${lawyerId}/reviews`, reviewData);
+      // Remove duplicate /api prefix
+      const response = await apiClient.post(`/lawyers/${lawyerId}/reviews`, reviewData);
       return response.data;
     } catch (error) {
       console.error('Error submitting review:', error);

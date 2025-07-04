@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { setTheme } from './redux/themeSlice';
 import { initializeTheme } from './utils/theme';
@@ -37,6 +37,22 @@ import LegalAIPortfolio from './components/LegalAIPortfolio';
 import { authAPI, tokenManager } from './api/apiService';
 import PersonalRoom from './components/PersonalRoom';
 import LawyerAdmin from './components/Lawyer/LawyerAdmin';
+
+// Layout wrapper to conditionally render Navbar and Footer
+const AppLayout = ({ children }) => {
+  const location = useLocation();
+  const isLawyerAdmin = location.pathname.startsWith('/lawyer-admin');
+  
+  return (
+    <>
+      {!isLawyerAdmin && <Navbar />}
+      <ScrollToTop />
+      {children}
+      {!isLawyerAdmin && <Footer />}
+      {!isLawyerAdmin && <FloatingThemeToggle />}
+    </>
+  );
+};
 
 const App = () => {
   const { mode } = useSelector((state) => state.theme);
@@ -91,56 +107,58 @@ const App = () => {
             ? 'dark bg-gray-900 text-gray-100' 
             : 'bg-white text-gray-900'
         }`}>
-          <Navbar />
-          <ScrollToTop />
+          <Routes>
+            {/* LawyerAdmin with its own layout (no main Navbar/Footer) */}
+            <Route path="/lawyer-admin/*" element={<LawyerAdmin />} />
+            
+            {/* All other routes with the main layout */}
+            <Route path="/*" element={
+              <AppLayout>
+                <Routes>
+                  {/* Home Route */}
+                  <Route path="/" element={
+                    <>
+                      <Hero />
+                      <Services />
+                      <PracticeAreas />
+                      <About />
+                      <Testimonials />
+                      <Founders />
+                      <Contact />
+                    </>
+                  } />
 
-        <Routes>
-          {/* Home Route */}
-          <Route path="/" element={
-            <>
-              <Hero />
-              <Services />
-              <PracticeAreas />
-              <About />
-              <Testimonials />
-              <Founders />
-              <Contact />
-            </>
-          } />
+                  {/* Public Routes */}
+                  <Route path="/about" element={<About />} />
+                  <Route path="/services" element={<Services />} />
+                  <Route path="/testimonials" element={<Testimonials />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/legal-consoltation" element={<LegalCosultation />} />
+                  <Route path="/task-automation" element={<TaskAutomation />} />
+                  <Route path="/our-story" element={<OurStory />} />
+                  <Route path="/our-team" element={<OurTeam />} />
+                  <Route path="/information-hub" element={<InformationHub />} />
+                  <Route path="/legal-documents-review" element={<LegalDocumentsReview />} />
+                  <Route path="/voice-modal" element={<VoiceModal />} />
+                  <Route path="/virtual-bakil" element={<VirtualBakil />} />
+                  <Route path="/portfolio" element={<LegalAIPortfolio />} />
+                  <Route path="/personal-room" element={<PersonalRoom />} />
 
-          {/* Public Routes */}
-          <Route path="/about" element={<About />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/testimonials" element={<Testimonials />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/legal-consoltation" element={<LegalCosultation />} />
-          <Route path="/task-automation" element={<TaskAutomation />} />
-          <Route path="/our-story" element={<OurStory />} />
-          <Route path="/our-team" element={<OurTeam />} />
-          <Route path="/information-hub" element={<InformationHub />} />
-          <Route path="/legal-documents-review" element={<LegalDocumentsReview />} />
-          <Route path="/voice-modal" element={<VoiceModal />} />
-          <Route path="/virtual-bakil" element={<VirtualBakil />} />
-          <Route path="/portfolio" element={<LegalAIPortfolio />} />
-          <Route path="/personal-room" element={<PersonalRoom />} />
-          <Route path="/lawyer-admin" element={<LawyerAdmin />} />
-          
+                  {/* Authentication Routes */}
+                  <Route path="/auth" element={isAuthenticated ? <Navigate to="/" replace /> : <AuthComponent />} />
+                  <Route path="/signup" element={isAuthenticated ? <Navigate to="/" replace /> : <SignupComponent />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
 
-          {/* Authentication Routes */}
-          <Route path="/auth" element={isAuthenticated ? <Navigate to="/" replace /> : <AuthComponent />} />
-          <Route path="/signup" element={isAuthenticated ? <Navigate to="/" replace /> : <SignupComponent />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
+                  {/* Protected Routes */}
+                  <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/auth" replace />} />
 
-          {/* Protected Routes */}
-          <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/auth" replace />} />
-
-          {/* Catch-all Route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-
-        <Footer />
-        <FloatingThemeToggle />
-      </div>
+                  {/* Catch-all Route */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </AppLayout>
+            } />
+          </Routes>
+        </div>
       </ToastProvider>
     </Router>
   );

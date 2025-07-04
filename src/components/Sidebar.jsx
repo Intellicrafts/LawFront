@@ -173,19 +173,32 @@ export function Sidebar({
       {/* Header with logo/title */}
       <div className="pt-4 pb-2 px-5 border-b border-gray-200/30 dark:border-gray-700/30 flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <div className={`w-7 h-7 rounded-full flex items-center justify-center 
+          {/* <div className={`w-7 h-7 rounded-full flex items-center justify-center 
                         ${isDark ? 'bg-gradient-to-br from-sky-700 to-sky-900' : 'bg-gradient-to-br from-sky-500 to-sky-700'} 
                         text-white shadow-sm`}>
             <MessageSquare size={14} />
-          </div>
+          </div> */}
           <h2 className={`text-base font-medium ${isDark ? 'text-white' : 'text-gray-800'}`}>
-            Conversations
+            <button
+          onClick={handleReset}
+          className={`py-2 px-4 rounded-full text-white font-medium 
+                    flex items-center justify-center gap-2 
+                    bg-gradient-to-r from-sky-400 to-indigo-500 hover:from-sky-500 hover:to-indigo-600
+                    shadow-sm hover:shadow-md 
+                    transition-all duration-300 transform hover:scale-[1.02]`}
+        >
+          <div className="relative">
+            <Sparkles size={14} className="text-white/80 absolute -top-1 -right-1" />
+            <MessageCircle size={15} className="text-white" />
+          </div>
+          <span className="text-sm">New Chat</span>
+        </button>
           </h2>
         </div>
       </div>
 
       {/* New Conversation Button with colorful styling */}
-      <div className="px-4 pt-3 pb-2 flex justify-center">
+      {/* <div className="px-4 pt-3 pb-2 flex justify-center">
         <button
           onClick={handleReset}
           className={`py-2 px-4 rounded-full text-white font-medium 
@@ -200,7 +213,7 @@ export function Sidebar({
           </div>
           <span className="text-sm">New Chat</span>
         </button>
-      </div>
+      </div> */}
 
       {/* Enhanced Search with clear button */}
       <div className="px-4 py-2">

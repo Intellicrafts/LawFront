@@ -238,21 +238,21 @@ const Navbar = () => {
       path: '/services',
       icon: <Briefcase size={18} className="mr-2" />,
       dropdown: [
-        { name: 'Virtual Assistant', path: '/', icon: <HelpCircle size={16} className="mr-2" /> },
-        { name: 'Virtual Bakil', path: '/virtual-bakil', icon: <Users size={16} className="mr-2" /> },
+        // { name: 'Virtual Assistant', path: '/', icon: <HelpCircle size={16} className="mr-2" /> },
+        { name: 'Private Chat', path: '/virtual-bakil', icon: <Users size={16} className="mr-2" /> },
         { name: 'Legal Consultations', path: '/legal-consoltation', icon: <Scale size={16} className="mr-2" /> },
-        { name: 'Find Lawyers', path: '/lawyers', icon: <Users size={16} className="mr-2" /> },
+        // { name: 'Find Lawyers', path: '/lawyers', icon: <Users size={16} className="mr-2" /> },
         { name: 'Legal Task Automation', path: '/task-automation', icon: <Clock size={16} className="mr-2" /> },
         { name: 'Document Review', path: '/legal-documents-review', icon: <FileText size={16} className="mr-2" /> },
         { name: 'Personal Appointments', path: '/personal-room', icon: <Calendar size={16} className="mr-2" /> },
         { name: 'Information Hub', path: '/information-hub', icon: <HelpCircle size={16} className="mr-2" /> },
       ]
     },
-    { 
-      name: 'Find Lawyers', 
-      path: '/lawyers',
-      icon: <Users size={18} className="mr-2" /> 
-    },
+    // { 
+    //   name: 'Find Lawyers', 
+    //   path: '/lawyers',
+    //   icon: <Users size={18} className="mr-2" /> 
+    // },
     { 
       name: 'Portfolio', 
       path: '/portfolio',

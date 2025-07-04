@@ -558,7 +558,15 @@ export const Signup = ({ onSignupSuccess }) => {
     
     try {
       // Step 1: Get CSRF cookie first
-      await authAPI.getCsrfCookie();
+      try {
+        console.log('Getting CSRF cookie...');
+        await authAPI.getCsrfCookie();
+        console.log('CSRF cookie obtained successfully');
+      } catch (csrfError) {
+        console.error('Error getting CSRF cookie:', csrfError);
+        // Continue with registration even if CSRF cookie fails
+        // Some APIs don't require it
+      }
       
       // Step 2: Prepare registration data
       const formData = new FormData();
@@ -570,6 +578,9 @@ export const Signup = ({ onSignupSuccess }) => {
       
       // Add lawyer-specific fields if account type is business
       if (accountType === 'business') {
+        // Use a local variable instead of modifying the state directly
+        const accountTypeValue = 2;
+        formData.append('account_type', accountTypeValue);
         formData.append('enrollment_no', enrollmentNo.trim());
         
         if (enrollmentCertificate) {
@@ -616,49 +627,50 @@ export const Signup = ({ onSignupSuccess }) => {
           withCredentials: true
         };
         
-        response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/register`, formData, config);
+        try {
+          response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/register`, formData, config);
+          console.log('FormData registration response:', response);
+        } catch (formDataError) {
+          console.error('FormData registration error:', formDataError);
+          throw formDataError;
+        }
       } else {
         // Use regular JSON request for standard registration
-        response = await authAPI.register(registrationData);
+        try {
+          response = await authAPI.register(registrationData);
+          console.log('JSON registration response:', response);
+        } catch (jsonError) {
+          console.error('JSON registration error:', jsonError);
+          throw jsonError;
+        }
       }
       
       console.log('Registration response:', response.data);
       
       // Step 4: Handle successful registration
-      if (response.data.access_token) {
+      if (response.data && (response.data.access_token || response.data.token)) {
         // Use token manager to store authentication data
-        tokenManager.setToken(response.data.access_token);
+        const token = response.data.access_token || response.data.token;
+        tokenManager.setToken(token);
         
-        // if (response.data.user) {
-        //   tokenManager.setUser(response.data.user);
-        // }
-        
-        // showToast('Registration successful! Welcome to MeraBakil!', 'success');
-        
-        // // Redirect after showing success message
-        // setTimeout(() => {
-        //   window.location.href = '/';
-        // }, 2000);
-
-
         if (response.data.user) {
-  tokenManager.setUser(response.data.user);
-}
+          tokenManager.setUser(response.data.user);
+        }
 
-showToast('Registration successful! Welcome to MeraBakil!', 'success');
+        showToast('Registration successful! Welcome to MeraBakil!', 'success');
 
-// Conditional redirect based on user_type
-setTimeout(() => {
-  const userType = response?.data?.user?.user_type;
+        // Conditional redirect based on user_type
+        setTimeout(() => {
+          const userType = response?.data?.user?.user_type;
 
-  if (userType === 1) {
-    // Normal user – stay on current route or go to homepage
-    window.location.href = '/';
-  } else {
-    // Lawyer or other admin-type – redirect to Lawyer Admin Dashboard
-    window.location.href = '/lawyer-admin';
-  }
-}, 2000);
+          if (userType === 1) {
+            // Normal user – stay on current route or go to homepage
+            window.location.href = '/';
+          } else {
+            // Lawyer or other admin-type – redirect to Lawyer Admin Dashboard
+            window.location.href = '/lawyer-admin';
+          }
+        }, 2000);
 
         
         // Call parent callback if provided
@@ -686,6 +698,7 @@ setTimeout(() => {
           const firstErrorField = Object.keys(validationErrors)[0];
           const firstErrorMessage = validationErrors[firstErrorField][0];
           showToast(firstErrorMessage || 'Please check your input and try again', 'error');
+          console.log('Validation errors:', validationErrors);
         } else {
           showToast('Please check your input and try again', 'error');
         }
@@ -698,20 +711,30 @@ setTimeout(() => {
       } else if (error.response?.data?.message) {
         // Other API errors with message
         showToast(error.response.data.message, 'error');
+        console.log('API error message:', error.response.data);
       } else if (error.message === 'Network error. Please check your connection.') {
         // Network error handled by interceptor
         showToast('Network error. Please check your internet connection and try again.', 'error');
+      } else if (error.message && error.message.includes('Assignment to constant variable')) {
+        // Handle the specific error we were fixing
+        showToast('There was an issue with the form submission. Please try again.', 'error');
+        console.error('Assignment to constant variable error:', error);
       } else {
         // Generic error
         showToast('Registration failed. Please try again later.', 'error');
+        console.error('Unhandled error during registration:', error);
       }
     } finally {
       setLoading(false);
     }
   };
 
+  // Get theme from Redux
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
+
   return (
-    <div className="min-h-screen mt-6 flex flex-col bg-gray-50 relative overflow-hidden">
+    <div className={`min-h-screen mt-6 flex flex-col relative overflow-hidden ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Toast notification positioned on the right */}
       {toast && (
         <Toast 
@@ -723,22 +746,35 @@ setTimeout(() => {
       
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-blue-50 rounded-full opacity-30"></div>
-        <div className="absolute top-40 -right-20 w-60 h-60 bg-blue-100 rounded-full opacity-20"></div>
-        <div className="absolute bottom-20 left-20 w-40 h-40 bg-blue-50 rounded-full opacity-30"></div>
+        {isDarkMode ? (
+          <>
+            <div className="absolute -top-40 -left-40 w-80 h-80 bg-blue-900/20 rounded-full opacity-20"></div>
+            <div className="absolute top-40 -right-20 w-60 h-60 bg-indigo-900/20 rounded-full opacity-10"></div>
+            <div className="absolute bottom-20 left-20 w-40 h-40 bg-blue-900/20 rounded-full opacity-20"></div>
+          </>
+        ) : (
+          <>
+            <div className="absolute -top-40 -left-40 w-80 h-80 bg-blue-50 rounded-full opacity-30"></div>
+            <div className="absolute top-40 -right-20 w-60 h-60 bg-blue-100 rounded-full opacity-20"></div>
+            <div className="absolute bottom-20 left-20 w-40 h-40 bg-blue-50 rounded-full opacity-30"></div>
+          </>
+        )}
       </div>
       
       <LegalStrip />
       
       <div className="flex-1 flex items-center justify-center p-6 z-10">
         <div 
-          className={`bg-white rounded-xl shadow-xl p-8 w-full max-w-md transition-all duration-700 transform ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-          style={{ boxShadow: '0 10px 25px -5px rgba(34, 87, 122, 0.1), 0 10px 10px -5px rgba(92, 172, 222, 0.05)' }}
+          className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-xl p-8 w-full max-w-md transition-all duration-700 transform ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+          style={{ boxShadow: isDarkMode 
+            ? '0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)' 
+            : '0 10px 25px -5px rgba(34, 87, 122, 0.1), 0 10px 10px -5px rgba(92, 172, 222, 0.05)' 
+          }}
         >
           <div className="text-center mb-6">
             <Logo />
-            <h2 className="text-2xl font-bold text-gray-800 mb-1">Create your account</h2>
-            <p className="text-gray-600">Join MeraBakil and start your journey</p>
+            <h2 className={`text-2xl font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Create your account</h2>
+            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Join MeraBakil and start your journey</p>
           </div>
           
           {/* Step indicator */}
@@ -768,7 +804,7 @@ setTimeout(() => {
                 <AccountTypeSelector selectedType={accountType} setSelectedType={setAccountType} />
                 
                 <div className="space-y-1">
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email Address</label>
+                  <label htmlFor="email" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Email Address</label>
                   <InputField
                     type="email"
                     id="email"
@@ -786,7 +822,7 @@ setTimeout(() => {
                 </div>
 
                 <div className="space-y-1">
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">Create Password</label>
+                  <label htmlFor="password" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Create Password</label>
                   <InputField
                     type={showPassword ? "text" : "password"}
                     id="password"
@@ -816,8 +852,8 @@ setTimeout(() => {
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     required
                   />
-                  <label htmlFor="agree-terms" className="ml-2 block text-sm text-gray-700">
-                    I agree to the <a href="#" className="text-blue-600 hover:underline">Terms of Service</a> and <a href="#" className="text-blue-600 hover:underline">Privacy Policy</a>
+                  <label htmlFor="agree-terms" className={`ml-2 block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    I agree to the <a href="#" className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} hover:underline`}>Terms of Service</a> and <a href="#" className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} hover:underline`}>Privacy Policy</a>
                   </label>
                 </div>
 
@@ -831,7 +867,7 @@ setTimeout(() => {
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label htmlFor="first-name" className="block text-sm font-medium text-gray-700">First Name</label>
+                    <label htmlFor="first-name" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>First Name</label>
                     <InputField
                       type="text"
                       id="first-name"
@@ -843,7 +879,7 @@ setTimeout(() => {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label htmlFor="last-name" className="block text-sm font-medium text-gray-700">Last Name</label>
+                    <label htmlFor="last-name" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Last Name</label>
                     <InputField
                       type="text"
                       id="last-name"
@@ -857,7 +893,7 @@ setTimeout(() => {
                 </div>
 
                 <div className="space-y-1">
-                  <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700">Confirm Password</label>
+                  <label htmlFor="confirm-password" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Confirm Password</label>
                   <InputField
                     type={showConfirmPassword ? "text" : "password"}
                     id="confirm-password"
@@ -880,15 +916,15 @@ setTimeout(() => {
 
                 {/* Lawyer-specific fields */}
                 {accountType === 'business' && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <h3 className="text-lg font-medium text-gray-800 mb-3 flex items-center">
-                      <FaGavel className="mr-2 text-blue-500" />
+                  <div className={`mt-4 pt-4 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                    <h3 className={`text-lg font-medium mb-3 flex items-center ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                      <FaGavel className={`mr-2 ${isDarkMode ? 'text-blue-400' : 'text-blue-500'}`} />
                       Lawyer Verification Details
                     </h3>
                     
                     <div className="space-y-4">
                       <div className="space-y-1">
-                        <label htmlFor="enrollment-no" className="block text-sm font-medium text-gray-700">
+                        <label htmlFor="enrollment-no" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                           Enrollment Number <span className="text-red-500">*</span>
                         </label>
                         <InputField
@@ -931,8 +967,8 @@ setTimeout(() => {
                         required={false}
                       />
                       
-                      <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                        <p className="text-xs text-blue-700">
+                      <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-blue-900/20 border border-blue-800/30' : 'bg-blue-50 border border-blue-100'}`}>
+                        <p className={`text-xs ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
                           <strong>Note:</strong> Your lawyer verification documents will be reviewed by our team. 
                           Enrollment Number and certificates are required for verification.
                         </p>
@@ -945,7 +981,11 @@ setTimeout(() => {
                   <button
                     type="button"
                     onClick={goBackToStep}
-                    className="w-full py-3 px-4 rounded-md flex items-center justify-center text-gray-600 font-medium border border-gray-300 transition-all duration-300 hover:bg-gray-50"
+                    className={`w-full py-3 px-4 rounded-md flex items-center justify-center font-medium transition-all duration-300 ${
+                      isDarkMode 
+                        ? 'text-gray-300 border border-gray-700 hover:bg-gray-800' 
+                        : 'text-gray-600 border border-gray-300 hover:bg-gray-50'
+                    }`}
                     disabled={loading}
                   >
                     Back
@@ -974,19 +1014,19 @@ setTimeout(() => {
               <div className="mt-8">
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200"></div>
+                    <div className={`w-full border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}></div>
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white text-gray-500">or sign up with</span>
+                    <span className={`px-4 ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'}`}>or sign up with</span>
                   </div>
                 </div>
                 
                 <SocialButtons />
               </div>
               
-              <p className="mt-8 text-center text-sm text-gray-600">
+              <p className={`mt-8 text-center text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Already have an account?{' '}
-                <a href="/auth" className="font-medium text-blue-600 hover:text-blue-500 transition-all duration-200 underline-offset-2 hover:underline">
+                <a href="/auth" className={`font-medium ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'} transition-all duration-200 underline-offset-2 hover:underline`}>
                   Sign in instead
                 </a>
               </p>
@@ -995,7 +1035,7 @@ setTimeout(() => {
         </div>
       </div>
       
-      <div className="py-3 text-center text-xs text-gray-500 bg-gray-50 border-t border-gray-100">
+      <div className={`py-3 text-center text-xs ${isDarkMode ? 'text-gray-500 bg-gray-900 border-t border-gray-800' : 'text-gray-500 bg-gray-50 border-t border-gray-100'}`}>
         © 2025 MeraBakil. All rights reserved.
       </div>
     </div>

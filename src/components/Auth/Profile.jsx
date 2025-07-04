@@ -104,12 +104,25 @@ const UserProfile = () => {
     }
   }, [showSuccess, showError, showWarning, showInfo]);
   
-  // Simple function to get avatar URL from API response
+  // Enhanced function to get avatar URL from API response
   const getAvatarUrl = useCallback((userData) => {
     // Directly use avatar_url if available (preferred method)
     if (userData && userData.avatar_url) {
       console.log('Using avatar_url from API response:', userData.avatar_url);
-      return userData.avatar_url;
+      
+      // Check if the URL is already absolute
+      if (userData.avatar_url.startsWith('http')) {
+        return userData.avatar_url;
+      }
+      
+      // If it's a relative URL (like /storage/avatars/...), make it absolute
+      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const fullUrl = userData.avatar_url.startsWith('/') 
+        ? `${baseUrl}${userData.avatar_url}`
+        : `${baseUrl}/${userData.avatar_url}`;
+        
+      console.log('Converted avatar_url to absolute URL:', fullUrl);
+      return fullUrl;
     }
     
     // Fallback to avatar if avatar_url is not available
@@ -372,16 +385,25 @@ const UserProfile = () => {
       
       // Get the avatar URL from the response using our helper function
       // First check if result has data property (API response format)
-      const responseData = result.data || result;
+      const response = result.data || result;
       
       // Try to get avatar_url directly from the response
-      let avatarUrl = responseData.avatar_url;
+      let avatarUrl = response.avatar_url;
       
       if (avatarUrl) {
         console.log('Using avatar_url from upload response:', avatarUrl);
+        
+        // Make sure the URL is absolute
+        if (!avatarUrl.startsWith('http')) {
+          const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+          avatarUrl = avatarUrl.startsWith('/') 
+            ? `${baseUrl}${avatarUrl}` 
+            : `${baseUrl}/${avatarUrl}`;
+          console.log('Converted avatar_url to absolute URL:', avatarUrl);
+        }
       } else {
         // If no avatar_url, try to get avatar
-        avatarUrl = responseData.avatar;
+        avatarUrl = response.avatar;
         console.log('Using avatar from upload response:', avatarUrl);
       }
       
@@ -974,6 +996,7 @@ const UserProfile = () => {
                     <Avatar
                       src={imagePreview || userInfo.avatar}
                       alt={`${userInfo.name} ${userInfo.last_name}`}
+                      name={`${userInfo.name} ${userInfo.last_name}`}
                       size={128}
                       className="border-4 border-white dark:border-gray-800 shadow-md transition-all duration-300 hover:shadow-lg"
                       style={{

@@ -452,8 +452,8 @@ const LegalCosultation = () => {
         const response = await lawyerAPI.getLawyers(params);
         
         if (response && response.success) {
-          const responseData = response.data;
-          const lawyersData = responseData.data || [];
+          const response = response.data;
+          const lawyersData = response.data || [];
           
           // Update state based on whether this is a new search or loading more
           if (isNewSearch) {
@@ -463,7 +463,7 @@ const LegalCosultation = () => {
           }
           
           // Calculate total pages
-          const totalPagesCount = Math.ceil((responseData.total || 0) / (responseData.per_page || 6));
+          const totalPagesCount = Math.ceil((response.total || 0) / (response.per_page || 6));
           setTotalPages(totalPagesCount);
           
           // Check if we have more data to load
