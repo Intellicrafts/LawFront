@@ -14,6 +14,17 @@ const apiClient = axios.create({
   },
 });
 
+// const apiClientforscrf = axios.create({
+//   baseURL: 'http://127.0.0.1:8000', // Changed from 127.0.0.1 or for production use the API URL from .env
+//   timeout: 10000,
+//   withCredentials: true,
+//   headers: {
+//     'Content-Type': 'application/json',
+//     'Accept': 'application/json',
+//     'X-Requested-With': 'XMLHttpRequest',
+//   },
+// });
+
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config) => {
@@ -164,7 +175,8 @@ export const lawyerAPI = {
 // API endpoints
 export const authAPI = {
   // Get CSRF cookie for Laravel Sanctum
-  getCsrfCookie: () => apiClient.get('/sanctum/csrf-cookie'),
+  // getCsrfCookie: () => apiClientforscrf.get('/sanctum/csrf-cookie'),
+ getCsrfCookie: () => apiClient.get('/sanctum/csrf-cookie'),
 
   // Register user
   register: async (userData) => {

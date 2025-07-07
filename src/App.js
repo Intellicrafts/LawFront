@@ -23,7 +23,7 @@ import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import { Login as AuthComponent } from './components/AuthComponent';
 import { Signup as SignupComponent } from './components/SignupComponent';
-import { ForgotPassword as ForgotPassword } from './components/ForgotPassword';
+import { ForgotPassword } from './components/ForgotPassword';
 import LegalCosultation from './components/LegalCosultation';
 import TaskAutomation from './components/TaskAutomation';
 import OurStory from './components/OurStory';
