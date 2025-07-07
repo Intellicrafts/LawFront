@@ -1,3 +1,4 @@
+[![Netlify Status](https://api.netlify.com/api/v1/badges/0ca8b2b6-5c90-4ccf-8d14-9ca7ffc64628/deploy-status)](https://app.netlify.com/projects/euphonious-narwhal-a1bc7e/deploys)
 ![Screenshot from 2025-06-18 23-47-45](https://github.com/user-attachments/assets/42f0a86e-788f-42cc-8979-5bc3c8b777a0)
 # LawFront Service
 React Application For Showing BakilApp Frontend Ui 
