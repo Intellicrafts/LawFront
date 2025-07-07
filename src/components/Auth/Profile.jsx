@@ -110,16 +110,24 @@ const UserProfile = () => {
     if (userData && userData.avatar_url) {
       console.log('Using avatar_url from API response:', userData.avatar_url);
       
+      // Handle escaped backslashes in URLs (like "https:\/\/chambersapi.logicera.in\/storage\/avatars\/...")
+      let processedUrl = userData.avatar_url;
+      if (typeof processedUrl === 'string' && processedUrl.includes('\\/')) {
+        // Replace escaped backslashes with forward slashes
+        processedUrl = processedUrl.replace(/\\\//g, '/');
+        console.log('Fixed escaped backslashes in avatar_url:', processedUrl);
+      }
+      
       // Check if the URL is already absolute
-      if (userData.avatar_url.startsWith('http')) {
-        return userData.avatar_url;
+      if (processedUrl.startsWith('http')) {
+        return processedUrl;
       }
       
       // If it's a relative URL (like /storage/avatars/...), make it absolute
       const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      const fullUrl = userData.avatar_url.startsWith('/') 
-        ? `${baseUrl}${userData.avatar_url}`
-        : `${baseUrl}/${userData.avatar_url}`;
+      const fullUrl = processedUrl.startsWith('/') 
+        ? `${baseUrl}${processedUrl}`
+        : `${baseUrl}/${processedUrl}`;
         
       console.log('Converted avatar_url to absolute URL:', fullUrl);
       return fullUrl;
@@ -128,7 +136,28 @@ const UserProfile = () => {
     // Fallback to avatar if avatar_url is not available
     if (userData && userData.avatar) {
       console.log('Using avatar from API response:', userData.avatar);
-      return userData.avatar;
+      
+      // Handle escaped backslashes in URLs
+      let processedUrl = userData.avatar;
+      if (typeof processedUrl === 'string' && processedUrl.includes('\\/')) {
+        // Replace escaped backslashes with forward slashes
+        processedUrl = processedUrl.replace(/\\\//g, '/');
+        console.log('Fixed escaped backslashes in avatar:', processedUrl);
+      }
+      
+      // Check if the URL is already absolute
+      if (processedUrl.startsWith('http')) {
+        return processedUrl;
+      }
+      
+      // If it's a relative URL, make it absolute
+      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const fullUrl = processedUrl.startsWith('/') 
+        ? `${baseUrl}${processedUrl}`
+        : `${baseUrl}/${processedUrl}`;
+        
+      console.log('Converted avatar to absolute URL:', fullUrl);
+      return fullUrl;
     }
     
     // Return null if no avatar is found

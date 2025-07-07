@@ -401,6 +401,16 @@ const LegalCosultation = () => {
     };
   }, [view, hasMore, loading, loadingMore, currentPage]);
   
+  // State for caching
+  const [lawyersCache, setLawyersCache] = useState({});
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  // Check if user is authenticated
+  useEffect(() => {
+    const authToken = localStorage.getItem('auth_token');
+    setIsAuthenticated(!!authToken);
+  }, []);
+
   // Fetch lawyers from API - initial load
   useEffect(() => {
     // Reset lawyers array and fetch from page 1 when filters change
@@ -409,6 +419,13 @@ const LegalCosultation = () => {
     setHasMore(true);
     fetchLawyers(1, true);
   }, [selectedCategory, locationEnabled, userLocation, searchQuery]);
+
+  /**
+   * Generate cache key based on current filters
+   */
+  const getCacheKey = (page, category, location, query) => {
+    return `lawyers_${page}_${category}_${location ? `${location.latitude}_${location.longitude}` : 'noloc'}_${query || 'noquery'}`;
+  };
 
   /**
    * Fetch lawyers from the API with optional filtering
@@ -445,16 +462,106 @@ const LegalCosultation = () => {
         params.radius = 50; // Search radius in kilometers
       }
       
+      // Generate cache key
+      const cacheKey = getCacheKey(page, selectedCategory, locationEnabled ? userLocation : null, searchQuery);
+      
+      // Check if we have cached data for this query
+      if (lawyersCache[cacheKey] && !isNewSearch) {
+        console.log('Using cached lawyers data');
+        const cachedData = lawyersCache[cacheKey];
+        
+        if (isNewSearch) {
+          setLawyers(cachedData.lawyers);
+        } else {
+          setLawyers(prevLawyers => [...prevLawyers, ...cachedData.lawyers]);
+        }
+        
+        setTotalPages(cachedData.totalPages);
+        setHasMore(page < cachedData.totalPages);
+        setCurrentPage(page);
+        
+        // Still update background images
+        const newImages = preloadLawyerBackgroundImages(cachedData.lawyers);
+        setBackgroundImages(prevImages => ({
+          ...prevImages,
+          ...newImages
+        }));
+        
+        if (isNewSearch) {
+          setLoading(false);
+        } else {
+          setLoadingMore(false);
+        }
+        
+        return;
+      }
+      
       console.log('Fetching lawyers with params:', params);
       
-      try {
-        // Call the API using lawyerAPI service
-        const response = await lawyerAPI.getLawyers(params);
+      // Check if user is authenticated for premium features
+      if (!isAuthenticated && (params.latitude || params.sort === 'rating')) {
+        console.log('User not authenticated for premium features');
+        setError('Please login to access premium features like location-based search and top-rated lawyers.');
         
-        if (response && response.success) {
-          const response = response.data;
-          const lawyersData = response.data || [];
+        // Still show some sample data
+        handleApiFailure(page, isNewSearch);
+        return;
+      }
+      
+      // Call the API using lawyerAPI service with retry logic
+      let apiResponse = null;
+      let retryCount = 0;
+      const maxRetries = 2;
+      
+      while (retryCount <= maxRetries && !apiResponse) {
+        try {
+          const response = await lawyerAPI.getLawyers(params);
           
+          if (response && response.success) {
+            apiResponse = response;
+            break;
+          } else {
+            retryCount++;
+            if (retryCount <= maxRetries) {
+              console.log(`Retry attempt ${retryCount} for API call`);
+              await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+            }
+          }
+        } catch (error) {
+          retryCount++;
+          if (retryCount <= maxRetries) {
+            console.log(`Retry attempt ${retryCount} after error: ${error.message}`);
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+          } else {
+            throw error; // Rethrow after max retries
+          }
+        }
+      }
+      
+      if (apiResponse) {
+        const responseData = apiResponse.data;
+        const lawyersData = responseData.data || [];
+        
+        if (lawyersData.length === 0) {
+          // API returned empty data
+          console.log('API returned empty lawyers data');
+          
+          if (isNewSearch) {
+            setLawyers([]);
+          }
+          
+          setHasMore(false);
+          
+          // Cache the empty result to avoid unnecessary API calls
+          setLawyersCache(prev => ({
+            ...prev,
+            [cacheKey]: {
+              lawyers: [],
+              totalPages: 0,
+              timestamp: Date.now()
+            }
+          }));
+        } else {
           // Update state based on whether this is a new search or loading more
           if (isNewSearch) {
             setLawyers(lawyersData);
@@ -463,7 +570,7 @@ const LegalCosultation = () => {
           }
           
           // Calculate total pages
-          const totalPagesCount = Math.ceil((response.total || 0) / (response.per_page || 6));
+          const totalPagesCount = Math.ceil((responseData.total || 0) / (responseData.per_page || 6));
           setTotalPages(totalPagesCount);
           
           // Check if we have more data to load
@@ -475,72 +582,30 @@ const LegalCosultation = () => {
           // Preload background images for each lawyer
           console.log('Fetched lawyers data:', lawyersData);
           const newImages = preloadLawyerBackgroundImages(lawyersData);
-          console.log('Setting background images:', newImages);
           
           // Merge new images with existing ones
           setBackgroundImages(prevImages => ({
             ...prevImages,
             ...newImages
           }));
-        } else {
-          throw new Error('Failed to fetch lawyers data');
+          
+          // Cache the result
+          setLawyersCache(prev => ({
+            ...prev,
+            [cacheKey]: {
+              lawyers: lawyersData,
+              totalPages: totalPagesCount,
+              timestamp: Date.now()
+            }
+          }));
         }
-      } catch (apiError) {
-        console.error('API Error:', apiError);
-        
-        // Fallback to sample data if API fails
-        console.log('Falling back to sample data');
-        
-        // Filter the sample data based on category and search query
-        let filteredData = [...sampleLawyers];
-        
-        if (selectedCategory !== 'All') {
-          filteredData = filteredData.filter(lawyer => 
-            lawyer.specialization === selectedCategory
-          );
-        }
-        
-        if (searchQuery) {
-          const query = searchQuery.toLowerCase();
-          filteredData = filteredData.filter(lawyer => 
-            lawyer.full_name.toLowerCase().includes(query) || 
-            lawyer.specialization.toLowerCase().includes(query)
-          );
-        }
-        
-        // Calculate total pages
-        const perPage = 6;
-        const totalItems = filteredData.length;
-        const totalPagesCount = Math.ceil(totalItems / perPage);
-        
-        // Get the current page of data
-        const startIndex = (page - 1) * perPage;
-        const paginatedData = filteredData.slice(startIndex, startIndex + perPage);
-        
-        // Update state based on whether this is a new search or loading more
-        if (isNewSearch) {
-          setLawyers(paginatedData);
-        } else {
-          setLawyers(prevLawyers => [...prevLawyers, ...paginatedData]);
-        }
-        
-        setTotalPages(totalPagesCount);
-        setHasMore(page < totalPagesCount);
-        setCurrentPage(page);
-        
-        // Preload background images for sample data
-        const newImages = preloadLawyerBackgroundImages(paginatedData);
-        setBackgroundImages(prevImages => ({
-          ...prevImages,
-          ...newImages
-        }));
+      } else {
+        // All retries failed
+        throw new Error('Failed to fetch lawyers data after multiple attempts');
       }
     } catch (err) {
       console.error('Error fetching lawyers:', err);
-      setError('Failed to load lawyers. Please try again later.');
-      if (isNewSearch) {
-        setLawyers([]);
-      }
+      handleApiFailure(page, isNewSearch);
     } finally {
       if (isNewSearch) {
         setLoading(false);
@@ -548,6 +613,57 @@ const LegalCosultation = () => {
         setLoadingMore(false);
       }
     }
+  };
+  
+  /**
+   * Handle API failure by showing sample data
+   */
+  const handleApiFailure = (page, isNewSearch) => {
+    console.log('Falling back to sample data');
+    
+    // Filter the sample data based on category and search query
+    let filteredData = [...sampleLawyers];
+    
+    if (selectedCategory !== 'All') {
+      filteredData = filteredData.filter(lawyer => 
+        lawyer.specialization === selectedCategory
+      );
+    }
+    
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filteredData = filteredData.filter(lawyer => 
+        lawyer.full_name.toLowerCase().includes(query) || 
+        lawyer.specialization.toLowerCase().includes(query)
+      );
+    }
+    
+    // Calculate total pages
+    const perPage = 6;
+    const totalItems = filteredData.length;
+    const totalPagesCount = Math.ceil(totalItems / perPage);
+    
+    // Get the current page of data
+    const startIndex = (page - 1) * perPage;
+    const paginatedData = filteredData.slice(startIndex, startIndex + perPage);
+    
+    // Update state based on whether this is a new search or loading more
+    if (isNewSearch) {
+      setLawyers(paginatedData);
+    } else {
+      setLawyers(prevLawyers => [...prevLawyers, ...paginatedData]);
+    }
+    
+    setTotalPages(totalPagesCount);
+    setHasMore(page < totalPagesCount);
+    setCurrentPage(page);
+    
+    // Preload background images for sample data
+    const newImages = preloadLawyerBackgroundImages(paginatedData);
+    setBackgroundImages(prevImages => ({
+      ...prevImages,
+      ...newImages
+    }));
   };
 
   // Handle search form submission
@@ -620,12 +736,35 @@ const LegalCosultation = () => {
    * Fetch nearby lawyers
    */
   const fetchNearbyLawyers = async () => {
+    // Check if user is authenticated for location-based search
+    if (!isAuthenticated) {
+      setError('Please login to access location-based search features.');
+      // Show sample data instead
+      setNearbyLoading(true);
+      setTimeout(() => {
+        const filteredSample = sampleLawyers.slice(0, 6);
+        setLawyers(filteredSample);
+        setTotalPages(Math.ceil(filteredSample.length / 6));
+        setHasMore(false);
+        
+        // Generate background images for sample lawyers
+        const sampleImages = preloadLawyerBackgroundImages(filteredSample);
+        setBackgroundImages(prevImages => ({
+          ...prevImages,
+          ...sampleImages
+        }));
+        setNearbyLoading(false);
+      }, 1000);
+      return;
+    }
+    
     if (!userLocation) {
       getUserLocation();
       return;
     }
     
     setNearbyLoading(true);
+    setError(null);
     
     try {
       // Reset state for new search
@@ -642,15 +781,73 @@ const LegalCosultation = () => {
         per_page: 6
       };
       
-      try {
-        const response = await lawyerAPI.getLawyers(params);
+      // Generate cache key for nearby search
+      const cacheKey = `nearby_${params.latitude}_${params.longitude}_${params.radius}`;
+      
+      // Check if we have cached data
+      if (lawyersCache[cacheKey]) {
+        console.log('Using cached nearby lawyers data');
+        const cachedData = lawyersCache[cacheKey];
         
-        if (response && response.success) {
-          const lawyersData = response.data.data || [];
+        setLawyers(cachedData.lawyers);
+        setTotalPages(cachedData.totalPages);
+        setHasMore(1 < cachedData.totalPages);
+        
+        // Still update background images
+        const newImages = preloadLawyerBackgroundImages(cachedData.lawyers);
+        setBackgroundImages(prevImages => ({
+          ...prevImages,
+          ...newImages
+        }));
+        
+        setNearbyLoading(false);
+        return;
+      }
+      
+      // Call the API with retry logic
+      let apiResponse = null;
+      let retryCount = 0;
+      const maxRetries = 2;
+      
+      while (retryCount <= maxRetries && !apiResponse) {
+        try {
+          const response = await lawyerAPI.getLawyers(params);
+          
+          if (response && response.success) {
+            apiResponse = response;
+            break;
+          } else {
+            retryCount++;
+            if (retryCount <= maxRetries) {
+              console.log(`Retry attempt ${retryCount} for nearby lawyers API call`);
+              await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+            }
+          }
+        } catch (error) {
+          retryCount++;
+          if (retryCount <= maxRetries) {
+            console.log(`Retry attempt ${retryCount} after error: ${error.message}`);
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+          } else {
+            throw error; // Rethrow after max retries
+          }
+        }
+      }
+      
+      if (apiResponse) {
+        const responseData = apiResponse.data;
+        const lawyersData = responseData.data || [];
+        
+        if (lawyersData.length === 0) {
+          // API returned empty data
+          setLawyers([]);
+          setHasMore(false);
+          setError('No lawyers found in your area. Try expanding your search radius.');
+        } else {
           setLawyers(lawyersData);
           
           // Calculate total pages
-          const totalPagesCount = Math.ceil((response.data.total || 0) / (response.data.per_page || 6));
+          const totalPagesCount = Math.ceil((responseData.total || 0) / (responseData.per_page || 6));
           setTotalPages(totalPagesCount);
           
           // Check if we have more data to load
@@ -658,23 +855,39 @@ const LegalCosultation = () => {
           
           // Preload background images for each lawyer
           const newImages = preloadLawyerBackgroundImages(lawyersData);
-          setBackgroundImages(newImages);
-        } else {
-          throw new Error('Failed to fetch nearby lawyers');
+          setBackgroundImages(prevImages => ({
+            ...prevImages,
+            ...newImages
+          }));
+          
+          // Cache the result
+          setLawyersCache(prev => ({
+            ...prev,
+            [cacheKey]: {
+              lawyers: lawyersData,
+              totalPages: totalPagesCount,
+              timestamp: Date.now()
+            }
+          }));
         }
-      } catch (apiError) {
-        console.error('API Error:', apiError);
-        // Fallback to sample data
-        setLawyers(sampleLawyers.slice(0, 6));
-        setTotalPages(Math.ceil(sampleLawyers.length / 6));
-        setHasMore(6 < sampleLawyers.length);
-        
-        // Generate background images for sample lawyers
-        const sampleImages = preloadLawyerBackgroundImages(sampleLawyers.slice(0, 6));
-        setBackgroundImages(sampleImages);
+      } else {
+        // All retries failed
+        throw new Error('Failed to fetch nearby lawyers after multiple attempts');
       }
     } catch (err) {
       console.error('Error fetching nearby lawyers:', err);
+      // Fallback to sample data
+      const filteredSample = sampleLawyers.slice(0, 6);
+      setLawyers(filteredSample);
+      setTotalPages(Math.ceil(filteredSample.length / 6));
+      setHasMore(false);
+      
+      // Generate background images for sample lawyers
+      const sampleImages = preloadLawyerBackgroundImages(filteredSample);
+      setBackgroundImages(prevImages => ({
+        ...prevImages,
+        ...sampleImages
+      }));
     } finally {
       setNearbyLoading(false);
     }
@@ -684,7 +897,31 @@ const LegalCosultation = () => {
    * Fetch top-rated lawyers
    */
   const fetchTopRatedLawyers = async () => {
+    // Check if user is authenticated for premium features
+    if (!isAuthenticated) {
+      setError('Please login to access premium features like top-rated lawyers.');
+      // Show sample data instead
+      setTopRatedLoading(true);
+      setTimeout(() => {
+        // Sort sample data by reviews_count to simulate top-rated
+        const sortedSample = [...sampleLawyers].sort((a, b) => b.reviews_count - a.reviews_count).slice(0, 6);
+        setLawyers(sortedSample);
+        setTotalPages(Math.ceil(sortedSample.length / 6));
+        setHasMore(false);
+        
+        // Generate background images for sample lawyers
+        const sampleImages = preloadLawyerBackgroundImages(sortedSample);
+        setBackgroundImages(prevImages => ({
+          ...prevImages,
+          ...sampleImages
+        }));
+        setTopRatedLoading(false);
+      }, 1000);
+      return;
+    }
+    
     setTopRatedLoading(true);
+    setError(null);
     
     try {
       // Reset state for new search
@@ -698,15 +935,75 @@ const LegalCosultation = () => {
         per_page: 6
       };
       
-      try {
-        const response = await lawyerAPI.getLawyers(params);
+      // Generate cache key for top-rated search
+      const cacheKey = 'top_rated_lawyers';
+      
+      // Check if we have cached data that's less than 30 minutes old
+      const currentTime = Date.now();
+      if (lawyersCache[cacheKey] && 
+          (currentTime - lawyersCache[cacheKey].timestamp) < 30 * 60 * 1000) { // 30 minutes cache
+        console.log('Using cached top-rated lawyers data');
+        const cachedData = lawyersCache[cacheKey];
         
-        if (response && response.success) {
-          const lawyersData = response.data.data || [];
+        setLawyers(cachedData.lawyers);
+        setTotalPages(cachedData.totalPages);
+        setHasMore(1 < cachedData.totalPages);
+        
+        // Still update background images
+        const newImages = preloadLawyerBackgroundImages(cachedData.lawyers);
+        setBackgroundImages(prevImages => ({
+          ...prevImages,
+          ...newImages
+        }));
+        
+        setTopRatedLoading(false);
+        return;
+      }
+      
+      // Call the API with retry logic
+      let apiResponse = null;
+      let retryCount = 0;
+      const maxRetries = 2;
+      
+      while (retryCount <= maxRetries && !apiResponse) {
+        try {
+          const response = await lawyerAPI.getLawyers(params);
+          
+          if (response && response.success) {
+            apiResponse = response;
+            break;
+          } else {
+            retryCount++;
+            if (retryCount <= maxRetries) {
+              console.log(`Retry attempt ${retryCount} for top-rated lawyers API call`);
+              await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+            }
+          }
+        } catch (error) {
+          retryCount++;
+          if (retryCount <= maxRetries) {
+            console.log(`Retry attempt ${retryCount} after error: ${error.message}`);
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+          } else {
+            throw error; // Rethrow after max retries
+          }
+        }
+      }
+      
+      if (apiResponse) {
+        const responseData = apiResponse.data;
+        const lawyersData = responseData.data || [];
+        
+        if (lawyersData.length === 0) {
+          // API returned empty data
+          setLawyers([]);
+          setHasMore(false);
+          setError('No top-rated lawyers found. Please try again later.');
+        } else {
           setLawyers(lawyersData);
           
           // Calculate total pages
-          const totalPagesCount = Math.ceil((response.data.total || 0) / (response.data.per_page || 6));
+          const totalPagesCount = Math.ceil((responseData.total || 0) / (responseData.per_page || 6));
           setTotalPages(totalPagesCount);
           
           // Check if we have more data to load
@@ -714,24 +1011,40 @@ const LegalCosultation = () => {
           
           // Preload background images for each lawyer
           const newImages = preloadLawyerBackgroundImages(lawyersData);
-          setBackgroundImages(newImages);
-        } else {
-          throw new Error('Failed to fetch top-rated lawyers');
+          setBackgroundImages(prevImages => ({
+            ...prevImages,
+            ...newImages
+          }));
+          
+          // Cache the result
+          setLawyersCache(prev => ({
+            ...prev,
+            [cacheKey]: {
+              lawyers: lawyersData,
+              totalPages: totalPagesCount,
+              timestamp: Date.now()
+            }
+          }));
         }
-      } catch (apiError) {
-        console.error('API Error:', apiError);
-        // Sort sample data by reviews_count (as a proxy for rating)
-        const sortedLawyers = [...sampleLawyers].sort((a, b) => b.reviews_count - a.reviews_count);
-        setLawyers(sortedLawyers.slice(0, 6));
-        setTotalPages(Math.ceil(sampleLawyers.length / 6));
-        setHasMore(6 < sampleLawyers.length);
-        
-        // Generate background images for sample lawyers
-        const sampleImages = preloadLawyerBackgroundImages(sortedLawyers.slice(0, 6));
-        setBackgroundImages(sampleImages);
+      } else {
+        // All retries failed
+        throw new Error('Failed to fetch top-rated lawyers after multiple attempts');
       }
     } catch (err) {
       console.error('Error fetching top-rated lawyers:', err);
+      // Fallback to sample data
+      // Sort sample data by reviews_count to simulate top-rated
+      const sortedSample = [...sampleLawyers].sort((a, b) => b.reviews_count - a.reviews_count).slice(0, 6);
+      setLawyers(sortedSample);
+      setTotalPages(Math.ceil(sortedSample.length / 6));
+      setHasMore(false);
+      
+      // Generate background images for sample lawyers
+      const sampleImages = preloadLawyerBackgroundImages(sortedSample);
+      setBackgroundImages(prevImages => ({
+        ...prevImages,
+        ...sampleImages
+      }));
     } finally {
       setTopRatedLoading(false);
     }
@@ -1328,39 +1641,108 @@ const LegalCosultation = () => {
 
           {/* Error State */}
           {error && !loading && (
-            <div className={`rounded-xl p-6 mb-8 text-center ${
-              isDarkMode ? 'bg-red-900/20 text-red-200' : 'bg-red-50 text-red-600'
+            <div className={`rounded-xl p-8 mb-8 ${
+              isDarkMode ? 'bg-slate-800 border border-red-800' : 'bg-white border border-red-200 shadow-sm'
             }`}>
-              <FaTimes className="mx-auto text-3xl mb-2" />
-              <p>{error}</p>
-              <button 
-                onClick={fetchLawyers}
-                className="mt-4 px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors"
-              >
-                Try Again
-              </button>
+              <div className="flex flex-col items-center text-center">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
+                  isDarkMode ? 'bg-red-900/30' : 'bg-red-50'
+                }`}>
+                  <FaTimes className={`text-2xl ${isDarkMode ? 'text-red-400' : 'text-red-500'}`} />
+                </div>
+                
+                <h3 className={`text-xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                  {error.includes('login') ? 'Authentication Required' : 'Unable to Load Lawyers'}
+                </h3>
+                
+                <p className={`mb-6 max-w-md ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                  {error}
+                </p>
+                
+                <div className="flex flex-wrap gap-3 justify-center">
+                  <button 
+                    onClick={() => fetchLawyers(1, true)}
+                    className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors flex items-center"
+                  >
+                    {/* <FaSync className="mr-2" /> */}
+                    Try Again
+                  </button>
+                  
+                  {error.includes('login') && (
+                    <button 
+                      onClick={() => {
+                        // Redirect to login page
+                        window.location.href = '/auth';
+                      }}
+                      className={`px-4 py-2 rounded-lg transition-colors flex items-center ${
+                        isDarkMode 
+                          ? 'bg-green-700 hover:bg-green-600 text-white' 
+                          : 'bg-green-600 hover:bg-green-700 text-white'
+                      }`}
+                    >
+                      <FaUserCheck className="mr-2" />
+                      Login Now
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
           {/* Empty State */}
           {!loading && !error && lawyers.length === 0 && (
             <div className={`rounded-xl p-8 mb-8 text-center ${
-              isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-slate-50 text-slate-600'
+              isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-white border border-slate-200 shadow-sm text-slate-600'
             }`}>
-              <FaUserTie className="mx-auto text-5xl mb-4 opacity-30" />
-              <h3 className="text-xl font-bold mb-2">No Lawyers Found</h3>
-              <p>We couldn't find any lawyers matching your criteria.</p>
-              <button 
-                onClick={() => {
-                  setSelectedCategory('All');
-                  setSearchQuery('');
-                  setCurrentPage(1);
-                  fetchLawyers();
-                }}
-                className="mt-4 px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors"
-              >
-                Reset Filters
-              </button>
+              <div className="flex flex-col items-center justify-center">
+                <FaUserTie className={`text-6xl mb-4 ${isDarkMode ? 'text-slate-600' : 'text-slate-300'}`} />
+                <h3 className={`text-xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>No Lawyers Found</h3>
+                <p className="mb-4 max-w-md">We couldn't find any lawyers matching your criteria. Try adjusting your filters or search terms.</p>
+                
+                <div className="flex flex-wrap gap-3 justify-center">
+                  <button 
+                    onClick={() => {
+                      setSelectedCategory('All');
+                      setSearchQuery('');
+                      setCurrentPage(1);
+                      fetchLawyers(1, true);
+                    }}
+                    className={`px-4 py-2 rounded-lg transition-colors flex items-center ${
+                      isDarkMode 
+                        ? 'bg-slate-700 hover:bg-slate-600 text-white' 
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
+                    }`}
+                  >
+                    <FaTimes className="mr-2" />
+                    Reset Filters
+                  </button>
+                  
+                  {!isAuthenticated && (
+                    <button 
+                      onClick={() => {
+                        // Redirect to login page
+                        window.location.href = '/auth';
+                      }}
+                      className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors flex items-center"
+                    >
+                      <FaUserCheck className="mr-2" />
+                      Login for More Options
+                    </button>
+                  )}
+                </div>
+                
+                {selectedCategory !== 'All' && (
+                  <div className="mt-4 text-sm">
+                    <p>Currently filtering by: <span className="font-semibold">{selectedCategory}</span></p>
+                  </div>
+                )}
+                
+                {searchQuery && (
+                  <div className="mt-2 text-sm">
+                    <p>Search term: <span className="font-semibold">"{searchQuery}"</span></p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

@@ -533,12 +533,22 @@ export const apiServices = {
       
       // Store user profile data in localStorage for offline access
       if (userData) {
-        // Process avatar URL if present
-        if (userData.avatar) {
+        // Process avatar URL if present - prioritize avatar_url if available
+        if (userData.avatar_url || userData.avatar) {
+          // Determine which avatar field to use (prefer avatar_url if available)
+          const avatarSource = userData.avatar_url || userData.avatar;
+          
           // Ensure avatar URL is absolute and correctly formatted
-          if (typeof userData.avatar === 'string' && !userData.avatar.startsWith('data:')) {
+          if (typeof avatarSource === 'string') {
             // Fix the avatar URL if it's a storage path
-            let fixedAvatarUrl = userData.avatar;
+            let fixedAvatarUrl = avatarSource;
+            
+            // Handle escaped backslashes in URLs (like "https:\/\/chambersapi.logicera.in\/storage\/avatars\/...")
+            if (fixedAvatarUrl.includes('\\/')) {
+              // Replace escaped backslashes with forward slashes
+              fixedAvatarUrl = fixedAvatarUrl.replace(/\\\//g, '/');
+              console.log('Fixed escaped backslashes in avatar URL:', fixedAvatarUrl);
+            }
             
             // First, check for duplicate /api prefixes and fix them
             if (fixedAvatarUrl.includes('/api/api')) {
@@ -583,7 +593,10 @@ export const apiServices = {
             console.log('Added cache-busting parameter:', fixedAvatarUrl);
             
             console.log('Using fixed avatar URL:', fixedAvatarUrl);
+            
+            // Update both avatar fields in userData for consistency
             userData.avatar = fixedAvatarUrl;
+            userData.avatar_url = fixedAvatarUrl;
           }
           
           // Store the avatar URL in localStorage
@@ -714,7 +727,7 @@ export const apiServices = {
       
       try {
         // First attempt: Try the /avatar endpoint
-        response = await apiClient.post('/api/avatar', formData, {
+        response = await apiClient.post('/avatar', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -790,11 +803,22 @@ export const apiServices = {
       if (userData) {
         try {
           // If we have an avatar URL from the server response, store it
-          if (userData.avatar) {
+          // Prioritize avatar_url if available
+          if (userData.avatar_url || userData.avatar) {
+            // Determine which avatar field to use (prefer avatar_url if available)
+            const avatarSource = userData.avatar_url || userData.avatar;
+            
             // If it's a URL (not a data URL), store it directly
-            if (typeof userData.avatar === 'string' && !userData.avatar.startsWith('data:')) {
+            if (typeof avatarSource === 'string' && !avatarSource.startsWith('data:')) {
               // Fix the avatar URL if it's a storage path
-              let fixedAvatarUrl = userData.avatar;
+              let fixedAvatarUrl = avatarSource;
+              
+              // Handle escaped backslashes in URLs (like "https:\/\/chambersapi.logicera.in\/storage\/avatars\/...")
+              if (fixedAvatarUrl.includes('\\/')) {
+                // Replace escaped backslashes with forward slashes
+                fixedAvatarUrl = fixedAvatarUrl.replace(/\\\//g, '/');
+                console.log('Fixed escaped backslashes in avatar URL:', fixedAvatarUrl);
+              }
               
               // First, check for duplicate /api prefixes and fix them
               if (fixedAvatarUrl.includes('/api/api')) {
@@ -837,8 +861,9 @@ export const apiServices = {
               console.log('Storing fixed avatar URL in localStorage:', fixedAvatarUrl);
               localStorage.setItem('user_avatar', fixedAvatarUrl);
               
-              // Update the avatar in userData for further processing
+              // Update both avatar fields in userData for consistency
               userData.avatar = fixedAvatarUrl;
+              userData.avatar_url = fixedAvatarUrl;
               
               // Also update the avatar in the user object if it exists
               const storedUser = localStorage.getItem('user');

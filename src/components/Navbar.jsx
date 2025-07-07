@@ -74,8 +74,16 @@ const Navbar = () => {
         
         // Add avatar URL to user object if available in localStorage
         if (userAvatar) {
-          parsedUser.avatar = userAvatar;
-          console.log('Added avatar URL to user object:', userAvatar);
+          // Handle escaped backslashes in URLs (like "https:\/\/chambersapi.logicera.in\/storage\/avatars\/...")
+          let processedAvatar = userAvatar;
+          if (typeof processedAvatar === 'string' && processedAvatar.includes('\\/')) {
+            // Replace escaped backslashes with forward slashes
+            processedAvatar = processedAvatar.replace(/\\\//g, '/');
+            console.log('Navbar: Fixed escaped backslashes in avatar URL:', processedAvatar);
+          }
+          
+          parsedUser.avatar = processedAvatar;
+          console.log('Added avatar URL to user object:', processedAvatar);
         }
         
         setUser(parsedUser);

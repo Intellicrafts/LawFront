@@ -107,6 +107,13 @@ const Avatar = ({ src, alt, className, size, style, name, forceRefresh, ...rest 
     let processedSrc = src;
 
     try {
+      // Handle escaped backslashes in URLs (like "https:\/\/chambersapi.logicera.in\/storage\/avatars\/...")
+      if (typeof processedSrc === 'string' && processedSrc.includes('\\/')) {
+        // Replace escaped backslashes with forward slashes
+        processedSrc = processedSrc.replace(/\\\//g, '/');
+        console.log('Avatar: Fixed escaped backslashes in URL:', processedSrc);
+      }
+
       // First, check for duplicate /api prefixes and fix them
       if (typeof processedSrc === 'string' && processedSrc.includes('/api/api')) {
         // Fix duplicate /api prefixes
@@ -117,6 +124,7 @@ const Avatar = ({ src, alt, className, size, style, name, forceRefresh, ...rest 
       }
 
       // Handle Laravel storage URLs like "http://localhost:8000/storage/avatars/9qILjMIcOKOwGxInp0sRMP79f5xDoCp1UT4EbCgt.jpg"
+      // or "https://chambersapi.logicera.in/storage/avatars/o7vyJNOhHqI6Nf7I8t6ErXT1dxcJnId6XniqnuIE.jpg"
       if (typeof processedSrc === 'string' && 
           (processedSrc.includes('/storage/avatars/') || processedSrc.includes('/storage/profile-photos/'))) {
         // This is already a storage path, just ensure it has the correct base URL
@@ -158,7 +166,7 @@ const Avatar = ({ src, alt, className, size, style, name, forceRefresh, ...rest 
 
       // Add a cache-busting parameter to prevent browser caching
       if (typeof processedSrc === 'string' && !processedSrc.startsWith('data:')) {
-        const cacheBuster = `_cb=${new Date().getTime()}`;
+        const cacheBuster = `_cb=${refreshKey}`;
         processedSrc = processedSrc.includes('?') 
           ? `${processedSrc}&${cacheBuster}` 
           : `${processedSrc}?${cacheBuster}`;
@@ -171,7 +179,7 @@ const Avatar = ({ src, alt, className, size, style, name, forceRefresh, ...rest 
       setHasError(true);
       setIsLoading(false);
     }
-  }, [src]);
+  }, [src, refreshKey]);
 
   // Handle image load error
   const handleError = (e) => {
