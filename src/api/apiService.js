@@ -1,6 +1,7 @@
 // apiService.js - Centralized API configuration
 
 import axios from 'axios';
+import { cleanAvatarUrl, cacheAvatarUrl } from '../utils/avatarUtils';
 
 // Create axios instance with default configuration
 const apiClient = axios.create({
@@ -167,6 +168,129 @@ export const lawyerAPI = {
       return response.data;
     } catch (error) {
       console.error('Error fetching available time slots:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get nearby lawyers based on location
+   * @param {Object} location - User location {latitude, longitude}
+   * @param {number} radius - Search radius in meters
+   * @returns {Promise} - API response
+   */
+  getNearbyLawyers: async (location, radius = 5000) => {
+    try {
+      const response = await apiClient.get('/api/lawyers/nearby', {
+        params: {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          radius: radius
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching nearby lawyers:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get lawyer's online status
+   * @param {number} lawyerId - Lawyer ID
+   * @returns {Promise} - API response
+   */
+  getLawyerStatus: async (lawyerId) => {
+    try {
+      const response = await apiClient.get(`/api/lawyers/${lawyerId}/status`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching lawyer status:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update lawyer's online status
+   * @param {number} lawyerId - Lawyer ID
+   * @param {boolean} isOnline - Online status
+   * @returns {Promise} - API response
+   */
+  updateLawyerStatus: async (lawyerId, isOnline) => {
+    try {
+      const response = await apiClient.put(`/api/lawyers/${lawyerId}/status`, {
+        is_online: isOnline
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating lawyer status:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Start a call session with a lawyer
+   * @param {number} lawyerId - Lawyer ID
+   * @returns {Promise} - API response
+   */
+  startCallSession: async (lawyerId) => {
+    try {
+      const response = await apiClient.post(`/api/lawyers/${lawyerId}/call/start`);
+      return response.data;
+    } catch (error) {
+      console.error('Error starting call session:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * End a call session with a lawyer
+   * @param {number} lawyerId - Lawyer ID
+   * @param {string} sessionId - Call session ID
+   * @returns {Promise} - API response
+   */
+  endCallSession: async (lawyerId, sessionId) => {
+    try {
+      const response = await apiClient.post(`/api/lawyers/${lawyerId}/call/end`, {
+        session_id: sessionId
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error ending call session:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Start a chat session with a lawyer
+   * @param {number} lawyerId - Lawyer ID
+   * @returns {Promise} - API response
+   */
+  startChatSession: async (lawyerId) => {
+    try {
+      const response = await apiClient.post(`/api/lawyers/${lawyerId}/chat/start`);
+      return response.data;
+    } catch (error) {
+      console.error('Error starting chat session:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Send a message in chat session
+   * @param {number} lawyerId - Lawyer ID
+   * @param {string} sessionId - Chat session ID
+   * @param {string} message - Message content
+   * @returns {Promise} - API response
+   */
+  sendChatMessage: async (lawyerId, sessionId, message) => {
+    try {
+      const response = await apiClient.post(`/api/lawyers/${lawyerId}/chat/message`, {
+        session_id: sessionId,
+        message: message
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error sending chat message:', error);
       throw error;
     }
   }
@@ -372,6 +496,114 @@ export const apiServices = {
     }
   },
 
+  // Voice and Speech APIs for Enhanced Voice Modal Functionality
+  startVoiceSession: async (sessionData = {}) => {
+    try {
+      const response = await apiClient.post('/api/voice/session/start', {
+        user_id: sessionData.userId,
+        session_type: sessionData.sessionType || 'legal_consultation',
+        language: sessionData.language || 'en',
+        ...sessionData
+      });
+      console.log('Voice session started:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Start voice session error:', error.response || error);
+      throw error;
+    }
+  },
+
+  endVoiceSession: async (sessionId, sessionSummary = {}) => {
+    try {
+      const response = await apiClient.post(`/api/voice/session/${sessionId}/end`, {
+        duration: sessionSummary.duration,
+        transcript: sessionSummary.transcript,
+        summary: sessionSummary.summary,
+        ...sessionSummary
+      });
+      console.log('Voice session ended:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('End voice session error:', error.response || error);
+      throw error;
+    }
+  },
+
+  processVoiceTranscript: async (audioData, sessionId = null) => {
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioData);
+      if (sessionId) {
+        formData.append('session_id', sessionId);
+      }
+      
+      const response = await apiClient.post('/api/voice/transcribe', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 30000, // 30 seconds timeout for audio processing
+      });
+      console.log('Voice transcription response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Voice transcription error:', error.response || error);
+      throw error;
+    }
+  },
+
+  generateVoiceResponse: async (textData, voiceConfig = {}) => {
+    try {
+      const response = await apiClient.post('/api/voice/synthesize', {
+        text: textData.text,
+        voice: voiceConfig.voice || 'default',
+        language: voiceConfig.language || 'en',
+        speed: voiceConfig.speed || 1.0,
+        pitch: voiceConfig.pitch || 1.0,
+        session_id: textData.sessionId,
+        ...voiceConfig
+      });
+      console.log('Voice synthesis response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Voice synthesis error:', error.response || error);
+      throw error;
+    }
+  },
+
+  getVoiceSessionHistory: async (userId, limit = 10) => {
+    try {
+      const response = await apiClient.get(`/api/voice/sessions/history`, {
+        params: {
+          user_id: userId,
+          limit: limit
+        }
+      });
+      console.log('Voice session history:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Voice session history error:', error.response || error);
+      throw error;
+    }
+  },
+
+  updateVoicePreferences: async (userId, preferences) => {
+    try {
+      const response = await apiClient.put(`/api/voice/preferences/${userId}`, {
+        language: preferences.language || 'en',
+        voice_type: preferences.voiceType || 'default',
+        speech_speed: preferences.speechSpeed || 1.0,
+        auto_transcribe: preferences.autoTranscribe !== undefined ? preferences.autoTranscribe : true,
+        noise_reduction: preferences.noiseReduction !== undefined ? preferences.noiseReduction : true,
+        ...preferences
+      });
+      console.log('Voice preferences updated:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Update voice preferences error:', error.response || error);
+      throw error;
+    }
+  },
+
   // Authentication APIs - These are now handled by authAPI, keeping for backward compatibility
   register: async (userData) => {
     console.warn('Using deprecated apiServices.register. Please use authAPI.register instead.');
@@ -533,106 +765,62 @@ export const apiServices = {
       
       // Store user profile data in localStorage for offline access
       if (userData) {
-        // Process avatar URL if present - prioritize avatar_url if available
+        // Process avatar URL using the smart avatar utilities
         if (userData.avatar_url || userData.avatar) {
-          // Determine which avatar field to use (prefer avatar_url if available)
           const avatarSource = userData.avatar_url || userData.avatar;
+          console.log('Processing avatar URL from API:', avatarSource);
           
-          // Ensure avatar URL is absolute and correctly formatted
-          if (typeof avatarSource === 'string') {
-            // Fix the avatar URL if it's a storage path
-            let fixedAvatarUrl = avatarSource;
-            
-            // Handle escaped backslashes in URLs (like "https:\/\/chambersapi.logicera.in\/storage\/avatars\/...")
-            if (fixedAvatarUrl.includes('\\/')) {
-              // Replace escaped backslashes with forward slashes
-              fixedAvatarUrl = fixedAvatarUrl.replace(/\\\//g, '/');
-              console.log('Fixed escaped backslashes in avatar URL:', fixedAvatarUrl);
-            }
-            
-            // First, check for duplicate /api prefixes and fix them
-            if (fixedAvatarUrl.includes('/api/api')) {
-              // Fix duplicate /api prefixes
-              while (fixedAvatarUrl.includes('/api/api')) {
-                fixedAvatarUrl = fixedAvatarUrl.replace('/api/api', '/api');
-              }
-              console.log('Fixed duplicate /api prefixes:', fixedAvatarUrl);
-            }
-            
-            // Check if it's just a filename (no slashes)
-            if (!fixedAvatarUrl.includes('/') && (fixedAvatarUrl.includes('.jpg') || fixedAvatarUrl.includes('.jpeg') || 
-                fixedAvatarUrl.includes('.png') || fixedAvatarUrl.includes('.gif') || fixedAvatarUrl.includes('.webp'))) {
-              // It's just a filename, construct the full path
-              fixedAvatarUrl = `/storage/avatars/${fixedAvatarUrl}`;
-              console.log('Converted filename to full path:', fixedAvatarUrl);
-            }
-            // Check if it's a storage path that needs to be fixed
-            else if (fixedAvatarUrl.includes('/storage/')) {
-              // We'll keep the storage path as is, as Laravel's public storage is directly accessible
-              console.log('Using storage path:', fixedAvatarUrl);
-            }
-            
-            // Ensure the URL is absolute
-            if (!fixedAvatarUrl.startsWith('http')) {
-              const baseUrl = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
-              
-              // Make sure we don't add the baseUrl if it's already in the URL
-              if (!fixedAvatarUrl.includes(baseUrl)) {
-                fixedAvatarUrl = fixedAvatarUrl.startsWith('/') 
-                  ? `${baseUrl}${fixedAvatarUrl}` 
-                  : `${baseUrl}/${fixedAvatarUrl}`;
-                console.log('Converted to absolute URL:', fixedAvatarUrl);
-              }
-            }
-            
-            // Add a cache-busting parameter to prevent browser caching
-            const cacheBuster = `_cb=${new Date().getTime()}`;
-            fixedAvatarUrl = fixedAvatarUrl.includes('?') 
-              ? `${fixedAvatarUrl}&${cacheBuster}` 
-              : `${fixedAvatarUrl}?${cacheBuster}`;
-            console.log('Added cache-busting parameter:', fixedAvatarUrl);
-            
-            console.log('Using fixed avatar URL:', fixedAvatarUrl);
+          // Use the smart cleaning utility to fix malformed URLs
+          const cleanedAvatarUrl = cleanAvatarUrl(avatarSource);
+          
+          if (cleanedAvatarUrl) {
+            console.log('Successfully cleaned avatar URL:', cleanedAvatarUrl);
             
             // Update both avatar fields in userData for consistency
-            userData.avatar = fixedAvatarUrl;
-            userData.avatar_url = fixedAvatarUrl;
-          }
-          
-          // Store the avatar URL in localStorage
-          localStorage.setItem('user_avatar', userData.avatar);
-          console.log('Avatar URL stored in localStorage:', userData.avatar);
-          
-          // Also update the avatar in the user object if it exists
-          const storedUser = localStorage.getItem('user');
-          if (storedUser) {
-            try {
-              const parsedUser = JSON.parse(storedUser);
-              parsedUser.avatar = userData.avatar;
-              localStorage.setItem('user', JSON.stringify(parsedUser));
-            } catch (e) {
-              console.error('Error updating user avatar in localStorage:', e);
+            userData.avatar = cleanedAvatarUrl;
+            userData.avatar_url = cleanedAvatarUrl;
+            
+            // Cache the avatar URL using the enhanced caching system
+            cacheAvatarUrl(cleanedAvatarUrl, userData.id || 'current');
+            
+            // Store the avatar URL in localStorage (backward compatibility)
+            localStorage.setItem('user_avatar', cleanedAvatarUrl);
+            
+            // Also update the avatar in the user object if it exists
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+              try {
+                const parsedUser = JSON.parse(storedUser);
+                parsedUser.avatar = cleanedAvatarUrl;
+                localStorage.setItem('user', JSON.stringify(parsedUser));
+              } catch (e) {
+                console.error('Error updating user avatar in localStorage:', e);
+              }
             }
-          }
-          
-          // If it's a URL (not a data URL), also fetch and store as data URL for offline use
-          if (typeof userData.avatar === 'string' && !userData.avatar.startsWith('data:')) {
-            try {
-              console.log('Fetching avatar image for offline storage:', userData.avatar);
-              fetch(userData.avatar)
-                .then(response => response.blob())
-                .then(blob => {
-                  const reader = new FileReader();
-                  reader.onloadend = function() {
-                    localStorage.setItem('user_avatar_offline', reader.result);
-                    console.log('Avatar stored as data URL for offline use');
-                  };
-                  reader.readAsDataURL(blob);
-                })
-                .catch(err => console.error('Failed to fetch avatar for offline storage:', err));
-            } catch (imgError) {
-              console.error('Failed to process avatar for offline storage:', imgError);
+            
+            // Fetch and store as data URL for offline use
+            if (!cleanedAvatarUrl.startsWith('data:')) {
+              try {
+                console.log('Fetching avatar image for offline storage:', cleanedAvatarUrl);
+                fetch(cleanedAvatarUrl)
+                  .then(response => response.blob())
+                  .then(blob => {
+                    const reader = new FileReader();
+                    reader.onloadend = function() {
+                      localStorage.setItem('user_avatar_offline', reader.result);
+                      console.log('Avatar stored as data URL for offline use');
+                    };
+                    reader.readAsDataURL(blob);
+                  })
+                  .catch(err => console.error('Failed to fetch avatar for offline storage:', err));
+              } catch (imgError) {
+                console.error('Failed to process avatar for offline storage:', imgError);
+              }
             }
+          } else {
+            console.log('Failed to clean avatar URL, removing avatar fields');
+            userData.avatar = null;
+            userData.avatar_url = null;
           }
         }
         
@@ -1003,6 +1191,7 @@ export const lawyerAPI2 = {
   
   // Book an appointment with a lawyer
   bookAppointment: async (lawyerId, appointmentData) => {
+    console.log('Booking appointment for lawyer ID:', lawyerId);
     try {
       const response = await apiClient.post(`/api/lawyers/${lawyerId}/appointments`, appointmentData);
       return response.data;

@@ -37,6 +37,7 @@ import LegalAIPortfolio from './components/LegalAIPortfolio';
 import { authAPI, tokenManager } from './api/apiService';
 import PersonalRoom from './components/PersonalRoom';
 import LawyerAdmin from './components/Lawyer/LawyerAdmin';
+import TestEnhancedComponents from './components/TestEnhancedComponents';
 
 // Layout wrapper to conditionally render Navbar and Footer
 const AppLayout = ({ children }) => {
@@ -85,19 +86,19 @@ const App = () => {
   }, [mode]);
 
   // Initialize chat widget
-  useEffect(() => {
-    // Initialize Tawk.to chat widget
-    var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
-    (function () {
-      var s1 = document.createElement("script"),
-        s0 = document.getElementsByTagName("script")[0];
-      s1.async = true;
-      s1.src = 'https://embed.tawk.to/6824eb76f9b7b6191418efbe/1ir83ficf';
-      s1.charset = 'UTF-8';
-      s1.setAttribute('crossorigin', '*');
-      s0.parentNode.insertBefore(s1, s0);
-    })();
-  }, []);
+  // useEffect(() => {
+  //   // Initialize Tawk.to chat widget
+  //   var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+  //   (function () {
+  //     var s1 = document.createElement("script"),
+  //       s0 = document.getElementsByTagName("script")[0];
+  //     s1.async = true;
+  //     s1.src = 'https://embed.tawk.to/6824eb76f9b7b6191418efbe/1ir83ficf';
+  //     s1.charset = 'UTF-8';
+  //     s1.setAttribute('crossorigin', '*');
+  //     s0.parentNode.insertBefore(s1, s0);
+  //   })();
+  // }, []);
 
   return (
     <Router>
@@ -143,6 +144,7 @@ const App = () => {
                   <Route path="/virtual-bakil" element={<VirtualBakil />} />
                   <Route path="/portfolio" element={<LegalAIPortfolio />} />
                   <Route path="/personal-room" element={<PersonalRoom />} />
+                  <Route path="/test-enhanced" element={<TestEnhancedComponents />} />
 
                   {/* Authentication Routes */}
                   <Route path="/auth" element={isAuthenticated ? <Navigate to="/" replace /> : <AuthComponent />} />

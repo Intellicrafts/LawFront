@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { authAPI, tokenManager, apiServices } from '../api/apiService';
 import Avatar from './common/Avatar';
 import NotificationDropdown from './NotificationDropdown';
+import { cleanAvatarUrl, generateInitials, getCachedAvatarUrl } from '../utils/avatarUtils';
 import { 
   Menu, 
   X, 
@@ -57,33 +58,53 @@ const Navbar = () => {
   // Check authentication status on component mount
   useEffect(() => {
     checkAuthStatus();
-  }, []);
+    
+    // Listen for avatar updates
+    const handleAvatarUpdate = (event) => {
+      if (user && event.detail.userId === (user.id || 'current')) {
+        console.log('Navbar: Avatar updated, refreshing user data');
+        checkAuthStatus();
+      }
+    };
+    
+    window.addEventListener('avatar-updated', handleAvatarUpdate);
+    
+    return () => {
+      window.removeEventListener('avatar-updated', handleAvatarUpdate);
+    };
+  }, [user?.id]);
 
   
-  // Function to check if user is authenticated
+  // Function to check if user is authenticated with enhanced avatar handling
   const checkAuthStatus = () => {
     const token = localStorage.getItem('auth_token');
     const userData = localStorage.getItem('user');
-    const userAvatar = localStorage.getItem('user_avatar');
-    console.log('User:', userData, 'token:', token, 'avatar:', userAvatar);
+    console.log('Navbar: Checking auth status - User:', userData, 'token:', token);
     
     if (token && userData) {
       setIsAuthenticated(true);
       try {
         const parsedUser = JSON.parse(userData);
         
-        // Add avatar URL to user object if available in localStorage
-        if (userAvatar) {
-          // Handle escaped backslashes in URLs (like "https:\/\/chambersapi.logicera.in\/storage\/avatars\/...")
-          let processedAvatar = userAvatar;
-          if (typeof processedAvatar === 'string' && processedAvatar.includes('\\/')) {
-            // Replace escaped backslashes with forward slashes
-            processedAvatar = processedAvatar.replace(/\\\//g, '/');
-            console.log('Navbar: Fixed escaped backslashes in avatar URL:', processedAvatar);
+        // Try to get avatar from enhanced cache first
+        const cachedAvatar = getCachedAvatarUrl(parsedUser.id || 'current');
+        if (cachedAvatar) {
+          console.log('Navbar: Using cached avatar from enhanced cache:', cachedAvatar);
+          parsedUser.avatar = cachedAvatar;
+        } else {
+          // Try old localStorage avatar
+          const oldAvatar = localStorage.getItem('user_avatar');
+          if (oldAvatar) {
+            console.log('Navbar: Processing old avatar from localStorage:', oldAvatar);
+            const cleanedAvatar = cleanAvatarUrl(oldAvatar);
+            if (cleanedAvatar) {
+              parsedUser.avatar = cleanedAvatar;
+              console.log('Navbar: Using cleaned avatar URL:', cleanedAvatar);
+            } else {
+              console.log('Navbar: Failed to clean avatar URL, will use initials');
+              parsedUser.avatar = null;
+            }
           }
-          
-          parsedUser.avatar = processedAvatar;
-          console.log('Added avatar URL to user object:', processedAvatar);
         }
         
         setUser(parsedUser);
@@ -367,10 +388,9 @@ const Navbar = () => {
     };
   }, []);
 
-  // Get user initials for avatar
-  const getUserInitials = (name) => {
-    if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  // Get user initials for avatar using enhanced utilities
+  const getUserInitials = (name, lastName = '') => {
+    return generateInitials(name, lastName);
   };
   
   // Handle notification click
@@ -618,18 +638,13 @@ const Navbar = () => {
                         onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                         className="flex items-center space-x-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 focus:outline-none"
                       >
-                        {user?.avatar ? (
-                          <Avatar 
-                            src={user.avatar} 
-                            alt={user.name || 'User'} 
-                            size={32} 
-                            className="border-2 border-white dark:border-gray-800"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
-                            {getUserInitials(user?.name)}
-                          </div>
-                        )}
+                        <Avatar 
+                          src={user?.avatar} 
+                          alt={user?.name || 'User'} 
+                          name={`${user?.name || ''} ${user?.last_name || ''}`.trim() || 'User'}
+                          size={32} 
+                          className="border-2 border-white dark:border-gray-800"
+                        />
                         <ChevronDown size={16} className="text-gray-500 dark:text-gray-400" />
                       </button>
 
@@ -755,18 +770,13 @@ const Navbar = () => {
             <div className="flex items-center space-x-3 py-3 border-b border-gray-100 dark:border-gray-800 mb-2">
               {isAuthenticated ? (
                 <>
-                  {user?.avatar ? (
-                    <Avatar 
-                      src={user.avatar} 
-                      alt={user.name || 'User'} 
-                      size={48} 
-                      className="border-2 border-white dark:border-gray-800"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg font-medium">
-                      {getUserInitials(user?.name)}
-                    </div>
-                  )}
+                  <Avatar 
+                    src={user?.avatar} 
+                    alt={user?.name || 'User'} 
+                    name={`${user?.name || ''} ${user?.last_name || ''}`.trim() || 'User'}
+                    size={48} 
+                    className="border-2 border-white dark:border-gray-800"
+                  />
                   <div>
                     <h4 className="font-medium text-gray-900 dark:text-white">{user?.name || 'User'}</h4>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>

@@ -13,6 +13,7 @@ import Toast from '../common/Toast';
 import useToast from '../../hooks/useToast';
 import ProfileSkeleton from '../common/ProfileSkeleton';
 import Avatar from '../common/Avatar';
+import { cleanAvatarUrl, generateInitials, generateAvatarColor, cacheAvatarUrl, getCachedAvatarUrl, updateAvatarRealTime } from '../../utils/avatarUtils';
 
 const UserProfile = () => {
   // Get theme from Redux store
@@ -104,63 +105,40 @@ const UserProfile = () => {
     }
   }, [showSuccess, showError, showWarning, showInfo]);
   
-  // Enhanced function to get avatar URL from API response
+  // Enhanced function to get avatar URL from API response with smart malformed URL handling
   const getAvatarUrl = useCallback((userData) => {
-    // Directly use avatar_url if available (preferred method)
-    if (userData && userData.avatar_url) {
-      console.log('Using avatar_url from API response:', userData.avatar_url);
-      
-      // Handle escaped backslashes in URLs (like "https:\/\/chambersapi.logicera.in\/storage\/avatars\/...")
-      let processedUrl = userData.avatar_url;
-      if (typeof processedUrl === 'string' && processedUrl.includes('\\/')) {
-        // Replace escaped backslashes with forward slashes
-        processedUrl = processedUrl.replace(/\\\//g, '/');
-        console.log('Fixed escaped backslashes in avatar_url:', processedUrl);
-      }
-      
-      // Check if the URL is already absolute
-      if (processedUrl.startsWith('http')) {
-        return processedUrl;
-      }
-      
-      // If it's a relative URL (like /storage/avatars/...), make it absolute
-      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      const fullUrl = processedUrl.startsWith('/') 
-        ? `${baseUrl}${processedUrl}`
-        : `${baseUrl}/${processedUrl}`;
-        
-      console.log('Converted avatar_url to absolute URL:', fullUrl);
-      return fullUrl;
+    console.log('Processing avatar URL from userData:', userData);
+    
+    // First check for cached avatar (for real-time updates)
+    const cachedAvatar = getCachedAvatarUrl(userData?.id || 'current');
+    if (cachedAvatar) {
+      console.log('Using cached avatar URL:', cachedAvatar);
+      return cachedAvatar;
     }
     
-    // Fallback to avatar if avatar_url is not available
-    if (userData && userData.avatar) {
-      console.log('Using avatar from API response:', userData.avatar);
-      
-      // Handle escaped backslashes in URLs
-      let processedUrl = userData.avatar;
-      if (typeof processedUrl === 'string' && processedUrl.includes('\\/')) {
-        // Replace escaped backslashes with forward slashes
-        processedUrl = processedUrl.replace(/\\\//g, '/');
-        console.log('Fixed escaped backslashes in avatar:', processedUrl);
-      }
-      
-      // Check if the URL is already absolute
-      if (processedUrl.startsWith('http')) {
-        return processedUrl;
-      }
-      
-      // If it's a relative URL, make it absolute
-      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      const fullUrl = processedUrl.startsWith('/') 
-        ? `${baseUrl}${processedUrl}`
-        : `${baseUrl}/${processedUrl}`;
-        
-      console.log('Converted avatar to absolute URL:', fullUrl);
-      return fullUrl;
+    // Try avatar_url first (preferred method)
+    let avatarSource = userData?.avatar_url || userData?.avatar;
+    
+    if (!avatarSource) {
+      console.log('No avatar found in userData');
+      return null;
     }
     
-    // Return null if no avatar is found
+    console.log('Raw avatar URL from API:', avatarSource);
+    
+    // Use the smart cleaning utility
+    const cleanedUrl = cleanAvatarUrl(avatarSource);
+    
+    if (cleanedUrl) {
+      console.log('Successfully cleaned avatar URL:', cleanedUrl);
+      
+      // Cache the cleaned URL for future use
+      cacheAvatarUrl(cleanedUrl, userData?.id || 'current');
+      
+      return cleanedUrl;
+    }
+    
+    console.log('Failed to clean avatar URL, returning null');
     return null;
   }, []);
 
@@ -281,25 +259,50 @@ const UserProfile = () => {
     }
   }, [showSuccess, showInfo, showError, getAvatarUrl]);
 
-  // Function to ensure avatar is loaded - simplified
+  // Function to ensure avatar is loaded with enhanced caching
   const ensureAvatarLoaded = useCallback(() => {
-    // This function is now much simpler since we're using avatar_url directly
     if (userInfo && !userInfo.avatar) {
-      // If no avatar in userInfo, try to get from localStorage
-      const cachedAvatar = localStorage.getItem('user_avatar');
+      // Try to get from our enhanced cache first
+      const cachedAvatar = getCachedAvatarUrl(userInfo.id || 'current');
       
       if (cachedAvatar) {
-        console.log('Restoring avatar from localStorage:', cachedAvatar);
+        console.log('Restoring avatar from enhanced cache:', cachedAvatar);
         setUserInfo(prev => ({ ...prev, avatar: cachedAvatar }));
         setEditForm(prev => ({ ...prev, avatar: cachedAvatar }));
+      } else {
+        // Fallback to old localStorage method
+        const oldCachedAvatar = localStorage.getItem('user_avatar');
+        if (oldCachedAvatar) {
+          console.log('Restoring avatar from old cache:', oldCachedAvatar);
+          const cleanedUrl = cleanAvatarUrl(oldCachedAvatar);
+          if (cleanedUrl) {
+            cacheAvatarUrl(cleanedUrl, userInfo.id || 'current');
+            setUserInfo(prev => ({ ...prev, avatar: cleanedUrl }));
+            setEditForm(prev => ({ ...prev, avatar: cleanedUrl }));
+          }
+        }
       }
     }
   }, [userInfo]);
 
   useEffect(() => {
     fetchUserData();
-    // No need for cleanup as our toast component handles its own timeouts
-  }, [fetchUserData]);
+    
+    // Listen for real-time avatar updates
+    const handleAvatarUpdate = (event) => {
+      if (event.detail.userId === (userInfo?.id || 'current')) {
+        console.log('Profile: Avatar updated, refreshing avatar in UI');
+        setUserInfo(prev => prev ? { ...prev, avatar: event.detail.avatarUrl } : prev);
+        setEditForm(prev => prev ? { ...prev, avatar: event.detail.avatarUrl } : prev);
+      }
+    };
+    
+    window.addEventListener('avatar-updated', handleAvatarUpdate);
+    
+    return () => {
+      window.removeEventListener('avatar-updated', handleAvatarUpdate);
+    };
+  }, [fetchUserData, userInfo?.id]);
   
   // Additional effect to ensure avatar is loaded after profile data is fetched
   useEffect(() => {
@@ -437,12 +440,12 @@ const UserProfile = () => {
       }
       
       if (avatarUrl) {
-        // Update localStorage with the new avatar URL
-        updateLocalStorageWithAvatar(avatarUrl);
+        // Use the real-time avatar update function for instant updates across all components
+        updateAvatarRealTime(avatarUrl, userInfo?.id);
         
         // Update the UI with the new avatar
-        setUserInfo(prev => ({ ...prev, avatar: avatarUrl }));
-        setEditForm(prev => ({ ...prev, avatar: avatarUrl }));
+        setUserInfo(prev => ({ ...prev, avatar: cleanAvatarUrl(avatarUrl) }));
+        setEditForm(prev => ({ ...prev, avatar: cleanAvatarUrl(avatarUrl) }));
         
         showSuccess('Avatar Updated', 'Your profile picture has been updated successfully!');
       } else {
@@ -457,12 +460,12 @@ const UserProfile = () => {
           
           if (profileAvatarUrl) {
             console.log('Using avatar URL from profile:', profileAvatarUrl);
-            // Update localStorage with the new avatar URL
-            updateLocalStorageWithAvatar(profileAvatarUrl);
+            // Use the real-time avatar update function
+            updateAvatarRealTime(profileAvatarUrl, userInfo?.id);
             
             // Update the UI with the new avatar
-            setUserInfo(prev => ({ ...prev, avatar: profileAvatarUrl }));
-            setEditForm(prev => ({ ...prev, avatar: profileAvatarUrl }));
+            setUserInfo(prev => ({ ...prev, avatar: cleanAvatarUrl(profileAvatarUrl) }));
+            setEditForm(prev => ({ ...prev, avatar: cleanAvatarUrl(profileAvatarUrl) }));
             
             showSuccess('Avatar Updated', 'Your profile picture has been updated successfully!');
           } else {

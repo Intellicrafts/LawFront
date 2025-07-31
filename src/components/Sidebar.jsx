@@ -179,20 +179,7 @@ export function Sidebar({
             <MessageSquare size={14} />
           </div> */}
           <h2 className={`text-base font-medium ${isDark ? 'text-white' : 'text-gray-800'}`}>
-            <button
-          onClick={handleReset}
-          className={`py-2 px-4 rounded-full text-white font-medium 
-                    flex items-center justify-center gap-2 
-                    bg-gradient-to-r from-sky-400 to-indigo-500 hover:from-sky-500 hover:to-indigo-600
-                    shadow-sm hover:shadow-md 
-                    transition-all duration-300 transform hover:scale-[1.02]`}
-        >
-          <div className="relative">
-            <Sparkles size={14} className="text-white/80 absolute -top-1 -right-1" />
-            <MessageCircle size={15} className="text-white" />
-          </div>
-          <span className="text-sm">New Chat</span>
-        </button>
+            Chat History
           </h2>
         </div>
       </div>

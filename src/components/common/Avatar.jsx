@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { cleanAvatarUrl, generateInitials, generateAvatarColor } from '../../utils/avatarUtils';
 
 // Base64 encoded default avatar (a simple gray user silhouette)
 const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzlFOUU5RSI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgM2MyLjY3IDAgOCAyLjY3IDggOHYyYzAgMi42Ny01LjMzIDUtOCA1cy04LTIuMzMtOC01di0yYzAtNS4zMyA1LjMzLTggOC04em0wIDJjLTEuMSAwLTIgLjktMiAyczAuOSAyIDIgMiAyLS45IDItMi0uOS0yLTItMnoiLz48L3N2Zz4=';
@@ -23,55 +24,14 @@ const Avatar = ({ src, alt, className, size, style, name, forceRefresh, ...rest 
   const [isLoading, setIsLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(Date.now()); // Used to force refresh
 
-  // Generate initials from name
+  // Generate initials from name using utility function
   const getInitials = () => {
-    if (!name) return '?';
-    
-    // Split the name by spaces
-    const nameParts = name.trim().split(/\s+/);
-    
-    if (nameParts.length === 1) {
-      const singleName = nameParts[0];
-      // If only one name and it's long enough, return first and last character
-      if (singleName.length > 1) {
-        return (singleName.charAt(0) + singleName.charAt(singleName.length - 1)).toUpperCase();
-      }
-      // Otherwise just return the first character
-      return singleName.charAt(0).toUpperCase();
-    } else {
-      // Return first character of first name and first character of last name
-      return (nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)).toUpperCase();
-    }
+    return generateInitials(name);
   };
 
-  // Generate a consistent background color based on the name
+  // Generate a consistent background color based on the name using utility function
   const getBackgroundColor = () => {
-    if (!name) return '#6B7280'; // Default gray
-    
-    // List of colors to choose from
-    const colors = [
-      '#F87171', // Red
-      '#FB923C', // Orange
-      '#FBBF24', // Amber
-      '#A3E635', // Lime
-      '#34D399', // Emerald
-      '#22D3EE', // Cyan
-      '#60A5FA', // Blue
-      '#818CF8', // Indigo
-      '#A78BFA', // Violet
-      '#E879F9', // Fuchsia
-      '#F472B6', // Pink
-    ];
-    
-    // Simple hash function to get a consistent index
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    
-    // Get a positive index within the colors array
-    const index = Math.abs(hash) % colors.length;
-    return colors[index];
+    return generateAvatarColor(name);
   };
 
   // Update refreshKey when forceRefresh prop changes
@@ -103,77 +63,25 @@ const Avatar = ({ src, alt, className, size, style, name, forceRefresh, ...rest 
     // Reset error state when src changes
     setHasError(false);
 
-    // Process the URL
-    let processedSrc = src;
-
+    // Process the URL using the smart avatar utilities
     try {
-      // Handle escaped backslashes in URLs (like "https:\/\/chambersapi.logicera.in\/storage\/avatars\/...")
-      if (typeof processedSrc === 'string' && processedSrc.includes('\\/')) {
-        // Replace escaped backslashes with forward slashes
-        processedSrc = processedSrc.replace(/\\\//g, '/');
-        console.log('Avatar: Fixed escaped backslashes in URL:', processedSrc);
-      }
-
-      // First, check for duplicate /api prefixes and fix them
-      if (typeof processedSrc === 'string' && processedSrc.includes('/api/api')) {
-        // Fix duplicate /api prefixes
-        while (processedSrc.includes('/api/api')) {
-          processedSrc = processedSrc.replace('/api/api', '/api');
-        }
-        console.log('Avatar: Fixed duplicate /api prefixes:', processedSrc);
-      }
-
-      // Handle Laravel storage URLs like "http://localhost:8000/storage/avatars/9qILjMIcOKOwGxInp0sRMP79f5xDoCp1UT4EbCgt.jpg"
-      // or "https://chambersapi.logicera.in/storage/avatars/o7vyJNOhHqI6Nf7I8t6ErXT1dxcJnId6XniqnuIE.jpg"
-      if (typeof processedSrc === 'string' && 
-          (processedSrc.includes('/storage/avatars/') || processedSrc.includes('/storage/profile-photos/'))) {
-        // This is already a storage path, just ensure it has the correct base URL
-        console.log('Avatar: Detected Laravel storage path:', processedSrc);
-        
-        // If it's not an absolute URL, make it absolute
-        if (!processedSrc.startsWith('http')) {
-          const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-          processedSrc = processedSrc.startsWith('/') 
-            ? `${baseUrl}${processedSrc}` 
-            : `${baseUrl}/${processedSrc}`;
-          console.log('Avatar: Converted storage path to absolute URL:', processedSrc);
-        }
-      }
+      console.log('Avatar: Processing URL with cleanAvatarUrl:', src);
+      const processedSrc = cleanAvatarUrl(src);
       
-      // Check if it's just a filename (no slashes)
-      else if (typeof processedSrc === 'string' && !processedSrc.includes('/') && 
-          (processedSrc.includes('.jpg') || processedSrc.includes('.jpeg') || processedSrc.includes('.png') || 
-           processedSrc.includes('.gif') || processedSrc.includes('.webp'))) {
-        
-        // It's just a filename, construct the full path
-        const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-        processedSrc = `${baseUrl}/storage/avatars/${processedSrc}`;
-        console.log('Avatar: Converted filename to storage path:', processedSrc);
-      }
-      
-      // Ensure any other URL is absolute
-      else if (typeof processedSrc === 'string' && !processedSrc.startsWith('data:') && !processedSrc.startsWith('http')) {
-        const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-        
-        // Make sure we don't add the baseUrl if it's already in the URL
-        if (!processedSrc.includes(baseUrl)) {
-          processedSrc = processedSrc.startsWith('/') 
-            ? `${baseUrl}${processedSrc}` 
-            : `${baseUrl}/${processedSrc}`;
-          console.log('Avatar: Converted to absolute URL:', processedSrc);
-        }
-      }
-
-      // Add a cache-busting parameter to prevent browser caching
-      if (typeof processedSrc === 'string' && !processedSrc.startsWith('data:')) {
+      if (processedSrc) {
+        // Add a cache-busting parameter to prevent browser caching
         const cacheBuster = `_cb=${refreshKey}`;
-        processedSrc = processedSrc.includes('?') 
+        const finalSrc = processedSrc.includes('?') 
           ? `${processedSrc}&${cacheBuster}` 
           : `${processedSrc}?${cacheBuster}`;
-        console.log('Avatar: Added cache-busting parameter:', processedSrc);
+        
+        console.log('Avatar: Successfully processed URL:', finalSrc);
+        setImageSrc(finalSrc);
+      } else {
+        console.log('Avatar: Failed to process URL, will show initials');
+        setHasError(true);
+        setIsLoading(false);
       }
-
-      setImageSrc(processedSrc);
     } catch (error) {
       console.error('Avatar: Error processing avatar URL:', error);
       setHasError(true);
