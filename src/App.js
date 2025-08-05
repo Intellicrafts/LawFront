@@ -34,7 +34,7 @@ import VoiceModal from './components/VoiceModal';
 import Profile from './components/Auth/Profile';
 import VirtualBakil from './components/VirtualBakil';
 import LegalAIPortfolio from './components/LegalAIPortfolio';
-import { authAPI, tokenManager } from './api/apiService';
+import { tokenManager } from './api/apiService';
 import PersonalRoom from './components/PersonalRoom';
 import LawyerAdmin from './components/Lawyer/LawyerAdmin';
 import TestEnhancedComponents from './components/TestEnhancedComponents';

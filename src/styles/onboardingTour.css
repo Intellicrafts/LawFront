@@ -1,0 +1,328 @@
+/* Onboarding Tour Styles */
+
+/* Base tour overlay styling */
+.joyride-overlay {
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+/* Tour tooltip base styling */
+.joyride-tooltip {
+  border-radius: 16px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  border: none !important;
+  max-width: 400px !important;
+  min-width: 320px !important;
+  font-family: inherit !important;
+}
+
+/* Dark mode styles */
+.joyride-tooltip.dark {
+  background: #1f2937 !important;
+  border: 1px solid #374151 !important;
+  color: #f9fafb !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 
+              0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+}
+
+.joyride-tooltip.light {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  color: #1f2937 !important;
+}
+
+/* Button styling */
+.joyride-button-back {
+  background: transparent !important;
+  border: 1px solid #d1d5db !important;
+  color: #6b7280 !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  margin-right: 8px !important;
+}
+
+.dark .joyride-button-back {
+  border-color: #4b5563 !important;
+  color: #d1d5db !important;
+}
+
+.joyride-button-back:hover {
+  background: #f9fafb !important;
+}
+
+.dark .joyride-button-back:hover {
+  background: #374151 !important;
+  border-color: #6b7280 !important;
+}
+
+.joyride-button-skip {
+  background: transparent !important;
+  border: none !important;
+  color: #6b7280 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  padding: 8px 16px !important;
+  transition: color 0.2s ease !important;
+}
+
+.dark .joyride-button-skip {
+  color: #9ca3af !important;
+}
+
+.joyride-button-skip:hover {
+  color: #374151 !important;
+}
+
+.dark .joyride-button-skip:hover {
+  color: #d1d5db !important;
+}
+
+.joyride-button-next {
+  background: #7c3aed !important;
+  border: none !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.dark .joyride-button-next {
+  background: #8b5cf6 !important;
+}
+
+.joyride-button-next:hover {
+  background: #6d28d9 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3) !important;
+}
+
+.dark .joyride-button-next:hover {
+  background: #7c3aed !important;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3) !important;
+}
+
+/* Enhanced spotlight animation */
+@keyframes pulse-spotlight {
+  0%, 100% {
+    box-shadow: 
+      0 0 0 0 rgba(139, 92, 246, 0.6),
+      0 0 30px rgba(139, 92, 246, 0.4),
+      0 0 60px rgba(139, 92, 246, 0.2),
+      inset 0 0 20px rgba(139, 92, 246, 0.1) !important;
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 
+      0 0 0 8px rgba(139, 92, 246, 0.1),
+      0 0 40px rgba(139, 92, 246, 0.5),
+      0 0 80px rgba(139, 92, 246, 0.3),
+      inset 0 0 30px rgba(139, 92, 246, 0.15) !important;
+    transform: scale(1.02);
+  }
+}
+
+/* Additional premium animations */
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(139, 92, 246, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+  }
+}
+
+/* Tooltip arrow styling */
+.joyride-tooltip .joyride-tooltip__arrow {
+  display: none !important;
+}
+
+/* Content styling */
+.joyride-tooltip-content {
+  padding: 0 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .joyride-tooltip {
+    max-width: 320px !important;
+    min-width: 280px !important;
+    margin: 16px !important;
+  }
+  
+  .joyride-button-back,
+  .joyride-button-skip,
+  .joyride-button-next {
+    padding: 6px 12px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* Smooth transitions for tour elements */
+.joyride-beacon {
+  animation: beacon-pulse 1.5s infinite !important;
+}
+
+@keyframes beacon-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Prevent layout shifts and scrolling during tour */
+.tour-active {
+  scroll-behavior: smooth !important;
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.tour-active * {
+  scroll-margin-top: 80px !important;
+}
+
+/* Ensure tour tooltips are always above everything */
+.tour-tooltip {
+  position: fixed !important;
+  z-index: 99999 !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure tour overlay covers everything */
+.tour-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 99998 !important;
+  pointer-events: none !important;
+}
+
+/* Make sure navigation buttons are always visible */
+.tour-navigation {
+  position: relative !important;
+  z-index: 100000 !important;
+  pointer-events: auto !important;
+}
+
+/* Enhanced voice button highlight during tour */
+.tour-voice-highlight {
+  animation: tour-voice-pulse 2s ease-in-out infinite !important;
+  border-radius: 50% !important;
+}
+
+@keyframes tour-voice-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(34, 87, 122, 0.6) !important;
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(34, 87, 122, 0.2) !important;
+  }
+}
+
+/* Backdrop blur effect for modals */
+.tour-backdrop {
+  backdrop-filter: blur(12px) !important;
+  background: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Enhanced glowing effects */
+.tour-glow {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3),
+              0 0 40px rgba(139, 92, 246, 0.2),
+              0 0 60px rgba(139, 92, 246, 0.1) !important;
+}
+
+/* Tour step indicators */
+.tour-step-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #8b5cf6;
+}
+
+.dark .tour-step-indicator {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.3);
+  color: #a78bfa;
+}
+
+/* Smooth entrance animations */
+.tour-entrance {
+  animation: tourEntrance 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes tourEntrance {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Premium gradient backgrounds */
+.tour-gradient-bg {
+  background: linear-gradient(135deg, 
+    rgba(139, 92, 246, 0.1) 0%, 
+    rgba(99, 102, 241, 0.1) 50%, 
+    rgba(168, 85, 247, 0.1) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.dark .tour-gradient-bg {
+  background: linear-gradient(135deg, 
+    rgba(139, 92, 246, 0.2) 0%, 
+    rgba(99, 102, 241, 0.2) 50%, 
+    rgba(168, 85, 247, 0.2) 100%);
+  border-color: rgba(139, 92, 246, 0.3);
+}

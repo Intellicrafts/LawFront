@@ -196,8 +196,16 @@
 
 @layer base {
   /* Base styles that apply to both light and dark modes */
-  body {
+  html, body {
     @apply antialiased transition-colors duration-300;
+    scrollbar-width: none; /* Hide scrollbar in Firefox */
+    -ms-overflow-style: none; /* Hide scrollbar in IE/Edge */
+  }
+  
+  /* Hide webkit scrollbars for html and body */
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
   }
 
   /* Dark mode specific styles */
@@ -251,32 +259,32 @@
     display: none; /* Chrome, Safari, Opera */
   }
 
-  /* Custom scrollbar for dark mode */
+  /* Hide dark mode scrollbars */
   .dark ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 0px;
+    background: transparent;
   }
 
   .dark ::-webkit-scrollbar-track {
-    @apply bg-gray-800;
+    background: transparent;
   }
 
   .dark ::-webkit-scrollbar-thumb {
-    @apply bg-gray-600 rounded-full hover:bg-gray-500;
+    background: transparent;
   }
 
-  /* Custom scrollbar for light mode */
+  /* Hide all scrollbars */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 0px;
+    background: transparent;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-gray-100;
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 rounded-full hover:bg-gray-400;
+    background: transparent;
   }
 }
 

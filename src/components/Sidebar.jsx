@@ -144,6 +144,7 @@ export function Sidebar({
                 transform transition-all duration-300 ease-in-out 
                 rounded-2xl border border-gray-100/30 dark:border-gray-700/30
                 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      data-tour="chat-history"
     >
       {/* Decorative elements for premium look */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-sky-400/10 to-indigo-400/5 rounded-full blur-3xl -z-10"></div>

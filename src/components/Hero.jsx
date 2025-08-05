@@ -11,10 +11,12 @@ import {
 
 import { Sidebar } from './Sidebar';
 import VoiceModal from '../components/VoiceModal';
+import OnboardingTour from './OnboardingTour';
 import { useAuth } from '../context/AuthContext'; 
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMobileKeyboard } from '../hooks/useMobileKeyboard';
+import { useOnboardingTour } from '../hooks/useOnboardingTour';
 
 // API Configuration
 const API_CONFIG = {
@@ -67,6 +69,16 @@ const Hero = () => {
     isKeyboardTransitioning
   } = useMobileKeyboard();
   
+  // Onboarding tour functionality
+  const {
+    showTour,
+    isFirstLogin,
+    startTour,
+    closeTour,
+    completeTour,
+    resetTour
+  } = useOnboardingTour();
+  
   // Free request limit state
   const [requestCount, setRequestCount] = useState(0);
   const [showLimitWarning, setShowLimitWarning] = useState(false);
@@ -77,11 +89,20 @@ const Hero = () => {
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
   const [lastScrollPosition, setLastScrollPosition] = useState(0);
   
+  // Text-to-Speech state management
+  const [isReading, setIsReading] = useState(false);
+  const [currentReadingMessageId, setCurrentReadingMessageId] = useState(null);
+  const [availableVoices, setAvailableVoices] = useState([]);
+  const [selectedVoiceIndex, setSelectedVoiceIndex] = useState(null);
+  const [showVoiceSelector, setShowVoiceSelector] = useState(false);
+  const speechSynthesisRef = useRef(null);
+  
   // Refs
   const inputRef = useRef(null);
   const chatContainerRef = useRef(null);
   const sidebarRef = useRef(null);
   const modalDropdownRef = useRef(null);
+  const voiceSelectorRef = useRef(null);
   const scrollTimeoutRef = useRef(null);
   const isUserScrollingRef = useRef(false);
   const scrollIntervalRef = useRef(null);
@@ -313,19 +334,325 @@ const Hero = () => {
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
+      // Cleanup speech synthesis
+      if (speechSynthesisRef.current) {
+        speechSynthesis.cancel();
+      }
     };
   }, []);
 
-  // Click outside handler for modal dropdown and body scroll management
+  // Text-to-Speech functionality with Indian accent
+  const cleanTextForSpeech = (text) => {
+    // Remove HTML tags and formatting
+    const cleanText = text
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove markdown bold
+      .replace(/\*(.*?)\*/g, '$1') // Remove markdown italic
+      .replace(/`([^`]*)`/g, '$1') // Remove inline code
+      .replace(/```[\s\S]*?```/g, '') // Remove code blocks
+      .replace(/#{1,6}\s/g, '') // Remove markdown headers
+      .replace(/[-*]\s/g, '') // Remove bullet points
+      .replace(/\n+/g, '. ') // Replace line breaks with periods
+      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+      .trim();
+    
+    return cleanText;
+  };
+
+  const readAloudMessage = (messageText, messageId) => {
+    // Check if browser supports speech synthesis
+    if (!('speechSynthesis' in window)) {
+      alert('Sorry, your browser does not support text-to-speech feature.');
+      return;
+    }
+
+    // Cancel any ongoing speech
+    speechSynthesis.cancel();
+
+    // If already reading this message, stop it
+    if (isReading && currentReadingMessageId === messageId) {
+      setIsReading(false);
+      setCurrentReadingMessageId(null);
+      return;
+    }
+
+    // Clean the text for better speech
+    const cleanText = cleanTextForSpeech(messageText);
+    
+    if (!cleanText.trim()) {
+      alert('No readable content found in this message.');
+      return;
+    }
+
+    // Create speech synthesis utterance
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    speechSynthesisRef.current = utterance;
+
+    // Set speech parameters for natural human-like Hindi accent
+    utterance.rate = 0.85; // Slower for more natural human pace
+    utterance.pitch = 0.95; // Slightly lower pitch for male voice
+    utterance.volume = 0.85; // Clear and comfortable volume
+
+    // Get available voices
+    const voices = speechSynthesis.getVoices();
+    
+    console.log('🔍 Searching for Hindi/Indian male voice...');
+    console.log('Total voices available:', voices.length);
+    
+    // If user has manually selected a voice, use that
+    let selectedVoice = null;
+    if (selectedVoiceIndex !== null && voices[selectedVoiceIndex]) {
+      selectedVoice = voices[selectedVoiceIndex];
+      console.log('👤 Using manually selected voice:', selectedVoice.name, selectedVoice.lang);
+    } else {
+      // Automatic voice selection with comprehensive patterns
+      const indianVoicePatterns = [
+        'hindi', 'indian', 'india', 'ravi', 'aditi', 'kiran', 'priya', 'veena', 'hemant',
+        'microsoft ravi', 'google hindi', 'nuance vocalizer', 'haruka', 'sayaka',
+        'en-in', 'hi-in', 'marathi', 'bengali', 'tamil', 'telugu', 'malayalam', 'kannada',
+        'microsoft desktop', 'natural', 'premium'
+      ];
+      
+      const maleVoicePatterns = [
+        'male', 'man', 'boy', 'ravi', 'hemant', 'kiran', 'arjun', 'rohan', 'amit', 'raj',
+        'deep', 'bass', 'low'
+      ];
+      
+      // Try multiple strategies to find the best voice
+      
+      // Strategy 1: Perfect match - Hindi male voices
+      selectedVoice = voices.find(voice => {
+        const name = voice.name.toLowerCase();
+        const lang = voice.lang.toLowerCase();
+        return (lang.includes('hi-in') || lang.includes('hi')) && 
+               (maleVoicePatterns.some(pattern => name.includes(pattern)) || 
+                (!name.includes('female') && !name.includes('woman')));
+      });
+      
+      // Strategy 2: Indian English voices (male preference)
+      if (!selectedVoice) {
+        selectedVoice = voices.find(voice => {
+          const name = voice.name.toLowerCase();
+          const lang = voice.lang.toLowerCase();
+          return (lang.includes('en-in') || indianVoicePatterns.some(pattern => name.includes(pattern))) &&
+                 (maleVoicePatterns.some(pattern => name.includes(pattern)) || 
+                  (!name.includes('female') && !name.includes('woman')));
+        });
+      }
+      
+      // Strategy 3: Any Indian/Hindi voice
+      if (!selectedVoice) {
+        selectedVoice = voices.find(voice => {
+          const name = voice.name.toLowerCase();
+          const lang = voice.lang.toLowerCase();
+          return lang.includes('hi-in') || lang.includes('hi') || lang.includes('en-in') || 
+                 indianVoicePatterns.some(pattern => name.includes(pattern));
+        });
+      }
+      
+      // Strategy 4: English voices with male preference
+      if (!selectedVoice) {
+        selectedVoice = voices.find(voice => {
+          const name = voice.name.toLowerCase();
+          const lang = voice.lang.toLowerCase();
+          return lang.includes('en-') && 
+                 (maleVoicePatterns.some(pattern => name.includes(pattern)) || 
+                  (!name.includes('female') && !name.includes('woman')));
+        });
+      }
+      
+      // Strategy 5: Premium voices (often better quality)
+      if (!selectedVoice) {
+        selectedVoice = voices.find(voice => {
+          const name = voice.name.toLowerCase();
+          return name.includes('premium') || name.includes('natural') || name.includes('neural');
+        });
+      }
+      
+      // Strategy 6: Any English voice
+      if (!selectedVoice) {
+        selectedVoice = voices.find(voice => voice.lang.includes('en-'));
+      }
+      
+      // Strategy 7: Fallback to first available voice
+      if (!selectedVoice && voices.length > 0) {
+        selectedVoice = voices[0];
+      }
+    }
+    
+    // Apply voice-specific settings
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      
+      const name = selectedVoice.name.toLowerCase();
+      const lang = selectedVoice.lang.toLowerCase();
+      
+      // Optimize settings based on voice characteristics
+      if (lang.includes('hi-in') || lang.includes('hi')) {
+        // Hindi voices
+        utterance.rate = 0.7; // Much slower for clear Hindi pronunciation
+        utterance.pitch = 0.8; // Lower for male effect
+        console.log('✅ Using Hindi voice:', selectedVoice.name);
+      } else if (lang.includes('en-in') || name.includes('indian') || name.includes('india')) {
+        // Indian English voices
+        utterance.rate = 0.75; // Slower for Indian accent
+        utterance.pitch = 0.85; // Lower for male effect
+        console.log('✅ Using Indian English voice:', selectedVoice.name);
+      } else if (name.includes('male') || name.includes('man')) {
+        // Confirmed male voices
+        utterance.rate = 0.8; // Natural pace
+        utterance.pitch = 0.85; // Lower pitch
+        console.log('✅ Using male voice:', selectedVoice.name);
+      } else {
+        // Generic/fallback voices - make them sound more male
+        utterance.rate = 0.75; // Slower for accent effect
+        utterance.pitch = 0.7; // Much lower pitch to sound male
+        console.log('✅ Using voice with male settings:', selectedVoice.name);
+      }
+      
+      console.log('🎙️ Final voice settings - Rate:', utterance.rate, 'Pitch:', utterance.pitch, 'Volume:', utterance.volume);
+    } else {
+      console.log('⚠️ No voice found, using system default');
+    }
+
+    // Add more human-like pauses and intonation
+    const enhancedText = cleanText
+      .replace(/\./g, '. ') // Add pause after periods
+      .replace(/,/g, ', ') // Add slight pause after commas
+      .replace(/:/g, ': ') // Add pause after colons
+      .replace(/;/g, '; ') // Add pause after semicolons
+      .replace(/\?/g, '? ') // Add pause after questions
+      .replace(/!/g, '! ') // Add pause after exclamations
+      .replace(/\s+/g, ' ') // Clean up multiple spaces
+      .trim();
+    
+    utterance.text = enhancedText;
+
+    // Event handlers
+    utterance.onstart = () => {
+      setIsReading(true);
+      setCurrentReadingMessageId(messageId);
+    };
+
+    utterance.onend = () => {
+      setIsReading(false);
+      setCurrentReadingMessageId(null);
+    };
+
+    utterance.onerror = (event) => {
+      console.error('Speech synthesis error:', event);
+      setIsReading(false);
+      setCurrentReadingMessageId(null);
+      alert('An error occurred while reading the text. Please try again.');
+    };
+
+    // Start speaking
+    speechSynthesis.speak(utterance);
+  };
+
+  // Load voices when available (some browsers load voices asynchronously)
+  useEffect(() => {
+    const loadVoices = () => {
+      const voices = speechSynthesis.getVoices();
+      
+      if (voices.length > 0) {
+        setAvailableVoices(voices);
+        
+        // Debug: Log available voices
+        console.log('🎤 Available voices for TTS:', voices.length);
+        voices.forEach((voice, index) => {
+          console.log(`${index}. ${voice.name} (${voice.lang})`);
+        });
+        
+        // Highlight Hindi/Indian voices for debugging
+        const indianVoices = voices.filter(voice => {
+          const name = voice.name.toLowerCase();
+          const lang = voice.lang.toLowerCase();
+          return lang.includes('hi') || lang.includes('en-in') || 
+                 name.includes('indian') || name.includes('india') || 
+                 name.includes('hindi') || name.includes('ravi') || 
+                 name.includes('aditi');
+        });
+        
+        if (indianVoices.length > 0) {
+          console.log('🇮🇳 Available Hindi/Indian voices:');
+          indianVoices.forEach((voice, index) => {
+            const originalIndex = voices.indexOf(voice);
+            console.log(`Index ${originalIndex}: ${voice.name} (${voice.lang})`);
+          });
+        } else {
+          console.log('❌ No Hindi/Indian voices found. Using best available voice with Indian accent simulation.');
+        }
+        
+        // Auto-select best voice if none selected
+        if (selectedVoiceIndex === null) {
+          const bestVoiceIndex = findBestVoiceIndex(voices);
+          if (bestVoiceIndex !== -1) {
+            setSelectedVoiceIndex(bestVoiceIndex);
+            console.log(`🎯 Auto-selected voice: ${voices[bestVoiceIndex].name} (Index: ${bestVoiceIndex})`);
+          }
+        }
+      }
+    };
+
+    // Helper function to find best voice
+    const findBestVoiceIndex = (voices) => {
+      // Priority patterns for automatic selection
+      const patterns = [
+        { pattern: (v) => v.lang.includes('hi-IN') && !v.name.toLowerCase().includes('female'), score: 100 },
+        { pattern: (v) => v.lang.includes('hi') && !v.name.toLowerCase().includes('female'), score: 95 },
+        { pattern: (v) => v.lang.includes('en-IN') && !v.name.toLowerCase().includes('female'), score: 90 },
+        { pattern: (v) => v.name.toLowerCase().includes('ravi'), score: 85 },
+        { pattern: (v) => v.name.toLowerCase().includes('indian') && !v.name.toLowerCase().includes('female'), score: 80 },
+        { pattern: (v) => v.lang.includes('hi-IN'), score: 75 },
+        { pattern: (v) => v.lang.includes('en-IN'), score: 70 },
+        { pattern: (v) => v.name.toLowerCase().includes('male'), score: 65 },
+        { pattern: (v) => !v.name.toLowerCase().includes('female'), score: 60 }
+      ];
+      
+      let bestIndex = -1;
+      let bestScore = 0;
+      
+      voices.forEach((voice, index) => {
+        let score = 0;
+        for (const pattern of patterns) {
+          if (pattern.pattern(voice)) {
+            score = Math.max(score, pattern.score);
+            break;
+          }
+        }
+        
+        if (score > bestScore) {
+          bestScore = score;
+          bestIndex = index;
+        }
+      });
+      
+      return bestIndex;
+    };
+
+    // Load voices immediately
+    loadVoices();
+
+    // Some browsers need this event listener
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }, [selectedVoiceIndex]);
+
+  // Click outside handler for dropdowns and body scroll management
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (modalDropdownRef.current && !modalDropdownRef.current.contains(event.target)) {
         setShowModalDropdown(false);
       }
+      if (voiceSelectorRef.current && !voiceSelectorRef.current.contains(event.target)) {
+        setShowVoiceSelector(false);
+      }
     };
 
-    // Prevent body scroll on mobile when dropdown is open
-    if (isMobile && showModalDropdown) {
+    // Prevent body scroll on mobile when any dropdown is open
+    if (isMobile && (showModalDropdown || showVoiceSelector)) {
       document.body.classList.add('dropdown-open');
     } else {
       document.body.classList.remove('dropdown-open');
@@ -337,7 +664,7 @@ const Hero = () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.body.classList.remove('dropdown-open');
     };
-  }, [showModalDropdown, isMobile]);
+  }, [showModalDropdown, showVoiceSelector, isMobile]);
 
   // Enhanced API Response Parser
   const parseAPIResponse = (rawText) => {
@@ -837,31 +1164,29 @@ const Hero = () => {
     }, 200);
   };
 
-  // Enhanced voice button toggle handler for smooth modal operation
+  // Clean voice button toggle handler - completely independent of input focus state
   const handleVoiceToggle = useCallback((e) => {
-    // Prevent event propagation and default behavior
+    // Stop event propagation using React-compatible methods
     if (e) {
       e.preventDefault();
       e.stopPropagation();
+      // Access native event if available for stopImmediatePropagation
+      if (e.nativeEvent && e.nativeEvent.stopImmediatePropagation) {
+        e.nativeEvent.stopImmediatePropagation();
+      }
     }
     
-    // Force state update with proper timing
-    if (isVoiceModalOpen) {
-      // If modal is open, close it and stop voice
-      setIsVoiceActive(false);
-      // Small delay to ensure smooth animation
-      setTimeout(() => {
-        setVoiceModalOpen(false);
-      }, 100);
-    } else {
-      // Open modal and start voice immediately with proper state synchronization
-      setVoiceModalOpen(true);
-      // Ensure voice is activated after modal state is set
-      setTimeout(() => {
-        setIsVoiceActive(true);
-      }, 150);
-    }
-  }, [isVoiceModalOpen, isVoiceActive]);
+    // Force state update regardless of input focus state
+    const newModalState = !isVoiceModalOpen;
+    
+    // Use requestAnimationFrame to ensure state updates happen in the next render cycle
+    requestAnimationFrame(() => {
+      setVoiceModalOpen(newModalState);
+      setIsVoiceActive(newModalState);
+    });
+    
+    console.log('Voice button clicked - Modal opening:', newModalState);
+  }, [isVoiceModalOpen]);
 
   // Lock input field height during loading to prevent UI breaks
   useEffect(() => {
@@ -1235,6 +1560,98 @@ const Hero = () => {
             {/* Bot Message Actions */}
             {!isUser && messageAnimationComplete && message.text && (
               <div className="flex items-center space-x-2">
+                {/* Voice Selector Button */}
+                <div className="relative" ref={voiceSelectorRef}>
+                  <button 
+                    onClick={() => setShowVoiceSelector(!showVoiceSelector)}
+                    className="text-slate-400 hover:text-blue-500 transition-colors p-1 rounded relative group"
+                    title="Select voice"
+                  >
+                    <Settings size={12} />
+                    
+                    {/* Tooltip */}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+                      Select voice for reading
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-2 border-transparent border-t-slate-800"></div>
+                    </div>
+                  </button>
+                  
+                  {/* Voice Selector Dropdown */}
+                  {showVoiceSelector && (
+                    <div className="absolute bottom-full left-0 mb-2 w-64 max-h-40 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg overflow-y-auto z-20">
+                      <div className="p-2 border-b border-slate-200 dark:border-slate-700">
+                        <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                          Choose Voice ({availableVoices.length} available)
+                        </p>
+                      </div>
+                      <div className="max-h-32 overflow-y-auto">
+                        {availableVoices.map((voice, index) => (
+                          <button
+                            key={index}
+                            onClick={() => {
+                              setSelectedVoiceIndex(index);
+                              setShowVoiceSelector(false);
+                              console.log('🎙️ Voice selected:', voice.name, voice.lang);
+                            }}
+                            className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ${
+                              selectedVoiceIndex === index ? 'bg-violet-100 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400' : ''
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium truncate">
+                                {voice.name}
+                              </span>
+                              <span className="text-xs opacity-60 ml-2 flex-shrink-0">
+                                {voice.lang}
+                              </span>
+                            </div>
+                            {(voice.lang.includes('hi') || voice.lang.includes('en-IN') || 
+                              voice.name.toLowerCase().includes('indian') || 
+                              voice.name.toLowerCase().includes('hindi')) && (
+                              <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                🇮🇳 Hindi/Indian
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Read Aloud Button */}
+                <button 
+                  onClick={() => readAloudMessage(message.text, message.id)}
+                  className={`${
+                    isReading && currentReadingMessageId === message.id
+                      ? 'text-violet-500 hover:text-violet-600' 
+                      : 'text-slate-400 hover:text-violet-500'
+                  } transition-colors p-1 rounded relative group`}
+                  title={
+                    isReading && currentReadingMessageId === message.id 
+                      ? "Stop reading" 
+                      : "Read aloud"
+                  }
+                >
+                  {isReading && currentReadingMessageId === message.id ? (
+                    <div className="relative">
+                      <Volume2 size={14} />
+                      <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-violet-500 rounded-full animate-pulse"></div>
+                    </div>
+                  ) : (
+                    <Volume2 size={14} />
+                  )}
+                  
+                  {/* Enhanced Tooltip with Current Voice Info */}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+                    {isReading && currentReadingMessageId === message.id ? "Stop reading" : 
+                     `Read aloud ${selectedVoiceIndex !== null && availableVoices[selectedVoiceIndex] ? 
+                      `(${availableVoices[selectedVoiceIndex].name})` : 
+                      '(Hindi accent)'}`}
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-2 border-transparent border-t-slate-800"></div>
+                  </div>
+                </button>
+                
                 <button 
                   onClick={() => {
                     navigator.clipboard.writeText(message.text);
@@ -1437,6 +1854,7 @@ const Hero = () => {
         exit={{ opacity: 0, y: 10 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
         className="absolute left-0 right-0 top-full mt-3 bg-slate-50/80 dark:bg-slate-900/30 backdrop-blur-sm rounded-2xl z-10"
+        data-tour="suggestions-panel"
       >
         <div className="p-4 space-y-2">
           {randomSuggestions.map((suggestion, index) => (
@@ -1467,93 +1885,73 @@ const Hero = () => {
     );
   };
   
-  // Enhanced voice button with mobile-optimized sizing
-  const VoiceButton = ({ onClick, isActive = false }) => {
-    const [isClicking, setIsClicking] = useState(false);
-    
+  // Clean Professional Voice Button - Independent of input focus state
+  const CleanVoiceButton = ({ onClick, isActive = false }) => {
     const handleClick = useCallback((e) => {
+      // Stop event propagation using React-compatible methods
       e.preventDefault();
       e.stopPropagation();
+      // Access native event if available for stopImmediatePropagation
+      if (e.nativeEvent && e.nativeEvent.stopImmediatePropagation) {
+        e.nativeEvent.stopImmediatePropagation();
+      }
       
-      // Prevent double-clicks
-      if (isClicking) return;
+      console.log('Voice button physical click detected');
       
-      setIsClicking(true);
-      
-      // Execute the onClick handler with the event
+      // Execute immediately without any conditions
       if (onClick) {
         onClick(e);
       }
-      
-      // Reset clicking state after a short delay
-      setTimeout(() => {
-        setIsClicking(false);
-      }, 300);
-    }, [onClick, isClicking]);
+    }, [onClick]);
+
+    // Beautiful Professional Voice Icon
+    const VoiceIcon = () => (
+      <svg 
+        width={isMobile ? "16" : "18"} 
+        height={isMobile ? "16" : "18"} 
+        viewBox="0 0 24 24" 
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+        <line x1="12" y1="19" x2="12" y2="22" />
+        <line x1="8" y1="22" x2="16" y2="22" />
+      </svg>
+    );
 
     return (
-      <motion.button
-        whileTap={{ scale: 0.90 }}
-        whileHover={{ scale: isMobile ? 1.02 : 1.05 }}
+      <button
         onClick={handleClick}
+        onMouseDown={handleClick} // Handle mousedown as backup
+        onTouchStart={handleClick} // Handle touch as backup
         type="button"
-        disabled={isClicking}
-        className={`relative ${isMobile ? 'w-8 h-8' : 'w-9 h-9'} flex items-center justify-center rounded-full transition-all duration-300 cursor-pointer ${
-          isActive
-            ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25 ring-2 ring-red-200 dark:ring-red-800'
-            : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-sky-50 hover:text-sky-500 dark:hover:bg-sky-900/20 dark:hover:text-sky-400 hover:shadow-md'
-        } ${isClicking ? 'opacity-80 cursor-wait' : ''}`}
-        title={isActive ? "Stop Voice Recording" : "Start Voice Recording"}
-        aria-label={isActive ? "Stop Voice Recording" : "Start Voice Recording"}
+        className={`
+          ${isMobile ? 'w-9 h-9' : 'w-10 h-10'}
+          flex items-center justify-center
+          rounded-full
+          transition-colors duration-200
+          focus:outline-none
+          ${isActive 
+            ? 'bg-red-500 text-white shadow-lg' 
+            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 shadow-md hover:bg-slate-50 dark:hover:bg-slate-700'
+          }
+        `}
+        title={isActive ? "Stop Recording" : "Voice Input"}
+        style={{ 
+          zIndex: 9999, // Highest possible z-index
+          position: 'relative',
+          pointerEvents: 'auto'
+        }}
       >
-        {/* Voice Mode Indicator */}
+        <VoiceIcon />
         {isActive && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white dark:border-slate-800"
-          >
-            <motion.div
-              animate={{ scale: [0.8, 1.2, 0.8] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              className="w-full h-full bg-green-400 rounded-full"
-            />
-          </motion.div>
+          <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border border-white" />
         )}
-        
-        <motion.div
-          animate={isActive ? { 
-            scale: [1, 1.1, 1],
-            rotate: [0, 5, -5, 0]
-          } : { scale: 1, rotate: 0 }}
-          transition={{ 
-            duration: isActive ? 2 : 0.3, 
-            repeat: isActive ? Infinity : 0,
-            ease: "easeInOut"
-          }}
-        >
-          {isActive ? (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="flex items-center justify-center"
-            >
-              <Mic size={isMobile ? 16 : 18} />
-            </motion.div>
-          ) : (
-            <Mic size={isMobile ? 16 : 18} />
-          )}
-        </motion.div>
-        
-        {/* Pulse ring for active state */}
-        {isActive && (
-          <motion.div
-            className="absolute inset-0 rounded-full border-2 border-red-400"
-            animate={{ scale: [1, 1.5, 2], opacity: [0.8, 0.4, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
-        )}
-      </motion.button>
+      </button>
     );
   };
 
@@ -1815,18 +2213,18 @@ const Hero = () => {
           
           /* Mobile input elevated state when keyboard is visible */
           .mobile-input-elevated {
-            backdrop-filter: blur(25px);
-            background: rgba(249, 250, 251, 0.98) !important;
-            box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.15), 0 -5px 15px rgba(0, 0, 0, 0.1);
+            background: rgb(249, 250, 251) !important;
             border-top: 1px solid rgba(203, 213, 225, 0.9);
             position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
             touch-action: pan-y;
           }
           
           .dark .mobile-input-elevated {
-            background: rgba(15, 23, 42, 0.98) !important;
+            background: rgb(15, 23, 42) !important;
             border-top: 1px solid rgba(51, 65, 85, 0.9);
-            box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.3), 0 -5px 15px rgba(0, 0, 0, 0.2);
           }
           
           /* Allow interaction with input elements while preventing general dragging */
@@ -1843,15 +2241,12 @@ const Hero = () => {
           /* Enhanced mobile input styling */
           .mobile-input:focus {
             transform: none !important;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
           }
           
           /* Mobile input keyboard focus state */
           .mobile-input-keyboard-focus {
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4), 0 10px 40px rgba(0, 0, 0, 0.15) !important;
             border-color: rgb(59, 130, 246) !important;
             background: rgba(255, 255, 255, 0.98) !important;
-            backdrop-filter: blur(15px);
           }
           
           .dark .mobile-input-keyboard-focus {
@@ -1880,8 +2275,6 @@ const Hero = () => {
           /* Mobile app-like input container */
           .mobile-app-input {
             border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
           }
         }
         
@@ -1935,6 +2328,7 @@ const Hero = () => {
             setSidebarOpen={setSidebarOpen}
             chatHistory={chatHistory}
             handleReset={handleReset}
+            data-tour="chat-history"
             toggleStar={(id) => {
               setChatHistory(
                 chatHistory.map(chat => 
@@ -2000,7 +2394,6 @@ const Hero = () => {
                     Mera Bakil
                   </span>
                 </motion.h1>
-                
                 {/* Subtitle */}
                 <motion.p 
                   initial={{ opacity: 0, y: 20 }}
@@ -2029,19 +2422,15 @@ const Hero = () => {
                 <VoiceModal
                   isOpen={isVoiceModalOpen}
                   onClose={() => {
-                    setVoiceModalOpen(false);
                     setIsVoiceActive(false);
+                    setVoiceModalOpen(false);
                   }}
                   isVoiceActive={isVoiceActive}
                   setIsVoiceActive={setIsVoiceActive}
                   onVoiceResult={(transcript) => {
-                    // Set the transcript to the input field
                     setQuery(transcript);
-                    // Close the modal after processing
-                    setTimeout(() => {
-                      setIsVoiceActive(false);
-                      setVoiceModalOpen(false);
-                    }, 500);
+                    setIsVoiceActive(false);
+                    setVoiceModalOpen(false);
                   }}
                 />
                 
@@ -2067,9 +2456,9 @@ const Hero = () => {
                     
 
                     
-                    {/* Voice Button - Fixed Position */}
-                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                      <VoiceButton 
+                    {/* Clean Voice Button - Fixed Position */}
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-30">
+                      <CleanVoiceButton 
                         onClick={handleVoiceToggle} 
                         isActive={isVoiceActive || isVoiceModalOpen}
                       />
@@ -2130,6 +2519,7 @@ const Hero = () => {
                     }, 100);
                   }}
                   className="px-8 py-4 bg-gradient-to-r from-sky-500 to-sky-600 text-white font-semibold rounded-full shadow-xl hover:shadow-2xl hover:shadow-sky-500/25 transition-all duration-300 flex items-center justify-center text-lg"
+                  data-tour="start-consultation"
                 >
                   <MessageSquare size={20} className="mr-2" />
                   <span>Start Legal Consultation</span>
@@ -2145,57 +2535,60 @@ const Hero = () => {
                 transition={{ duration: 0.3 }}
                 className="flex flex-col h-full relative"
               >
-                {/* Clean Centered Header */}
-                <div className="sticky top-0 z-20 py-6 flex justify-center">
-                  <motion.div 
-                    initial={{ y: -20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="flex items-center gap-4"
-                  >
-                    {/* Status Indicator */}
-                    <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></div>
-                    
-                    {/* Greeting Text */}
-                    <div className="flex items-center gap-3">
-                      <Scale size={22} className="text-sky-600 dark:text-sky-400" />
-                      <span className="text-slate-800 dark:text-slate-200 font-semibold text-base">
-                        {new Date().getHours() < 12 ? 'Good Morning' : 
-                         new Date().getHours() < 17 ? 'Good Afternoon' : 'Good Evening'}
-                      </span>
-                    </div>
-                    
-                    {/* Date Badge */}
-                    <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full">
-                      <Calendar size={12} className="text-slate-500" />
-                      <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                        {new Date().toLocaleDateString('en-US', {
-                          weekday: 'short',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </span>
-                    </div>
-
-                    {/* Free Questions Counter */}
-                    {!checkAuthStatus() && (
-                      <div className="flex items-center gap-2 px-3 py-1 bg-sky-50 dark:bg-sky-900/20 rounded-full">
-                        <Bell size={12} className="text-sky-500" />
-                        <span className="text-xs text-sky-600 dark:text-sky-300 font-medium">
-                          {API_CONFIG.FREE_REQUEST_LIMIT - requestCount} free left
+                {/* Clean Centered Header - Hidden on Mobile */}
+                {!isMobile && (
+                  <div className="sticky top-0 z-20 py-6 flex justify-center">
+                    <motion.div 
+                      initial={{ y: -20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ duration: 0.5 }}
+                      className="flex items-center gap-4"
+                    >
+                      {/* Status Indicator */}
+                      <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></div>
+                      
+                      {/* Greeting Text */}
+                      <div className="flex items-center gap-3">
+                        <Scale size={22} className="text-sky-600 dark:text-sky-400" />
+                        <span className="text-slate-800 dark:text-slate-200 font-semibold text-base">
+                          {new Date().getHours() < 12 ? 'Good Morning' : 
+                           new Date().getHours() < 17 ? 'Good Afternoon' : 'Good Evening'}
                         </span>
                       </div>
-                    )}
-                  </motion.div>
-                  
+                      
+                      {/* Date Badge */}
+                      <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full">
+                        <Calendar size={12} className="text-slate-500" />
+                        <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                          {new Date().toLocaleDateString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </span>
+                      </div>
 
-                </div>
+                      {/* Free Questions Counter */}
+                      {!checkAuthStatus() && (
+                        <div className="flex items-center gap-2 px-3 py-1 bg-sky-50 dark:bg-sky-900/20 rounded-full">
+                          <Bell size={12} className="text-sky-500" />
+                          <span className="text-xs text-sky-600 dark:text-sky-300 font-medium">
+                            {API_CONFIG.FREE_REQUEST_LIMIT - requestCount} free left
+                          </span>
+                        </div>
+                      )}
+                    </motion.div>
+                  </div>
+                )}
 
                 {/* Chat Messages Area - Full Height */}
                 <div
                   ref={chatContainerRef}
                   onScroll={handleChatScroll}
-                  className="flex-1 overflow-y-auto px-6 pt-2 pb-32 space-y-6 chat-container"
+                  className={`flex-1 overflow-y-auto px-6 pb-32 space-y-6 chat-container hero-chat-container ${
+                    isMobile ? 'pt-20' : 'pt-2'
+                  }`}
+                  data-tour="chat-container"
                   style={{ 
                     scrollbarWidth: 'none',
                     msOverflowStyle: 'none',
@@ -2485,13 +2878,15 @@ const Hero = () => {
                 
                 {/* Professional Input Area - Mobile App Style with Enhanced Positioning */}
                 <div 
-                  className={`mt-auto ${isMobile ? 'p-4 pb-6' : 'p-4 sm:p-6 pb-16 sm:pb-20'} bg-gray-50/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/50 dark:border-slate-700/50 ${
+                  className={`mt-auto ${isMobile ? 'p-4 pb-2' : 'p-4 sm:p-6 pb-16 sm:pb-20'} bg-gray-50 dark:bg-slate-900 border-t border-slate-200/50 dark:border-slate-700/50 ${
                     isMobile && keyboardVisible ? 'mobile-input-elevated' : ''
                   }`}
                   style={isMobile ? {
                     ...getInputContainerStyle(),
-                    paddingBottom: keyboardVisible ? '16px' : '40px',
-                    transform: keyboardVisible ? 'translateY(-40px)' : 'translateY(-10px)',
+                    paddingBottom: keyboardVisible ? '8px' : '16px',
+                    paddingTop: keyboardVisible ? '20px' : '16px',
+                    minHeight: keyboardVisible ? '140px' : 'auto',
+                    transform: keyboardVisible ? 'translateY(0px)' : 'translateY(-60px)',
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     // Prevent dragging when keyboard is open
                     touchAction: keyboardVisible ? 'none' : 'auto',
@@ -2535,9 +2930,10 @@ const Hero = () => {
                           onFocus={handleInputFocus}
                           onBlur={handleInputBlur}
                           placeholder={isMobile ? "Ask your legal question..." : " Ask about legal matters, request document generation, or upload files for analysis"}
+                          data-tour="chat-input"
                           rows={1}
                           disabled={isLoading || isTyping} // Disable during processing
-                          className={`w-full ${isMobile ? 'pl-14 pr-20 py-4 pb-14 mobile-input mobile-app-input mobile-keyboard-transition' : 'pl-12 pr-24 py-3 pb-12'} rounded-2xl border ${isMobile ? 'border-2' : 'border'} border-slate-200 dark:border-slate-700 focus:outline-none focus:border-sky-400 dark:focus:border-sky-500 bg-white dark:bg-slate-800 dark:text-slate-100 text-slate-900 resize-none transition-all duration-300 shadow-lg ${isMobile ? 'text-base shadow-2xl' : 'text-base'} leading-relaxed overflow-y-auto scrollbar-hide ${(isLoading || isTyping) ? 'opacity-75 cursor-not-allowed input-loading-lock' : ''} ${
+                          className={`w-full ${isMobile ? 'pl-14 pr-20 py-4 pb-14 mobile-input mobile-app-input mobile-keyboard-transition' : 'pl-12 pr-24 py-3 pb-12'} rounded-2xl border ${isMobile ? 'border-2' : 'border'} border-slate-200 dark:border-slate-700 focus:outline-none focus:border-sky-400 dark:focus:border-sky-500 bg-white dark:bg-slate-800 dark:text-slate-100 text-slate-900 resize-none transition-all duration-300 ${isMobile ? 'text-base' : 'text-base'} leading-relaxed overflow-y-auto scrollbar-hide ${(isLoading || isTyping) ? 'opacity-75 cursor-not-allowed input-loading-lock' : ''} ${
                             isMobile && keyboardVisible && mobileInputFocused ? 'mobile-input-keyboard-focus' : ''
                           }`}
                           style={{ 
@@ -2562,9 +2958,14 @@ const Hero = () => {
                           autoFocus={!isMobile && !isLoading && !isTyping}
                         />
                         
-                        {/* Voice Button - Mobile Optimized */}
-                        <div className={`absolute ${isMobile ? 'left-3 top-3' : 'left-3 top-3'}`}>
-                          <VoiceButton 
+                        {/* Clean Voice Button - Mobile Optimized */}
+                        <div 
+                          className={`absolute ${isMobile ? 'left-2 top-2' : 'left-3 top-3'} z-30`} 
+                          data-tour="voice-button"
+                          data-voice-button="true"
+                          style={{ zIndex: 9999 }}
+                        >
+                          <CleanVoiceButton 
                             onClick={handleVoiceToggle} 
                             isActive={isVoiceActive || isVoiceModalOpen}
                           />
@@ -2640,6 +3041,15 @@ const Hero = () => {
           </div>
         </div>
       </div>
+
+      {/* Onboarding Tour */}
+      <OnboardingTour 
+        isOpen={showTour}
+        onClose={closeTour}
+        onComplete={completeTour}
+      />
+
+
     </div>
   );
 };

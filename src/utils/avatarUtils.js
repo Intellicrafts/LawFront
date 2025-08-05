@@ -20,7 +20,7 @@ export const cleanAvatarUrl = (avatarUrl) => {
 
   // Fix specific malformed URL pattern: extract the actual file path
   // Pattern: "http://127.0.0.1:8000/api/apihttp://127.0.0.1:8000/storage/avatars/filename.jpg"
-  const malformedPattern = /^(https?:\/\/[^\/]+)\/api\/api(https?:\/\/[^\/]+)(\/storage\/avatars\/.+)$/;
+  const malformedPattern = /^(https?:\/\/[^/]+)\/api\/api(https?:\/\/[^/]+)(\/storage\/avatars\/.+)$/;
   const malformedMatch = cleanedUrl.match(malformedPattern);
   
   if (malformedMatch) {
@@ -33,7 +33,7 @@ export const cleanAvatarUrl = (avatarUrl) => {
 
   // Handle other duplicate URL patterns
   // Pattern: "http://127.0.0.1:8000http://127.0.0.1:8000/storage/avatars/filename.jpg"
-  const duplicateBasePattern = /^(https?:\/\/[^\/]+)(https?:\/\/[^\/]+)(\/storage\/.+)$/;
+  const duplicateBasePattern = /^(https?:\/\/[^/]+)(https?:\/\/[^/]+)(\/storage\/.+)$/;
   const duplicateMatch = cleanedUrl.match(duplicateBasePattern);
   
   if (duplicateMatch) {
@@ -51,7 +51,7 @@ export const cleanAvatarUrl = (avatarUrl) => {
 
   // Extract storage path from complex URLs
   // Look for the actual storage path within the URL
-  const storagePathMatch = cleanedUrl.match(/(\/storage\/avatars\/[^\/\s]+\.[a-zA-Z0-9]+)/);
+  const storagePathMatch = cleanedUrl.match(/(\/storage\/avatars\/[^/\s]+\.[a-zA-Z0-9]+)/);
   if (storagePathMatch) {
     const storagePath = storagePathMatch[1];
     const baseUrl = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';

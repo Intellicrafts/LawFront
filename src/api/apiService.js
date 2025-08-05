@@ -14,7 +14,6 @@ const apiClient = axios.create({
     'X-Requested-With': 'XMLHttpRequest',
   },
 });
-
 // const apiClientforscrf = axios.create({
 //   baseURL: 'http://127.0.0.1:8000', // Changed from 127.0.0.1 or for production use the API URL from .env
 //   timeout: 10000,
@@ -96,7 +95,7 @@ export const lawyerAPI = {
       };
       
       console.log('Booking appointment with data:', appointmentPayload);
-      const response = await apiClient.post('/appointments/', appointmentPayload);
+      const response = await apiClient.post('/api/appointments/', appointmentPayload);
       console.log('Booking response:', response.data);
       return response.data;
     } catch (error) {
@@ -144,7 +143,7 @@ export const lawyerAPI = {
   createAppointment: async (appointmentData) => {
     try {
       console.log('Sending appointment data:', appointmentData);
-      const response = await apiClient.post('/appointments/', appointmentData);
+      const response = await apiClient.post('/api/appointments/', appointmentData);
       console.log('Appointment creation response:', response.data);
       return response.data;
     } catch (error) {
@@ -316,7 +315,7 @@ export const authAPI = {
   },
 
   // Login user
-  login: (credentials) => apiClient.post('/login', credentials),
+  login: (credentials) => apiClient.post('/api/login', credentials),
 
   // Logout user
   logout: () => apiClient.post('/api/logout'),
@@ -465,7 +464,7 @@ export const apiServices = {
   
   createNotification: async (notificationData) => {
     try {
-      const response = await apiClient.post('/notifications/', notificationData);
+      const response = await apiClient.post('/api/notifications/', notificationData);
       console.log('Create notification response:', response.data);
       return response.data;
     } catch (error) {
@@ -476,7 +475,7 @@ export const apiServices = {
   
   markNotificationAsRead: async (notificationId) => {
     try {
-      const response = await apiClient.post(`/notifications/${notificationId}/read`);
+      const response = await apiClient.post(`/api/notifications/${notificationId}/read`);
       console.log('Mark notification as read response:', response.data);
       return response.data;
     } catch (error) {
@@ -487,7 +486,7 @@ export const apiServices = {
   
   markAllNotificationsAsRead: async (userId) => {
     try {
-      const response = await apiClient.post(`/notifications/mark-all-read`, { user_id: userId });
+      const response = await apiClient.post(`/api/notifications/mark-all-read`, { user_id: userId });
       console.log('Mark all notifications as read response:', response.data);
       return response.data;
     } catch (error) {
@@ -618,7 +617,7 @@ export const apiServices = {
   login: async (credentials) => {
     console.warn('Using deprecated apiServices.login. Please use authAPI.login instead.');
     try {
-      const response = await apiClient.post('/login', credentials);
+      const response = await apiClient.post('/api/login', credentials);
       
       if (response.data.token) {
         localStorage.setItem('auth_token', response.data.token);
@@ -634,8 +633,8 @@ export const apiServices = {
   logout: async () => {
     console.warn('Using deprecated apiServices.logout. Please use authAPI.logout instead.');
     try {
-      const response = await apiClient.post('/logout');
-      
+      const response = await apiClient.post('/api/logout');
+
       // Clear local storage
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
@@ -650,7 +649,7 @@ export const apiServices = {
   getUser: async () => {
     console.warn('Using deprecated apiServices.getUser. Please use authAPI.getUser instead.');
     try {
-      const response = await apiClient.get('/user/profile');
+      const response = await apiClient.get('/api/user/profile');
       return response.data;
     } catch (error) {
       throw error;
@@ -747,7 +746,7 @@ export const apiServices = {
   // Refresh token (if your API supports it)
   refreshToken: async () => {
     try {
-      const response = await apiClient.post('/refresh');
+      const response = await apiClient.post('/api/refresh');
       return response.data;
     } catch (error) {
       throw error;
@@ -867,8 +866,8 @@ export const apiServices = {
         // Don't send the data URL in the JSON payload
         delete dataToSend.avatar;
       }
-      
-      const response = await apiClient.put('/user/profile', dataToSend);
+
+      const response = await apiClient.put('/api/user/profile', dataToSend);
       console.log('Update profile response:', response.data);
       
       // Extract the actual user data from the response
@@ -960,7 +959,7 @@ export const apiServices = {
             
             try {
               // Fourth attempt: Try the endpoints without /api prefix
-              response = await apiClient.post('/avatar', formData, {
+              response = await apiClient.post('/api/avatar', formData, {
                 headers: {
                   'Content-Type': 'multipart/form-data',
                 },
@@ -971,7 +970,7 @@ export const apiServices = {
               console.log('Fourth avatar upload method failed, trying update-avatar without prefix:', error4);
               
               try {
-                response = await apiClient.post('/update-avatar', formData, {
+                response = await apiClient.post('/api/update-avatar', formData, {
                   headers: {
                     'Content-Type': 'multipart/form-data',
                   },

@@ -18,6 +18,9 @@ export const AuthProvider = ({ children }) => {
   const login = (token) => {
     localStorage.setItem('token', token);
     setIsAuthenticated(true);
+    
+    // Dispatch custom event for onboarding tour
+    window.dispatchEvent(new CustomEvent('loginSuccess'));
   };
 
   const logout = () => {

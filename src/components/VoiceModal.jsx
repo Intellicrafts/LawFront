@@ -3,23 +3,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mic, MicOff, Phone, PhoneOff, Upload, Settings, Sparkles } from 'lucide-react';
 
 // Import API services for voice functionality (with fallback)
-let apiServices = null;
-try {
-  const api = require('../api/apiService');
-  apiServices = api.apiServices;
-} catch (error) {
-  console.log('API services not available, using local voice processing');
-}
+// Note: Currently using local voice processing, API integration planned for future
+// let apiServices = null;
+// try {
+//   const api = require('../api/apiService');
+//   apiServices = api.apiServices;
+// } catch (error) {
+//   // Silently fallback to local voice processing - no console warning needed
+//   apiServices = null;
+// }
 
 const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceResult }) => {
   // State management
   const [voiceState, setVoiceState] = useState('idle'); // 'idle', 'listening', 'processing', 'speaking'
-  const [audioLevel, setAudioLevel] = useState(0);
-  const [isConnected, setIsConnected] = useState(false);
+  // const [audioLevel, setAudioLevel] = useState(0); // Reserved for future audio level visualization
+  // const [isConnected, setIsConnected] = useState(false); // Reserved for future connection status
   const [showControls, setShowControls] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [voiceSession, setVoiceSession] = useState(null);
-  const [transcript, setTranscript] = useState('');
+  // const [voiceSession, setVoiceSession] = useState(null); // Reserved for future session management
+  // const [transcript, setTranscript] = useState(''); // Reserved for future transcript display
   
   // Enhanced voice visualization
   const [realTimeAudioLevel, setRealTimeAudioLevel] = useState(0);
@@ -27,7 +29,7 @@ const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceR
   
   // Refs
   const modalRef = useRef(null);
-  const audioAnimationRef = useRef(null);
+  // const audioAnimationRef = useRef(null); // Reserved for future audio animation
   const hideControlsTimeoutRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -121,7 +123,7 @@ const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceR
       
       // Use requestAnimationFrame to ensure DOM updates are processed
       requestAnimationFrame(() => {
-        setIsConnected(true);
+        // setIsConnected(true); // Reserved for future connection status
         setVoiceState(isVoiceActive ? 'listening' : 'idle');
         
         // Auto-hide controls after 3 seconds
@@ -129,7 +131,7 @@ const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceR
       });
     } else {
       document.body.style.overflow = 'auto';
-      setIsConnected(false);
+      // setIsConnected(false); // Reserved for future connection status
       setVoiceState('idle');
       clearTimeout(hideControlsTimeoutRef.current);
     }
@@ -163,17 +165,43 @@ const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceR
       const interval = setInterval(() => {
         // Use real-time audio level if available, otherwise simulate
         if (realTimeAudioLevel > 0) {
-          setAudioLevel(realTimeAudioLevel * 4); // Amplify for better visualization
+          // setAudioLevel(realTimeAudioLevel * 4); // Reserved for future audio level visualization
         } else {
-          setAudioLevel(Math.random() * 100);
+          // setAudioLevel(Math.random() * 100); // Reserved for future audio level visualization
         }
       }, 50); // Faster updates for smoother animation
       return () => clearInterval(interval);
     } else {
-      setAudioLevel(0);
+      // setAudioLevel(0); // Reserved for future audio level visualization
       setRealTimeAudioLevel(0);
     }
   }, [voiceState, realTimeAudioLevel]);
+
+  // Process voice input (can be extended with API integration)
+  const processVoiceInput = useCallback(async (audioBlob) => {
+    try {
+      setVoiceState('processing');
+      
+      // Simulate processing time for demo
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Simulate transcript result for demo
+      const simulatedTranscript = "Hello, I need legal advice about my case.";
+      
+      // Call the onVoiceResult callback if provided
+      if (onVoiceResult) {
+        onVoiceResult(simulatedTranscript);
+      }
+      
+      setVoiceState('idle');
+      setIsVoiceActive(false);
+      
+    } catch (error) {
+      console.error('Error processing voice input:', error);
+      setVoiceState('idle');
+      setIsVoiceActive(false);
+    }
+  }, [onVoiceResult, setIsVoiceActive]);
 
   // Start voice recording with audio analysis
   const startVoiceRecording = useCallback(async () => {
@@ -207,14 +235,13 @@ const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceR
       
       mediaRecorderRef.current.start();
       setVoiceState('listening');
-      console.log('Voice recording started with real-time analysis');
       
     } catch (error) {
       console.error('Error starting voice recording:', error);
       setVoiceState('idle');
       setIsVoiceActive(false);
     }
-  }, [setupAudioAnalysis]);
+  }, [setupAudioAnalysis, processVoiceInput, setIsVoiceActive]);
 
   // Stop voice recording
   const stopVoiceRecording = useCallback(() => {
@@ -224,33 +251,6 @@ const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceR
       console.log('Voice recording stopped');
     }
   }, []);
-
-  // Process voice input (can be extended with API integration)
-  const processVoiceInput = useCallback(async (audioBlob) => {
-    try {
-      setVoiceState('processing');
-      
-      // Simulate processing time for demo
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Simulate transcript result for demo
-      const simulatedTranscript = "Hello, I need legal advice about my case.";
-      setTranscript(simulatedTranscript);
-      
-      // Call the onVoiceResult callback if provided
-      if (onVoiceResult) {
-        onVoiceResult(simulatedTranscript);
-      }
-      
-      setVoiceState('idle');
-      setIsVoiceActive(false);
-      
-    } catch (error) {
-      console.error('Error processing voice input:', error);
-      setVoiceState('idle');
-      setIsVoiceActive(false);
-    }
-  }, [onVoiceResult]);
 
   // Enhanced voice toggle handler
   const handleVoiceToggle = useCallback(() => {
@@ -274,7 +274,7 @@ const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceR
     // Reset all states
     setIsVoiceActive(false);
     setVoiceState('idle');
-    setTranscript('');
+    // setTranscript(''); // Reserved for future transcript display
     
     // Call parent close handler
     onClose();
