@@ -1,5 +1,6 @@
 // SignupComponent.jsx
 import React, { useState, useEffect, useRef } from 'react';
+import { useSelector } from 'react-redux';
 import { FaFacebook, FaGoogle, FaLinkedin, FaEye, FaEyeSlash, FaShieldAlt, FaUser, FaBriefcase, FaCheck, FaCheckCircle, FaExclamationCircle, FaUpload, FaFileAlt, FaIdCard, FaGavel } from 'react-icons/fa';
 import axios from 'axios';
 import { authAPI, tokenManager } from '../api/apiService'; // Import your API service
@@ -13,6 +14,10 @@ axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 const Toast = ({ message, type, onClose }) => {
   const [isVisible, setIsVisible] = useState(true);
   
+  // Get theme from Redux
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
+  
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(false);
@@ -22,13 +27,23 @@ const Toast = ({ message, type, onClose }) => {
     return () => clearTimeout(timer);
   }, [onClose]);
   
+  const getToastStyles = () => {
+    if (isDarkMode) {
+      return type === 'success' 
+        ? 'bg-green-900 text-green-100 border-l-4 border-green-500' 
+        : 'bg-red-900 text-red-100 border-l-4 border-red-500';
+    } else {
+      return type === 'success' 
+        ? 'bg-green-50 text-green-800 border-l-4 border-green-500' 
+        : 'bg-red-50 text-red-800 border-l-4 border-red-500';
+    }
+  };
+  
   return (
     <div 
       className={`fixed top-16 right-4 flex items-center p-4 rounded-lg shadow-lg transition-all duration-300 z-50 ${
         isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
-      } ${
-        type === 'success' ? 'bg-green-50 text-green-800 border-l-4 border-green-500' : 'bg-red-50 text-red-800 border-l-4 border-red-500'
-      }`}
+      } ${getToastStyles()}`}
       role="alert"
       style={{ maxWidth: '90%', width: '400px' }}
     >
@@ -46,7 +61,11 @@ const Toast = ({ message, type, onClose }) => {
           setIsVisible(false);
           setTimeout(onClose, 300);
         }}
-        className="ml-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex items-center justify-center h-8 w-8"
+        className={`ml-auto -mx-1.5 -my-1.5 ${
+          isDarkMode 
+            ? 'bg-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
+            : 'bg-white text-gray-400 hover:text-gray-900 hover:bg-gray-100'
+        } rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 inline-flex items-center justify-center h-8 w-8`}
       >
         <span className="sr-only">Close</span>
         <svg className="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
@@ -131,9 +150,17 @@ const SocialButtons = () => {
 
 // Enhanced Input Field component
 const InputField = ({ type, id, name, value, onChange, placeholder, icon, rightIcon, onRightIconClick }) => {
+  // Get theme from Redux
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
+
   return (
     <div className="relative group">
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-500 transition-colors duration-200">
+      <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${
+        isDarkMode 
+          ? 'text-gray-500 group-focus-within:text-blue-400' 
+          : 'text-gray-400 group-focus-within:text-blue-500'
+      } transition-colors duration-200`}>
         {icon}
       </div>
       <input
@@ -142,14 +169,22 @@ const InputField = ({ type, id, name, value, onChange, placeholder, icon, rightI
         type={type}
         value={value}
         onChange={onChange}
-        className="block w-full pl-10 pr-10 py-3.5 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-300"
+        className={`block w-full pl-10 pr-10 py-3.5 rounded-lg shadow-sm transition-all duration-300 ${
+          isDarkMode 
+            ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500' 
+            : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400'
+        }`}
         placeholder={placeholder}
         required
       />
       {rightIcon && (
         <button
           type="button"
-          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-200"
+          className={`absolute inset-y-0 right-0 pr-3 flex items-center ${
+            isDarkMode 
+              ? 'text-gray-400 hover:text-gray-300' 
+              : 'text-gray-400 hover:text-gray-600'
+          } transition-colors duration-200`}
           onClick={onRightIconClick}
         >
           {rightIcon}
@@ -221,6 +256,10 @@ const PasswordStrengthIndicator = ({ password }) => {
 
 // Password requirements component
 const PasswordRequirements = ({ password }) => {
+  // Get theme from Redux
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
+
   const requirements = [
     { text: 'At least 8 characters', met: password.length >= 8 },
     { text: 'At least 1 uppercase letter', met: /[A-Z]/.test(password) },
@@ -232,10 +271,16 @@ const PasswordRequirements = ({ password }) => {
     <div className="mt-2 space-y-1">
       {requirements.map((req, index) => (
         <div key={index} className="flex items-center text-xs">
-          <div className={`mr-2 text-${req.met ? 'green' : 'gray'}-500`}>
+          <div className={`mr-2 ${req.met ? 'text-green-500' : isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
             {req.met ? <FaCheck size={12} /> : '○'}
           </div>
-          <span className={`text-${req.met ? 'green' : 'gray'}-600`}>{req.text}</span>
+          <span className={`${
+            req.met 
+              ? 'text-green-500' 
+              : isDarkMode 
+                ? 'text-gray-400' 
+                : 'text-gray-600'
+          }`}>{req.text}</span>
         </div>
       ))}
     </div>
@@ -248,6 +293,10 @@ const FileUploadField = ({ id, name, label, icon, onChange, required = false, ac
   const [fileName, setFileName] = useState('');
   const [fileSize, setFileSize] = useState('');
   const [hasFile, setHasFile] = useState(false);
+  
+  // Get theme from Redux
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -270,13 +319,19 @@ const FileUploadField = ({ id, name, label, icon, onChange, required = false, ac
 
   return (
     <div className="space-y-1">
-      <label htmlFor={id} className="block text-sm font-medium text-gray-700">
+      <label htmlFor={id} className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       <div 
         onClick={triggerFileInput}
         className={`relative border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 ${
-          hasFile ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+          hasFile 
+            ? isDarkMode 
+              ? 'border-green-600 bg-green-900 bg-opacity-20' 
+              : 'border-green-300 bg-green-50'
+            : isDarkMode
+              ? 'border-gray-600 hover:border-blue-600 hover:bg-blue-900 hover:bg-opacity-20' 
+              : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
         }`}
       >
         <input
@@ -292,15 +347,15 @@ const FileUploadField = ({ id, name, label, icon, onChange, required = false, ac
         
         {hasFile ? (
           <div className="flex flex-col items-center">
-            <FaFileAlt className="h-8 w-8 text-green-500 mb-2" />
-            <span className="text-sm font-medium text-gray-700 text-center">{fileName}</span>
-            <span className="text-xs text-gray-500">{fileSize}</span>
+            <FaFileAlt className={`h-8 w-8 ${isDarkMode ? 'text-green-400' : 'text-green-500'} mb-2`} />
+            <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-center`}>{fileName}</span>
+            <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{fileSize}</span>
           </div>
         ) : (
           <div className="flex flex-col items-center">
-            {icon || <FaUpload className="h-8 w-8 text-gray-400 mb-2" />}
-            <span className="text-sm font-medium text-gray-700">Click to upload {label}</span>
-            <span className="text-xs text-gray-500 text-center mt-1">
+            {icon || <FaUpload className={`h-8 w-8 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mb-2`} />}
+            <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Click to upload {label}</span>
+            <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center mt-1`}>
               PDF, JPG, PNG (Max. 5MB)
             </span>
           </div>
@@ -311,8 +366,11 @@ const FileUploadField = ({ id, name, label, icon, onChange, required = false, ac
 };
 
 // Account type selector
-
 const AccountTypeSelector = ({ selectedType, setSelectedType }) => {
+  // Get theme from Redux
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
+
   return (
     <div className="grid grid-cols-2 gap-4 mb-4">
       <button
@@ -320,19 +378,27 @@ const AccountTypeSelector = ({ selectedType, setSelectedType }) => {
         onClick={() => setSelectedType('personal')}
         className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all duration-200 ${
           selectedType === 'personal' 
-            ? 'border-blue-500 bg-blue-50' 
-            : 'border-gray-200 hover:border-gray-300'
+            ? isDarkMode
+              ? 'border-blue-600 bg-blue-900 bg-opacity-20' 
+              : 'border-blue-500 bg-blue-50'
+            : isDarkMode
+              ? 'border-gray-700 hover:border-gray-600'
+              : 'border-gray-200 hover:border-gray-300'
         }`}
       >
         <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${
           selectedType === 'personal' 
-            ? 'bg-blue-100 text-blue-600' 
-            : 'bg-gray-100 text-gray-500'
+            ? isDarkMode
+              ? 'bg-blue-800 text-blue-400'
+              : 'bg-blue-100 text-blue-600' 
+            : isDarkMode
+              ? 'bg-gray-800 text-gray-400'
+              : 'bg-gray-100 text-gray-500'
         }`}>
           <FaUser size={18} />
         </div>
-        <span className="font-medium text-gray-700">Personal</span>
-        <span className="text-xs text-gray-500 mt-1">I am User</span>
+        <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Personal</span>
+        <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>I am User</span>
       </button>
       
       <button
@@ -340,19 +406,27 @@ const AccountTypeSelector = ({ selectedType, setSelectedType }) => {
         onClick={() => setSelectedType('business')}
         className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all duration-200 ${
           selectedType === 'business' 
-            ? 'border-blue-500 bg-blue-50' 
-            : 'border-gray-200 hover:border-gray-300'
+            ? isDarkMode
+              ? 'border-blue-600 bg-blue-900 bg-opacity-20' 
+              : 'border-blue-500 bg-blue-50'
+            : isDarkMode
+              ? 'border-gray-700 hover:border-gray-600'
+              : 'border-gray-200 hover:border-gray-300'
         }`}
       >
         <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${
           selectedType === 'business' 
-            ? 'bg-blue-100 text-blue-600' 
-            : 'bg-gray-100 text-gray-500'
+            ? isDarkMode
+              ? 'bg-blue-800 text-blue-400'
+              : 'bg-blue-100 text-blue-600' 
+            : isDarkMode
+              ? 'bg-gray-800 text-gray-400'
+              : 'bg-gray-100 text-gray-500'
         }`}>
           <FaBriefcase size={18} />
         </div>
-        <span className="font-medium text-gray-700">Business</span>
-        <span className="text-xs text-gray-500 mt-1">I am Lawyer</span>
+        <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Business</span>
+        <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>I am Lawyer</span>
       </button>
     </div>
   );
@@ -484,7 +558,15 @@ export const Signup = ({ onSignupSuccess }) => {
     
     try {
       // Step 1: Get CSRF cookie first
-      await authAPI.getCsrfCookie();
+      try {
+        console.log('Getting CSRF cookie...');
+        await authAPI.getCsrfCookie();
+        console.log('CSRF cookie obtained successfully');
+      } catch (csrfError) {
+        console.error('Error getting CSRF cookie:', csrfError);
+        // Continue with registration even if CSRF cookie fails
+        // Some APIs don't require it
+      }
       
       // Step 2: Prepare registration data
       const formData = new FormData();
@@ -496,6 +578,9 @@ export const Signup = ({ onSignupSuccess }) => {
       
       // Add lawyer-specific fields if account type is business
       if (accountType === 'business') {
+        // Use a local variable instead of modifying the state directly
+        const accountTypeValue = 2;
+        formData.append('account_type', accountTypeValue);
         formData.append('enrollment_no', enrollmentNo.trim());
         
         if (enrollmentCertificate) {
@@ -542,49 +627,50 @@ export const Signup = ({ onSignupSuccess }) => {
           withCredentials: true
         };
         
-        response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/register`, formData, config);
+        try {
+          response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/register`, formData, config);
+          console.log('FormData registration response:', response);
+        } catch (formDataError) {
+          console.error('FormData registration error:', formDataError);
+          throw formDataError;
+        }
       } else {
         // Use regular JSON request for standard registration
-        response = await authAPI.register(registrationData);
+        try {
+          response = await authAPI.register(registrationData);
+          console.log('JSON registration response:', response);
+        } catch (jsonError) {
+          console.error('JSON registration error:', jsonError);
+          throw jsonError;
+        }
       }
       
       console.log('Registration response:', response.data);
       
       // Step 4: Handle successful registration
-      if (response.data.access_token) {
+      if (response.data && (response.data.access_token || response.data.token)) {
         // Use token manager to store authentication data
-        tokenManager.setToken(response.data.access_token);
+        const token = response.data.access_token || response.data.token;
+        tokenManager.setToken(token);
         
-        // if (response.data.user) {
-        //   tokenManager.setUser(response.data.user);
-        // }
-        
-        // showToast('Registration successful! Welcome to MeraBakil!', 'success');
-        
-        // // Redirect after showing success message
-        // setTimeout(() => {
-        //   window.location.href = '/';
-        // }, 2000);
-
-
         if (response.data.user) {
-  tokenManager.setUser(response.data.user);
-}
+          tokenManager.setUser(response.data.user);
+        }
 
-showToast('Registration successful! Welcome to MeraBakil!', 'success');
+        showToast('Registration successful! Welcome to MeraBakil!', 'success');
 
-// Conditional redirect based on user_type
-setTimeout(() => {
-  const userType = response?.data?.user?.user_type;
+        // Conditional redirect based on user_type
+        setTimeout(() => {
+          const userType = response?.data?.user?.user_type;
 
-  if (userType === 1) {
-    // Normal user – stay on current route or go to homepage
-    window.location.href = '/';
-  } else {
-    // Lawyer or other admin-type – redirect to Lawyer Admin Dashboard
-    window.location.href = '/lawyer-admin';
-  }
-}, 2000);
+          if (userType === 1) {
+            // Normal user – stay on current route or go to homepage
+            window.location.href = '/';
+          } else {
+            // Lawyer or other admin-type – redirect to Lawyer Admin Dashboard
+            window.location.href = '/lawyer-admin';
+          }
+        }, 2000);
 
         
         // Call parent callback if provided
@@ -612,6 +698,7 @@ setTimeout(() => {
           const firstErrorField = Object.keys(validationErrors)[0];
           const firstErrorMessage = validationErrors[firstErrorField][0];
           showToast(firstErrorMessage || 'Please check your input and try again', 'error');
+          console.log('Validation errors:', validationErrors);
         } else {
           showToast('Please check your input and try again', 'error');
         }
@@ -624,20 +711,30 @@ setTimeout(() => {
       } else if (error.response?.data?.message) {
         // Other API errors with message
         showToast(error.response.data.message, 'error');
+        console.log('API error message:', error.response.data);
       } else if (error.message === 'Network error. Please check your connection.') {
         // Network error handled by interceptor
         showToast('Network error. Please check your internet connection and try again.', 'error');
+      } else if (error.message && error.message.includes('Assignment to constant variable')) {
+        // Handle the specific error we were fixing
+        showToast('There was an issue with the form submission. Please try again.', 'error');
+        console.error('Assignment to constant variable error:', error);
       } else {
         // Generic error
         showToast('Registration failed. Please try again later.', 'error');
+        console.error('Unhandled error during registration:', error);
       }
     } finally {
       setLoading(false);
     }
   };
 
+  // Get theme from Redux
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
+
   return (
-    <div className="min-h-screen mt-6 flex flex-col bg-gray-50 relative overflow-hidden">
+    <div className={`min-h-screen mt-6 flex flex-col relative overflow-hidden ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Toast notification positioned on the right */}
       {toast && (
         <Toast 
@@ -649,22 +746,35 @@ setTimeout(() => {
       
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-blue-50 rounded-full opacity-30"></div>
-        <div className="absolute top-40 -right-20 w-60 h-60 bg-blue-100 rounded-full opacity-20"></div>
-        <div className="absolute bottom-20 left-20 w-40 h-40 bg-blue-50 rounded-full opacity-30"></div>
+        {isDarkMode ? (
+          <>
+            <div className="absolute -top-40 -left-40 w-80 h-80 bg-blue-900/20 rounded-full opacity-20"></div>
+            <div className="absolute top-40 -right-20 w-60 h-60 bg-indigo-900/20 rounded-full opacity-10"></div>
+            <div className="absolute bottom-20 left-20 w-40 h-40 bg-blue-900/20 rounded-full opacity-20"></div>
+          </>
+        ) : (
+          <>
+            <div className="absolute -top-40 -left-40 w-80 h-80 bg-blue-50 rounded-full opacity-30"></div>
+            <div className="absolute top-40 -right-20 w-60 h-60 bg-blue-100 rounded-full opacity-20"></div>
+            <div className="absolute bottom-20 left-20 w-40 h-40 bg-blue-50 rounded-full opacity-30"></div>
+          </>
+        )}
       </div>
       
       <LegalStrip />
       
       <div className="flex-1 flex items-center justify-center p-6 z-10">
         <div 
-          className={`bg-white rounded-xl shadow-xl p-8 w-full max-w-md transition-all duration-700 transform ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-          style={{ boxShadow: '0 10px 25px -5px rgba(34, 87, 122, 0.1), 0 10px 10px -5px rgba(92, 172, 222, 0.05)' }}
+          className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-xl p-8 w-full max-w-md transition-all duration-700 transform ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+          style={{ boxShadow: isDarkMode 
+            ? '0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)' 
+            : '0 10px 25px -5px rgba(34, 87, 122, 0.1), 0 10px 10px -5px rgba(92, 172, 222, 0.05)' 
+          }}
         >
           <div className="text-center mb-6">
             <Logo />
-            <h2 className="text-2xl font-bold text-gray-800 mb-1">Create your account</h2>
-            <p className="text-gray-600">Join MeraBakil and start your journey</p>
+            <h2 className={`text-2xl font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Create your account</h2>
+            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Join MeraBakil and start your journey</p>
           </div>
           
           {/* Step indicator */}
@@ -694,7 +804,7 @@ setTimeout(() => {
                 <AccountTypeSelector selectedType={accountType} setSelectedType={setAccountType} />
                 
                 <div className="space-y-1">
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email Address</label>
+                  <label htmlFor="email" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Email Address</label>
                   <InputField
                     type="email"
                     id="email"
@@ -712,7 +822,7 @@ setTimeout(() => {
                 </div>
 
                 <div className="space-y-1">
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">Create Password</label>
+                  <label htmlFor="password" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Create Password</label>
                   <InputField
                     type={showPassword ? "text" : "password"}
                     id="password"
@@ -742,8 +852,8 @@ setTimeout(() => {
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     required
                   />
-                  <label htmlFor="agree-terms" className="ml-2 block text-sm text-gray-700">
-                    I agree to the <a href="#" className="text-blue-600 hover:underline">Terms of Service</a> and <a href="#" className="text-blue-600 hover:underline">Privacy Policy</a>
+                  <label htmlFor="agree-terms" className={`ml-2 block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    I agree to the <a href="#" className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} hover:underline`}>Terms of Service</a> and <a href="#" className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} hover:underline`}>Privacy Policy</a>
                   </label>
                 </div>
 
@@ -757,7 +867,7 @@ setTimeout(() => {
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label htmlFor="first-name" className="block text-sm font-medium text-gray-700">First Name</label>
+                    <label htmlFor="first-name" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>First Name</label>
                     <InputField
                       type="text"
                       id="first-name"
@@ -769,7 +879,7 @@ setTimeout(() => {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label htmlFor="last-name" className="block text-sm font-medium text-gray-700">Last Name</label>
+                    <label htmlFor="last-name" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Last Name</label>
                     <InputField
                       type="text"
                       id="last-name"
@@ -783,7 +893,7 @@ setTimeout(() => {
                 </div>
 
                 <div className="space-y-1">
-                  <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700">Confirm Password</label>
+                  <label htmlFor="confirm-password" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Confirm Password</label>
                   <InputField
                     type={showConfirmPassword ? "text" : "password"}
                     id="confirm-password"
@@ -806,15 +916,15 @@ setTimeout(() => {
 
                 {/* Lawyer-specific fields */}
                 {accountType === 'business' && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <h3 className="text-lg font-medium text-gray-800 mb-3 flex items-center">
-                      <FaGavel className="mr-2 text-blue-500" />
+                  <div className={`mt-4 pt-4 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                    <h3 className={`text-lg font-medium mb-3 flex items-center ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                      <FaGavel className={`mr-2 ${isDarkMode ? 'text-blue-400' : 'text-blue-500'}`} />
                       Lawyer Verification Details
                     </h3>
                     
                     <div className="space-y-4">
                       <div className="space-y-1">
-                        <label htmlFor="enrollment-no" className="block text-sm font-medium text-gray-700">
+                        <label htmlFor="enrollment-no" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                           Enrollment Number <span className="text-red-500">*</span>
                         </label>
                         <InputField
@@ -857,8 +967,8 @@ setTimeout(() => {
                         required={false}
                       />
                       
-                      <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                        <p className="text-xs text-blue-700">
+                      <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-blue-900/20 border border-blue-800/30' : 'bg-blue-50 border border-blue-100'}`}>
+                        <p className={`text-xs ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
                           <strong>Note:</strong> Your lawyer verification documents will be reviewed by our team. 
                           Enrollment Number and certificates are required for verification.
                         </p>
@@ -871,7 +981,11 @@ setTimeout(() => {
                   <button
                     type="button"
                     onClick={goBackToStep}
-                    className="w-full py-3 px-4 rounded-md flex items-center justify-center text-gray-600 font-medium border border-gray-300 transition-all duration-300 hover:bg-gray-50"
+                    className={`w-full py-3 px-4 rounded-md flex items-center justify-center font-medium transition-all duration-300 ${
+                      isDarkMode 
+                        ? 'text-gray-300 border border-gray-700 hover:bg-gray-800' 
+                        : 'text-gray-600 border border-gray-300 hover:bg-gray-50'
+                    }`}
                     disabled={loading}
                   >
                     Back
@@ -900,19 +1014,19 @@ setTimeout(() => {
               <div className="mt-8">
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200"></div>
+                    <div className={`w-full border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}></div>
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white text-gray-500">or sign up with</span>
+                    <span className={`px-4 ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'}`}>or sign up with</span>
                   </div>
                 </div>
                 
                 <SocialButtons />
               </div>
               
-              <p className="mt-8 text-center text-sm text-gray-600">
+              <p className={`mt-8 text-center text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Already have an account?{' '}
-                <a href="/auth" className="font-medium text-blue-600 hover:text-blue-500 transition-all duration-200 underline-offset-2 hover:underline">
+                <a href="/auth" className={`font-medium ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'} transition-all duration-200 underline-offset-2 hover:underline`}>
                   Sign in instead
                 </a>
               </p>
@@ -921,7 +1035,7 @@ setTimeout(() => {
         </div>
       </div>
       
-      <div className="py-3 text-center text-xs text-gray-500 bg-gray-50 border-t border-gray-100">
+      <div className={`py-3 text-center text-xs ${isDarkMode ? 'text-gray-500 bg-gray-900 border-t border-gray-800' : 'text-gray-500 bg-gray-50 border-t border-gray-100'}`}>
         © 2025 MeraBakil. All rights reserved.
       </div>
     </div>

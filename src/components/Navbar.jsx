@@ -3,7 +3,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleTheme } from '../redux/themeSlice';
 import { Link } from 'react-router-dom';
-import { authAPI, tokenManager } from '../api/apiService';
+import { authAPI, tokenManager, apiServices } from '../api/apiService';
+import Avatar from './common/Avatar';
+import NotificationDropdown from './NotificationDropdown';
+import MobileSidebar from './MobileSidebar';
+import OnboardingTour from './OnboardingTour';
+import { cleanAvatarUrl, generateInitials, getCachedAvatarUrl } from '../utils/avatarUtils';
 import { 
   Menu, 
   X, 
@@ -28,38 +33,117 @@ import {
   LogOut,
   User,
   Settings,
-  Bell
+  Bell,
+  AlertCircle,
+  Loader,
+  Compass,
+  PlayCircle
 } from 'lucide-react';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  // We keep scrolled state for potential future use but it no longer affects navbar appearance
+  const [scrolled, setScrolled] = useState(true);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsCount, setNotificationsCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState(null);
+  const [notificationsDropdownOpen, setNotificationsDropdownOpen] = useState(false);
+  const [showOnboardingTour, setShowOnboardingTour] = useState(false);
   const { mode } = useSelector((state) => state.theme);
   const dispatch = useDispatch();
-  const mobileMenuRef = useRef(null);
   const userDropdownRef = useRef(null);
-
+  const notificationsDropdownRef = useRef(null);
 
   // Check authentication status on component mount
   useEffect(() => {
     checkAuthStatus();
-  }, []);
+    
+    // Listen for avatar updates
+    const handleAvatarUpdate = (event) => {
+      if (user && event.detail.userId === (user.id || 'current')) {
+        console.log('Navbar: Avatar updated, refreshing user data');
+        checkAuthStatus();
+      }
+    };
+    
+    window.addEventListener('avatar-updated', handleAvatarUpdate);
+    
+    return () => {
+      window.removeEventListener('avatar-updated', handleAvatarUpdate);
+    };
+  }, [user?.id]);
+
+  // Watch for user authentication changes to trigger tour
+  useEffect(() => {
+    if (isAuthenticated && user && user.id) {
+      // Only check tour for newly authenticated users (avoid multiple triggers)
+      const previousUserId = sessionStorage.getItem('currentUserId');
+      const currentUserId = user.id.toString();
+      
+      if (previousUserId !== currentUserId) {
+        console.log('New user session detected, checking tour status');
+        sessionStorage.setItem('currentUserId', currentUserId);
+        checkAndStartTourForNewUser(user);
+      }
+    } else if (!isAuthenticated) {
+      // Clear session when user logs out
+      sessionStorage.removeItem('currentUserId');
+    }
+  }, [isAuthenticated, user?.id]);
 
   
-  // Function to check if user is authenticated
+  // Function to check if user is authenticated with enhanced avatar handling
   const checkAuthStatus = () => {
     const token = localStorage.getItem('auth_token');
     const userData = localStorage.getItem('user');
-    console.log('User :', userData , 'token:', token);
+    console.log('Navbar: Checking auth status - User:', userData, 'token:', token);
     
     if (token && userData) {
       setIsAuthenticated(true);
       try {
-        setUser(JSON.parse(userData));
+        const parsedUser = JSON.parse(userData);
+        
+        // Try to get avatar from enhanced cache first
+        const cachedAvatar = getCachedAvatarUrl(parsedUser.id || 'current');
+        if (cachedAvatar) {
+          console.log('Navbar: Using cached avatar from enhanced cache:', cachedAvatar);
+          parsedUser.avatar = cachedAvatar;
+        } else {
+          // Try old localStorage avatar
+          const oldAvatar = localStorage.getItem('user_avatar');
+          if (oldAvatar) {
+            console.log('Navbar: Processing old avatar from localStorage:', oldAvatar);
+            const cleanedAvatar = cleanAvatarUrl(oldAvatar);
+            if (cleanedAvatar) {
+              parsedUser.avatar = cleanedAvatar;
+              console.log('Navbar: Using cleaned avatar URL:', cleanedAvatar);
+            } else {
+              console.log('Navbar: Failed to clean avatar URL, will use initials');
+              parsedUser.avatar = null;
+            }
+          }
+        }
+        
+        setUser(parsedUser);
+        
+        // Check if we should start tour for first-time user
+        console.log('🔍 Auth check complete, checking tour for user:', parsedUser.id);
+        checkAndStartTourForNewUser(parsedUser);
+        
+        // Fetch notifications if user is authenticated and has an ID
+        if (parsedUser && parsedUser.id) {
+          console.log('Fetching notifications for user ID:', parsedUser.id);
+          fetchUserNotifications(parsedUser.id);
+        } else {
+          // For testing purposes, if user ID is not available, use the hardcoded ID 18
+          console.log('User ID not found in user data, using default ID 18');
+          fetchUserNotifications(18);
+        }
       } catch (error) {
         console.error('Error parsing user data:', error);
         handleLogout();
@@ -67,6 +151,61 @@ const Navbar = () => {
     } else {
       setIsAuthenticated(false);
       setUser(null);
+    }
+  };
+  
+  // Function to fetch user notifications
+  const fetchUserNotifications = async (userId) => {
+    if (!userId) return;
+    
+    console.log(`Fetching notifications for user ID: ${userId}`);
+    setNotificationsLoading(true);
+    setNotificationsError(null);
+    
+    try {
+      // Make the API call with the provided user ID
+      const response = await apiServices.getUserNotifications(userId);
+      console.log('Notifications response:', response);
+      
+      // Process the response data
+      if (response && Array.isArray(response.data)) {
+        // If the API returns data in a nested 'data' property
+        setNotifications(response.data);
+        // Count unread notifications
+        const unreadCount = response.data.filter(notification => !notification.read_at).length;
+        setNotificationsCount(unreadCount);
+        console.log(`Found ${response.data.length} notifications, ${unreadCount} unread`);
+      } else if (response && Array.isArray(response)) {
+        // If the API returns data directly as an array
+        setNotifications(response);
+        // Count unread notifications
+        const unreadCount = response.filter(notification => !notification.read_at).length;
+        setNotificationsCount(unreadCount);
+        console.log(`Found ${response.length} notifications, ${unreadCount} unread`);
+      } else {
+        console.log('No notifications found or invalid response format:', response);
+        setNotifications([]);
+        setNotificationsCount(0);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      
+      // Detailed error logging
+      if (error.response) {
+        console.error('Error response:', error.response.status, error.response.data);
+        setNotificationsError(`Failed to load notifications: ${error.response.status}`);
+      } else if (error.request) {
+        console.error('No response received:', error.request);
+        setNotificationsError('Network error. Please check your connection.');
+      } else {
+        console.error('Error message:', error.message);
+        setNotificationsError('Failed to load notifications');
+      }
+      
+      setNotifications([]);
+      setNotificationsCount(0);
+    } finally {
+      setNotificationsLoading(false);
     }
   };
 
@@ -105,6 +244,9 @@ const Navbar = () => {
       setScrolled(window.scrollY > 10);
     };
     
+    // Initial check on mount
+    handleScroll();
+    
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -112,11 +254,11 @@ const Navbar = () => {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
-        setIsMenuOpen(false);
-      }
       if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
         setUserDropdownOpen(false);
+      }
+      if (notificationsDropdownRef.current && !notificationsDropdownRef.current.contains(event.target)) {
+        setNotificationsDropdownOpen(false);
       }
     };
 
@@ -124,18 +266,7 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Prevent body scroll when mobile menu is open
-  useEffect(() => {
-    if (isMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isMenuOpen]);
+
 
   const navItems = [
     { 
@@ -148,15 +279,21 @@ const Navbar = () => {
       path: '/services',
       icon: <Briefcase size={18} className="mr-2" />,
       dropdown: [
-        { name: 'Virtual Assistant', path: '/', icon: <HelpCircle size={16} className="mr-2" /> },
-        { name: 'Virtual Bakil', path: '/virtual-bakil', icon: <Users size={16} className="mr-2" /> },
+        // { name: 'Virtual Assistant', path: '/', icon: <HelpCircle size={16} className="mr-2" /> },
+        { name: 'Private Chat', path: '/virtual-bakil', icon: <Users size={16} className="mr-2" /> },
         { name: 'Legal Consultations', path: '/legal-consoltation', icon: <Scale size={16} className="mr-2" /> },
+        // { name: 'Find Lawyers', path: '/lawyers', icon: <Users size={16} className="mr-2" /> },
         { name: 'Legal Task Automation', path: '/task-automation', icon: <Clock size={16} className="mr-2" /> },
         { name: 'Document Review', path: '/legal-documents-review', icon: <FileText size={16} className="mr-2" /> },
         { name: 'Personal Appointments', path: '/personal-room', icon: <Calendar size={16} className="mr-2" /> },
         { name: 'Information Hub', path: '/information-hub', icon: <HelpCircle size={16} className="mr-2" /> },
       ]
     },
+    // { 
+    //   name: 'Find Lawyers', 
+    //   path: '/lawyers',
+    //   icon: <Users size={18} className="mr-2" /> 
+    // },
     { 
       name: 'Portfolio', 
       path: '/portfolio',
@@ -232,28 +369,274 @@ const Navbar = () => {
     }
   };
 
+  // Set up periodic refresh for notifications
+  useEffect(() => {
+    // Only set up refresh if user is authenticated
+    if (isAuthenticated) {
+      // Determine which user ID to use
+      const userId = user?.id || 18; // Use user ID if available, otherwise use 18
+      console.log(`Setting up notification refresh for user ID: ${userId}`);
+      
+      // Initial fetch
+      fetchUserNotifications(userId);
+      
+      // Set up interval to refresh notifications every 60 seconds
+      const intervalId = setInterval(() => {
+        console.log(`Refreshing notifications for user ID: ${userId}`);
+        fetchUserNotifications(userId);
+      }, 60000); // 60 seconds
+      
+      // Clean up interval on unmount
+      return () => {
+        console.log('Cleaning up notification refresh interval');
+        clearInterval(intervalId);
+      };
+    }
+  }, [isAuthenticated, user?.id]);
+
   useEffect(() => {
     return () => {
       document.body.style.overflow = 'auto'; // Cleanup
     };
   }, []);
 
-  // Get user initials for avatar
-  const getUserInitials = (name) => {
-    if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  // Get user initials for avatar using enhanced utilities
+  const getUserInitials = (name, lastName = '') => {
+    return generateInitials(name, lastName);
+  };
+  
+  // Tour management functions
+  // ===============================
+  // AUTO-TOUR FUNCTIONALITY:
+  // - When user logs in for first time (after cache clear), tour starts automatically
+  // - Tour completion is stored per-user in localStorage with key: hasSeenOnboardingTour_{userId}
+  // - Next login with same cache checks this flag and skips auto-tour
+  // - Manual tour restart is always available via navbar button
+  // ===============================
+  
+  const getTourStorageKey = (userId) => {
+    return `hasSeenOnboardingTour_${userId || 'guest'}`;
+  };
+
+  const hasUserSeenTour = (userId) => {
+    const storageKey = getTourStorageKey(userId);
+    return localStorage.getItem(storageKey) === 'true';
+  };
+
+  const markTourAsCompleted = (userId) => {
+    const storageKey = getTourStorageKey(userId);
+    localStorage.setItem(storageKey, 'true');
+    // Also set generic flag for backward compatibility
+    localStorage.setItem('hasSeenOnboardingTour', 'true');
+  };
+
+  // Handle start tour
+  const handleStartTour = () => {
+    // Clear any existing tour completion flag to allow restart
+    if (user?.id) {
+      localStorage.removeItem(getTourStorageKey(user.id));
+    }
+    localStorage.removeItem('hasSeenOnboardingTour');
+    setShowOnboardingTour(true);
+    setIsMenuOpen(false); // Close mobile menu if open
+  };
+
+  const handleTourClose = () => {
+    setShowOnboardingTour(false);
+    console.log('Tour closed by user');
+  };
+
+  const handleTourComplete = () => {
+    setShowOnboardingTour(false);
+    if (user?.id) {
+      markTourAsCompleted(user.id);
+      console.log('✅ Tour completed and marked for user:', user.id);
+    } else {
+      localStorage.setItem('hasSeenOnboardingTour', 'true');
+      console.log('✅ Tour completed (no user ID available)');
+    }
+  };
+
+  // Auto-start tour for first-time users
+  const checkAndStartTourForNewUser = (userData) => {
+    if (!userData || !userData.id) {
+      console.log('No user data or user ID available for tour check');
+      return;
+    }
+
+    // Don't start tour if it's already open
+    if (showOnboardingTour) {
+      console.log('Tour is already open, skipping auto-start');
+      return;
+    }
+
+    // Check if this user has seen the tour before
+    const hasSeenTour = hasUserSeenTour(userData.id);
+    const storageKey = getTourStorageKey(userData.id);
+    
+    console.log(`Tour check for user ${userData.id}:`, {
+      hasSeenTour,
+      storageKey,
+      storageValue: localStorage.getItem(storageKey)
+    });
+    
+    // Check if this is a fresh login (no previous tour data for this user)
+    const isFirstTimeUser = !hasSeenTour;
+    
+    // Start tour automatically for first-time users
+    if (isFirstTimeUser) {
+      console.log('🎯 Starting tour for first-time user:', userData.id);
+      // Small delay to ensure UI is ready
+      setTimeout(() => {
+        if (!showOnboardingTour) { // Double-check before starting
+          setShowOnboardingTour(true);
+        }
+      }, 1500); // 1.5 second delay for smooth UX
+    } else {
+      console.log('✅ User has already seen tour:', userData.id);
+    }
+  };
+
+  // Debug function to reset tour for current user (for testing)
+  const resetTourForCurrentUser = () => {
+    if (user?.id) {
+      const storageKey = getTourStorageKey(user.id);
+      localStorage.removeItem(storageKey);
+      localStorage.removeItem('hasSeenOnboardingTour');
+      console.log('🔄 Tour reset for user:', user.id);
+      setShowOnboardingTour(true);
+    }
+  };
+
+  // Add to window for debugging (development only)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      window.resetTour = resetTourForCurrentUser;
+      window.checkTourStatus = () => {
+        if (user?.id) {
+          console.log('Tour status for user:', user.id, {
+            hasSeenTour: hasUserSeenTour(user.id),
+            storageKey: getTourStorageKey(user.id),
+            value: localStorage.getItem(getTourStorageKey(user.id))
+          });
+        } else {
+          console.log('No user logged in to check tour status');
+        }
+      };
+      window.simulateFirstLogin = () => {
+        if (user?.id) {
+          console.log('🧪 Simulating first login for user:', user.id);
+          sessionStorage.removeItem('currentUserId');
+          const storageKey = getTourStorageKey(user.id);
+          localStorage.removeItem(storageKey);
+          localStorage.removeItem('hasSeenOnboardingTour');
+          checkAndStartTourForNewUser(user);
+        } else {
+          console.log('❌ No user logged in to simulate first login');
+        }
+      };
+      
+      // Log available commands
+      console.log('🛠️ Development tour debugging commands available:');
+      console.log('  window.resetTour() - Reset and start tour for current user');
+      console.log('  window.checkTourStatus() - Check tour completion status');
+      console.log('  window.simulateFirstLogin() - Simulate first-time login');
+    }
+  }, [user?.id]);
+
+  // Handle notification click
+  const handleNotificationClick = async (notification) => {
+    console.log('Notification clicked:', notification);
+    
+    if (!notification.read_at) {
+      console.log(`Marking notification ${notification.id} as read`);
+      
+      try {
+        // Use the updated endpoint for marking a notification as read
+        await apiServices.markNotificationAsRead(notification.id);
+        
+        // Update local state to mark this notification as read
+        setNotifications(prevNotifications => 
+          prevNotifications.map(n => 
+            n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n
+          )
+        );
+        
+        // Update unread count
+        setNotificationsCount(prevCount => Math.max(0, prevCount - 1));
+        console.log(`Notification ${notification.id} marked as read`);
+      } catch (error) {
+        console.error('Error marking notification as read:', error);
+        
+        // Detailed error logging
+        if (error.response) {
+          console.error('Error response:', error.response.status, error.response.data);
+        } else if (error.request) {
+          console.error('No response received:', error.request);
+        } else {
+          console.error('Error message:', error.message);
+        }
+      }
+    }
+    
+    // Handle navigation or action based on notification type
+    if (notification.link) {
+      console.log(`Navigating to notification link: ${notification.link}`);
+      // Close dropdown
+      setNotificationsDropdownOpen(false);
+      
+      // Navigate to the link if it exists
+      // If using react-router, you could use history.push here
+      // For now, we'll just use window.location
+      window.location.href = notification.link;
+    }
+  };
+  
+  // Mark all notifications as read
+  const markAllAsRead = async () => {
+    // Use user ID if available, otherwise use 18
+    const userId = user?.id || 18;
+    
+    if (notifications.length === 0) return;
+    
+    console.log(`Marking all notifications as read for user ID: ${userId}`);
+    setNotificationsLoading(true);
+    
+    try {
+      // Call the updated endpoint
+      await apiServices.markAllNotificationsAsRead(userId);
+      
+      // Update local state
+      setNotifications(prevNotifications => 
+        prevNotifications.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
+      );
+      
+      // Reset unread count
+      setNotificationsCount(0);
+      console.log('All notifications marked as read');
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      
+      // Detailed error logging
+      if (error.response) {
+        console.error('Error response:', error.response.status, error.response.data);
+      } else if (error.request) {
+        console.error('No response received:', error.request);
+      } else {
+        console.error('Error message:', error.message);
+      }
+    } finally {
+      setNotificationsLoading(false);
+    }
   };
 
   return (
     <>
       <nav 
-        className={`fixed top-0 w-full z-40 transition-all duration-300 ${
-          scrolled 
-            ? 'py-2 bg-white/95 backdrop-blur-sm shadow-lg dark:bg-gray-900/95 dark:shadow-gray-800/30' 
-            : 'py-4 bg-white dark:bg-gray-900'
-        }`}
+        className="fixed top-0 w-full z-40 transition-all duration-300 py-3 bg-white/95 backdrop-blur-sm shadow-md dark:bg-gray-900/95 dark:shadow-gray-800/30"
+        data-tour="navbar"
         style={{
-          borderBottom: scrolled ? '1px solid rgba(82, 152, 219, 0.1)' : 'none',
+          borderBottom: '1px solid rgba(82, 152, 219, 0.1)',
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -334,87 +717,69 @@ const Navbar = () => {
               ))}
             </div>
 
-            {/* App/Website Mode Toggle */}
-            <button
-              onClick={handleModeToggle}
-              className="p-2 rounded-full text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-gray-800 focus:outline-none"
-              aria-label="Toggle App/Website mode"
-            >
-              {isAppMode ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  {/* Smartphone icon */}
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4h10M7 20h10M8 4v16m8-16v16M12 17h.01" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  {/* Desktop icon */}
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17H6.75A2.25 2.25 0 014.5 14.75V5.25A2.25 2.25 0 016.75 3h10.5A2.25 2.25 0 0119.5 5.25v9.5a2.25 2.25 0 01-2.25 2.25h-3m-4.5 0v1.5m0 0h3m-3 0H9" />
-                </svg>
-              )}
-            </button>
-
             {/* Desktop Right Side - Auth & Theme */}
             <div className="hidden lg:flex lg:items-center lg:space-x-3">
+              {/* Theme Toggle Button */}
               <button
                 className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200
                           dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 focus:outline-none"
                 onClick={() => dispatch(toggleTheme())}
                 aria-label="Toggle dark mode"
+                data-tour="theme-toggle"
               >
-                {mode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                {mode === 'dark' ? <Sun size={20} className="text-yellow-300" /> : <Moon size={20} />}
+              </button>
+
+              {/* Start Tour Button */}
+              <button
+                className="p-2 rounded-full text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200
+                          dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/30 focus:outline-none
+                          relative group"
+                onClick={handleStartTour}
+                aria-label="Start tour"
+                title="Take a tour of MeraBakil"
+              >
+                <Compass size={20} className="group-hover:rotate-12 transition-transform duration-200" />
+                {/* Subtle glow effect */}
+                <span className="absolute inset-0 rounded-full bg-blue-500/20 scale-0 group-hover:scale-110 
+                                transition-transform duration-200 opacity-0 group-hover:opacity-100"></span>
               </button>
 
               {isAuthenticated ? (
                   <>
-                    {/* Notifications Dropdown */}
-                    <div className="relative group">
-                      <button className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 focus:outline-none relative">
+                    {/* Enhanced Notifications Dropdown */}
+                    <div ref={notificationsDropdownRef}>
+                      <NotificationDropdown 
+                        notifications={notifications}
+                        notificationsCount={notificationsCount}
+                        notificationsLoading={notificationsLoading}
+                        notificationsError={notificationsError}
+                        isOpen={notificationsDropdownOpen}
+                        onToggle={() => setNotificationsDropdownOpen(!notificationsDropdownOpen)}
+                        onMarkAllAsRead={markAllAsRead}
+                        onRefresh={fetchUserNotifications}
+                        onNotificationClick={handleNotificationClick}
+                        userId={user?.id || 18}
+                      />
+                      {/* <button 
+                        className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 focus:outline-none relative"
+                        onClick={() => setNotificationsDropdownOpen(!notificationsDropdownOpen)}
+                      >
                         <Bell size={20} />
-                        <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                          3
-                        </span>
+                        {notificationsLoading ? (
+                          <span className="absolute -top-1 -right-1 h-4 w-4 bg-gray-300 dark:bg-gray-600 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
+                            <Loader size={10} className="animate-spin" />
+                          </span>
+                        ) : notificationsCount > 0 ? (
+                          <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                            {notificationsCount > 9 ? '9+' : notificationsCount}
+                          </span>
+                        ) : null}
                       </button>
-                      {/* Notification Panel on Hover */}
-                      <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg shadow-lg z-50 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 transform -translate-y-2 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto">
-                        <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
-                          <p className="text-sm font-semibold text-gray-800 dark:text-white">Notifications</p>
-                        </div>
-                        <ul className="max-h-60 overflow-y-auto">
-                          <li className="px-4 py-3 flex items-start hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                            <div className="p-2 bg-blue-100 text-blue-600 rounded-full dark:bg-blue-500/20 dark:text-blue-400">
-                              <User size={18} />
-                            </div>
-                            <div className="ml-3 text-sm">
-                              <p className="text-gray-800 dark:text-gray-200">New user registration</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">2 minutes ago</p>
-                            </div>
-                          </li>
-                          <li className="px-4 py-3 flex items-start hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                            <div className="p-2 bg-green-100 text-green-600 rounded-full dark:bg-green-500/20 dark:text-green-400">
-                              <Settings size={18} />
-                            </div>
-                            <div className="ml-3 text-sm">
-                              <p className="text-gray-800 dark:text-gray-200">Settings updated</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">10 minutes ago</p>
-                            </div>
-                          </li>
-                          <li className="px-4 py-3 flex items-start hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                            <div className="p-2 bg-red-100 text-red-600 rounded-full dark:bg-red-500/20 dark:text-red-400">
-                              <LogOut size={18} />
-                            </div>
-                            <div className="ml-3 text-sm">
-                              <p className="text-gray-800 dark:text-gray-200">Logged out from new device</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">1 hour ago</p>
-                            </div>
-                          </li>
-                        </ul>
-                        <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-700 text-sm text-center">
-                          <a href="/notifications" className="text-blue-600 dark:text-blue-400 hover:underline">
-                            View all
-                          </a>
-                        </div>
-                      </div>
-                    </div>
+                      
+                      {/* Notification Panel */}
+                      
+                    </div> 
 
                     {/* User Dropdown */}
                     <div className="relative" ref={userDropdownRef}>
@@ -422,9 +787,13 @@ const Navbar = () => {
                         onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                         className="flex items-center space-x-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 focus:outline-none"
                       >
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
-                          {getUserInitials(user?.name)}
-                        </div>
+                        <Avatar 
+                          src={user?.avatar} 
+                          alt={user?.name || 'User'} 
+                          name={`${user?.name || ''} ${user?.last_name || ''}`.trim() || 'User'}
+                          size={32} 
+                          className="border-2 border-white dark:border-gray-800"
+                        />
                         <ChevronDown size={16} className="text-gray-500 dark:text-gray-400" />
                       </button>
 
@@ -498,8 +867,20 @@ const Navbar = () => {
                           dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 focus:outline-none"
                 onClick={() => dispatch(toggleTheme())}
                 aria-label="Toggle dark mode"
+                data-tour="theme-toggle"
               >
                 {mode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+              </button>
+              
+              {/* Mobile Start Tour Button */}
+              <button
+                className="p-2 mr-2 rounded-full text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200
+                          dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/30 focus:outline-none"
+                onClick={handleStartTour}
+                aria-label="Start tour"
+                title="Take a tour of MeraBakil"
+              >
+                <Compass size={20} />
               </button>
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -514,188 +895,23 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Mobile Menu - Fixed at top with no layout shifting */}
-      <div 
-        className={`lg:hidden fixed  inset-0 z-30 ${isMenuOpen ? 'block' : 'hidden'}`}
-      >
-        {/* Backdrop */}
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
-          onClick={() => setIsMenuOpen(false)}
-        ></div>
-        
-        {/* Side drawer menu - Improved with rounded corners and better spacing */}
-        <div 
-          ref={mobileMenuRef}
-          className={`fixed top-0 right-0 h-full max-h-screen pb-24 w-4/5 max-w-xs bg-white dark:bg-gray-900 shadow-xl transform transition-transform duration-300 ease-in-out ${
-            isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-          } overflow-y-auto rounded-l-2xl mt-16`}
-          style={{ 
-            maxHeight: 'calc(100% - 4rem)',
-            boxShadow: mode === 'dark' ? '0 0 20px rgba(0, 0, 0, 0.5)' : '-10px 0 30px rgba(0, 0, 0, 0.1)'
-          }}
-        >
-          {/* Mobile Menu Toggle Button - Inside sidebar */}
-          <button
-            className="absolute left-0 top-4 -ml-10 flex items-center justify-center w-8 h-8 rounded-l-md bg-blue-600 text-white focus:outline-none"
-            onClick={() => setIsMenuOpen(false)}
-            aria-label="Close menu"
-          >
-            <ChevronRight size={20} />
-          </button>
+      {/* Professional Mobile Sidebar */}
+      <MobileSidebar 
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        isAuthenticated={isAuthenticated}
+        user={user}
+        onLogout={handleLogout}
+        navItems={navItems}
+        onStartTour={handleStartTour}
+      />
 
-          <div className="pt-4 pb-2 px-4">
-            {/* Profile Section */}
-            <div className="flex items-center space-x-3 py-3 border-b border-gray-100 dark:border-gray-800 mb-2">
-              {isAuthenticated ? (
-                <>
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg font-medium">
-                    {getUserInitials(user?.name)}
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white">{user?.name || 'User'}</h4>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="w-12 h-12 rounded-full overflow-hidden shadow-md">
-                    <img 
-                      src="https://icon-library.com/images/guest-account-icon/guest-account-icon-7.jpg" 
-                      alt="Guest Icon"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white">Guest User</h4>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Sign in to access your account</p>
-                  </div>
-                </>
-              )}
-            </div>
-            
-            {/* Mobile Navigation Items */}
-            <div className="mt-4 space-y-1">
-              {navItems.map((item, index) => (
-                <div key={item.name} className="mb-1">
-                  {item.dropdown ? (
-                    <div className="mb-1">
-                      <button
-                        onClick={() => toggleDropdown(index)}
-                        className="w-full flex justify-between items-center px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 hover:text-blue-600 rounded-lg
-                                dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-blue-400 transition-colors"
-                      >
-                        <div className="flex items-center">
-                          {item.icon}
-                          <span>{item.name}</span>
-                        </div>
-                        <ChevronDown 
-                          size={18} 
-                          className={`transition-transform duration-300 ${activeDropdown === index ? 'rotate-180 text-blue-500' : ''}`}
-                        />
-                      </button>
-                      
-                      {/* Mobile Dropdown */}
-                      <div 
-                        className={`overflow-hidden transition-all duration-300 rounded-lg ${
-                          activeDropdown === index ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                        }`}
-                      >
-                        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg mx-2 pl-4 py-1">
-                          {item.dropdown.map(subItem => (
-                            <Link
-                              key={subItem.name}
-                              to={subItem.path}
-                              className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-lg my-0.5
-                                      dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-blue-400 transition-colors"
-                              onClick={() => setIsMenuOpen(false)}
-                            >
-                              {subItem.icon}
-                              <span>{subItem.name}</span>
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <Link
-                      to={item.path}
-                      className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 hover:text-blue-600 rounded-lg block
-                                dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-blue-400 transition-colors"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {item.icon}
-                      <span>{item.name}</span>
-                    </Link>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            
-            
-                      {/* Auth Buttons */}
-              {isAuthenticated ? (
-                // Show Logout button when authenticated
-                <div className="border-t border-gray-100 dark:border-gray-700 mt-1 pt-1">
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center w-full px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
-                  >
-                    <LogOut size={16} className="mr-2" />
-                    Logout
-                  </button>
-                </div>
-              ) : (
-                // Show Login/Register when NOT authenticated
-                <div className="space-y-3 mt-2 border-t border-gray-100 dark:border-gray-700 pt-3">
-                  <Link
-                    to="/Auth"
-                    className="flex items-center justify-center w-full px-4 py-2.5 rounded-lg text-white font-medium text-center shadow-sm transition-transform hover:scale-[1.02] duration-200"
-                    style={{ background: 'linear-gradient(to right, #22577a, #5cacde)' }}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <LogIn size={18} className="mr-2" />
-                    Login
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className="flex items-center justify-center w-full px-4 py-2.5 rounded-lg bg-gray-100 text-gray-800 font-medium hover:bg-gray-200 text-center transition-all shadow-sm hover:shadow-md dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <UserPlus size={18} className="mr-2" />
-                    Register
-                  </Link>
-                </div>
-              )}
-
-            
-            {/* Theme Toggle Button - Inside sidebar */}
-            <div className="mt-4 border-t border-gray-100 dark:border-gray-800 pt-4">
-              <button
-                onClick={() => dispatch(toggleTheme())}
-                className="flex items-center justify-between w-full px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 rounded-lg
-                        dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
-              >
-                <span className="flex items-center">
-                  {mode === 'dark' ? <Sun size={18} className="mr-2" /> : <Moon size={18} className="mr-2" />}
-                  {mode === 'dark' ? 'Light Mode' : 'Dark Mode'}
-                </span>
-                <div className={`w-10 h-5 rounded-full p-1 duration-300 ease-in-out ${mode === 'dark' ? 'bg-blue-600' : 'bg-gray-300'}`}>
-                  <div className={`bg-white w-3 h-3 rounded-full shadow-md transform duration-300 ease-in-out ${mode === 'dark' ? 'translate-x-5' : 'translate-x-0'}`}></div>
-                </div>
-              </button>
-            </div>
-            
-            {/* Footer info */}
-            <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
-              <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-                © 2025 MeraBakil Professional Solutions.<br />All rights reserved.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Onboarding Tour */}
+      <OnboardingTour
+        isOpen={showOnboardingTour}
+        onClose={handleTourClose}
+        onComplete={handleTourComplete}
+      />
     </>
   );
 };

@@ -1,10 +1,6 @@
 // src/redux/themeSlice.js
 import { createSlice } from '@reduxjs/toolkit';
 
-// src/redux/store.js
-import { configureStore } from '@reduxjs/toolkit';
-import themeReducer from './themeSlice';
-
 // Check if dark mode is saved in localStorage or use system preference
 const getInitialTheme = () => {
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -31,23 +27,18 @@ export const themeSlice = createSlice({
     toggleTheme: (state) => {
       state.mode = state.mode === 'light' ? 'dark' : 'light';
       // Save to localStorage
-      localStorage.setItem('theme', state.mode);
-      // Apply to document
-      if (state.mode === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem('theme', state.mode);
       }
     },
     setTheme: (state, action) => {
-      state.mode = action.payload;
-      // Save to localStorage
-      localStorage.setItem('theme', state.mode);
-      // Apply to document
-      if (state.mode === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
+      // Only accept valid theme values
+      if (action.payload === 'light' || action.payload === 'dark') {
+        state.mode = action.payload;
+        // Save to localStorage
+        if (typeof window !== 'undefined' && window.localStorage) {
+          localStorage.setItem('theme', state.mode);
+        }
       }
     }
   },
@@ -55,23 +46,3 @@ export const themeSlice = createSlice({
 
 export const { toggleTheme, setTheme } = themeSlice.actions;
 export default themeSlice.reducer;
-export const store = configureStore({
-  reducer: {
-    theme: themeReducer,
-  },
-});
-
-// src/utils/theme.js
-export const initializeTheme = () => {
-  // On page load or when changing themes, apply the correct theme class
-  if (typeof window !== 'undefined' && window.localStorage) {
-    const storedTheme = localStorage.getItem('theme');
-    
-    if (storedTheme === 'dark' || 
-       (!storedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }
-};

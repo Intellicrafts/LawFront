@@ -2,9 +2,255 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Leaflet CSS */
+@import 'leaflet/dist/leaflet.css';
 
-/* Hide scrollbar but keep scroll functionality */
-.scrollbar-hidden {
+/* Custom Leaflet Marker Styles */
+.custom-lawyer-marker {
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+}
+
+.custom-lawyer-marker:hover {
+  z-index: 1000 !important;
+}
+
+/* Map popup styles */
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+}
+
+.leaflet-popup-tip {
+  background: white !important;
+}
+
+/* Dark mode popup styles */
+.dark .leaflet-popup-content-wrapper {
+  background: #1f2937 !important;
+  color: white !important;
+}
+
+.dark .leaflet-popup-tip {
+  background: #1f2937 !important;
+}
+
+/* Ensure map containers have proper styling */
+.leaflet-container {
+  background: transparent !important;
+}
+
+/* Custom scrollbar for modals */
+.modal-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Dark mode scrollbar */
+.dark .modal-scroll::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+.dark .modal-scroll::-webkit-scrollbar-thumb {
+  background: #6b7280;
+}
+
+.dark .modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Professional animations */
+@keyframes pulse-gradient {
+  0%, 100% {
+    background-size: 200% 200%;
+    background-position: left center;
+  }
+  50% {
+    background-size: 200% 200%;
+    background-position: right center;
+  }
+}
+
+.animate-pulse-gradient {
+  animation: pulse-gradient 2s ease-in-out infinite;
+}
+
+/* Professional blur effect */
+.professional-blur {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Enhanced hover effects */
+.hover-lift {
+  transition: all 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Professional button animations */
+.btn-professional {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.btn-professional::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-professional:hover::before {
+  left: 100%;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .leaflet-container {
+    touch-action: pan-x pan-y;
+  }
+  
+  .leaflet-control-zoom {
+    margin-bottom: 80px !important;
+  }
+  
+  .leaflet-popup-content-wrapper {
+    max-width: 280px !important;
+  }
+}
+
+/* Professional status indicators */
+.status-online {
+  animation: pulse-green 2s infinite;
+}
+
+.status-busy {
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-green {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+  }
+}
+
+@keyframes pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+}
+
+/* Professional loading animations */
+.professional-loading {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading-shimmer 1.5s infinite;
+}
+
+.dark .professional-loading {
+  background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+  background-size: 200% 100%;
+}
+
+@keyframes loading-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@layer base {
+  /* Base styles that apply to both light and dark modes */
+  html, body {
+    @apply antialiased transition-colors duration-300;
+    scrollbar-width: none; /* Hide scrollbar in Firefox */
+    -ms-overflow-style: none; /* Hide scrollbar in IE/Edge */
+  }
+  
+  /* Hide webkit scrollbars for html and body */
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Dark mode specific styles */
+  .dark {
+    color-scheme: dark;
+  }
+
+  /* Smooth transitions for theme changes */
+  *, *::before, *::after {
+    @apply transition-colors duration-300;
+  }
+
+  /* Headings */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold dark:text-white;
+  }
+
+  /* Links */
+  a {
+    @apply text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300;
+  }
+
+  /* Form elements */
+  input, textarea, select {
+    @apply bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 
+           text-gray-900 dark:text-gray-100 focus:ring-blue-500 dark:focus:ring-blue-400 
+           focus:border-blue-500 dark:focus:border-blue-400;
+  }
+
+  /* Buttons */
+  button {
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 
+           shadow-sm hover:shadow-md dark:shadow-gray-900/30 dark:hover:shadow-gray-900/50;
+  }
+}
+
+/* Custom scrollbar styling */
+@layer utilities {
+  /* Hide scrollbar but keep scroll functionality */
+  .scrollbar-hidden {
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE 10+ */
   }
@@ -12,4 +258,139 @@
   .scrollbar-hidden::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
   }
-  
+
+  /* Hide dark mode scrollbars */
+  .dark ::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+  }
+
+  .dark ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: transparent;
+  }
+
+  /* Hide all scrollbars */
+  ::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: transparent;
+  }
+}
+
+/* Dark mode selection styles */
+.dark ::selection {
+  @apply bg-blue-700 text-white;
+}
+
+::selection {
+  @apply bg-blue-200 text-blue-900;
+}
+
+/* Optimized chat typing animations */
+.chat-typing-text {
+  word-break: break-word;
+  line-height: 1.6;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.chat-formatting-transition {
+  transition: all 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Smooth formatting application */
+.message-formatting-complete {
+  animation: formatApply 0.2s ease-in-out;
+}
+
+@keyframes formatApply {
+  0% {
+    transform: scale(0.99);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Performance optimizations for chat */
+.chat-container {
+  contain: layout style paint;
+  will-change: auto;
+  scroll-behavior: smooth;
+}
+
+.chat-message {
+  contain: layout style;
+  transform: translateZ(0); /* Enable hardware acceleration */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+/* Robust bullet point and list formatting */
+.chat-message div[class*="flex"] {
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+.chat-message div[class*="flex-1"] {
+  min-width: 0;
+  flex: 1 1 0%;
+  word-break: break-word;
+}
+
+/* Input box stability during processing */
+.input-loading-lock {
+  pointer-events: none;
+  height: var(--locked-height) !important;
+  min-height: var(--locked-height) !important;
+  max-height: var(--locked-height) !important;
+  resize: none !important;
+}
+
+/* Prevent layout shifts during formatting */
+.message-content {
+  contain: layout;
+  min-height: 1.5rem;
+}
+
+/* Safe text rendering */
+.safe-text-render {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+  max-width: 100%;
+}
+
+/* Smooth scroll override for chat */
+.chat-container.no-auto-scroll {
+  scroll-behavior: auto;
+}
+
+/* Loading state input protection */
+textarea[disabled].input-loading-lock {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background-color: var(--input-bg-disabled);
+}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { authAPI,  } from '../api/apiService';
+import { useSelector } from 'react-redux';
+import { authAPI } from '../api/apiService';
 import { 
   MapPin, 
   Phone, 
@@ -55,7 +56,7 @@ const tokenManager = {
 };
 
 // Toast Component
-const Toast = ({ toast, onClose }) => {
+const Toast = ({ toast, onClose, isDarkMode }) => {
   const icons = {
     success: <CheckCircle className="w-5 h-5" />,
     error: <AlertCircle className="w-5 h-5" />,
@@ -64,24 +65,24 @@ const Toast = ({ toast, onClose }) => {
   };
 
   const colors = {
-    success: 'bg-green-50 border-green-200 text-green-800',
-    error: 'bg-red-50 border-red-200 text-red-800',
-    warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
-    info: 'bg-blue-50 border-blue-200 text-blue-800'
+    success: isDarkMode ? 'bg-green-900/30 border-green-800 text-green-200' : 'bg-green-50 border-green-200 text-green-800',
+    error: isDarkMode ? 'bg-red-900/30 border-red-800 text-red-200' : 'bg-red-50 border-red-200 text-red-800',
+    warning: isDarkMode ? 'bg-yellow-900/30 border-yellow-800 text-yellow-200' : 'bg-yellow-50 border-yellow-200 text-yellow-800',
+    info: isDarkMode ? 'bg-blue-900/30 border-blue-800 text-blue-200' : 'bg-blue-50 border-blue-200 text-blue-800'
   };
 
   const iconColors = {
-    success: 'text-green-600',
-    error: 'text-red-600',
-    warning: 'text-yellow-600',
-    info: 'text-blue-600'
+    success: isDarkMode ? 'text-green-400' : 'text-green-600',
+    error: isDarkMode ? 'text-red-400' : 'text-red-600',
+    warning: isDarkMode ? 'text-yellow-400' : 'text-yellow-600',
+    info: isDarkMode ? 'text-blue-400' : 'text-blue-600'
   };
 
   return (
     <div className={`fixed top-4 right-4 z-50 max-w-sm w-full transition-all duration-300 transform ${
       toast.show ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
     }`}>
-      <div className={`p-4 rounded-lg border shadow-lg backdrop-blur-sm ${colors[toast.type]}`}>
+      <div className={`p-4 rounded-lg border shadow-lg ${isDarkMode ? 'backdrop-blur-md' : 'backdrop-blur-sm'} ${colors[toast.type]}`}>
         <div className="flex items-start space-x-3">
           <div className={`flex-shrink-0 ${iconColors[toast.type]}`}>
             {icons[toast.type]}
@@ -105,7 +106,7 @@ const Toast = ({ toast, onClose }) => {
 };
 
 // Rocket animation component
-const RocketAnimation = ({ show, onComplete }) => {
+const RocketAnimation = ({ show, onComplete, isDarkMode }) => {
   useEffect(() => {
     if (show) {
       const timer = setTimeout(() => {
@@ -120,11 +121,17 @@ const RocketAnimation = ({ show, onComplete }) => {
   return (
     <div className="fixed inset-0 pointer-events-none z-40 flex items-center justify-center">
       <div className="relative">
-        <Rocket className={`w-8 h-8 text-sky-500 transition-all duration-2000 ${
+        <Rocket className={`w-8 h-8 transition-all duration-2000 ${
+          isDarkMode ? 'text-sky-400' : 'text-sky-500'
+        } ${
           show ? 'transform -translate-y-96 opacity-0' : 'transform translate-y-0 opacity-100'
         }`} />
         <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
-          <div className={`w-1 bg-gradient-to-t from-orange-400 to-transparent transition-all duration-1000 ${
+          <div className={`w-1 transition-all duration-1000 ${
+            isDarkMode 
+              ? 'bg-gradient-to-t from-orange-500 to-transparent' 
+              : 'bg-gradient-to-t from-orange-400 to-transparent'
+          } ${
             show ? 'h-24 opacity-100' : 'h-0 opacity-0'
           }`} />
         </div>
@@ -134,7 +141,9 @@ const RocketAnimation = ({ show, onComplete }) => {
 };
 
 const Contact = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  // Use Redux state for dark mode
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
   const [formData, setFormData] = useState({
     userId: '',
     name: '',
@@ -368,25 +377,29 @@ const Contact = () => {
       {/* Toast Notification */}
       <Toast 
         toast={toast} 
-        onClose={() => setToast(prev => ({ ...prev, show: false }))} 
+        onClose={() => setToast(prev => ({ ...prev, show: false }))}
+        isDarkMode={isDarkMode}
       />
 
       {/* Rocket Animation */}
       <RocketAnimation 
         show={showRocket} 
-        onComplete={() => setShowRocket(false)} 
+        onComplete={() => setShowRocket(false)}
+        isDarkMode={isDarkMode}
       />
 
       <section className="py-16 px-4 mt-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="text-center mb-10 mt-10">
-            <div className="inline-flex items-center px-4 py-2 rounded-full border mb-6">
+            <div className={`inline-flex items-center px-4 py-2 rounded-full border mb-6 ${
+              isDarkMode ? 'border-slate-700 bg-slate-800' : 'border-slate-200 bg-white'
+            }`}>
               <MessageSquare className={`w-4 h-4 mr-2 ${
                 isDarkMode ? 'text-sky-400' : 'text-sky-600'
               }`} />
               <span className={`text-sm font-medium ${
-                isDarkMode ? 'text-slate-300 border-slate-700' : 'text-slate-600 border-slate-200'
+                isDarkMode ? 'text-slate-300' : 'text-slate-600'
               }`}>
                 Get In Touch
               </span>
@@ -401,10 +414,15 @@ const Contact = () => {
               </div>
             )}
             
-            <p className={`text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed ${
-              isDarkMode ? 'text-slate-400' : 'text-slate-600'
+            <h2 className={`text-3xl font-bold mb-4 ${
+              isDarkMode ? 'text-white' : 'text-slate-800'
             }`}>
-              Ready to get started? Our expert team is here to help you with all your legal and business needs.
+              Ready to get started?
+            </h2>
+            <p className={`text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed ${
+              isDarkMode ? 'text-slate-300' : 'text-slate-600'
+            }`}>
+              Our expert team is here to help you with all your legal and business needs.
             </p>
           </div>
 

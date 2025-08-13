@@ -1,11 +1,16 @@
 // AuthComponents.jsx - Production Ready
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { FaFacebook, FaGoogle, FaLinkedin, FaEye, FaEyeSlash, FaShieldAlt, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 import { authAPI, tokenManager } from '../api/apiService';
 
 // Enhanced Toast notification component with different types
 const Toast = ({ message, type = 'success', onClose }) => {
   const [isVisible, setIsVisible] = useState(true);
+  
+  // Get theme from Redux
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -16,17 +21,32 @@ const Toast = ({ message, type = 'success', onClose }) => {
   }, [onClose, type]);
   
   const getToastStyles = () => {
-    switch (type) {
-      case 'success':
-        return 'bg-gradient-to-r from-green-50 to-white text-green-900 border-l-4 border-green-500';
-      case 'error':
-        return 'bg-gradient-to-r from-red-50 to-white text-red-900 border-l-4 border-red-500';
-      case 'warning':
-        return 'bg-gradient-to-r from-yellow-50 to-white text-yellow-900 border-l-4 border-yellow-500';
-      case 'info':
-        return 'bg-gradient-to-r from-blue-50 to-white text-blue-900 border-l-4 border-blue-500';
-      default:
-        return 'bg-gradient-to-r from-gray-50 to-white text-gray-900 border-l-4 border-gray-500';
+    if (isDarkMode) {
+      switch (type) {
+        case 'success':
+          return 'bg-gradient-to-r from-green-900 to-gray-900 text-green-100 border-l-4 border-green-500';
+        case 'error':
+          return 'bg-gradient-to-r from-red-900 to-gray-900 text-red-100 border-l-4 border-red-500';
+        case 'warning':
+          return 'bg-gradient-to-r from-yellow-900 to-gray-900 text-yellow-100 border-l-4 border-yellow-500';
+        case 'info':
+          return 'bg-gradient-to-r from-blue-900 to-gray-900 text-blue-100 border-l-4 border-blue-500';
+        default:
+          return 'bg-gradient-to-r from-gray-800 to-gray-900 text-gray-100 border-l-4 border-gray-500';
+      }
+    } else {
+      switch (type) {
+        case 'success':
+          return 'bg-gradient-to-r from-green-50 to-white text-green-900 border-l-4 border-green-500';
+        case 'error':
+          return 'bg-gradient-to-r from-red-50 to-white text-red-900 border-l-4 border-red-500';
+        case 'warning':
+          return 'bg-gradient-to-r from-yellow-50 to-white text-yellow-900 border-l-4 border-yellow-500';
+        case 'info':
+          return 'bg-gradient-to-r from-blue-50 to-white text-blue-900 border-l-4 border-blue-500';
+        default:
+          return 'bg-gradient-to-r from-gray-50 to-white text-gray-900 border-l-4 border-gray-500';
+      }
     }
   };
 
@@ -67,7 +87,7 @@ const Toast = ({ message, type = 'success', onClose }) => {
           setIsVisible(false);
           setTimeout(onClose, 300);
         }}
-        className="text-gray-400 hover:text-gray-700 transition duration-200 rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
+        className={`${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-700'} transition duration-200 rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-offset-2 ${isDarkMode ? 'focus:ring-gray-700' : 'focus:ring-gray-300'}`}
         aria-label="Close notification"
       >
         <svg className="w-4 h-4" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -184,10 +204,14 @@ const InputField = ({
   disabled = false,
   autoComplete
 }) => {
+  // Get theme from Redux
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
+
   return (
     <div className="relative group">
       <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors duration-200 ${
-        error ? 'text-red-400' : disabled ? 'text-gray-300' : 'text-gray-400 group-focus-within:text-blue-500'
+        error ? 'text-red-400' : disabled ? 'text-gray-300' : isDarkMode ? 'text-gray-500 group-focus-within:text-blue-400' : 'text-gray-400 group-focus-within:text-blue-500'
       }`}>
         {icon}
       </div>
@@ -199,12 +223,20 @@ const InputField = ({
         onChange={onChange}
         disabled={disabled}
         autoComplete={autoComplete}
-        className={`block w-full pl-10 pr-10 py-3.5 rounded-lg shadow-sm placeholder-gray-400 transition-all duration-300 ${
-          error 
-            ? 'border-2 border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100' 
-            : disabled
-            ? 'border border-gray-200 bg-gray-50 cursor-not-allowed'
-            : 'border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400'
+        className={`block w-full pl-10 pr-10 py-3.5 rounded-lg shadow-sm transition-all duration-300 ${
+          isDarkMode 
+            ? `${error 
+                ? 'border-2 border-red-500 focus:border-red-400 focus:ring-2 focus:ring-red-900 bg-gray-700 text-white placeholder-gray-400' 
+                : disabled
+                  ? 'border border-gray-700 bg-gray-800 text-gray-400 cursor-not-allowed placeholder-gray-600'
+                  : 'border border-gray-600 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400'
+              }`
+            : `${error 
+                ? 'border-2 border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 placeholder-gray-400' 
+                : disabled
+                  ? 'border border-gray-200 bg-gray-50 cursor-not-allowed placeholder-gray-400'
+                  : 'border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 placeholder-gray-400'
+              }`
         }`}
         placeholder={placeholder}
         required
@@ -215,7 +247,11 @@ const InputField = ({
         <button
           type="button"
           className={`absolute inset-y-0 right-0 pr-3 flex items-center transition-colors duration-200 ${
-            disabled ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 hover:text-gray-600'
+            disabled 
+              ? 'text-gray-300 cursor-not-allowed' 
+              : isDarkMode 
+                ? 'text-gray-400 hover:text-gray-300' 
+                : 'text-gray-400 hover:text-gray-600'
           }`}
           onClick={onRightIconClick}
           disabled={disabled}
@@ -230,6 +266,10 @@ const InputField = ({
 
 // Enhanced Login Component with comprehensive API integration
 export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
+  // Get theme from Redux
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
+
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -453,7 +493,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 relative overflow-hidden">
+    <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} relative overflow-hidden`}>
       {/* Toast notification */}
       {toast && (
         <Toast 
@@ -465,29 +505,29 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-blue-50 rounded-full opacity-30 animate-pulse"></div>
-        <div className="absolute top-40 -right-20 w-60 h-60 bg-blue-100 rounded-full opacity-20 animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute bottom-20 left-20 w-40 h-40 bg-blue-50 rounded-full opacity-30 animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className={`absolute -top-40 -left-40 w-80 h-80 ${isDarkMode ? 'bg-blue-900' : 'bg-blue-50'} rounded-full opacity-10 animate-pulse`}></div>
+        <div className={`absolute top-40 -right-20 w-60 h-60 ${isDarkMode ? 'bg-blue-800' : 'bg-blue-100'} rounded-full opacity-10 animate-pulse`} style={{ animationDelay: '1s' }}></div>
+        <div className={`absolute bottom-20 left-20 w-40 h-40 ${isDarkMode ? 'bg-blue-900' : 'bg-blue-50'} rounded-full opacity-10 animate-pulse`} style={{ animationDelay: '2s' }}></div>
       </div>
       
       <LegalStrip />
       
       <div className="flex-1 flex items-center justify-center p-6 z-10">
         <div 
-          className={`bg-white rounded-xl shadow-xl p-8 w-full max-w-md transition-all duration-700 transform ${
+          className={`${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-xl shadow-xl p-8 w-full max-w-md transition-all duration-700 transform ${
             formState.fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
           }`}
-          style={{ boxShadow: '0 10px 25px -5px rgba(34, 87, 122, 0.1), 0 10px 10px -5px rgba(92, 172, 222, 0.05)' }}
+          style={{ boxShadow: isDarkMode ? '0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)' : '0 10px 25px -5px rgba(34, 87, 122, 0.1), 0 10px 10px -5px rgba(92, 172, 222, 0.05)' }}
         >
           <div className="text-center mb-8">
             <Logo />
-            <h1 className="text-2xl font-bold text-gray-800 mb-2">Welcome to MeraBakil</h1>
-            <p className="text-gray-600">Sign in to your account to continue</p>
+            <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'} mb-2`}>Welcome to MeraBakil</h1>
+            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Sign in to your account to continue</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5" noValidate>
             <div className="space-y-1">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                 Email Address <span className="text-red-500">*</span>
               </label>
               <InputField
@@ -514,12 +554,12 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
 
             <div className="space-y-1">
               <div className="flex justify-between items-center">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="password" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Password <span className="text-red-500">*</span>
                 </label>
                 <a 
                   href="/forgot-password" 
-                  className="text-sm text-blue-600 hover:text-blue-500 transition-colors duration-200 focus:outline-none focus:underline"
+                  className={`text-sm ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'} transition-colors duration-200 focus:outline-none focus:underline`}
                   tabIndex={formState.loading ? -1 : 0}
                 >
                   Forgot password?
@@ -559,7 +599,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                   disabled={formState.loading}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-60"
                 />
-                <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
+                <label htmlFor="rememberMe" className={`ml-2 block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Remember me for 30 days
                 </label>
               </div>
@@ -582,20 +622,20 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                 <div className="w-full border-t border-gray-200"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500">or continue with</span>
+                <span className={`px-4 ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'}`}>or continue with</span>
               </div>
             </div>
 
             <SocialButtons onSocialLogin={handleSocialLogin} loading={formState.loading} />
           </div>
 
-          <p className="mt-8 text-center text-sm text-gray-600">
+          <p className={`mt-8 text-center text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             Don't have an account?{' '}
             <button
               type="button"
               onClick={handleSwitchToRegister}
               disabled={formState.loading}
-              className="font-medium text-blue-600 hover:text-blue-500 transition-all duration-200 underline-offset-2 hover:underline focus:outline-none focus:underline disabled:opacity-60 disabled:cursor-not-allowed"
+              className={`font-medium ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'} transition-all duration-200 underline-offset-2 hover:underline focus:outline-none focus:underline disabled:opacity-60 disabled:cursor-not-allowed`}
             >
               Create a free account
             </button>
@@ -603,11 +643,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
         </div>
       </div>
       
-      <footer className="py-3 text-center text-xs text-gray-500 bg-gray-50 border-t border-gray-100">
-        © 2025 MeraBakil. All rights reserved. | 
-        <a href="/privacy" className="hover:text-gray-700 ml-1">Privacy</a> | 
-        <a href="/terms" className="hover:text-gray-700 ml-1">Terms</a>
-      </footer>
+
     </div>
   );
 };

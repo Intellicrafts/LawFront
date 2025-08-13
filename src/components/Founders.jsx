@@ -4,7 +4,8 @@ import { useSelector } from 'react-redux';
 import { Linkedin, Twitter, Instagram } from 'lucide-react';
 
 const Founders = () => {
-  const isDarkMode = useSelector((state) => state.theme.darkMode);
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
 
   const founders = [
     {
@@ -102,21 +103,33 @@ const Founders = () => {
                     <motion.a 
                       href={founder.socials.linkedin} 
                       whileHover={{ y: -5 }}
-                      className="bg-white text-blue-600 p-2 rounded-full hover:bg-blue-100 transition"
+                      className={`p-2 rounded-full transition ${
+                        isDarkMode 
+                          ? 'bg-slate-700 text-blue-400 hover:bg-slate-600' 
+                          : 'bg-white text-blue-600 hover:bg-blue-100'
+                      }`}
                     >
                       <Linkedin size={20} />
                     </motion.a>
                     <motion.a 
                       href={founder.socials.twitter} 
                       whileHover={{ y: -5 }}
-                      className="bg-white text-blue-400 p-2 rounded-full hover:bg-blue-100 transition"
+                      className={`p-2 rounded-full transition ${
+                        isDarkMode 
+                          ? 'bg-slate-700 text-blue-300 hover:bg-slate-600' 
+                          : 'bg-white text-blue-400 hover:bg-blue-100'
+                      }`}
                     >
                       <Twitter size={20} />
                     </motion.a>
                     <motion.a 
                       href={founder.socials.instagram} 
                       whileHover={{ y: -5 }}
-                      className="bg-white text-pink-600 p-2 rounded-full hover:bg-pink-100 transition"
+                      className={`p-2 rounded-full transition ${
+                        isDarkMode 
+                          ? 'bg-slate-700 text-pink-400 hover:bg-slate-600' 
+                          : 'bg-white text-pink-600 hover:bg-pink-100'
+                      }`}
                     >
                       <Instagram size={20} />
                     </motion.a>
@@ -128,7 +141,9 @@ const Founders = () => {
                 <h3 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
                   {founder.name}
                 </h3>
-                <p className="text-blue-600 font-medium mb-4">
+                <p className={`font-medium mb-4 ${
+                  isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                }`}>
                   {founder.position}
                 </p>
                 <div className="w-10 h-1 bg-blue-600 mb-4"></div>
@@ -141,7 +156,9 @@ const Founders = () => {
         </motion.div>
 
         <div className="absolute right-0 bottom-0 -z-10">
-          <div className="w-64 h-64 bg-blue-100 rounded-full opacity-20"></div>
+          <div className={`w-64 h-64 rounded-full opacity-20 ${
+            isDarkMode ? 'bg-blue-500/30' : 'bg-blue-100'
+          }`}></div>
         </div>
       </div>
     </section>

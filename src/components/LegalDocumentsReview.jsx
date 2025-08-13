@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, FileText, User, Star, MessageCircle, Clock, DollarSign, Filter, Search, Calendar, CheckCircle, AlertCircle, Eye, Download, Send, Phone, Video, Shield, Award, BookOpen, Briefcase, Scale, Building, Users, Heart, ChevronRight, X, Paperclip, ArrowRight, Edit } from 'lucide-react';
+import { useSelector, useDispatch } from 'react-redux';
+import { toggleTheme } from '../redux/themeSlice';
+import { Upload, FileText, User, Star, MessageCircle, Clock, DollarSign, Filter, Search, Calendar, CheckCircle, AlertCircle, Eye, Download, Send, Phone, Video, Shield, Award, BookOpen, Briefcase, Scale, Building, Users, Heart, ChevronRight, X, Paperclip, ArrowRight, Edit, Moon, Sun } from 'lucide-react';
 
 const DocumentReview = () => {
-  const [darkMode, setDarkMode] = useState(false);
+  // Use Redux theme state instead of local state
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
+  const dispatch = useDispatch();
+  
   const [activeTab, setActiveTab] = useState('upload');
   const [selectedLawyer, setSelectedLawyer] = useState(null);
   const [selectedService, setSelectedService] = useState(null);
@@ -218,18 +224,19 @@ const DocumentReview = () => {
   };
 
   const BookingModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className={`rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto ${
-        darkMode ? 'bg-slate-800' : 'bg-white'
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className={`rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl transition-colors duration-300 ${
+        isDarkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white'
       }`}>
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className={`text-2xl font-bold ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+            <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
               Book Service
             </h3>
             <button
               onClick={() => setShowBooking(false)}
-              className={`p-2 rounded-lg ${darkMode ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}`}
+              className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'text-slate-400 hover:bg-slate-700 hover:text-slate-200' : 'text-slate-500 hover:bg-gray-100 hover:text-slate-700'}`}
+              aria-label="Close booking modal"
             >
               <X className="w-5 h-5" />
             </button>
@@ -238,34 +245,34 @@ const DocumentReview = () => {
           {selectedLawyer && selectedService && (
             <div className="space-y-6">
               {/* Service Summary */}
-              <div className={`p-4 rounded-lg border ${
-                darkMode ? 'bg-slate-700 border-slate-600' : 'bg-gray-50 border-gray-200'
+              <div className={`p-4 rounded-lg border transition-colors duration-300 ${
+                isDarkMode ? 'bg-slate-700/70 border-slate-600' : 'bg-gray-50 border-gray-200'
               }`}>
-                <h4 className={`font-semibold mb-2 ${darkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                <h4 className={`font-semibold mb-2 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
                   Service Details
                 </h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className={darkMode ? 'text-slate-400' : 'text-slate-600'}>Service:</span>
-                    <span className={`ml-2 font-medium ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                    <span className={isDarkMode ? 'text-slate-400' : 'text-slate-600'}>Service:</span>
+                    <span className={`ml-2 font-medium ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                       {selectedService.name}
                     </span>
                   </div>
                   <div>
-                    <span className={darkMode ? 'text-slate-400' : 'text-slate-600'}>Price:</span>
-                    <span className={`ml-2 font-medium ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
+                    <span className={isDarkMode ? 'text-slate-400' : 'text-slate-600'}>Price:</span>
+                    <span className={`ml-2 font-medium ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
                       ${selectedService.price}
                     </span>
                   </div>
                   <div>
-                    <span className={darkMode ? 'text-slate-400' : 'text-slate-600'}>Duration:</span>
-                    <span className={`ml-2 font-medium ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                    <span className={isDarkMode ? 'text-slate-400' : 'text-slate-600'}>Duration:</span>
+                    <span className={`ml-2 font-medium ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                       {selectedService.duration}
                     </span>
                   </div>
                   <div>
-                    <span className={darkMode ? 'text-slate-400' : 'text-slate-600'}>Lawyer:</span>
-                    <span className={`ml-2 font-medium ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                    <span className={isDarkMode ? 'text-slate-400' : 'text-slate-600'}>Lawyer:</span>
+                    <span className={`ml-2 font-medium ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                       {selectedLawyer.name}
                     </span>
                   </div>
@@ -276,14 +283,14 @@ const DocumentReview = () => {
               <form className="space-y-4">
                 <div>
                   <label className={`block text-sm font-medium mb-2 ${
-                    darkMode ? 'text-slate-200' : 'text-slate-700'
+                    isDarkMode ? 'text-slate-200' : 'text-slate-700'
                   }`}>
                     Preferred Date & Time
                   </label>
                   <input
                     type="datetime-local"
-                    className={`w-full px-4 py-3 rounded-lg border ${
-                      darkMode 
+                    className={`w-full px-4 py-3 rounded-lg border transition-colors duration-300 ${
+                      isDarkMode 
                         ? 'bg-slate-700 border-slate-600 text-slate-100' 
                         : 'bg-white border-gray-300 text-slate-800'
                     } focus:ring-2 focus:ring-sky-500 focus:border-sky-500`}
@@ -292,15 +299,15 @@ const DocumentReview = () => {
 
                 <div>
                   <label className={`block text-sm font-medium mb-2 ${
-                    darkMode ? 'text-slate-200' : 'text-slate-700'
+                    isDarkMode ? 'text-slate-200' : 'text-slate-700'
                   }`}>
                     Project Description
                   </label>
                   <textarea
                     rows={4}
                     placeholder="Briefly describe your legal document needs..."
-                    className={`w-full px-4 py-3 rounded-lg border ${
-                      darkMode 
+                    className={`w-full px-4 py-3 rounded-lg border transition-colors duration-300 ${
+                      isDarkMode 
                         ? 'bg-slate-700 border-slate-600 text-slate-100 placeholder-slate-400' 
                         : 'bg-white border-gray-300 text-slate-800 placeholder-slate-500'
                     } focus:ring-2 focus:ring-sky-500 focus:border-sky-500`}
@@ -312,7 +319,7 @@ const DocumentReview = () => {
                     type="button"
                     onClick={() => setShowBooking(false)}
                     className={`flex-1 py-3 px-6 rounded-lg font-medium transition-colors ${
-                      darkMode 
+                      isDarkMode 
                         ? 'bg-slate-700 hover:bg-slate-600 text-slate-300' 
                         : 'bg-gray-200 hover:bg-gray-300 text-slate-700'
                     }`}
@@ -321,7 +328,7 @@ const DocumentReview = () => {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-3 px-6 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium transition-colors"
+                    className="flex-1 py-3 px-6 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium transition-colors shadow-sm"
                   >
                     Confirm Booking
                   </button>
@@ -336,49 +343,50 @@ const DocumentReview = () => {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
-      darkMode ? 'bg-slate-900' : 'bg-gray-50'
+      isDarkMode ? 'bg-slate-900' : 'bg-gray-50'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-12">
-         <div className="mt-2 md:mt-4 lg:mt-16 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-
-        <div className="mt-6 px-4 py-4 bg-transparent dark:bg-slate-900 rounded-lg shadow-sm">
-            <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight ${
-                darkMode ? 'text-slate-100' : 'text-slate-800'
-            }`}>
+          <div className="mt-2 md:mt-4 lg:mt-16 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className={`mt-6 px-6 py-5 rounded-xl ${
+              isDarkMode ? 'bg-slate-800/70 border border-slate-700' : 'bg-white shadow-sm border border-gray-200'
+            } transition-colors duration-300`}>
+              <h1 className={`text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight ${
+                isDarkMode ? 'text-slate-100' : 'text-slate-800'
+              }`}>
                 Legal Document Review
-            </h1>
-            
-            <p className={`text-sm sm:text-base lg:text-lg mt-2 leading-relaxed ${
-                darkMode ? 'text-slate-400' : 'text-slate-600'
-            }`}>
+              </h1>
+              
+              <p className={`text-sm sm:text-base lg:text-lg mt-2 leading-relaxed ${
+                isDarkMode ? 'text-slate-400' : 'text-slate-600'
+              }`}>
                 <span className="block sm:inline">
-                Connect with specialized lawyers
+                  Connect with specialized lawyers
                 </span>
                 <span className="hidden sm:inline">
-                {' '}for document review and legal services
+                  {' '}for document review and legal services
                 </span>
-            </p>
+              </p>
             </div>
 
-            
             <button
-              onClick={() => setDarkMode(!darkMode)}
+              onClick={() => dispatch(toggleTheme())}
               className={`p-3 rounded-lg transition-colors ${
-                darkMode 
-                  ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' 
+                isDarkMode 
+                  ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700' 
                   : 'bg-white text-slate-600 hover:bg-gray-100 shadow-sm border'
               }`}
+              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {darkMode ? '☀️' : '🌙'}
+              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div className={`rounded-xl p-2 mb-8 ${
-          darkMode ? 'bg-slate-800' : 'bg-white shadow-sm border'
+        <div className={`rounded-xl p-2 mb-8 transition-colors duration-300 ${
+          isDarkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white shadow-sm border'
         }`}>
           <div className="flex space-x-1">
             {[
@@ -395,7 +403,7 @@ const DocumentReview = () => {
                   className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-colors ${
                     activeTab === tab.id
                       ? 'bg-sky-500 text-white'
-                      : darkMode
+                      : isDarkMode
                         ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
                         : 'text-slate-600 hover:text-slate-800 hover:bg-gray-100'
                   }`}
@@ -412,20 +420,20 @@ const DocumentReview = () => {
         {activeTab === 'upload' && (
           <div className="space-y-8">
             {/* Upload Area */}
-            <div className={`rounded-xl border-2 border-dashed p-8 text-center transition-colors ${
-              darkMode 
+            <div className={`rounded-xl border-2 border-dashed p-8 text-center transition-colors duration-300 ${
+              isDarkMode 
                 ? 'border-slate-600 bg-slate-800 hover:border-sky-400' 
                 : 'border-gray-300 bg-white hover:border-sky-500'
             }`}>
               <Upload className={`mx-auto h-12 w-12 mb-4 ${
-                darkMode ? 'text-slate-400' : 'text-slate-500'
+                isDarkMode ? 'text-slate-400' : 'text-slate-500'
               }`} />
               <h3 className={`text-xl font-semibold mb-2 ${
-                darkMode ? 'text-slate-100' : 'text-slate-800'
+                isDarkMode ? 'text-slate-100' : 'text-slate-800'
               }`}>
                 Upload Your Legal Documents
               </h3>
-              <p className={`mb-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+              <p className={`mb-4 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                 Drag and drop files here, or click to browse
               </p>
               <input
@@ -438,43 +446,43 @@ const DocumentReview = () => {
               />
               <label
                 htmlFor="file-upload"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium cursor-pointer transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium cursor-pointer transition-colors shadow-sm"
               >
                 <Paperclip className="w-5 h-5" />
                 Choose Files
               </label>
-              <p className={`text-sm mt-2 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+              <p className={`text-sm mt-2 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
                 Supported formats: PDF, DOC, DOCX, TXT (Max 10MB each)
               </p>
             </div>
 
             {/* Uploaded Files */}
             {uploadedFiles.length > 0 && (
-              <div className={`rounded-xl p-6 ${
-                darkMode ? 'bg-slate-800' : 'bg-white border shadow-sm'
+              <div className={`rounded-xl p-6 transition-colors duration-300 ${
+                isDarkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white border shadow-sm'
               }`}>
                 <h3 className={`text-lg font-semibold mb-4 ${
-                  darkMode ? 'text-slate-100' : 'text-slate-800'
+                  isDarkMode ? 'text-slate-100' : 'text-slate-800'
                 }`}>
                   Uploaded Documents ({uploadedFiles.length})
                 </h3>
                 <div className="space-y-3">
                   {uploadedFiles.map(file => (
-                    <div key={file.id} className={`flex items-center justify-between p-4 rounded-lg ${
-                      darkMode ? 'bg-slate-700' : 'bg-gray-50'
+                    <div key={file.id} className={`flex items-center justify-between p-4 rounded-lg transition-colors duration-300 ${
+                      isDarkMode ? 'bg-slate-700/70' : 'bg-gray-50'
                     }`}>
                       <div className="flex items-center gap-3">
                         <FileText className={`w-8 h-8 ${
-                          darkMode ? 'text-sky-400' : 'text-sky-600'
+                          isDarkMode ? 'text-sky-400' : 'text-sky-600'
                         }`} />
                         <div>
                           <p className={`font-medium ${
-                            darkMode ? 'text-slate-200' : 'text-slate-800'
+                            isDarkMode ? 'text-slate-200' : 'text-slate-800'
                           }`}>
                             {file.name}
                           </p>
                           <p className={`text-sm ${
-                            darkMode ? 'text-slate-400' : 'text-slate-500'
+                            isDarkMode ? 'text-slate-400' : 'text-slate-500'
                           }`}>
                             {(file.size / 1024 / 1024).toFixed(2)} MB • Uploaded {file.uploadedAt.toLocaleTimeString()}
                           </p>
@@ -483,8 +491,9 @@ const DocumentReview = () => {
                       <div className="flex items-center gap-2">
                         <CheckCircle className="w-5 h-5 text-green-500" />
                         <button className={`p-2 rounded-lg transition-colors ${
-                          darkMode ? 'hover:bg-slate-600' : 'hover:bg-gray-200'
-                        }`}>
+                          isDarkMode ? 'hover:bg-slate-600 text-slate-300' : 'hover:bg-gray-200 text-slate-600'
+                        }`}
+                        aria-label="View document">
                           <Eye className="w-4 h-4" />
                         </button>
                       </div>
@@ -493,17 +502,17 @@ const DocumentReview = () => {
                 </div>
                 
                 {uploadedFiles.length > 0 && (
-                  <div className="mt-6 flex gap-4">
+                  <div className="mt-6 flex flex-wrap gap-4">
                     <button 
                       onClick={() => setActiveTab('lawyers')}
-                      className="px-6 py-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium transition-colors"
+                      className="px-6 py-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium transition-colors shadow-sm"
                     >
                       Find Lawyer for Review
                     </button>
                     <button 
                       onClick={() => setActiveTab('services')}
                       className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                        darkMode 
+                        isDarkMode 
                           ? 'bg-slate-700 hover:bg-slate-600 text-slate-300' 
                           : 'bg-gray-200 hover:bg-gray-300 text-slate-700'
                       }`}
@@ -521,21 +530,21 @@ const DocumentReview = () => {
         {activeTab === 'lawyers' && (
           <div className="space-y-6">
             {/* Search and Filter */}
-            <div className={`rounded-xl p-6 ${
-              darkMode ? 'bg-slate-800' : 'bg-white shadow-sm border'
+            <div className={`rounded-xl p-6 transition-colors duration-300 ${
+              isDarkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white shadow-sm border'
             }`}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative">
                   <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${
-                    darkMode ? 'text-slate-400' : 'text-slate-500'
+                    isDarkMode ? 'text-slate-400' : 'text-slate-500'
                   }`} />
                   <input
                     type="text"
                     placeholder="Search lawyers by name or specialization..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className={`w-full pl-10 pr-4 py-3 rounded-lg border transition-colors ${
-                      darkMode 
+                    className={`w-full pl-10 pr-4 py-3 rounded-lg border transition-colors duration-300 ${
+                      isDarkMode 
                         ? 'bg-slate-700 border-slate-600 text-slate-100 placeholder-slate-400' 
                         : 'bg-gray-50 border-gray-200 text-slate-800 placeholder-slate-500'
                     } focus:ring-2 focus:ring-sky-500 focus:border-sky-500`}
@@ -545,8 +554,8 @@ const DocumentReview = () => {
                 <select
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value)}
-                  className={`px-4 py-3 rounded-lg border transition-colors ${
-                    darkMode 
+                  className={`px-4 py-3 rounded-lg border transition-colors duration-300 ${
+                    isDarkMode 
                       ? 'bg-slate-700 border-slate-600 text-slate-100' 
                       : 'bg-gray-50 border-gray-200 text-slate-800'
                   } focus:ring-2 focus:ring-sky-500 focus:border-sky-500`}
@@ -564,7 +573,7 @@ const DocumentReview = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {filteredLawyers.map(lawyer => (
                 <div key={lawyer.id} className={`rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg ${
-                  darkMode ? 'bg-slate-800 hover:bg-slate-750' : 'bg-white hover:shadow-xl border'
+                  isDarkMode ? 'bg-slate-800 hover:bg-slate-750 border border-slate-700' : 'bg-white hover:shadow-xl border'
                 } ${selectedLawyer?.id === lawyer.id ? 'ring-2 ring-sky-500' : ''}`}>
                   <div className="p-6">
                     <div className="flex items-start gap-4">
@@ -576,7 +585,7 @@ const DocumentReview = () => {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className={`text-xl font-bold ${
-                            darkMode ? 'text-slate-100' : 'text-slate-800'
+                            isDarkMode ? 'text-slate-100' : 'text-slate-800'
                           }`}>
                             {lawyer.name}
                           </h3>
@@ -586,7 +595,7 @@ const DocumentReview = () => {
                         </div>
                         
                         <p className={`font-medium mb-2 ${
-                          darkMode ? 'text-sky-400' : 'text-sky-600'
+                          isDarkMode ? 'text-sky-400' : 'text-sky-600'
                         }`}>
                           {lawyer.specialization}
                         </p>
@@ -595,19 +604,19 @@ const DocumentReview = () => {
                           <div className="flex items-center gap-1">
                             <Star className="w-4 h-4 text-yellow-500 fill-current" />
                             <span className={`font-medium ${
-                              darkMode ? 'text-slate-200' : 'text-slate-800'
+                              isDarkMode ? 'text-slate-200' : 'text-slate-800'
                             }`}>
                               {lawyer.rating}
                             </span>
                             <span className={`text-sm ${
-                              darkMode ? 'text-slate-400' : 'text-slate-500'
+                              isDarkMode ? 'text-slate-400' : 'text-slate-500'
                             }`}>
                               ({lawyer.reviews} reviews)
                             </span>
                           </div>
                           
                           <div className={`text-sm ${
-                            darkMode ? 'text-slate-400' : 'text-slate-500'
+                            isDarkMode ? 'text-slate-400' : 'text-slate-500'
                           }`}>
                             {lawyer.experience} years exp.
                           </div>
@@ -616,7 +625,7 @@ const DocumentReview = () => {
                         <div className="flex flex-wrap gap-2 mb-4">
                           {lawyer.badges.slice(0, 2).map(badge => (
                             <span key={badge} className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              darkMode ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-slate-600'
+                              isDarkMode ? 'bg-slate-700 text-slate-300' : 'bg-gray-100 text-slate-600'
                             }`}>
                               {badge}
                             </span>
@@ -624,7 +633,7 @@ const DocumentReview = () => {
                         </div>
 
                         <p className={`text-sm mb-4 ${
-                          darkMode ? 'text-slate-300' : 'text-slate-600'
+                          isDarkMode ? 'text-slate-300' : 'text-slate-600'
                         }`}>
                           {lawyer.bio}
                         </p>
@@ -632,12 +641,12 @@ const DocumentReview = () => {
                         <div className="flex items-center justify-between">
                           <div>
                             <span className={`text-2xl font-bold ${
-                              darkMode ? 'text-green-400' : 'text-green-600'
+                              isDarkMode ? 'text-green-400' : 'text-green-600'
                             }`}>
                               ${lawyer.hourlyRate}
                             </span>
                             <span className={`text-sm ${
-                              darkMode ? 'text-slate-400' : 'text-slate-500'
+                              isDarkMode ? 'text-slate-400' : 'text-slate-500'
                             }`}>
                               /hour
                             </span>
@@ -645,25 +654,30 @@ const DocumentReview = () => {
                           
                           <div className="flex gap-2">
                             <button
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setSelectedLawyer(lawyer);
                                 setShowChat(true);
                               }}
                               className={`p-2 rounded-lg transition-colors ${
-                                darkMode 
+                                isDarkMode 
                                   ? 'bg-slate-700 hover:bg-slate-600 text-slate-300' 
                                   : 'bg-gray-100 hover:bg-gray-200 text-slate-600'
                               }`}
+                              aria-label="Chat with lawyer"
                             >
                               <MessageCircle className="w-5 h-5" />
                             </button>
                             
                             <button
-                              onClick={() => setSelectedLawyer(lawyer)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedLawyer(lawyer);
+                              }}
                               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                                 selectedLawyer?.id === lawyer.id
                                   ? 'bg-sky-500 text-white'
-                                  : darkMode
+                                  : isDarkMode
                                     ? 'bg-sky-500 hover:bg-sky-400 text-white'
                                     : 'bg-sky-500 hover:bg-sky-600 text-white'
                               }`}
@@ -688,24 +702,24 @@ const DocumentReview = () => {
               const Icon = service.icon;
               return (
                 <div key={service.id} className={`rounded-xl p-6 transition-all duration-300 hover:shadow-lg ${
-                  darkMode ? 'bg-slate-800 hover:bg-slate-750' : 'bg-white hover:shadow-xl border'
+                  isDarkMode ? 'bg-slate-800 hover:bg-slate-750 border border-slate-700' : 'bg-white hover:shadow-xl border'
                 } ${selectedService?.id === service.id ? 'ring-2 ring-sky-500' : ''}`}>
                   <div className="flex items-start gap-4 mb-4">
                     <div className={`p-3 rounded-lg ${
-                      darkMode ? 'bg-slate-700' : 'bg-sky-50'
+                      isDarkMode ? 'bg-slate-700' : 'bg-sky-50'
                     }`}>
                       <Icon className={`w-6 h-6 ${
-                        darkMode ? 'text-sky-400' : 'text-sky-600'
+                        isDarkMode ? 'text-sky-400' : 'text-sky-600'
                       }`} />
                     </div>
                     <div className="flex-1">
                       <h3 className={`text-xl font-bold mb-2 ${
-                        darkMode ? 'text-slate-100' : 'text-slate-800'
+                        isDarkMode ? 'text-slate-100' : 'text-slate-800'
                       }`}>
                         {service.name}
                       </h3>
                       <p className={`mb-3 ${
-                        darkMode ? 'text-slate-300' : 'text-slate-600'
+                        isDarkMode ? 'text-slate-300' : 'text-slate-600'
                       }`}>
                         {service.description}
                       </p>
@@ -715,13 +729,13 @@ const DocumentReview = () => {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <span className={`text-2xl font-bold ${
-                        darkMode ? 'text-green-400' : 'text-green-600'
+                        isDarkMode ? 'text-green-400' : 'text-green-600'
                       }`}>
                         ${service.price}
                       </span>
                     </div>
                     <div className={`flex items-center gap-1 text-sm ${
-                      darkMode ? 'text-slate-400' : 'text-slate-500'
+                      isDarkMode ? 'text-slate-400' : 'text-slate-500'
                     }`}>
                       <Clock className="w-4 h-4" />
                       {service.duration}
@@ -729,14 +743,14 @@ const DocumentReview = () => {
                   </div>
                   <div className="mb-4">
                     <h4 className={`font-medium mb-2 ${
-                      darkMode ? 'text-slate-200' : 'text-slate-700'
+                      isDarkMode ? 'text-slate-200' : 'text-slate-700'
                     }`}>
                       Includes:
                     </h4>
                     <ul className="space-y-1">
                       {service.features.map((feature, index) => (
                         <li key={index} className={`flex items-center gap-2 text-sm ${
-                          darkMode ? 'text-slate-300' : 'text-slate-600'
+                          isDarkMode ? 'text-slate-300' : 'text-slate-600'
                         }`}>
                           <CheckCircle className="w-4 h-4 text-green-500" />
                           {feature}
@@ -757,7 +771,7 @@ const DocumentReview = () => {
                     className={`w-full py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
                       selectedService?.id === service.id
                         ? 'bg-sky-500 text-white'
-                        : darkMode
+                        : isDarkMode
                           ? 'bg-slate-700 hover:bg-slate-600 text-slate-300'
                           : 'bg-gray-100 hover:bg-gray-200 text-slate-700'
                     }`}
@@ -775,50 +789,52 @@ const DocumentReview = () => {
         {activeTab === 'status' && (
           <div className="space-y-6">
             {/* Active Cases */}
-            <div className={`rounded-xl p-6 ${
-              darkMode ? 'bg-slate-800' : 'bg-white shadow-sm border'
+            <div className={`rounded-xl p-6 transition-colors duration-300 ${
+              isDarkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white shadow-sm border'
             }`}>
               <h3 className={`text-xl font-bold mb-6 ${
-                darkMode ? 'text-slate-100' : 'text-slate-800'
+                isDarkMode ? 'text-slate-100' : 'text-slate-800'
               }`}>
                 Active Cases
               </h3>
               
               {/* Sample Active Case */}
-              <div className={`p-4 rounded-lg border mb-4 ${
-                darkMode ? 'border-slate-600 bg-slate-700' : 'border-gray-200 bg-gray-50'
+              <div className={`p-4 rounded-lg border mb-4 transition-colors duration-300 ${
+                isDarkMode ? 'border-slate-600 bg-slate-700/70' : 'border-gray-200 bg-gray-50'
               }`}>
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h4 className={`font-semibold mb-2 ${
-                      darkMode ? 'text-slate-100' : 'text-slate-800'
+                      isDarkMode ? 'text-slate-100' : 'text-slate-800'
                     }`}>
                       Employment Contract Review
                     </h4>
                     <div className="flex items-center gap-4 text-sm">
-                      <span className={darkMode ? 'text-slate-400' : 'text-slate-600'}>
+                      <span className={isDarkMode ? 'text-slate-400' : 'text-slate-600'}>
                         Lawyer: Michael Chen
                       </span>
-                      <span className={darkMode ? 'text-slate-400' : 'text-slate-600'}>
+                      <span className={isDarkMode ? 'text-slate-400' : 'text-slate-600'}>
                         Started: May 20, 2025
                       </span>
                     </div>
                   </div>
-                  <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    isDarkMode ? 'bg-amber-900/30 text-amber-300 border border-amber-700' : 'bg-yellow-100 text-yellow-800'
+                  }`}>
                     In Progress
                   </span>
                 </div>
                 
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                   <button className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    darkMode 
+                    isDarkMode 
                       ? 'bg-sky-500 hover:bg-sky-400 text-white' 
                       : 'bg-sky-500 hover:bg-sky-600 text-white'
                   }`}>
                     View Details
                   </button>
                   <button className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    darkMode 
+                    isDarkMode 
                       ? 'bg-slate-600 hover:bg-slate-500 text-slate-300' 
                       : 'bg-gray-200 hover:bg-gray-300 text-slate-700'
                   }`}>
@@ -832,15 +848,15 @@ const DocumentReview = () => {
                 uploadedFiles.length === 0 ? 'block' : 'hidden'
               }`}>
                 <FileText className={`mx-auto h-12 w-12 mb-4 ${
-                  darkMode ? 'text-slate-500' : 'text-slate-400'
+                  isDarkMode ? 'text-slate-500' : 'text-slate-400'
                 }`} />
                 <h4 className={`text-lg font-medium mb-2 ${
-                  darkMode ? 'text-slate-300' : 'text-slate-600'
+                  isDarkMode ? 'text-slate-300' : 'text-slate-600'
                 }`}>
                   No active cases yet
                 </h4>
                 <p className={`mb-4 ${
-                  darkMode ? 'text-slate-400' : 'text-slate-500'
+                  isDarkMode ? 'text-slate-400' : 'text-slate-500'
                 }`}>
                   Upload documents and connect with lawyers to get started
                 </p>
@@ -854,11 +870,11 @@ const DocumentReview = () => {
             </div>
 
             {/* Recent Activity */}
-            <div className={`rounded-xl p-6 ${
-              darkMode ? 'bg-slate-800' : 'bg-white shadow-sm border'
+            <div className={`rounded-xl p-6 transition-colors duration-300 ${
+              isDarkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white shadow-sm border'
             }`}>
               <h3 className={`text-xl font-bold mb-6 ${
-                darkMode ? 'text-slate-100' : 'text-slate-800'
+                isDarkMode ? 'text-slate-100' : 'text-slate-800'
               }`}>
                 Recent Activity
               </h3>
@@ -891,24 +907,24 @@ const DocumentReview = () => {
                   return (
                     <div key={index} className="flex items-center gap-4">
                       <div className={`p-2 rounded-lg ${
-                        darkMode ? 'bg-slate-700' : 'bg-gray-100'
+                        isDarkMode ? 'bg-slate-700' : 'bg-gray-100'
                       }`}>
                         <Icon className={`w-5 h-5 ${activity.color}`} />
                       </div>
                       <div className="flex-1">
                         <p className={`font-medium ${
-                          darkMode ? 'text-slate-200' : 'text-slate-800'
+                          isDarkMode ? 'text-slate-200' : 'text-slate-800'
                         }`}>
                           {activity.action}
                         </p>
                         <p className={`text-sm ${
-                          darkMode ? 'text-slate-400' : 'text-slate-600'
+                          isDarkMode ? 'text-slate-400' : 'text-slate-600'
                         }`}>
                           {activity.details}
                         </p>
                       </div>
                       <span className={`text-sm ${
-                        darkMode ? 'text-slate-500' : 'text-slate-400'
+                        isDarkMode ? 'text-slate-500' : 'text-slate-400'
                       }`}>
                         {activity.time}
                       </span>
@@ -922,13 +938,13 @@ const DocumentReview = () => {
 
         {/* Chat Modal */}
         {showChat && selectedLawyer && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className={`rounded-xl max-w-2xl w-full h-[600px] flex flex-col ${
-              darkMode ? 'bg-slate-800' : 'bg-white'
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className={`rounded-xl max-w-2xl w-full h-[600px] flex flex-col shadow-xl transition-colors duration-300 ${
+              isDarkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white'
             }`}>
               {/* Chat Header */}
-              <div className={`p-4 border-b flex items-center justify-between ${
-                darkMode ? 'border-slate-600' : 'border-gray-200'
+              <div className={`p-4 border-b flex items-center justify-between transition-colors duration-300 ${
+                isDarkMode ? 'border-slate-600' : 'border-gray-200'
               }`}>
                 <div className="flex items-center gap-3">
                   <img
@@ -938,33 +954,36 @@ const DocumentReview = () => {
                   />
                   <div>
                     <h3 className={`font-semibold ${
-                      darkMode ? 'text-slate-100' : 'text-slate-800'
+                      isDarkMode ? 'text-slate-100' : 'text-slate-800'
                     }`}>
                       {selectedLawyer.name}
                     </h3>
                     <p className={`text-sm ${
-                      darkMode ? 'text-slate-400' : 'text-slate-600'
+                      isDarkMode ? 'text-slate-400' : 'text-slate-600'
                     }`}>
                       {selectedLawyer.specialization}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className={`p-2 rounded-lg ${
-                    darkMode ? 'hover:bg-slate-700' : 'hover:bg-gray-100'
-                  }`}>
+                  <button className={`p-2 rounded-lg transition-colors ${
+                    isDarkMode ? 'text-slate-400 hover:bg-slate-700 hover:text-slate-200' : 'text-slate-600 hover:bg-gray-100 hover:text-slate-800'
+                  }`}
+                  aria-label="Voice call">
                     <Phone className="w-5 h-5" />
                   </button>
-                  <button className={`p-2 rounded-lg ${
-                    darkMode ? 'hover:bg-slate-700' : 'hover:bg-gray-100'
-                  }`}>
+                  <button className={`p-2 rounded-lg transition-colors ${
+                    isDarkMode ? 'text-slate-400 hover:bg-slate-700 hover:text-slate-200' : 'text-slate-600 hover:bg-gray-100 hover:text-slate-800'
+                  }`}
+                  aria-label="Video call">
                     <Video className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => setShowChat(false)}
-                    className={`p-2 rounded-lg ${
-                      darkMode ? 'hover:bg-slate-700' : 'hover:bg-gray-100'
+                    className={`p-2 rounded-lg transition-colors ${
+                      isDarkMode ? 'text-slate-400 hover:bg-slate-700 hover:text-slate-200' : 'text-slate-600 hover:bg-gray-100 hover:text-slate-800'
                     }`}
+                    aria-label="Close chat"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -976,9 +995,9 @@ const DocumentReview = () => {
                 {messages.length === 0 ? (
                   <div className="text-center py-8">
                     <MessageCircle className={`mx-auto h-12 w-12 mb-4 ${
-                      darkMode ? 'text-slate-500' : 'text-slate-400'
+                      isDarkMode ? 'text-slate-500' : 'text-slate-400'
                     }`} />
-                    <p className={`${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                    <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                       Start a conversation with {selectedLawyer.name}
                     </p>
                   </div>
@@ -990,7 +1009,7 @@ const DocumentReview = () => {
                       <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                         message.sender === 'user'
                           ? 'bg-sky-500 text-white'
-                          : darkMode
+                          : isDarkMode
                             ? 'bg-slate-700 text-slate-200'
                             : 'bg-gray-200 text-slate-800'
                       }`}>
@@ -1005,8 +1024,8 @@ const DocumentReview = () => {
               </div>
 
               {/* Message Input */}
-              <div className={`p-4 border-t ${
-                darkMode ? 'border-slate-600' : 'border-gray-200'
+              <div className={`p-4 border-t transition-colors duration-300 ${
+                isDarkMode ? 'border-slate-600' : 'border-gray-200'
               }`}>
                 <div className="flex gap-2">
                   <input
@@ -1015,15 +1034,16 @@ const DocumentReview = () => {
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                     placeholder="Type your message..."
-                    className={`flex-1 px-4 py-2 rounded-lg border ${
-                      darkMode 
+                    className={`flex-1 px-4 py-2 rounded-lg border transition-colors duration-300 ${
+                      isDarkMode 
                         ? 'bg-slate-700 border-slate-600 text-slate-100 placeholder-slate-400' 
                         : 'bg-gray-50 border-gray-200 text-slate-800 placeholder-slate-500'
                     } focus:ring-2 focus:ring-sky-500 focus:border-sky-500`}
                   />
                   <button
                     onClick={sendMessage}
-                    className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition-colors"
+                    className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition-colors shadow-sm"
+                    aria-label="Send message"
                   >
                     <Send className="w-5 h-5" />
                   </button>
@@ -1038,18 +1058,18 @@ const DocumentReview = () => {
 
         {/* Quick Actions Floating Panel */}
         {(selectedLawyer || selectedService) && (
-          <div className={`fixed bottom-6 right-6 p-4 rounded-xl shadow-lg ${
-            darkMode ? 'bg-slate-800 border border-slate-600' : 'bg-white border border-gray-200'
+          <div className={`fixed bottom-6 right-6 p-4 rounded-xl shadow-lg transition-colors duration-300 ${
+            isDarkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-200'
           }`}>
             <h4 className={`font-semibold mb-3 ${
-              darkMode ? 'text-slate-100' : 'text-slate-800'
+              isDarkMode ? 'text-slate-100' : 'text-slate-800'
             }`}>
               Ready to Proceed?
             </h4>
             
             {selectedLawyer && (
               <div className={`text-sm mb-2 ${
-                darkMode ? 'text-slate-300' : 'text-slate-600'
+                isDarkMode ? 'text-slate-300' : 'text-slate-600'
               }`}>
                 Lawyer: {selectedLawyer.name}
               </div>
@@ -1057,7 +1077,7 @@ const DocumentReview = () => {
             
             {selectedService && (
               <div className={`text-sm mb-3 ${
-                darkMode ? 'text-slate-300' : 'text-slate-600'
+                isDarkMode ? 'text-slate-300' : 'text-slate-600'
               }`}>
                 Service: {selectedService.name}
               </div>
@@ -1067,14 +1087,14 @@ const DocumentReview = () => {
               {selectedLawyer && selectedService ? (
                 <button
                   onClick={() => setShowBooking(true)}
-                  className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium transition-colors"
+                  className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium transition-colors shadow-sm"
                 >
                   Book Now
                 </button>
               ) : (
                 <button
                   onClick={() => setActiveTab(selectedLawyer ? 'services' : 'lawyers')}
-                  className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium transition-colors"
+                  className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium transition-colors shadow-sm"
                 >
                   {selectedLawyer ? 'Choose Service' : 'Choose Lawyer'}
                 </button>
@@ -1086,7 +1106,7 @@ const DocumentReview = () => {
                   setSelectedService(null);
                 }}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  darkMode 
+                  isDarkMode 
                     ? 'bg-slate-700 hover:bg-slate-600 text-slate-300' 
                     : 'bg-gray-200 hover:bg-gray-300 text-slate-700'
                 }`}
@@ -1101,8 +1121,8 @@ const DocumentReview = () => {
         <div className="fixed top-4 right-4 space-y-2 z-40">
           {/* Success notification example */}
           {uploadedFiles.length > 0 && (
-            <div className={`p-4 rounded-lg shadow-lg ${
-              darkMode ? 'bg-green-800 text-green-100' : 'bg-green-100 text-green-800'
+            <div className={`p-4 rounded-lg shadow-lg transition-colors duration-300 ${
+              isDarkMode ? 'bg-green-800 text-green-100' : 'bg-green-100 text-green-800'
             } transform transition-all duration-300`}>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5" />

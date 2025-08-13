@@ -14,14 +14,21 @@ import {
   Sparkles,
   Target,
   Shield,
-  Heart
+  Heart,
+  Star,
+  Zap,
+  Activity,
+  Infinity
 } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
 
 export default function OurStoryTimeline() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { isDark, colors } = useTheme();
   const [activeStory, setActiveStory] = useState(0);
   const [isVisible, setIsVisible] = useState({});
+
   const timelineRef = useRef(null);
+  const heroRef = useRef(null);
   
   // Observer for animation on scroll
   useEffect(() => {
@@ -41,16 +48,8 @@ export default function OurStoryTimeline() {
     const elements = document.querySelectorAll('.timeline-item');
     elements.forEach(el => observer.observe(el));
     
-    // Check for dark mode preference
-    const darkModeQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    setIsDarkMode(darkModeQuery.matches);
-    
-    const darkModeHandler = (e) => setIsDarkMode(e.matches);
-    darkModeQuery.addEventListener("change", darkModeHandler);
-    
     return () => {
       elements.forEach(el => observer.unobserve(el));
-      darkModeQuery.removeEventListener("change", darkModeHandler);
     };
   }, []);
 
@@ -133,212 +132,324 @@ export default function OurStoryTimeline() {
   };
 
   return (
-    <div className={`w-full py-16 mt-20 transition-colors duration-300`}
+    <div className={`w-full py-16 mt-20 transition-all duration-500 relative overflow-hidden`}
          style={{
-           backgroundColor: isDarkMode ? '#0F172A' : '#F8F9FA',
-           color: isDarkMode ? '#E2E8F0' : '#1E293B'
+           backgroundColor: isDark ? colors.background : colors.backgroundSecondary,
+           color: isDark ? colors.textPrimary : colors.textPrimary
          }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header Section */}
-        <div className="text-center mb-20">
-          <div className="inline-flex items-center justify-center mb-4"
-               style={{ color: isDarkMode ? '#38BDF8' : '#0EA5E9' }}>
-            <Calendar className="w-6 h-6 mr-2" />
+      
+      {/* Animated Background Pattern */}
+      <div className="absolute inset-0 opacity-5 pointer-events-none">
+        <div className="absolute top-10 left-10 w-96 h-96 rounded-full"
+             style={{
+               background: `radial-gradient(circle, ${colors.primary} 0%, transparent 50%)`,
+               animation: 'float 6s ease-in-out infinite'
+             }}></div>
+        <div className="absolute bottom-10 right-10 w-80 h-80 rounded-full"
+             style={{
+               background: `radial-gradient(circle, ${colors.accent} 0%, transparent 50%)`,
+               animation: 'float 8s ease-in-out infinite reverse'
+             }}></div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        
+        {/* Enhanced Hero Section */}
+        <div ref={heroRef} className="text-center mb-20 relative">
+          
+          {/* Floating Elements */}
+          <div className="absolute -top-4 -right-4 opacity-20">
+            <Star className="w-8 h-8 animate-pulse" style={{ color: colors.primary }} />
+          </div>
+          <div className="absolute -bottom-4 -left-4 opacity-20">
+            <Zap className="w-6 h-6 animate-bounce" style={{ color: colors.accent }} />
+          </div>
+          
+          <div className="inline-flex items-center justify-center mb-6 px-6 py-3 rounded-full backdrop-blur-sm border-2 border-opacity-20"
+               style={{ 
+                 backgroundColor: isDark ? 'rgba(56, 189, 248, 0.1)' : 'rgba(14, 165, 233, 0.1)',
+                 color: colors.primary,
+                 borderColor: colors.primary
+               }}>
+            <Calendar className="w-5 h-5 mr-2" />
             <span className="text-sm font-semibold uppercase tracking-wider">Our Journey</span>
           </div>
           
-          <h2 className="text-4xl md:text-5xl font-bold mb-6"
-              style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}>
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-8 leading-tight"
+              style={{ 
+                background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.accent} 100%)`,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text'
+              }}>
             The MeraBakil Story
-          </h2>
+          </h1>
           
-          <p className="text-lg max-w-3xl mx-auto">
+          <p className="text-xl md:text-2xl max-w-4xl mx-auto mb-12 leading-relaxed" 
+             style={{ color: colors.textSecondary }}>
             From vision to reality: how we're transforming legal services through technology and expertise,
             making justice accessible for everyone.
           </p>
           
-          {/* Stats Overview */}
-          <div className="flex flex-wrap justify-center gap-8 mt-12">
-            <div className="text-center">
-              <div className="text-3xl font-bold" style={{ color: isDarkMode ? '#38BDF8' : '#0EA5E9' }}>
-                50K+
-              </div>
-              <div className="text-sm font-medium">Clients Served</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold" style={{ color: isDarkMode ? '#38BDF8' : '#0EA5E9' }}>
-                400+
-              </div>
-              <div className="text-sm font-medium">Legal Experts</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold" style={{ color: isDarkMode ? '#38BDF8' : '#0EA5E9' }}>
-                12
-              </div>
-              <div className="text-sm font-medium">Regions</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold" style={{ color: isDarkMode ? '#38BDF8' : '#0EA5E9' }}>
-                99.5%
-              </div>
-              <div className="text-sm font-medium">Security Rating</div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Interactive Year Navigation */}
-        <div className="hidden md:block mb-16">
-          <div className="flex justify-between items-center relative mx-auto max-w-5xl"
-               style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}>
-            {/* Timeline Line */}
-            <div className="absolute top-1/2 left-0 right-0 h-1 transform -translate-y-1/2"
-                 style={{ backgroundColor: isDarkMode ? '#334155' : '#E2E8F0' }}></div>
-            
-            {/* Progress Line */}
-            <div className="absolute top-1/2 left-0 h-1 transform -translate-y-1/2 transition-all duration-500"
-                 style={{ 
-                   backgroundColor: isDarkMode ? '#38BDF8' : '#0EA5E9',
-                   width: `${(activeStory / (timelineData.length - 1)) * 100}%`
-                 }}></div>
-            
-            {/* Year Markers */}
-            {timelineData.map((item, index) => (
-              <button
-                key={index}
-                onClick={() => scrollToIndex(index)}
-                className={`relative z-10 transition-all duration-300 group ${
-                  activeStory === index ? 'scale-110' : 'opacity-70 hover:opacity-100 hover:scale-105'
-                }`}
-              >
-                <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-300"
+          {/* Enhanced Stats with Interactive Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16">
+            {[
+              { value: "50K+", label: "Clients Served", icon: <Users className="w-8 h-8" /> },
+              { value: "400+", label: "Legal Experts", icon: <Award className="w-8 h-8" /> },
+              { value: "12", label: "Regions", icon: <Globe className="w-8 h-8" /> },
+              { value: "99.5%", label: "Security Rating", icon: <Shield className="w-8 h-8" /> }
+            ].map((stat, index) => (
+              <div key={index} 
+                   className="group relative p-6 rounded-2xl backdrop-blur-sm border border-opacity-20 hover:border-opacity-40 transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                   style={{
+                     backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)',
+                     borderColor: colors.border
+                   }}>
+                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                      style={{
-                       backgroundColor: activeStory === index 
-                         ? (isDarkMode ? '#38BDF8' : '#0EA5E9')
-                         : (isDarkMode ? '#1E293B' : 'white'),
-                       color: activeStory === index 
-                         ? (isDarkMode ? '#0F172A' : 'white')
-                         : (isDarkMode ? '#38BDF8' : '#0EA5E9'),
-                       border: `2px solid ${isDarkMode ? '#334155' : '#E2E8F0'}`
-                     }}>
-                  {item.year.substring(2)}
+                       background: `linear-gradient(135deg, ${colors.primary}10, ${colors.accent}10)`
+                     }}></div>
+                <div className="relative z-10">
+                  <div className="flex justify-center mb-4" style={{ color: colors.primary }}>
+                    {stat.icon}
+                  </div>
+                  <div className="text-3xl md:text-4xl font-bold mb-2" style={{ color: colors.primary }}>
+                    {stat.value}
+                  </div>
+                  <div className="text-sm font-medium" style={{ color: colors.textSecondary }}>
+                    {stat.label}
+                  </div>
                 </div>
-                <span className={`absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${
-                  activeStory === index ? 'opacity-100' : 'opacity-0 group-hover:opacity-70'
-                }`}>
-                  {item.year}
-                </span>
-              </button>
+              </div>
             ))}
           </div>
         </div>
         
-        {/* Timeline Content */}
+        {/* Enhanced Interactive Year Navigation */}
+        <div className="hidden md:block mb-20">
+          <div className="relative mx-auto max-w-6xl">
+            
+            {/* Enhanced Timeline Line */}
+            <div className="absolute top-1/2 left-0 right-0 h-2 transform -translate-y-1/2 rounded-full"
+                 style={{ backgroundColor: isDark ? colors.backgroundTertiary : colors.border }}></div>
+            
+            {/* Animated Progress Line */}
+            <div className="absolute top-1/2 left-0 h-2 transform -translate-y-1/2 transition-all duration-700 rounded-full"
+                 style={{ 
+                   background: `linear-gradient(90deg, ${colors.primary} 0%, ${colors.accent} 100%)`,
+                   width: `${(activeStory / (timelineData.length - 1)) * 100}%`,
+                   boxShadow: `0 0 20px ${colors.primary}40`
+                 }}></div>
+            
+            {/* Enhanced Year Markers */}
+            <div className="flex justify-between items-center relative">
+              {timelineData.map((item, index) => (
+                <button
+                  key={index}
+                  onClick={() => scrollToIndex(index)}
+                  className={`relative z-10 transition-all duration-300 group ${
+                    activeStory === index ? 'scale-110' : 'opacity-70 hover:opacity-100 hover:scale-105'
+                  }`}
+                >
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 border-4"
+                       style={{
+                         backgroundColor: activeStory === index 
+                           ? colors.primary
+                           : (isDark ? colors.backgroundSecondary : colors.background),
+                         color: activeStory === index 
+                           ? colors.background
+                           : colors.primary,
+                         borderColor: activeStory === index ? colors.primary : colors.border,
+                         boxShadow: activeStory === index ? `0 0 30px ${colors.primary}40` : 'none'
+                       }}>
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs font-bold opacity-60">'{item.year.substring(2)}</span>
+                      <div className="text-xs mt-1 opacity-80">{item.icon}</div>
+                    </div>
+                  </div>
+                  
+                  {/* Enhanced Year Label */}
+                  <div className={`absolute -bottom-12 left-1/2 transform -translate-x-1/2 transition-all duration-300 ${
+                    activeStory === index ? 'opacity-100 scale-100' : 'opacity-0 scale-95 group-hover:opacity-70'
+                  }`}>
+                    <div className="px-3 py-1 rounded-full text-xs font-medium border backdrop-blur-sm"
+                         style={{
+                           backgroundColor: isDark ? colors.backgroundTertiary : colors.background,
+                           color: colors.textPrimary,
+                           borderColor: colors.border
+                         }}>
+                      {item.year}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        {/* Enhanced Timeline Content */}
         <div ref={timelineRef} className="relative">
           {timelineData.map((item, index) => (
             <div 
               key={index}
               data-index={index}
-              className={`timeline-item opacity-0 -translate-y-4 mb-16 last:mb-0 transition-all duration-700 ${
+              className={`timeline-item opacity-0 -translate-y-4 mb-20 last:mb-0 transition-all duration-700 ${
                 index % 2 === 0 ? "md:ml-[5%]" : "md:ml-[15%]"
               }`}
             >
-              <div className="rounded-2xl overflow-hidden shadow-xl max-w-4xl relative"
+              <div className="group relative rounded-3xl overflow-hidden shadow-2xl max-w-5xl backdrop-blur-sm border border-opacity-20 hover:border-opacity-40 transition-all duration-500 hover:scale-[1.02] hover:shadow-3xl"
                    style={{
-                     backgroundColor: isDarkMode ? '#1E293B' : 'white',
-                     border: `1px solid ${isDarkMode ? '#334155' : '#E2E8F0'}`
+                     backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+                     borderColor: colors.border
                    }}>
                 
-                {/* Sparkle Effect */}
+                {/* Floating Sparkle Effect */}
                 {isVisible[index] && (
-                  <div className="absolute top-4 right-4 animate-pulse">
-                    <Sparkles className="w-5 h-5" style={{ color: isDarkMode ? '#38BDF8' : '#0EA5E9' }} />
+                  <div className="absolute top-6 right-6 animate-pulse z-20">
+                    <Sparkles className="w-6 h-6" style={{ color: colors.primary }} />
                   </div>
                 )}
                 
-                <div className="flex flex-col md:flex-row gap-8">
-                  {/* Left Column - Visual */}
-                  <div className="md:w-2/5 p-8 flex flex-col justify-center items-center text-center"
-                       style={{ backgroundColor: isDarkMode ? 'rgba(56, 189, 248, 0.1)' : 'rgba(14, 165, 233, 0.05)' }}>
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                     style={{
+                       background: `radial-gradient(circle at 30% 30%, ${colors.primary}10 0%, transparent 60%)`
+                     }}></div>
+                
+                <div className="flex flex-col md:flex-row relative z-10">
+                  
+                  {/* Left Column - Enhanced Visual */}
+                  <div className="md:w-2/5 p-8 md:p-12 flex flex-col justify-center items-center text-center relative overflow-hidden"
+                       style={{ 
+                         backgroundColor: isDark ? 'rgba(56, 189, 248, 0.05)' : 'rgba(14, 165, 233, 0.03)',
+                         borderRight: `1px solid ${colors.border}`
+                       }}>
                     
-                    {/* Icon with glow effect */}
-                    <div className="w-20 h-20 rounded-full flex items-center justify-center mb-4 shadow-lg relative"
-                         style={{
-                           backgroundColor: isDarkMode ? '#1E293B' : 'white',
-                           color: isDarkMode ? '#38BDF8' : '#0EA5E9',
-                           border: `2px solid ${isDarkMode ? '#334155' : '#E2E8F0'}`
-                         }}>
-                      {item.icon}
-                      <div className="absolute inset-0 rounded-full animate-pulse"
+                    {/* Background Pattern */}
+                    <div className="absolute inset-0 opacity-5">
+                      <div className="absolute top-0 right-0 w-32 h-32 rounded-full"
+                           style={{ background: `radial-gradient(circle, ${colors.primary} 0%, transparent 70%)` }}></div>
+                    </div>
+                    
+                    {/* Enhanced Icon */}
+                    <div className="relative mb-6 group">
+                      <div className="w-24 h-24 rounded-2xl flex items-center justify-center shadow-xl transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 border-2"
                            style={{
-                             background: `radial-gradient(circle, ${isDarkMode ? 'rgba(56, 189, 248, 0.2)' : 'rgba(14, 165, 233, 0.2)'} 0%, transparent 70%)`
+                             backgroundColor: isDark ? colors.backgroundSecondary : colors.background,
+                             color: colors.primary,
+                             borderColor: colors.primary,
+                             boxShadow: `0 10px 40px ${colors.primary}20`
+                           }}>
+                        <div className="text-2xl">{item.icon}</div>
+                      </div>
+                      
+                      {/* Pulsing Ring */}
+                      <div className="absolute inset-0 rounded-2xl border-2 animate-pulse"
+                           style={{
+                             borderColor: colors.primary,
+                             animation: 'pulse-ring 2s infinite'
                            }}></div>
                     </div>
                     
-                    <span className="text-sm font-bold mb-1"
-                          style={{ color: isDarkMode ? '#38BDF8' : '#0EA5E9' }}>
-                      {item.year}
-                    </span>
-                    <h3 className="text-2xl font-bold mb-4">{item.title}</h3>
-                    
-                    {/* Highlight Badge */}
-                    <div className="flex items-center px-3 py-1 rounded-full text-xs font-medium mb-4"
+                    {/* Year Badge */}
+                    <div className="inline-block px-4 py-2 rounded-full text-sm font-bold mb-2 border-2"
                          style={{
-                           backgroundColor: isDarkMode ? 'rgba(56, 189, 248, 0.2)' : 'rgba(14, 165, 233, 0.1)',
-                           color: isDarkMode ? '#38BDF8' : '#0EA5E9'
+                           backgroundColor: colors.primary,
+                           color: colors.background,
+                           borderColor: colors.primary
                          }}>
-                      <CheckCircle className="w-3 h-3 mr-1" />
+                      {item.year}
+                    </div>
+                    
+                    <h3 className="text-2xl md:text-3xl font-bold mb-4 leading-tight" 
+                        style={{ color: colors.textPrimary }}>
+                      {item.title}
+                    </h3>
+                    
+                    {/* Enhanced Highlight Badge */}
+                    <div className="flex items-center px-4 py-2 rounded-full text-sm font-medium mb-6 border backdrop-blur-sm"
+                         style={{
+                           backgroundColor: isDark ? 'rgba(56, 189, 248, 0.1)' : 'rgba(14, 165, 233, 0.1)',
+                           color: colors.primary,
+                           borderColor: colors.primary
+                         }}>
+                      <CheckCircle className="w-4 h-4 mr-2" />
                       {item.highlight}
                     </div>
                     
-                    {/* Metrics */}
-                    <div className="flex gap-4 text-center">
-                      <div>
-                        <div className="font-bold text-lg" style={{ color: isDarkMode ? '#38BDF8' : '#0EA5E9' }}>
+                    {/* Enhanced Metrics Grid */}
+                    <div className="grid grid-cols-3 gap-4 text-center w-full max-w-xs">
+                      <div className="p-3 rounded-xl backdrop-blur-sm border border-opacity-20"
+                           style={{
+                             backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)',
+                             borderColor: colors.border
+                           }}>
+                        <div className="font-bold text-xl" style={{ color: colors.primary }}>
                           {item.metrics.clients}
                         </div>
-                        <div className="text-xs">Clients</div>
+                        <div className="text-xs" style={{ color: colors.textSecondary }}>
+                          Clients
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-bold text-lg" style={{ color: isDarkMode ? '#38BDF8' : '#0EA5E9' }}>
+                      <div className="p-3 rounded-xl backdrop-blur-sm border border-opacity-20"
+                           style={{
+                             backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)',
+                             borderColor: colors.border
+                           }}>
+                        <div className="font-bold text-xl" style={{ color: colors.primary }}>
                           {item.metrics.lawyers}
                         </div>
-                        <div className="text-xs">Lawyers</div>
+                        <div className="text-xs" style={{ color: colors.textSecondary }}>
+                          Lawyers
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-bold text-lg" style={{ color: isDarkMode ? '#38BDF8' : '#0EA5E9' }}>
+                      <div className="p-3 rounded-xl backdrop-blur-sm border border-opacity-20"
+                           style={{
+                             backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)',
+                             borderColor: colors.border
+                           }}>
+                        <div className="font-bold text-xl" style={{ color: colors.primary }}>
                           {item.metrics.regions}
                         </div>
-                        <div className="text-xs">Regions</div>
+                        <div className="text-xs" style={{ color: colors.textSecondary }}>
+                          Regions
+                        </div>
                       </div>
                     </div>
                     
                     {/* Mobile only description */}
-                    <p className="md:hidden text-sm mt-4"
-                       style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}>
+                    <p className="md:hidden text-sm mt-6 leading-relaxed"
+                       style={{ color: colors.textSecondary }}>
                       {item.description}
                     </p>
                   </div>
                   
-                  {/* Right Column - Content */}
-                  <div className="md:w-3/5 p-8 flex items-center">
-                    <div>
-                      <p className="hidden md:block text-lg leading-relaxed"
-                         style={{ color: isDarkMode ? '#94A3B8' : '#64748B' }}>
+                  {/* Right Column - Enhanced Content */}
+                  <div className="md:w-3/5 p-8 md:p-12 flex items-center relative">
+                    <div className="w-full">
+                      <p className="hidden md:block text-lg md:text-xl leading-relaxed mb-8"
+                         style={{ color: colors.textSecondary }}>
                         {item.description}
                       </p>
                       
                       {/* Enhanced achievements for certain years */}
                       {(index === 4 || index === 6) && (
-                        <div className="mt-6 py-4 px-6 rounded-lg"
-                             style={{ backgroundColor: isDarkMode ? '#334155' : '#F8F9FA' }}>
-                          <div className="flex items-center mb-2">
-                            <Award className="w-4 h-4 mr-2" style={{ color: isDarkMode ? '#38BDF8' : '#0EA5E9' }} />
-                            <h4 className="font-semibold"
-                                style={{ color: isDarkMode ? '#38BDF8' : '#0EA5E9' }}>
+                        <div className="mt-8 p-6 rounded-2xl border border-opacity-20"
+                             style={{ 
+                               backgroundColor: isDark ? colors.backgroundTertiary : colors.backgroundSecondary,
+                               borderColor: colors.border
+                             }}>
+                          <div className="flex items-center mb-4">
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center mr-3"
+                                 style={{ backgroundColor: colors.primary + '20', color: colors.primary }}>
+                              <Award className="w-5 h-5" />
+                            </div>
+                            <h4 className="font-semibold text-lg"
+                                style={{ color: colors.primary }}>
                               Key Achievement
                             </h4>
                           </div>
-                          <p className="text-sm">
+                          <p className="text-sm leading-relaxed" style={{ color: colors.textSecondary }}>
                             {index === 4 
                               ? "Recognized as 'Legal Tech Innovator of the Year' for our AI-powered consultation approach."
                               : "Successfully helped over 5,000 small businesses navigate complex regulatory requirements."}
@@ -352,92 +463,103 @@ export default function OurStoryTimeline() {
             </div>
           ))}
           
-          {/* Timeline vertical line (mobile only) */}
-          <div className="absolute top-0 bottom-0 left-8 w-px md:hidden"
-               style={{ backgroundColor: isDarkMode ? 'rgba(56, 189, 248, 0.3)' : 'rgba(14, 165, 233, 0.2)' }}></div>
+          {/* Enhanced Mobile Timeline Line */}
+          <div className="absolute top-0 bottom-0 left-8 w-1 md:hidden rounded-full"
+               style={{ 
+                 background: `linear-gradient(to bottom, ${colors.primary} 0%, ${colors.accent} 100%)`,
+                 opacity: 0.3
+               }}></div>
         </div>
         
         {/* Enhanced Vision Statement */}
-        <div className="mt-20 p-10 rounded-2xl shadow-xl max-w-5xl mx-auto text-center relative overflow-hidden"
+        <div className="mt-32 p-12 md:p-16 rounded-3xl shadow-2xl max-w-6xl mx-auto text-center relative overflow-hidden backdrop-blur-sm border border-opacity-20"
              style={{
-               backgroundColor: isDarkMode ? '#1E293B' : 'white',
-               border: `1px solid ${isDarkMode ? '#334155' : '#E2E8F0'}`
+               backgroundColor: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+               borderColor: colors.border
              }}>
           
-          {/* Background pattern */}
-          <div className="absolute inset-0 opacity-5">
+          {/* Enhanced Background Pattern */}
+          <div className="absolute inset-0 opacity-10">
             <div className="absolute inset-0" 
                  style={{
-                   backgroundImage: `radial-gradient(circle at 20% 80%, ${isDarkMode ? '#38BDF8' : '#0EA5E9'} 0%, transparent 50%), radial-gradient(circle at 80% 20%, ${isDarkMode ? '#38BDF8' : '#0EA5E9'} 0%, transparent 50%)`
+                   backgroundImage: `radial-gradient(circle at 20% 80%, ${colors.primary} 0%, transparent 50%), radial-gradient(circle at 80% 20%, ${colors.accent} 0%, transparent 50%)`
                  }}></div>
           </div>
           
+          {/* Floating Elements */}
+          <div className="absolute top-8 left-8 opacity-20">
+            <Activity className="w-8 h-8 animate-pulse" style={{ color: colors.primary }} />
+          </div>
+          <div className="absolute bottom-8 right-8 opacity-20">
+            <Infinity className="w-8 h-8 animate-spin" style={{ color: colors.accent, animationDuration: '8s' }} />
+          </div>
+          
           <div className="relative z-10">
-            <div className="flex items-center justify-center mb-4">
-              <Target className="w-6 h-6 mr-2" style={{ color: isDarkMode ? '#38BDF8' : '#0EA5E9' }} />
-              <h3 className="text-2xl font-bold"
-                  style={{ color: isDarkMode ? '#38BDF8' : '#0EA5E9' }}>
+            <div className="flex items-center justify-center mb-6">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center mr-4 border-2"
+                   style={{
+                     backgroundColor: colors.primary + '20',
+                     color: colors.primary,
+                     borderColor: colors.primary
+                   }}>
+                <Target className="w-6 h-6" />
+              </div>
+              <h3 className="text-3xl md:text-4xl font-bold"
+                  style={{ color: colors.primary }}>
                 Our Continuing Mission
               </h3>
             </div>
             
-            <p className="text-lg mb-8 max-w-3xl mx-auto">
+            <p className="text-xl md:text-2xl mb-12 max-w-4xl mx-auto leading-relaxed"
+               style={{ color: colors.textSecondary }}>
               Bridging the gap between complex legal systems and everyday people through innovative
               technology and expert guidance. Making justice accessible, affordable, and understandable for all.
             </p>
             
-            <div className="flex flex-wrap justify-center gap-4">
-              <div className="flex items-center px-6 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-300"
-                   style={{
-                     backgroundColor: isDarkMode ? '#334155' : '#F8F9FA',
-                     color: isDarkMode ? '#E2E8F0' : '#1E293B'
-                   }}>
-                <Scale className="w-4 h-4 mr-2" /> 
-                <span>Justice for All</span>
-              </div>
-              <div className="flex items-center px-6 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-300"
-                   style={{
-                     backgroundColor: isDarkMode ? '#334155' : '#F8F9FA',
-                     color: isDarkMode ? '#E2E8F0' : '#1E293B'
-                   }}>
-                <Globe className="w-4 h-4 mr-2" /> 
-                <span>Global Accessibility</span>
-              </div>
-              <div className="flex items-center px-6 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-300"
-                   style={{
-                     backgroundColor: isDarkMode ? '#334155' : '#F8F9FA',
-                     color: isDarkMode ? '#E2E8F0' : '#1E293B'
-                   }}>
-                <TrendingUp className="w-4 h-4 mr-2" /> 
-                <span>Continuous Innovation</span>
-              </div>
-              <div className="flex items-center px-6 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-300"
-                   style={{
-                     backgroundColor: isDarkMode ? '#334155' : '#F8F9FA',
-                     color: isDarkMode ? '#E2E8F0' : '#1E293B'
-                   }}>
-                <Shield className="w-4 h-4 mr-2" /> 
-                <span>Secure & Reliable</span>
-              </div>
-              <div className="flex items-center px-6 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-300"
-                   style={{
-                     backgroundColor: isDarkMode ? '#334155' : '#F8F9FA',
-                     color: isDarkMode ? '#E2E8F0' : '#1E293B'
-                   }}>
-                <Heart className="w-4 h-4 mr-2" /> 
-                <span>Community First</span>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-12">
+              {[
+                { icon: Scale, text: "Justice for All", color: colors.primary },
+                { icon: Globe, text: "Global Accessibility", color: colors.accent },
+                { icon: TrendingUp, text: "Continuous Innovation", color: colors.primary },
+                { icon: Shield, text: "Secure & Reliable", color: colors.accent },
+                { icon: Heart, text: "Community First", color: colors.primary }
+              ].map((item, index) => (
+                <div key={index} 
+                     className="group p-6 rounded-2xl border border-opacity-20 hover:border-opacity-40 transition-all duration-300 hover:scale-105 hover:shadow-xl backdrop-blur-sm"
+                     style={{
+                       backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.8)',
+                       borderColor: colors.border
+                     }}>
+                  <div className="flex items-center justify-center mb-3">
+                    <item.icon className="w-6 h-6" style={{ color: item.color }} />
+                  </div>
+                  <span className="text-sm font-medium" style={{ color: colors.textPrimary }}>
+                    {item.text}
+                  </span>
+                </div>
+              ))}
             </div>
             
-            {/* Call to action */}
-            <div className="mt-8">
-              <button className="inline-flex items-center px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
+            {/* Enhanced Call to Action */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <button className="group inline-flex items-center px-8 py-4 rounded-full font-semibold transition-all duration-300 hover:scale-105 shadow-xl hover:shadow-2xl border-2"
                       style={{
-                        backgroundColor: isDarkMode ? '#38BDF8' : '#0EA5E9',
-                        color: isDarkMode ? '#0F172A' : 'white'
+                        backgroundColor: colors.primary,
+                        color: colors.background,
+                        borderColor: colors.primary
                       }}>
-                Join Our Journey
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <span>Join Our Journey</span>
+                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              </button>
+              
+              <button className="group inline-flex items-center px-8 py-4 rounded-full font-semibold transition-all duration-300 hover:scale-105 shadow-xl hover:shadow-2xl border-2"
+                      style={{
+                        backgroundColor: 'transparent',
+                        color: colors.primary,
+                        borderColor: colors.primary
+                      }}>
+                <span>Learn More</span>
+                <Sparkles className="w-5 h-5 ml-2 group-hover:rotate-12 transition-transform" />
               </button>
             </div>
           </div>
@@ -462,20 +584,78 @@ export default function OurStoryTimeline() {
         }
         
         .timeline-item:hover {
-          transform: translateY(-2px);
+          transform: translateY(-8px);
+        }
+        
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-20px);
+          }
+        }
+        
+        @keyframes pulse-ring {
+          0% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.7;
+            transform: scale(1.05);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
         }
         
         @keyframes pulse-glow {
           0%, 100% {
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+            box-shadow: 0 0 20px rgba(34, 87, 122, 0.3);
           }
           50% {
-            box-shadow: 0 0 30px rgba(56, 189, 248, 0.5);
+            box-shadow: 0 0 40px rgba(34, 87, 122, 0.5);
           }
+        }
+        
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.6s ease-out forwards;
         }
         
         .animate-pulse {
           animation: pulse-glow 2s ease-in-out infinite;
+        }
+        
+        .hover-scale {
+          transition: all 0.3s ease;
+        }
+        
+        .hover-scale:hover {
+          transform: scale(1.05);
+        }
+        
+        .glass-effect {
+          backdrop-filter: blur(10px);
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .dark .glass-effect {
+          background: rgba(0, 0, 0, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.1);
         }
       `}</style>
     </div>
