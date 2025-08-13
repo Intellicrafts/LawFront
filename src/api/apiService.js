@@ -72,7 +72,7 @@ export const lawyerAPI = {
    */
   getLawyers: async (params = {}) => {
     try {
-      const response = await apiClient.get('/lawyers', { params });
+      const response = await apiClient.get('/api/lawyers', { params });
       return response.data;
     } catch (error) {
       console.error('Error fetching lawyers:', error);
