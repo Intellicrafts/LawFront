@@ -5,13 +5,13 @@ import { cleanAvatarUrl, cacheAvatarUrl } from '../utils/avatarUtils';
 
 // Create axios instance with default configuration
 const apiClient = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000', // Changed from 127.0.0.1
+  baseURL: "https://chambersapi.logicera.in", //process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000', // Changed from 127.0.0.1
   timeout: 10000,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-    'X-Requested-With': 'XMLHttpRequest',
+    // 'X-Requested-With': 'XMLHttpRequest',
   },
 });
 // const apiClientforscrf = axios.create({
@@ -95,7 +95,7 @@ export const lawyerAPI = {
       };
       
       console.log('Booking appointment with data:', appointmentPayload);
-      const response = await apiClient.post('/api/appointments/', appointmentPayload);
+      const response = await apiClient.post('/api/appointments', appointmentPayload);
       console.log('Booking response:', response.data);
       return response.data;
     } catch (error) {
