@@ -756,7 +756,7 @@ export const apiServices = {
   // User Profile APIs
   getUserProfile: async () => {
     try {
-      const response = await apiClient.get('/user/profile');
+      const response = await apiClient.get('/api/user/profile');
       console.log('User profile response:', response.data);
       
       // Extract the actual user data from the response
