@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { 
-  User, Mail, Phone, MapPin, Calendar, Briefcase, Globe, Camera, Edit3, Save, X, 
-  Crown, Shield, Star, Award, Settings, Lock, Bell, Heart, Share2, Download, 
-  AlertCircle, CheckCircle, Loader, Code, FileText, MessageSquare, Verified,
-  Building, Pencil, Check, Image, Upload, ChevronDown, ChevronUp, Eye, EyeOff,
-  Trash2, RefreshCw, Link, Clipboard, Github, Twitter, Linkedin, Facebook,
-  Laptop, AlertTriangle
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import {
+  User, Mail, Phone, MapPin, Calendar, Briefcase, Globe, Camera, X,
+  Award, Settings, Lock, Bell, Share2, Download,
+  AlertCircle, Loader, FileText, MessageSquare,
+  Building, Pencil, Check, Eye, EyeOff,
+  Trash2, RefreshCw, Github, Twitter, Linkedin, Facebook,
+  Laptop
 } from 'lucide-react';
 import { apiServices } from '../../api/apiService';
 import { useSelector } from 'react-redux';
@@ -13,7 +13,7 @@ import Toast from '../common/Toast';
 import useToast from '../../hooks/useToast';
 import ProfileSkeleton from '../common/ProfileSkeleton';
 import Avatar from '../common/Avatar';
-import { cleanAvatarUrl, generateInitials, generateAvatarColor, cacheAvatarUrl, getCachedAvatarUrl, updateAvatarRealTime } from '../../utils/avatarUtils';
+import { cleanAvatarUrl, cacheAvatarUrl, getCachedAvatarUrl, updateAvatarRealTime } from '../../utils/avatarUtils';
 
 const UserProfile = () => {
   // Get theme from Redux store
@@ -28,14 +28,13 @@ const UserProfile = () => {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [errors, setErrors] = useState({});
-  const [activeSection, setActiveSection] = useState('personal'); // For mobile accordion
+  // const [activeSection, setActiveSection] = useState('personal'); // For mobile accordion
   const [skillInput, setSkillInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   
   // Toast notifications
   const { 
     toast, 
-    showToast, 
     hideToast, 
     showSuccess, 
     showError, 
@@ -48,7 +47,7 @@ const UserProfile = () => {
   const skillInputRef = useRef(null);
 
   // Demo profile as fallback
-  const demoProfile = {
+  const demoProfile = useMemo(() => ({
     id: 'demo-001',
     name: 'John',
     last_name: 'Doe',
@@ -77,7 +76,7 @@ const UserProfile = () => {
       { id: 'act2', type: 'document', description: 'Created new contract template', date: '2023-05-28' },
       { id: 'act3', type: 'consultation', description: 'Provided legal consultation to Client XYZ', date: '2023-05-15' }
     ]
-  };
+  }), []);
 
   const [userInfo, setUserInfo] = useState(null);
   const [editForm, setEditForm] = useState({});
@@ -257,7 +256,7 @@ const UserProfile = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [showSuccess, showInfo, showError, getAvatarUrl]);
+  }, [showInfo, showError, getAvatarUrl, demoProfile]);
 
   // Function to ensure avatar is loaded with enhanced caching
   const ensureAvatarLoaded = useCallback(() => {
@@ -325,7 +324,7 @@ const UserProfile = () => {
       newErrors.email = 'Invalid email address';
     }
     
-    if (editForm.phone && !/^[+]?[1-9][\d\s\-\(\)]{7,15}$/.test(editForm.phone)) {
+    if (editForm.phone && !/^[+]?[1-9][\d\s\-()]{7,15}$/.test(editForm.phone)) {
       newErrors.phone = 'Invalid phone number';
     }
     
@@ -482,18 +481,17 @@ const UserProfile = () => {
               );
             }
           }
-        } catch (profileError) {
-          console.error('Failed to fetch profile after avatar upload:', profileError);
+        } catch {
+          // Profile fetch after avatar upload failed; fallback to local preview below
           
           // Use the local preview as fallback
           if (imagePreview) {
             updateLocalStorageWithAvatar(imagePreview);
             setUserInfo(prev => ({ ...prev, avatar: imagePreview }));
             setEditForm(prev => ({ ...prev, avatar: imagePreview }));
-            
             showWarning(
-              'Partial Success', 
-              'Your avatar has been uploaded but we couldn\'t verify it. It will appear correctly when you refresh.'
+              'Partial Success',
+              "Your avatar has been uploaded but we couldn't verify it. It will appear correctly when you refresh."
             );
           }
         }
@@ -522,7 +520,7 @@ const UserProfile = () => {
       setIsUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
-  }, [showSuccess, showError, showWarning, showInfo, hideToast, imagePreview, updateLocalStorageWithAvatar]);
+  }, [showSuccess, showError, showWarning, showInfo, hideToast, imagePreview, updateLocalStorageWithAvatar, userInfo]);
 
   // Save profile changes - enhanced with better error handling and UX
   const handleSave = useCallback(async () => {
