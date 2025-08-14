@@ -1,7 +1,6 @@
 // apiService.js - Centralized API configuration
 
 import axios from 'axios';
-import { cleanAvatarUrl, cacheAvatarUrl } from '../utils/avatarUtils';
 
 // Create axios instance with default configuration
 const apiClient = axios.create({
@@ -764,69 +763,10 @@ export const apiServices = {
       
       // Store user profile data in localStorage for offline access
       if (userData) {
-        // Process avatar URL using the smart avatar utilities
-        if (userData.avatar_url || userData.avatar) {
-          const avatarSource = userData.avatar_url;
-          console.log('Processing avatar URL from API:', avatarSource);
-          
-          // Use the smart cleaning utility to fix malformed URLs
-          const cleanedAvatarUrl = avatarSource;
-          
-          if (cleanedAvatarUrl) {
-            console.log('Successfully cleaned avatar URL:', cleanedAvatarUrl);
-            
-            // Update both avatar fields in userData for consistency
-            userData.avatar = cleanedAvatarUrl;
-            userData.avatar_url = cleanedAvatarUrl;
-            
-            // Cache the avatar URL using the enhanced caching system
-            cacheAvatarUrl(cleanedAvatarUrl, userData.id || 'current');
-            
-            // Store the avatar URL in localStorage (backward compatibility)
-            localStorage.setItem('user_avatar', cleanedAvatarUrl);
-            
-            // Also update the avatar in the user object if it exists
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) {
-              try {
-                const parsedUser = JSON.parse(storedUser);
-                parsedUser.avatar = cleanedAvatarUrl;
-                localStorage.setItem('user', JSON.stringify(parsedUser));
-              } catch (e) {
-                console.error('Error updating user avatar in localStorage:', e);
-              }
-            }
-            
-            // Fetch and store as data URL for offline use
-            if (!cleanedAvatarUrl.startsWith('data:')) {
-              try {
-                console.log('Fetching avatar image for offline storage:', cleanedAvatarUrl);
-                fetch(cleanedAvatarUrl)
-                  .then(response => response.blob())
-                  .then(blob => {
-                    const reader = new FileReader();
-                    reader.onloadend = function() {
-                      localStorage.setItem('user_avatar_offline', reader.result);
-                      console.log('Avatar stored as data URL for offline use');
-                    };
-                    reader.readAsDataURL(blob);
-                  })
-                  .catch(err => console.error('Failed to fetch avatar for offline storage:', err));
-              } catch (imgError) {
-                console.error('Failed to process avatar for offline storage:', imgError);
-              }
-            }
-          } else {
-            console.log('Failed to clean avatar URL, removing avatar fields');
-            userData.avatar = null;
-            userData.avatar_url = null;
-          }
-        }
-        
+        // ...no cleanedavatar logic needed...
         // Store the rest of the profile data
         localStorage.setItem('user_profile', JSON.stringify(userData));
       }
-      
       return userData;
     } catch (error) {
       console.error('Get user profile error:', error.response || error);
