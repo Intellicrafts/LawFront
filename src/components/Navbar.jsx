@@ -652,7 +652,7 @@ const Navbar = () => {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-                    MeraBakillllllllllllllllllllllllll
+                    MeraBakil
                   </span>
                   <span className="text-xs text-gray-500 dark:text-gray-400 -mt-1">
                     Professional Solutions
