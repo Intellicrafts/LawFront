@@ -5,7 +5,7 @@ import { cleanAvatarUrl, cacheAvatarUrl } from '../utils/avatarUtils';
 
 // Create axios instance with default configuration
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000', // Changed from 127.0.0.1
+  baseURL: process.env.REACT_APP_API_URL || 'https://chambersapi.logicera.in', // Changed from 127.0.0.1
   timeout: 10000,
   withCredentials: true,
   headers: {
