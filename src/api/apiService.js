@@ -304,7 +304,7 @@ export const authAPI = {
   register: async (userData) => {
     try {
       console.log('Registering user with data:', userData);
-      const response = await apiClient.post('/register', userData);
+      const response = await apiClient.post('/api/register', userData);
       console.log('Registration API response:', response);
       return response;
     } catch (error) {
