@@ -766,11 +766,11 @@ export const apiServices = {
       if (userData) {
         // Process avatar URL using the smart avatar utilities
         if (userData.avatar_url || userData.avatar) {
-          const avatarSource = userData.avatar_url || userData.avatar;
+          const avatarSource = userData.avatar_url;
           console.log('Processing avatar URL from API:', avatarSource);
           
           // Use the smart cleaning utility to fix malformed URLs
-          const cleanedAvatarUrl = cleanAvatarUrl(avatarSource);
+          const cleanedAvatarUrl = avatarSource;
           
           if (cleanedAvatarUrl) {
             console.log('Successfully cleaned avatar URL:', cleanedAvatarUrl);
