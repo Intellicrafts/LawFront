@@ -898,24 +898,20 @@ const UserProfile = () => {
 
   // Main UI
   return (
-    <div className={`min-h-screen pt-20 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} transition-colors duration-300 relative`}>
+    <div className={`min-h-screen pt-24 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} transition-colors duration-300 relative`}>
       {/* Toast Notification */}
       <Toast toast={toast} onClose={hideToast} />
       
       {/* Close Button */}
       <button 
         onClick={() => window.history.back()}
-        className="fixed top-24 right-6 z-40 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 group"
+        className="fixed top-28 right-6 z-40 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 group"
         aria-label="Close profile"
       >
         <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
       </button>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">My Profile</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your personal information and account settings</p>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
         {/* Tabs - Desktop */}
         <div className="hidden md:flex mb-8 border-b border-gray-200 dark:border-gray-700">
@@ -985,18 +981,25 @@ const UserProfile = () => {
             {/* Left Column - Profile Card */}
             <div className="lg:col-span-1">
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-                {/* Profile Header with Cover Image */}
-                <div className="h-32 bg-gradient-to-r from-blue-500 to-indigo-600 relative">
+                {/* Enhanced Premium Profile Header */}
+                <div className="h-40 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 relative overflow-hidden">
+                  {/* Background Pattern */}
+                  <div className="absolute inset-0 bg-black bg-opacity-10">
+                    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-transparent via-white/5 to-white/10"></div>
+                  </div>
+                  
+                  {/* Account Type Badge */}
                   {userInfo.account_type === 'Lawyer' && (
-                    <div className="absolute top-4 right-4 bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center">
-                      <Briefcase className="w-3 h-3 mr-1" /> Legal Professional
+                    <div className="absolute top-4 right-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-full text-xs font-semibold flex items-center shadow-lg backdrop-blur-sm">
+                      <Briefcase className="w-3 h-3 mr-2" /> Legal Professional
                     </div>
                   )}
                   
+                  {/* Edit/Save Controls */}
                   {!isEditing ? (
                     <button 
                       onClick={() => setIsEditing(true)}
-                      className="absolute top-4 left-4 bg-white bg-opacity-20 text-white p-2 rounded-full hover:bg-opacity-30 transition-colors"
+                      className="absolute top-4 left-4 bg-white/20 backdrop-blur-sm text-white p-3 rounded-full hover:bg-white/30 transition-all duration-300 shadow-lg hover:scale-105"
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
@@ -1005,14 +1008,14 @@ const UserProfile = () => {
                       <button 
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="bg-green-500 text-white p-2 rounded-full hover:bg-green-600 transition-colors disabled:opacity-50 shadow-md"
+                        className="bg-gradient-to-r from-green-500 to-green-600 text-white p-3 rounded-full hover:from-green-600 hover:to-green-700 transition-all duration-300 disabled:opacity-50 shadow-lg hover:scale-105"
                       >
                         {isSaving ? <Loader className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                       </button>
                       <button 
                         onClick={handleCancel}
                         disabled={isSaving}
-                        className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors disabled:opacity-50 shadow-md"
+                        className="bg-gradient-to-r from-red-500 to-red-600 text-white p-3 rounded-full hover:from-red-600 hover:to-red-700 transition-all duration-300 disabled:opacity-50 shadow-lg hover:scale-105"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -1020,24 +1023,31 @@ const UserProfile = () => {
                   )}
                 </div>
                 
-                {/* Avatar */}
-                <div className="relative -mt-16 px-6">
+                {/* Enhanced Premium Avatar Section */}
+                <div className="relative -mt-20 px-6 pb-4">
                   <div className="relative inline-block">
-                    <Avatar
-                      src={imagePreview || userInfo.avatar_url}
-                      alt={`${userInfo.name} ${userInfo.last_name}`}
-                      name={`${userInfo.name} ${userInfo.last_name}`}
-                      size={128}
-                      className="border-4 border-white dark:border-gray-800 shadow-md transition-all duration-300 hover:shadow-lg"
-                      style={{
-                        objectFit: 'cover',
-                        boxShadow: '0 4px 14px rgba(0, 0, 0, 0.1)'
-                      }}
-                    />
+                    {/* Premium Avatar Container */}
+                    <div className="relative p-1 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-full shadow-2xl">
+                      <div className="bg-white dark:bg-gray-800 rounded-full p-1">
+                        <Avatar
+                          src={imagePreview || cleanAvatarUrl(userInfo.avatar_url || userInfo.avatar) || userInfo.avatar}
+                          alt={`${userInfo.name} ${userInfo.last_name}`}
+                          name={`${userInfo.name} ${userInfo.last_name}`}
+                          size={140}
+                          className="border-4 border-white dark:border-gray-800 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-105"
+                          style={{
+                            objectFit: 'cover',
+                            filter: 'brightness(1.05) contrast(1.1)',
+                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08)'
+                          }}
+                        />
+                      </div>
+                    </div>
                     
+                    {/* Enhanced Camera Upload Button */}
                     {isEditing && (
-                      <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors">
-                        <Camera className="w-4 h-4" />
+                      <label className="absolute bottom-2 right-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3 rounded-full cursor-pointer hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:scale-110 transform">
+                        <Camera className="w-5 h-5" />
                         <input 
                           ref={fileInputRef} 
                           type="file" 
@@ -1045,12 +1055,33 @@ const UserProfile = () => {
                           onChange={handleImageUpload} 
                           className="hidden" 
                         />
+                        {isUploadingAvatar && (
+                          <div className="absolute inset-0 bg-blue-600 rounded-full flex items-center justify-center">
+                            <Loader className="w-5 h-5 animate-spin text-white" />
+                          </div>
+                        )}
                       </label>
                     )}
+
+                    {/* Premium Online Status Indicator */}
+                    <div className="absolute bottom-4 left-4 w-8 h-8 bg-gradient-to-r from-green-400 to-green-500 border-4 border-white dark:border-gray-800 rounded-full flex items-center justify-center shadow-lg">
+                      <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                    </div>
                     
+                    {/* Verification Badge for Premium Users */}
+                    {userInfo.is_verified && (
+                      <div className="absolute top-2 right-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-2 rounded-full shadow-lg">
+                        <Award className="w-4 h-4" />
+                      </div>
+                    )}
+                    
+                    {/* Upload Loading Overlay */}
                     {isUploadingAvatar && (
                       <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
-                        <Loader className="w-6 h-6 text-white animate-spin" />
+                        <div className="text-center text-white">
+                          <Loader className="w-8 h-8 animate-spin mx-auto mb-2" />
+                          <p className="text-xs">Uploading...</p>
+                        </div>
                       </div>
                     )}
                   </div>
