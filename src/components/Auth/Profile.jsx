@@ -1113,7 +1113,7 @@ const UserProfile = () => {
                     <div className="relative p-1 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-full shadow-2xl">
                       <div className="bg-white dark:bg-gray-800 rounded-full p-1">
                         <Avatar
-                          src={imagePreview || userInfo.avatar_url || userInfo.avatar}
+                          src={userInfo.avatar_url || imagePreview ||  userInfo.avatar}
                           alt={`${userInfo.name} ${userInfo.last_name}`}
                           name={`${userInfo.name} ${userInfo.last_name}`}
                           size={140}
