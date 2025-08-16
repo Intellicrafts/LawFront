@@ -1024,7 +1024,7 @@ const UserProfile = () => {
                 <div className="relative -mt-16 px-6">
                   <div className="relative inline-block">
                     <Avatar
-                      src={imagePreview || userInfo.avatar}
+                      src={imagePreview || userInfo.avatar_url}
                       alt={`${userInfo.name} ${userInfo.last_name}`}
                       name={`${userInfo.name} ${userInfo.last_name}`}
                       size={128}
