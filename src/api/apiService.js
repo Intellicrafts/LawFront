@@ -300,7 +300,17 @@ export const authAPI = {
   getCsrfCookie: () => apiClient.get('https://chambersapi.logicera.in/sanctum/csrf-cookie'),
 
   // Register user
-
+  register: async (userData) => {
+    try {
+      console.log('Registering user with data:', userData);
+      const response = await apiClient.post('/register', userData);
+      console.log('Registration API response:', response);
+      return response;
+    } catch (error) {
+      console.error('Registration API error:', error.response || error);
+      throw error;
+    }
+  },
 
   // Login user
   login: (credentials) => apiClient.post('/login', credentials),
