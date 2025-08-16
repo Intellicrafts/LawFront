@@ -71,7 +71,7 @@ export const lawyerAPI = {
    */
   getLawyers: async (params = {}) => {
     try {
-      const response = await apiClient.get('/api/lawyers', { params });
+      const response = await apiClient.get('/lawyers', { params });
       return response.data;
     } catch (error) {
       console.error('Error fetching lawyers:', error);
@@ -94,7 +94,7 @@ export const lawyerAPI = {
       };
       
       console.log('Booking appointment with data:', appointmentPayload);
-      const response = await apiClient.post('/api/appointments', appointmentPayload);
+      const response = await apiClient.post('/appointments', appointmentPayload);
       console.log('Booking response:', response.data);
       return response.data;
     } catch (error) {
@@ -110,7 +110,7 @@ export const lawyerAPI = {
    */
   getLawyer: async (id) => {
     try {
-      const response = await apiClient.get(`/api/lawyers/${id}`);
+      const response = await apiClient.get(`/lawyers/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching lawyer with ID ${id}:`, error);
@@ -126,7 +126,7 @@ export const lawyerAPI = {
    */
   bookConsultation: async (lawyerId, bookingData) => {
     try {
-      const response = await apiClient.post(`/api/lawyers/${lawyerId}/book`, bookingData);
+      const response = await apiClient.post(`/lawyers/${lawyerId}/book`, bookingData);
       return response.data;
     } catch (error) {
       console.error('Error booking consultation:', error);
@@ -142,7 +142,7 @@ export const lawyerAPI = {
   createAppointment: async (appointmentData) => {
     try {
       console.log('Sending appointment data:', appointmentData);
-      const response = await apiClient.post('/api/appointments/', appointmentData);
+      const response = await apiClient.post('/appointments/', appointmentData);
       console.log('Appointment creation response:', response.data);
       return response.data;
     } catch (error) {
@@ -160,7 +160,7 @@ export const lawyerAPI = {
    */
   getAvailableTimeSlots: async (lawyerId, date) => {
     try {
-      const response = await apiClient.get(`/api/lawyers/${lawyerId}/availability`, {
+      const response = await apiClient.get(`/lawyers/${lawyerId}/availability`, {
         params: { date }
       });
       return response.data;
@@ -178,7 +178,7 @@ export const lawyerAPI = {
    */
   getNearbyLawyers: async (location, radius = 5000) => {
     try {
-      const response = await apiClient.get('/api/lawyers/nearby', {
+      const response = await apiClient.get('/lawyers/nearby', {
         params: {
           latitude: location.latitude,
           longitude: location.longitude,
@@ -199,7 +199,7 @@ export const lawyerAPI = {
    */
   getLawyerStatus: async (lawyerId) => {
     try {
-      const response = await apiClient.get(`/api/lawyers/${lawyerId}/status`);
+      const response = await apiClient.get(`/lawyers/${lawyerId}/status`);
       return response.data;
     } catch (error) {
       console.error('Error fetching lawyer status:', error);
@@ -215,7 +215,7 @@ export const lawyerAPI = {
    */
   updateLawyerStatus: async (lawyerId, isOnline) => {
     try {
-      const response = await apiClient.put(`/api/lawyers/${lawyerId}/status`, {
+      const response = await apiClient.put(`/lawyers/${lawyerId}/status`, {
         is_online: isOnline
       });
       return response.data;
@@ -232,7 +232,7 @@ export const lawyerAPI = {
    */
   startCallSession: async (lawyerId) => {
     try {
-      const response = await apiClient.post(`/api/lawyers/${lawyerId}/call/start`);
+      const response = await apiClient.post(`/lawyers/${lawyerId}/call/start`);
       return response.data;
     } catch (error) {
       console.error('Error starting call session:', error);
@@ -248,7 +248,7 @@ export const lawyerAPI = {
    */
   endCallSession: async (lawyerId, sessionId) => {
     try {
-      const response = await apiClient.post(`/api/lawyers/${lawyerId}/call/end`, {
+      const response = await apiClient.post(`/lawyers/${lawyerId}/call/end`, {
         session_id: sessionId
       });
       return response.data;
@@ -265,7 +265,7 @@ export const lawyerAPI = {
    */
   startChatSession: async (lawyerId) => {
     try {
-      const response = await apiClient.post(`/api/lawyers/${lawyerId}/chat/start`);
+      const response = await apiClient.post(`/lawyers/${lawyerId}/chat/start`);
       return response.data;
     } catch (error) {
       console.error('Error starting chat session:', error);
@@ -282,7 +282,7 @@ export const lawyerAPI = {
    */
   sendChatMessage: async (lawyerId, sessionId, message) => {
     try {
-      const response = await apiClient.post(`/api/lawyers/${lawyerId}/chat/message`, {
+      const response = await apiClient.post(`/lawyers/${lawyerId}/chat/message`, {
         session_id: sessionId,
         message: message
       });
@@ -314,16 +314,16 @@ export const authAPI = {
   },
 
   // Login user
-  login: (credentials) => apiClient.post('/api/login', credentials),
+  login: (credentials) => apiClient.post('/login', credentials),
 
   // Logout user
-  logout: () => apiClient.post('/api/logout'),
+  logout: () => apiClient.post('/logout'),
 
   // Get authenticated user
-  getUser: () => apiClient.get('/api/user'),
+  getUser: () => apiClient.get('/user'),
 
   // Refresh token (if your API supports it)
-  refreshToken: () => apiClient.post('/api/refresh'),
+  refreshToken: () => apiClient.post('/refresh'),
 };
 
 // Utility functions for token management
@@ -362,7 +362,7 @@ export const apiServices = {
   // Task Automation API
   getTasks: async (filters = {}) => {
     try {
-      const response = await apiClient.get('/api/tasks', { params: filters });
+      const response = await apiClient.get('/tasks', { params: filters });
       console.log('Tasks API response:', response.data);
       return response.data;
     } catch (error) {
@@ -373,7 +373,7 @@ export const apiServices = {
   
   getTask: async (taskId) => {
     try {
-      const response = await apiClient.get(`/api/tasks/${taskId}`);
+      const response = await apiClient.get(`/tasks/${taskId}`);
       console.log('Task details response:', response.data);
       return response.data;
     } catch (error) {
@@ -384,7 +384,7 @@ export const apiServices = {
   
   createTask: async (taskData) => {
     try {
-      const response = await apiClient.post('/api/tasks', taskData);
+      const response = await apiClient.post('/tasks', taskData);
       console.log('Create task response:', response.data);
       return response.data;
     } catch (error) {
@@ -395,7 +395,7 @@ export const apiServices = {
   
   updateTask: async (taskId, taskData) => {
     try {
-      const response = await apiClient.put(`/api/tasks/${taskId}`, taskData);
+      const response = await apiClient.put(`/tasks/${taskId}`, taskData);
       console.log('Update task response:', response.data);
       return response.data;
     } catch (error) {
@@ -406,7 +406,7 @@ export const apiServices = {
   
   updateTaskStatus: async (taskId, status) => {
     try {
-      const response = await apiClient.patch(`/api/tasks/${taskId}/status`, { status });
+      const response = await apiClient.patch(`/tasks/${taskId}/status`, { status });
       console.log('Update task status response:', response.data);
       return response.data;
     } catch (error) {
@@ -417,7 +417,7 @@ export const apiServices = {
   
   deleteTask: async (taskId) => {
     try {
-      const response = await apiClient.delete(`/api/tasks/${taskId}`);
+      const response = await apiClient.delete(`/tasks/${taskId}`);
       console.log('Delete task response:', response.data);
       return response.data;
     } catch (error) {
@@ -428,7 +428,7 @@ export const apiServices = {
   
   getTaskCategories: async () => {
     try {
-      const response = await apiClient.get('/api/task-categories');
+      const response = await apiClient.get('/task-categories');
       console.log('Task categories response:', response.data);
       return response.data;
     } catch (error) {
@@ -439,7 +439,7 @@ export const apiServices = {
   
   getTaskStatistics: async () => {
     try {
-      const response = await apiClient.get('/api/tasks/statistics');
+      const response = await apiClient.get('/tasks/statistics');
       console.log('Task statistics response:', response.data);
       return response.data;
     } catch (error) {
@@ -452,7 +452,7 @@ export const apiServices = {
   getUserNotifications: async (userId) => {
     try {
       // Using the exact endpoint format you specified
-      const response = await apiClient.get(`http://127.0.0.1:8000/api/notifications/user/${userId}`);
+      const response = await apiClient.get(`/notifications/user/${userId}`);
       console.log('Notifications API response:', response.data);
       return response.data;
     } catch (error) {
@@ -463,7 +463,7 @@ export const apiServices = {
   
   createNotification: async (notificationData) => {
     try {
-      const response = await apiClient.post('/api/notifications/', notificationData);
+      const response = await apiClient.post('/notifications/', notificationData);
       console.log('Create notification response:', response.data);
       return response.data;
     } catch (error) {
@@ -474,7 +474,7 @@ export const apiServices = {
   
   markNotificationAsRead: async (notificationId) => {
     try {
-      const response = await apiClient.post(`/api/notifications/${notificationId}/read`);
+      const response = await apiClient.post(`/notifications/${notificationId}/read`);
       console.log('Mark notification as read response:', response.data);
       return response.data;
     } catch (error) {
@@ -485,7 +485,7 @@ export const apiServices = {
   
   markAllNotificationsAsRead: async (userId) => {
     try {
-      const response = await apiClient.post(`/api/notifications/mark-all-read`, { user_id: userId });
+      const response = await apiClient.post(`/notifications/mark-all-read`, { user_id: userId });
       console.log('Mark all notifications as read response:', response.data);
       return response.data;
     } catch (error) {
@@ -497,7 +497,7 @@ export const apiServices = {
   // Voice and Speech APIs for Enhanced Voice Modal Functionality
   startVoiceSession: async (sessionData = {}) => {
     try {
-      const response = await apiClient.post('/api/voice/session/start', {
+      const response = await apiClient.post('/voice/session/start', {
         user_id: sessionData.userId,
         session_type: sessionData.sessionType || 'legal_consultation',
         language: sessionData.language || 'en',
@@ -513,7 +513,7 @@ export const apiServices = {
 
   endVoiceSession: async (sessionId, sessionSummary = {}) => {
     try {
-      const response = await apiClient.post(`/api/voice/session/${sessionId}/end`, {
+      const response = await apiClient.post(`/voice/session/${sessionId}/end`, {
         duration: sessionSummary.duration,
         transcript: sessionSummary.transcript,
         summary: sessionSummary.summary,
@@ -535,7 +535,7 @@ export const apiServices = {
         formData.append('session_id', sessionId);
       }
       
-      const response = await apiClient.post('/api/voice/transcribe', formData, {
+      const response = await apiClient.post('/voice/transcribe', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -551,7 +551,7 @@ export const apiServices = {
 
   generateVoiceResponse: async (textData, voiceConfig = {}) => {
     try {
-      const response = await apiClient.post('/api/voice/synthesize', {
+      const response = await apiClient.post('/voice/synthesize', {
         text: textData.text,
         voice: voiceConfig.voice || 'default',
         language: voiceConfig.language || 'en',
@@ -570,7 +570,7 @@ export const apiServices = {
 
   getVoiceSessionHistory: async (userId, limit = 10) => {
     try {
-      const response = await apiClient.get(`/api/voice/sessions/history`, {
+      const response = await apiClient.get(`/voice/sessions/history`, {
         params: {
           user_id: userId,
           limit: limit
@@ -586,7 +586,7 @@ export const apiServices = {
 
   updateVoicePreferences: async (userId, preferences) => {
     try {
-      const response = await apiClient.put(`/api/voice/preferences/${userId}`, {
+      const response = await apiClient.put(`/voice/preferences/${userId}`, {
         language: preferences.language || 'en',
         voice_type: preferences.voiceType || 'default',
         speech_speed: preferences.speechSpeed || 1.0,
@@ -616,7 +616,7 @@ export const apiServices = {
   login: async (credentials) => {
     console.warn('Using deprecated apiServices.login. Please use authAPI.login instead.');
     try {
-      const response = await apiClient.post('/api/login', credentials);
+      const response = await apiClient.post('/login', credentials);
       
       if (response.data.token) {
         localStorage.setItem('auth_token', response.data.token);
@@ -632,7 +632,7 @@ export const apiServices = {
   logout: async () => {
     console.warn('Using deprecated apiServices.logout. Please use authAPI.logout instead.');
     try {
-      const response = await apiClient.post('/api/logout');
+      const response = await apiClient.post('/logout');
 
       // Clear local storage
       localStorage.removeItem('auth_token');
@@ -648,7 +648,7 @@ export const apiServices = {
   getUser: async () => {
     console.warn('Using deprecated apiServices.getUser. Please use authAPI.getUser instead.');
     try {
-      const response = await apiClient.get('/api/user/profile');
+      const response = await apiClient.get('/user/profile');
       return response.data;
     } catch (error) {
       throw error;
@@ -745,7 +745,7 @@ export const apiServices = {
   // Refresh token (if your API supports it)
   refreshToken: async () => {
     try {
-      const response = await apiClient.post('/api/refresh');
+      const response = await apiClient.post('/refresh');
       return response.data;
     } catch (error) {
       throw error;
@@ -755,7 +755,7 @@ export const apiServices = {
   // User Profile APIs
   getUserProfile: async () => {
     try {
-      const response = await apiClient.get('/api/user/profile');
+      const response = await apiClient.get('/user/profile');
       console.log('User profile response:', response.data);
       
       // Extract the actual user data from the response
@@ -807,7 +807,7 @@ export const apiServices = {
         delete dataToSend.avatar;
       }
 
-      const response = await apiClient.put('/api/user/profile', dataToSend);
+      const response = await apiClient.put('/user/profile', dataToSend);
       console.log('Update profile response:', response.data);
       
       // Extract the actual user data from the response
@@ -879,7 +879,7 @@ export const apiServices = {
           try {
             // Third attempt: Try with user ID
             // First get the user ID
-            const userResponse = await apiClient.get('/api/user/profile');
+            const userResponse = await apiClient.get('/user/profile');
             const userId = userResponse.data.id || userResponse.data.data?.id;
             
             if (!userId) {
@@ -887,7 +887,7 @@ export const apiServices = {
             }
             
             // Then use the user-specific avatar endpoint
-            response = await apiClient.post(`/api/${userId}/avatar`, formData, {
+            response = await apiClient.post(`/${userId}/avatar`, formData, {
               headers: {
                 'Content-Type': 'multipart/form-data',
               },
@@ -899,7 +899,7 @@ export const apiServices = {
             
             try {
               // Fourth attempt: Try the endpoints without /api prefix
-              response = await apiClient.post('/api/avatar', formData, {
+              response = await apiClient.post('/avatar', formData, {
                 headers: {
                   'Content-Type': 'multipart/form-data',
                 },
@@ -910,7 +910,7 @@ export const apiServices = {
               console.log('Fourth avatar upload method failed, trying update-avatar without prefix:', error4);
               
               try {
-                response = await apiClient.post('/api/update-avatar', formData, {
+                response = await apiClient.post('/update-avatar', formData, {
                   headers: {
                     'Content-Type': 'multipart/form-data',
                   },
@@ -948,10 +948,10 @@ export const apiServices = {
               }
               
               // First, check for duplicate /api prefixes and fix them
-              if (fixedAvatarUrl.includes('/api/api')) {
+              if (fixedAvatarUrl.includes('/api')) {
                 // Fix duplicate /api prefixes
-                while (fixedAvatarUrl.includes('/api/api')) {
-                  fixedAvatarUrl = fixedAvatarUrl.replace('/api/api', '/api');
+                while (fixedAvatarUrl.includes('/api')) {
+                  fixedAvatarUrl = fixedAvatarUrl.replace('/api', '/api');
                 }
                 console.log('Fixed duplicate /api prefixes:', fixedAvatarUrl);
               }
@@ -960,12 +960,12 @@ export const apiServices = {
               if (!fixedAvatarUrl.includes('/') && (fixedAvatarUrl.includes('.jpg') || fixedAvatarUrl.includes('.jpeg') || 
                   fixedAvatarUrl.includes('.png') || fixedAvatarUrl.includes('.gif') || fixedAvatarUrl.includes('.webp'))) {
                 // It's just a filename, construct the full path
-                fixedAvatarUrl = `/api/storage/avatars/${fixedAvatarUrl}`;
+                fixedAvatarUrl = `/storage/avatars/${fixedAvatarUrl}`;
                 console.log('Converted filename to full path:', fixedAvatarUrl);
               }
               // Check if it's a storage path that needs to be fixed
               else if (fixedAvatarUrl.includes('/storage/')) {
-                // Convert from /storage/avatars/file.jpg to /api/storage/avatars/file.jpg
+                // Convert from /storage/avatars/file.jpg to /storage/avatars/file.jpg
                 if (!fixedAvatarUrl.startsWith('/api')) {
                   fixedAvatarUrl = '/api' + fixedAvatarUrl;
                   console.log('Fixed storage path by adding /api prefix:', fixedAvatarUrl);
@@ -1044,7 +1044,7 @@ export const apiServices = {
   getLawyers: async (params = {}) => {
     try {
       console.log('Fetching lawyers with params:', params);
-      const response = await apiClient.get('/api/lawyers/', { params });
+      const response = await apiClient.get('/lawyers/', { params });
       console.log('Lawyers API response:', response.data);
       return response.data;
     } catch (error) {
@@ -1056,7 +1056,7 @@ export const apiServices = {
   getLawyerById: async (lawyerId) => {
     try {
       console.log(`Fetching lawyer with ID: ${lawyerId}`);
-      const response = await apiClient.get(`/api/lawyers/${lawyerId}`);
+      const response = await apiClient.get(`/lawyers/${lawyerId}`);
       console.log('Lawyer details response:', response.data);
       return response.data;
     } catch (error) {
@@ -1068,7 +1068,7 @@ export const apiServices = {
   getLawyerAppointments: async (lawyerId) => {
     try {
       console.log(`Fetching appointments for lawyer ID: ${lawyerId}`);
-      const response = await apiClient.get(`/api/lawyers/${lawyerId}/appointments`);
+      const response = await apiClient.get(`/lawyers/${lawyerId}/appointments`);
       console.log('Lawyer appointments response:', response.data);
       return response.data;
     } catch (error) {
@@ -1080,7 +1080,7 @@ export const apiServices = {
   getLawyerReviews: async (lawyerId) => {
     try {
       console.log(`Fetching reviews for lawyer ID: ${lawyerId}`);
-      const response = await apiClient.get(`/api/lawyers/${lawyerId}/reviews`);
+      const response = await apiClient.get(`/lawyers/${lawyerId}/reviews`);
       console.log('Lawyer reviews response:', response.data);
       return response.data;
     } catch (error) {
@@ -1092,7 +1092,7 @@ export const apiServices = {
   submitLawyerReview: async (lawyerId, reviewData) => {
     try {
       console.log(`Submitting review for lawyer ID: ${lawyerId}`, reviewData);
-      const response = await apiClient.post(`/api/lawyers/${lawyerId}/reviews`, reviewData);
+      const response = await apiClient.post(`/lawyers/${lawyerId}/reviews`, reviewData);
       console.log('Review submission response:', response.data);
       return response.data;
     } catch (error) {
@@ -1109,7 +1109,7 @@ export const lawyerAPI2 = {
   // Get all lawyers with optional filtering
   getLawyers: async (params = {}) => {
     try {
-      const response = await apiClient.get('/api/lawyers', { params });
+      const response = await apiClient.get('/lawyers', { params });
       return response.data;
     } catch (error) {
       console.error('Error fetching lawyers:', error);
@@ -1120,7 +1120,7 @@ export const lawyerAPI2 = {
   // Get a specific lawyer by ID
   getLawyerById: async (id) => {
     try {
-      const response = await apiClient.get(`/api/lawyers/${id}`);
+      const response = await apiClient.get(`/lawyers/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching lawyer with ID ${id}:`, error);
@@ -1132,7 +1132,7 @@ export const lawyerAPI2 = {
   bookAppointment: async (lawyerId, appointmentData) => {
     console.log('Booking appointment for lawyer ID:', lawyerId);
     try {
-      const response = await apiClient.post(`/api/lawyers/${lawyerId}/appointments`, appointmentData);
+      const response = await apiClient.post(`/lawyers/${lawyerId}/appointments`, appointmentData);
       return response.data;
     } catch (error) {
       console.error('Error booking appointment:', error);
@@ -1143,7 +1143,7 @@ export const lawyerAPI2 = {
   // Get lawyer reviews
   getLawyerReviews: async (lawyerId) => {
     try {
-      const response = await apiClient.get(`/api/lawyers/${lawyerId}/reviews`);
+      const response = await apiClient.get(`/lawyers/${lawyerId}/reviews`);
       return response.data;
     } catch (error) {
       console.error('Error fetching lawyer reviews:', error);
@@ -1154,7 +1154,7 @@ export const lawyerAPI2 = {
   // Submit a review for a lawyer
   submitReview: async (lawyerId, reviewData) => {
     try {
-      const response = await apiClient.post(`/api/lawyers/${lawyerId}/reviews`, reviewData);
+      const response = await apiClient.post(`/lawyers/${lawyerId}/reviews`, reviewData);
       return response.data;
     } catch (error) {
       console.error('Error submitting review:', error);
