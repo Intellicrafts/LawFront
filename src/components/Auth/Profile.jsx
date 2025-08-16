@@ -175,8 +175,19 @@ const UserProfile = () => {
         facebook: userData.facebook_url || userData.social?.facebook || ''
       };
       
-      // Get the avatar URL using our helper function
-      const avatarUrl = getAvatarUrl(userData);
+      // Always prioritize and clean avatar_url from API response
+      let cleanedAvatarUrl = null;
+      if (userData.avatar_url) {
+        // Clean the avatar_url that comes from your API
+        cleanedAvatarUrl = cleanAvatarUrl(userData.avatar_url);
+        console.log('Original avatar_url from API:', userData.avatar_url);
+        console.log('Cleaned avatar_url:', cleanedAvatarUrl);
+      } else if (userData.avatar) {
+        // Fallback to avatar field if avatar_url is not available
+        cleanedAvatarUrl = cleanAvatarUrl(userData.avatar);
+        console.log('Using avatar field as fallback:', userData.avatar);
+        console.log('Cleaned avatar:', cleanedAvatarUrl);
+      }
       
       // Transform API data to match our component structure
       const transformedData = {
@@ -199,8 +210,9 @@ const UserProfile = () => {
         company: userData.company || userData.organization || '',
         bio: userData.bio || userData.about || 'No bio available',
         title: userData.title || userData.job_title || userData.profession || '',
-        // Use the avatar URL directly from our helper function
-        avatar: userData.avatar_url || userData.avatar || '',
+        // Always use the cleaned avatar_url from API response
+        avatar_url: cleanedAvatarUrl,
+        avatar: cleanedAvatarUrl,
         account_type: userData.user_type === 1 ? 'Client' : 
                      userData.user_type === 2 ? 'Lawyer' : 
                      userData.user_type_name || userData.account_type || 'User',
@@ -224,9 +236,10 @@ const UserProfile = () => {
       setEditForm(transformedData);
       // showSuccess('Profile Loaded', 'Your profile information has been loaded successfully');
       
-      // Store the avatar URL in localStorage for offline access
-      if (avatarUrl) {
-        localStorage.setItem('user_avatar', avatarUrl);
+      // Store the cleaned avatar URL in localStorage for offline access
+      if (cleanedAvatarUrl) {
+        localStorage.setItem('user_avatar', cleanedAvatarUrl);
+        console.log('Stored cleaned avatar_url in localStorage:', cleanedAvatarUrl);
       }
       
       // Store the transformed data in localStorage for offline access
@@ -260,14 +273,22 @@ const UserProfile = () => {
 
   // Function to ensure avatar is loaded with enhanced caching
   const ensureAvatarLoaded = useCallback(() => {
-    if (userInfo && !userInfo.avatar) {
+    if (userInfo && !userInfo.avatar_url && !userInfo.avatar) {
       // Try to get from our enhanced cache first
       const cachedAvatar = getCachedAvatarUrl(userInfo.id || 'current');
       
       if (cachedAvatar) {
         console.log('Restoring avatar from enhanced cache:', cachedAvatar);
-        setUserInfo(prev => ({ ...prev, avatar: cachedAvatar }));
-        setEditForm(prev => ({ ...prev, avatar: cachedAvatar }));
+        setUserInfo(prev => ({ 
+          ...prev, 
+          avatar_url: cachedAvatar,
+          avatar: cachedAvatar 
+        }));
+        setEditForm(prev => ({ 
+          ...prev, 
+          avatar_url: cachedAvatar,
+          avatar: cachedAvatar 
+        }));
       } else {
         // Fallback to old localStorage method
         const oldCachedAvatar = localStorage.getItem('user_avatar');
@@ -276,8 +297,16 @@ const UserProfile = () => {
           const cleanedUrl = cleanAvatarUrl(oldCachedAvatar);
           if (cleanedUrl) {
             cacheAvatarUrl(cleanedUrl, userInfo.id || 'current');
-            setUserInfo(prev => ({ ...prev, avatar: cleanedUrl }));
-            setEditForm(prev => ({ ...prev, avatar: cleanedUrl }));
+            setUserInfo(prev => ({ 
+              ...prev, 
+              avatar_url: cleanedUrl,
+              avatar: cleanedUrl 
+            }));
+            setEditForm(prev => ({ 
+              ...prev, 
+              avatar_url: cleanedUrl,
+              avatar: cleanedUrl 
+            }));
           }
         }
       }
@@ -291,8 +320,16 @@ const UserProfile = () => {
     const handleAvatarUpdate = (event) => {
       if (event.detail.userId === (userInfo?.id || 'current')) {
         console.log('Profile: Avatar updated, refreshing avatar in UI');
-        setUserInfo(prev => prev ? { ...prev, avatar: event.detail.avatarUrl } : prev);
-        setEditForm(prev => prev ? { ...prev, avatar: event.detail.avatarUrl } : prev);
+        setUserInfo(prev => prev ? { 
+          ...prev, 
+          avatar_url: event.detail.avatarUrl,
+          avatar: event.detail.avatarUrl 
+        } : prev);
+        setEditForm(prev => prev ? { 
+          ...prev, 
+          avatar_url: event.detail.avatarUrl,
+          avatar: event.detail.avatarUrl 
+        } : prev);
       }
     };
     
@@ -439,12 +476,23 @@ const UserProfile = () => {
       }
       
       if (avatarUrl) {
-        // Use the real-time avatar update function for instant updates across all components
-        updateAvatarRealTime(avatarUrl, userInfo?.id);
+        // Clean the avatar URL for consistency
+        const cleanedUrl = cleanAvatarUrl(avatarUrl);
         
-        // Update the UI with the new avatar
-        setUserInfo(prev => ({ ...prev, avatar: cleanAvatarUrl(avatarUrl) }));
-        setEditForm(prev => ({ ...prev, avatar: cleanAvatarUrl(avatarUrl) }));
+        // Use the real-time avatar update function for instant updates across all components
+        updateAvatarRealTime(cleanedUrl || avatarUrl, userInfo?.id);
+        
+        // Update the UI with the new avatar - set both avatar and avatar_url
+        setUserInfo(prev => ({ 
+          ...prev, 
+          avatar_url: cleanedUrl || avatarUrl,
+          avatar: cleanedUrl || avatarUrl 
+        }));
+        setEditForm(prev => ({ 
+          ...prev, 
+          avatar_url: cleanedUrl || avatarUrl,
+          avatar: cleanedUrl || avatarUrl 
+        }));
         
         showSuccess('Avatar Updated', 'Your profile picture has been updated successfully!');
       } else {
@@ -459,12 +507,23 @@ const UserProfile = () => {
           
           if (profileAvatarUrl) {
             console.log('Using avatar URL from profile:', profileAvatarUrl);
-            // Use the real-time avatar update function
-            updateAvatarRealTime(profileAvatarUrl, userInfo?.id);
+            // Clean the avatar URL for consistency
+            const cleanedUrl = cleanAvatarUrl(profileAvatarUrl);
             
-            // Update the UI with the new avatar
-            setUserInfo(prev => ({ ...prev, avatar: cleanAvatarUrl(profileAvatarUrl) }));
-            setEditForm(prev => ({ ...prev, avatar: cleanAvatarUrl(profileAvatarUrl) }));
+            // Use the real-time avatar update function
+            updateAvatarRealTime(cleanedUrl || profileAvatarUrl, userInfo?.id);
+            
+            // Update the UI with the new avatar - set both avatar and avatar_url
+            setUserInfo(prev => ({ 
+              ...prev, 
+              avatar_url: cleanedUrl || profileAvatarUrl,
+              avatar: cleanedUrl || profileAvatarUrl 
+            }));
+            setEditForm(prev => ({ 
+              ...prev, 
+              avatar_url: cleanedUrl || profileAvatarUrl,
+              avatar: cleanedUrl || profileAvatarUrl 
+            }));
             
             showSuccess('Avatar Updated', 'Your profile picture has been updated successfully!');
           } else {
@@ -472,8 +531,16 @@ const UserProfile = () => {
             console.warn('No avatar URL returned from server, using local preview');
             if (imagePreview) {
               updateLocalStorageWithAvatar(imagePreview);
-              setUserInfo(prev => ({ ...prev, avatar: imagePreview }));
-              setEditForm(prev => ({ ...prev, avatar: imagePreview }));
+              setUserInfo(prev => ({ 
+                ...prev, 
+                avatar_url: imagePreview,
+                avatar: imagePreview 
+              }));
+              setEditForm(prev => ({ 
+                ...prev, 
+                avatar_url: imagePreview,
+                avatar: imagePreview 
+              }));
               
               showWarning(
                 'Partial Success', 
@@ -487,8 +554,16 @@ const UserProfile = () => {
           // Use the local preview as fallback
           if (imagePreview) {
             updateLocalStorageWithAvatar(imagePreview);
-            setUserInfo(prev => ({ ...prev, avatar: imagePreview }));
-            setEditForm(prev => ({ ...prev, avatar: imagePreview }));
+            setUserInfo(prev => ({ 
+              ...prev, 
+              avatar_url: imagePreview,
+              avatar: imagePreview 
+            }));
+            setEditForm(prev => ({ 
+              ...prev, 
+              avatar_url: imagePreview,
+              avatar: imagePreview 
+            }));
             showWarning(
               'Partial Success',
               "Your avatar has been uploaded but we couldn't verify it. It will appear correctly when you refresh."
@@ -504,8 +579,16 @@ const UserProfile = () => {
       
       // Even if the upload fails, keep the local preview
       if (imagePreview) {
-        setUserInfo(prev => ({ ...prev, avatar: imagePreview }));
-        setEditForm(prev => ({ ...prev, avatar: imagePreview }));
+        setUserInfo(prev => ({ 
+          ...prev, 
+          avatar_url: imagePreview,
+          avatar: imagePreview 
+        }));
+        setEditForm(prev => ({ 
+          ...prev, 
+          avatar_url: imagePreview,
+          avatar: imagePreview 
+        }));
         showWarning(
           'Offline Mode', 
           'Your avatar has been saved locally but failed to upload to the server. It will be synced when your connection is restored.'
@@ -1030,7 +1113,7 @@ const UserProfile = () => {
                     <div className="relative p-1 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-full shadow-2xl">
                       <div className="bg-white dark:bg-gray-800 rounded-full p-1">
                         <Avatar
-                          src={imagePreview || cleanAvatarUrl(userInfo.avatar_url || userInfo.avatar) || userInfo.avatar}
+                          src={imagePreview || userInfo.avatar_url || userInfo.avatar}
                           alt={`${userInfo.name} ${userInfo.last_name}`}
                           name={`${userInfo.name} ${userInfo.last_name}`}
                           size={140}
