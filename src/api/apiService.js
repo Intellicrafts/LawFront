@@ -297,8 +297,7 @@ export const lawyerAPI = {
 // API endpoints
 export const authAPI = {
   // Get CSRF cookie for Laravel Sanctum
-  // getCsrfCookie: () => apiClientforscrf.get('/sanctum/csrf-cookie'),
- getCsrfCookie: () => apiClient.get('/sanctum/csrf-cookie'),
+  getCsrfCookie: () => apiClient.get('https://chambersapi.logicera.in/sanctum/csrf-cookie'),
 
   // Register user
   register: async (userData) => {
