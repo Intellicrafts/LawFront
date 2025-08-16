@@ -5,7 +5,7 @@ import {
   AlertCircle, Loader, FileText, MessageSquare,
   Building, Pencil, Check, Eye, EyeOff,
   Trash2, RefreshCw, Github, Twitter, Linkedin, Facebook,
-  Laptop
+  Laptop, Video, Clock
 } from 'lucide-react';
 import { apiServices } from '../../api/apiService';
 import { useSelector } from 'react-redux';
@@ -80,6 +80,8 @@ const UserProfile = () => {
 
   const [userInfo, setUserInfo] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [appointmentDetails, setAppointmentDetails] = useState([]);
 
   // Show message - updated to use our toast system
   const showMessage = useCallback((type, text, duration = 5000) => {
@@ -312,6 +314,57 @@ const UserProfile = () => {
       }
     }
   }, [userInfo]);
+
+  // Handle appointment count click - show appointment details
+  const handleAppointmentClick = useCallback(async () => {
+    console.log('Appointment count clicked, showing appointment details');
+    
+    try {
+      // Get appointment details from user profile data
+      const appointments = userInfo?.appointments || [];
+      
+      if (appointments.length === 0) {
+        setAppointmentDetails([]);
+      } else {
+        // Process appointments data
+        const processedAppointments = appointments.map(apt => ({
+          ...apt,
+          isToday: isAppointmentToday(apt.date || apt.appointment_date || apt.scheduled_at),
+          canJoin: isAppointmentToday(apt.date || apt.appointment_date || apt.scheduled_at)
+        }));
+        
+        setAppointmentDetails(processedAppointments);
+        console.log('Processed appointments:', processedAppointments);
+      }
+      
+      setShowAppointmentModal(true);
+    } catch (error) {
+      console.error('Error fetching appointment details:', error);
+      showError('Error', 'Failed to fetch appointment details');
+    }
+  }, [userInfo, showError]);
+
+  // Helper function to check if appointment is today
+  const isAppointmentToday = (appointmentDate) => {
+    if (!appointmentDate) return false;
+    
+    const today = new Date();
+    const appointment = new Date(appointmentDate);
+    
+    return (
+      appointment.getDate() === today.getDate() &&
+      appointment.getMonth() === today.getMonth() &&
+      appointment.getFullYear() === today.getFullYear()
+    );
+  };
+
+  // Handle appointment join
+  const handleJoinAppointment = (appointmentId) => {
+    console.log('Joining appointment:', appointmentId);
+    showSuccess('Joining', 'Redirecting to appointment room...');
+    // Add your join appointment logic here
+    // e.g., navigate to video call or appointment page
+  };
 
   useEffect(() => {
     fetchUserData();
@@ -1238,8 +1291,11 @@ const UserProfile = () => {
                   
                   {/* Stats */}
                   <div className="mt-6 grid grid-cols-3 gap-4 border-t border-gray-200 dark:border-gray-700 pt-4">
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <div 
+                      className="text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg p-2 transition-colors duration-200"
+                      onClick={handleAppointmentClick}
+                    >
+                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
                         {(userInfo?.stats?.appointments || 0).toLocaleString()}
                       </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Appointments</p>
@@ -1969,6 +2025,190 @@ const UserProfile = () => {
           </div>
         )}
       </div>
+
+      {/* Appointment Details Modal */}
+      {showAppointmentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+                <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                My Appointments ({appointmentDetails.length})
+              </h2>
+              <button
+                onClick={() => setShowAppointmentModal(false)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              {appointmentDetails.length === 0 ? (
+                // No appointments found
+                <div className="text-center py-12">
+                  <Calendar className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    No Appointments Found
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    You don't have any appointments scheduled yet.
+                  </p>
+                  <button
+                    onClick={() => setShowAppointmentModal(false)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : (
+                // Show appointment details
+                <div className="space-y-4">
+                  <div className="mb-6">
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Here are your scheduled appointments. You can join appointments that are scheduled for today.
+                    </p>
+                  </div>
+
+                  {appointmentDetails.map((appointment, index) => (
+                    <div
+                      key={appointment.id || index}
+                      className={`border rounded-lg p-4 transition-all duration-200 ${
+                        appointment.canJoin
+                          ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
+                          : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          {/* Appointment Title */}
+                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                            {appointment.title || appointment.subject || 'Legal Consultation'}
+                          </h4>
+
+                          {/* Appointment Details */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div className="flex items-center text-gray-600 dark:text-gray-400">
+                              <Calendar className="w-4 h-4 mr-2" />
+                              <span>
+                                {appointment.date 
+                                  ? new Date(appointment.date).toLocaleDateString('en-US', {
+                                      weekday: 'long',
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric'
+                                    })
+                                  : 'Date not specified'
+                                }
+                              </span>
+                            </div>
+
+                            <div className="flex items-center text-gray-600 dark:text-gray-400">
+                              <Clock className="w-4 h-4 mr-2" />
+                              <span>
+                                {appointment.time || 
+                                 (appointment.date 
+                                   ? new Date(appointment.date).toLocaleTimeString('en-US', {
+                                       hour: '2-digit',
+                                       minute: '2-digit'
+                                     })
+                                   : 'Time not specified'
+                                 )}
+                              </span>
+                            </div>
+
+                            {appointment.lawyer_name && (
+                              <div className="flex items-center text-gray-600 dark:text-gray-400">
+                                <User className="w-4 h-4 mr-2" />
+                                <span>with {appointment.lawyer_name}</span>
+                              </div>
+                            )}
+
+                            {appointment.type && (
+                              <div className="flex items-center text-gray-600 dark:text-gray-400">
+                                <Briefcase className="w-4 h-4 mr-2" />
+                                <span>{appointment.type}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Appointment Description/Notes */}
+                          {(appointment.description || appointment.notes) && (
+                            <div className="mb-4">
+                              <p className="text-sm text-gray-700 dark:text-gray-300">
+                                {appointment.description || appointment.notes}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Status Badge */}
+                          <div className="flex items-center space-x-2">
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              appointment.status === 'confirmed'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                : appointment.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                                : appointment.status === 'cancelled'
+                                ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                            }`}>
+                              {appointment.status || 'scheduled'}
+                            </span>
+
+                            {appointment.canJoin && (
+                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                Available Today
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Join Button */}
+                        <div className="ml-4">
+                          {appointment.canJoin ? (
+                            <button
+                              onClick={() => handleJoinAppointment(appointment.id)}
+                              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                            >
+                              <Video className="w-4 h-4" />
+                              <span>Join Now</span>
+                            </button>
+                          ) : (
+                            <button
+                              disabled
+                              className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 rounded-lg cursor-not-allowed flex items-center space-x-2"
+                            >
+                              <Video className="w-4 h-4" />
+                              <span>Not Available</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Footer */}
+                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Join buttons are only active for appointments scheduled today.
+                      </p>
+                      <button
+                        onClick={() => setShowAppointmentModal(false)}
+                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
