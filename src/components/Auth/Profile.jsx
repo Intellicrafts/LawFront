@@ -12,8 +12,8 @@ import { useSelector } from 'react-redux';
 import Toast from '../common/Toast';
 import useToast from '../../hooks/useToast';
 import ProfileSkeleton from '../common/ProfileSkeleton';
-import Avatar from '../common/Avatar';
-import { cleanAvatarUrl, cacheAvatarUrl, getCachedAvatarUrl, updateAvatarRealTime } from '../../utils/avatarUtils';
+
+
 
 const UserProfile = () => {
   // Get theme from Redux store
@@ -59,7 +59,7 @@ const UserProfile = () => {
     company: 'MeraBakil Legal Solutions',
     bio: 'Legal professional with expertise in corporate law and intellectual property. Passionate about using technology to make legal services more accessible.',
     title: 'Senior Legal Consultant',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+    avatar_url: null, // No default avatar - will show initials
     account_type: 'premium',
     email_verified_at: '2023-01-15T10:30:00Z',
     stats: { projects: 24, followers: 1247, following: 189, likes: 3428 },
@@ -69,7 +69,7 @@ const UserProfile = () => {
       twitter: 'https://twitter.com/johndoe',
       linkedin: 'https://linkedin.com/in/johndoe',
       github: 'https://github.com/johndoe',
-      facebook: 'https://facebook.com/johndoe'
+      facebook: 'https://facebook.com/johndoe',
     },
     recentActivity: [
       { id: 'act1', type: 'case', description: 'Successfully resolved Case #12345', date: '2023-06-01' },
@@ -106,42 +106,7 @@ const UserProfile = () => {
     }
   }, [showSuccess, showError, showWarning, showInfo]);
   
-  // Enhanced function to get avatar URL from API response with smart malformed URL handling
-  const getAvatarUrl = useCallback((userData) => {
-    console.log('Processing avatar URL from userData:', userData);
-    
-    // First check for cached avatar (for real-time updates)
-    const cachedAvatar = getCachedAvatarUrl(userData?.id || 'current');
-    if (cachedAvatar) {
-      console.log('Using cached avatar URL:', cachedAvatar);
-      return cachedAvatar;
-    }
-    
-    // Try avatar_url first (preferred method)
-    let avatarSource = userData?.avatar_url || userData?.avatar;
-    
-    if (!avatarSource) {
-      console.log('No avatar found in userData');
-      return null;
-    }
-    
-    console.log('Raw avatar URL from API:', avatarSource);
-    
-    // Use the smart cleaning utility
-    const cleanedUrl = cleanAvatarUrl(avatarSource);
-    
-    if (cleanedUrl) {
-      console.log('Successfully cleaned avatar URL:', cleanedUrl);
-      
-      // Cache the cleaned URL for future use
-      cacheAvatarUrl(cleanedUrl, userData?.id || 'current');
-      
-      return cleanedUrl;
-    }
-    
-    console.log('Failed to clean avatar URL, returning null');
-    return null;
-  }, []);
+
 
   // Fetch user data from API - simplified with direct avatar_url usage
   const fetchUserData = useCallback(async () => {
@@ -154,6 +119,8 @@ const UserProfile = () => {
       // Extract the user data from the response
       // API returns data in format: { status: "success", data: {...}, message: "..." }
       const userData = response.data || response;
+      
+
       
       // Extract skills from API response if available
       let skills = [];
@@ -177,20 +144,6 @@ const UserProfile = () => {
         facebook: userData.facebook_url || userData.social?.facebook || ''
       };
       
-      // Always prioritize and clean avatar_url from API response
-      let cleanedAvatarUrl = null;
-      if (userData.avatar_url) {
-        // Clean the avatar_url that comes from your API
-        cleanedAvatarUrl = cleanAvatarUrl(userData.avatar_url);
-        console.log('Original avatar_url from API:', userData.avatar_url);
-        console.log('Cleaned avatar_url:', cleanedAvatarUrl);
-      } else if (userData.avatar) {
-        // Fallback to avatar field if avatar_url is not available
-        cleanedAvatarUrl = cleanAvatarUrl(userData.avatar);
-        console.log('Using avatar field as fallback:', userData.avatar);
-        console.log('Cleaned avatar:', cleanedAvatarUrl);
-      }
-      
       // Transform API data to match our component structure
       const transformedData = {
         id: userData.id,
@@ -212,9 +165,7 @@ const UserProfile = () => {
         company: userData.company || userData.organization || '',
         bio: userData.bio || userData.about || 'No bio available',
         title: userData.title || userData.job_title || userData.profession || '',
-        // Always use the cleaned avatar_url from API response
-        avatar_url: cleanedAvatarUrl,
-        avatar: cleanedAvatarUrl,
+        avatar_url: userData.avatar_url || null,
         account_type: userData.user_type === 1 ? 'Client' : 
                      userData.user_type === 2 ? 'Lawyer' : 
                      userData.user_type_name || userData.account_type || 'User',
@@ -234,15 +185,33 @@ const UserProfile = () => {
         reviews: userData.recent_activity?.reviews || []
       };
 
+      
       setUserInfo(transformedData);
       setEditForm(transformedData);
-      // showSuccess('Profile Loaded', 'Your profile information has been loaded successfully');
       
-      // Store the cleaned avatar URL in localStorage for offline access
-      if (cleanedAvatarUrl) {
-        localStorage.setItem('user_avatar', cleanedAvatarUrl);
-        console.log('Stored cleaned avatar_url in localStorage:', cleanedAvatarUrl);
+      // Update localStorage with fresh profile data including avatar
+      try {
+        const existingUserData = localStorage.getItem('user');
+        if (existingUserData) {
+          const parsedUser = JSON.parse(existingUserData);
+          const updatedUser = { 
+            ...parsedUser, 
+            avatar_url: transformedData.avatar_url,
+            name: transformedData.name,
+            last_name: transformedData.last_name 
+          };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          
+          // Dispatch event to update navbar with fresh data
+          window.dispatchEvent(new CustomEvent('profile-avatar-updated', {
+            detail: { avatarUrl: transformedData.avatar_url, userId: transformedData.id }
+          }));
+        }
+      } catch (error) {
+        console.error('Error updating localStorage with profile data:', error);
       }
+      
+      // showSuccess('Profile Loaded', 'Your profile information has been loaded successfully');
       
       // Store the transformed data in localStorage for offline access
       localStorage.setItem('user_profile_transformed', JSON.stringify(transformedData));
@@ -271,49 +240,7 @@ const UserProfile = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [showInfo, showError, getAvatarUrl, demoProfile]);
-
-  // Function to ensure avatar is loaded with enhanced caching
-  const ensureAvatarLoaded = useCallback(() => {
-    if (userInfo && !userInfo.avatar_url && !userInfo.avatar) {
-      // Try to get from our enhanced cache first
-      const cachedAvatar = getCachedAvatarUrl(userInfo.id || 'current');
-      
-      if (cachedAvatar) {
-        console.log('Restoring avatar from enhanced cache:', cachedAvatar);
-        setUserInfo(prev => ({ 
-          ...prev, 
-          avatar_url: cachedAvatar,
-          avatar: cachedAvatar 
-        }));
-        setEditForm(prev => ({ 
-          ...prev, 
-          avatar_url: cachedAvatar,
-          avatar: cachedAvatar 
-        }));
-      } else {
-        // Fallback to old localStorage method
-        const oldCachedAvatar = localStorage.getItem('user_avatar');
-        if (oldCachedAvatar) {
-          console.log('Restoring avatar from old cache:', oldCachedAvatar);
-          const cleanedUrl = cleanAvatarUrl(oldCachedAvatar);
-          if (cleanedUrl) {
-            cacheAvatarUrl(cleanedUrl, userInfo.id || 'current');
-            setUserInfo(prev => ({ 
-              ...prev, 
-              avatar_url: cleanedUrl,
-              avatar: cleanedUrl 
-            }));
-            setEditForm(prev => ({ 
-              ...prev, 
-              avatar_url: cleanedUrl,
-              avatar: cleanedUrl 
-            }));
-          }
-        }
-      }
-    }
-  }, [userInfo]);
+  }, [showInfo, showError, demoProfile]);
 
   // Handle appointment count click - show appointment details
   const handleAppointmentClick = useCallback(async () => {
@@ -326,15 +253,33 @@ const UserProfile = () => {
       if (appointments.length === 0) {
         setAppointmentDetails([]);
       } else {
-        // Process appointments data
-        const processedAppointments = appointments.map(apt => ({
-          ...apt,
-          isToday: isAppointmentToday(apt.date || apt.appointment_date || apt.scheduled_at),
-          canJoin: isAppointmentToday(apt.date || apt.appointment_date || apt.scheduled_at)
-        }));
+        // Process appointments data - show all appointments but check if today for join button
+        const processedAppointments = appointments.map(apt => {
+          const appointmentTime = apt.appointment_time; // Use the correct field from API
+          const isToday = isAppointmentToday(appointmentTime);
+          
+          return {
+            ...apt,
+            isToday,
+            canJoin: isToday && apt.status === 'scheduled' // Only allow join if today and scheduled
+          };
+        });
         
-        setAppointmentDetails(processedAppointments);
-        console.log('Processed appointments:', processedAppointments);
+        // Sort appointments by date - today's appointments first, then by date
+        const sortedAppointments = processedAppointments.sort((a, b) => {
+          const dateA = new Date(a.appointment_time);
+          const dateB = new Date(b.appointment_time);
+          
+          // Today's appointments first
+          if (a.isToday && !b.isToday) return -1;
+          if (!a.isToday && b.isToday) return 1;
+          
+          // Then sort by date (earliest first)
+          return dateA - dateB;
+        });
+        
+        setAppointmentDetails(sortedAppointments);
+        console.log('Processed appointments:', sortedAppointments);
       }
       
       setShowAppointmentModal(true);
@@ -345,17 +290,22 @@ const UserProfile = () => {
   }, [userInfo, showError]);
 
   // Helper function to check if appointment is today
-  const isAppointmentToday = (appointmentDate) => {
-    if (!appointmentDate) return false;
+  const isAppointmentToday = (appointmentTime) => {
+    if (!appointmentTime) return false;
     
-    const today = new Date();
-    const appointment = new Date(appointmentDate);
-    
-    return (
-      appointment.getDate() === today.getDate() &&
-      appointment.getMonth() === today.getMonth() &&
-      appointment.getFullYear() === today.getFullYear()
-    );
+    try {
+      const today = new Date();
+      const appointment = new Date(appointmentTime);
+      
+      // Reset time to compare only dates
+      today.setHours(0, 0, 0, 0);
+      appointment.setHours(0, 0, 0, 0);
+      
+      return today.getTime() === appointment.getTime();
+    } catch (error) {
+      console.error('Error parsing appointment time:', error);
+      return false;
+    }
   };
 
   // Handle appointment join
@@ -368,37 +318,7 @@ const UserProfile = () => {
 
   useEffect(() => {
     fetchUserData();
-    
-    // Listen for real-time avatar updates
-    const handleAvatarUpdate = (event) => {
-      if (event.detail.userId === (userInfo?.id || 'current')) {
-        console.log('Profile: Avatar updated, refreshing avatar in UI');
-        setUserInfo(prev => prev ? { 
-          ...prev, 
-          avatar_url: event.detail.avatarUrl,
-          avatar: event.detail.avatarUrl 
-        } : prev);
-        setEditForm(prev => prev ? { 
-          ...prev, 
-          avatar_url: event.detail.avatarUrl,
-          avatar: event.detail.avatarUrl 
-        } : prev);
-      }
-    };
-    
-    window.addEventListener('avatar-updated', handleAvatarUpdate);
-    
-    return () => {
-      window.removeEventListener('avatar-updated', handleAvatarUpdate);
-    };
-  }, [fetchUserData, userInfo?.id]);
-  
-  // Additional effect to ensure avatar is loaded after profile data is fetched
-  useEffect(() => {
-    if (!isLoading && userInfo) {
-      ensureAvatarLoaded();
-    }
-  }, [isLoading, userInfo, ensureAvatarLoaded]);
+  }, [fetchUserData]);
 
   // Validate form
   const validateForm = useCallback(() => {
@@ -426,40 +346,9 @@ const UserProfile = () => {
     return Object.keys(newErrors).length === 0;
   }, [editForm]);
 
-  // Helper function to update localStorage with the new avatar - simplified
-  const updateLocalStorageWithAvatar = useCallback((avatarUrl) => {
-    if (!avatarUrl) return;
-    
-    // Store the avatar URL in localStorage
-    localStorage.setItem('user_avatar', avatarUrl);
-    console.log('Avatar URL stored in localStorage:', avatarUrl);
-    
-    // Update the user object if it exists
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        parsedUser.avatar = avatarUrl;
-        localStorage.setItem('user', JSON.stringify(parsedUser));
-      } catch (e) {
-        console.error('Error updating user avatar in localStorage:', e);
-      }
-    }
-    
-    // Update the transformed profile data if it exists
-    const storedTransformedProfile = localStorage.getItem('user_profile_transformed');
-    if (storedTransformedProfile) {
-      try {
-        const parsedProfile = JSON.parse(storedTransformedProfile);
-        parsedProfile.avatar = avatarUrl;
-        localStorage.setItem('user_profile_transformed', JSON.stringify(parsedProfile));
-      } catch (e) {
-        console.error('Error updating profile avatar in localStorage:', e);
-      }
-    }
-  }, []);
 
-  // Handle image upload - simplified to use avatar_url directly
+
+  // Simplified image upload handler
   const handleImageUpload = useCallback(async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -487,176 +376,74 @@ const UserProfile = () => {
     try {
       setIsUploadingAvatar(true);
       
-      // Show a loading toast
-      showInfo('Uploading Avatar', 'Please wait while we upload your profile picture...', 0);
-      
-      // Create a local preview immediately for better UX
+      // Create image preview immediately
       const reader = new FileReader();
       reader.onloadend = () => {
-        const previewUrl = reader.result;
-        setImagePreview(previewUrl);
+        setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
       
+      // Show loading toast
+      showInfo('Uploading Avatar', 'Please wait while we upload your profile picture...', 0);
+      
       // Upload to server
       const result = await apiServices.uploadAvatar(file);
-      
-      // Hide the loading toast
-      hideToast();
-      
-      // Get the avatar URL from the response using our helper function
-      // First check if result has data property (API response format)
       const response = result.data || result;
       
-      // Try to get avatar_url directly from the response
-      let avatarUrl = response.avatar_url;
+      // Get avatar URL from response
+      const avatarUrl = response.avatar_url || response.avatar;
       
       if (avatarUrl) {
-        console.log('Using avatar_url from upload response:', avatarUrl);
-        
-        // Make sure the URL is absolute
-        if (!avatarUrl.startsWith('http')) {
-          const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-          avatarUrl = avatarUrl.startsWith('/') 
-            ? `${baseUrl}${avatarUrl}` 
-            : `${baseUrl}/${avatarUrl}`;
-          console.log('Converted avatar_url to absolute URL:', avatarUrl);
+        // Update localStorage first (for navbar sync)
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          try {
+            const parsedUser = JSON.parse(userData);
+            parsedUser.avatar_url = avatarUrl;
+            localStorage.setItem('user', JSON.stringify(parsedUser));
+          } catch (error) {
+            console.error('Error updating user avatar in localStorage:', error);
+          }
         }
-      } else {
-        // If no avatar_url, try to get avatar
-        avatarUrl = response.avatar;
-        console.log('Using avatar from upload response:', avatarUrl);
-      }
-      
-      if (avatarUrl) {
-        // Clean the avatar URL for consistency
-        const cleanedUrl = cleanAvatarUrl(avatarUrl);
         
-        // Use the real-time avatar update function for instant updates across all components
-        updateAvatarRealTime(cleanedUrl || avatarUrl, userInfo?.id);
+        // Update both userInfo and editForm with new avatar
+        setUserInfo(prev => ({ ...prev, avatar_url: avatarUrl }));
+        setEditForm(prev => ({ ...prev, avatar_url: avatarUrl }));
         
-        // Update the UI with the new avatar - set both avatar and avatar_url
-        setUserInfo(prev => ({ 
-          ...prev, 
-          avatar_url: cleanedUrl || avatarUrl,
-          avatar: cleanedUrl || avatarUrl 
-        }));
-        setEditForm(prev => ({ 
-          ...prev, 
-          avatar_url: cleanedUrl || avatarUrl,
-          avatar: cleanedUrl || avatarUrl 
+        // Dispatch event to update navbar immediately
+        window.dispatchEvent(new CustomEvent('profile-avatar-updated', {
+          detail: { avatarUrl, userId: userInfo?.id }
         }));
         
+        // Also dispatch the legacy event for compatibility
+        window.dispatchEvent(new CustomEvent('avatar-updated', {
+          detail: { avatarUrl, userId: userInfo?.id }
+        }));
+        
+        // Clear the preview since we have the actual URL now
+        setImagePreview(null);
+        
+        hideToast();
         showSuccess('Avatar Updated', 'Your profile picture has been updated successfully!');
+        
+        // Reload page after a short delay to show the success message
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
       } else {
-        // If no avatar URL was returned, try to fetch the profile to get it
-        console.log('No avatar URL in upload response, fetching profile');
-        try {
-          const profileResponse = await apiServices.getUserProfile();
-          const profileData = profileResponse.data || profileResponse;
-          
-          // Try to get avatar_url from profile
-          const profileAvatarUrl = profileData.avatar_url || profileData.avatar;
-          
-          if (profileAvatarUrl) {
-            console.log('Using avatar URL from profile:', profileAvatarUrl);
-            // Clean the avatar URL for consistency
-            const cleanedUrl = cleanAvatarUrl(profileAvatarUrl);
-            
-            // Use the real-time avatar update function
-            updateAvatarRealTime(cleanedUrl || profileAvatarUrl, userInfo?.id);
-            
-            // Update the UI with the new avatar - set both avatar and avatar_url
-            setUserInfo(prev => ({ 
-              ...prev, 
-              avatar_url: cleanedUrl || profileAvatarUrl,
-              avatar: cleanedUrl || profileAvatarUrl 
-            }));
-            setEditForm(prev => ({ 
-              ...prev, 
-              avatar_url: cleanedUrl || profileAvatarUrl,
-              avatar: cleanedUrl || profileAvatarUrl 
-            }));
-            
-            showSuccess('Avatar Updated', 'Your profile picture has been updated successfully!');
-          } else {
-            // If still no avatar URL, use the local preview
-            console.warn('No avatar URL returned from server, using local preview');
-            if (imagePreview) {
-              updateLocalStorageWithAvatar(imagePreview);
-              setUserInfo(prev => ({ 
-                ...prev, 
-                avatar_url: imagePreview,
-                avatar: imagePreview 
-              }));
-              setEditForm(prev => ({ 
-                ...prev, 
-                avatar_url: imagePreview,
-                avatar: imagePreview 
-              }));
-              
-              showWarning(
-                'Partial Success', 
-                'Your avatar has been saved locally but we couldn\'t get the server URL. It will be synced when you refresh.'
-              );
-            }
-          }
-        } catch {
-          // Profile fetch after avatar upload failed; fallback to local preview below
-          
-          // Use the local preview as fallback
-          if (imagePreview) {
-            updateLocalStorageWithAvatar(imagePreview);
-            setUserInfo(prev => ({ 
-              ...prev, 
-              avatar_url: imagePreview,
-              avatar: imagePreview 
-            }));
-            setEditForm(prev => ({ 
-              ...prev, 
-              avatar_url: imagePreview,
-              avatar: imagePreview 
-            }));
-            showWarning(
-              'Partial Success',
-              "Your avatar has been uploaded but we couldn't verify it. It will appear correctly when you refresh."
-            );
-          }
-        }
+        // Keep the preview if no URL returned
+        hideToast();
+        showWarning('Upload Complete', 'Avatar uploaded. The image will update after refresh.');
       }
     } catch (error) {
       console.error('Avatar upload failed:', error);
-      
-      // Hide the loading toast
       hideToast();
-      
-      // Even if the upload fails, keep the local preview
-      if (imagePreview) {
-        setUserInfo(prev => ({ 
-          ...prev, 
-          avatar_url: imagePreview,
-          avatar: imagePreview 
-        }));
-        setEditForm(prev => ({ 
-          ...prev, 
-          avatar_url: imagePreview,
-          avatar: imagePreview 
-        }));
-        showWarning(
-          'Offline Mode', 
-          'Your avatar has been saved locally but failed to upload to the server. It will be synced when your connection is restored.'
-        );
-      } else {
-        showError(
-          'Upload Failed', 
-          'We couldn\'t upload your profile picture. Please check your connection and try again.'
-        );
-      }
+      showError('Upload Failed', 'Failed to upload your profile picture. Please try again.');
     } finally {
       setIsUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
-  }, [showSuccess, showError, showWarning, showInfo, hideToast, imagePreview, updateLocalStorageWithAvatar, userInfo]);
+  }, [showSuccess, showError, showWarning, showInfo, hideToast]);
 
   // Save profile changes - enhanced with better error handling and UX
   const handleSave = useCallback(async () => {
@@ -752,7 +539,36 @@ const UserProfile = () => {
       // Update localStorage with the server response
       localStorage.setItem('user_profile_transformed', JSON.stringify(transformedData));
       
+      // Also update the main user object that navbar uses
+      const currentUser = localStorage.getItem('user');
+      if (currentUser) {
+        try {
+          const parsedUser = JSON.parse(currentUser);
+          const updatedUser = { 
+            ...parsedUser, 
+            ...transformedData,
+            // Map profile fields to user fields that navbar expects
+            avatar_url: transformedData.avatar_url,
+            first_name: transformedData.name,
+            last_name: transformedData.last_name
+          };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          
+          // Dispatch event to update navbar
+          window.dispatchEvent(new CustomEvent('profile-avatar-updated', {
+            detail: { avatarUrl: transformedData.avatar_url, userId: transformedData.id }
+          }));
+        } catch (e) {
+          console.error('Error updating user object in localStorage:', e);
+        }
+      }
+      
       showSuccess('Profile Updated', 'Your profile has been updated successfully!');
+      
+      // Reload page after a short delay to show the success message and reflect all changes
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } catch (error) {
       console.error('Profile update failed:', error);
       
@@ -1163,41 +979,59 @@ const UserProfile = () => {
                 <div className="relative -mt-20 px-6 pb-4">
                   <div className="relative inline-block">
                     {/* Premium Avatar Container */}
-                    <div className="relative p-1 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-full shadow-2xl">
-                      <div className="bg-white dark:bg-gray-800 rounded-full p-1">
-                        <Avatar
-                          src={userInfo.avatar_url || imagePreview ||  userInfo.avatar}
-                          alt={`${userInfo.name} ${userInfo.last_name}`}
-                          name={`${userInfo.name} ${userInfo.last_name}`}
-                          size={140}
-                          className="border-4 border-white dark:border-gray-800 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-105"
-                          style={{
-                            objectFit: 'cover',
-                            filter: 'brightness(1.05) contrast(1.1)',
-                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08)'
-                          }}
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* Enhanced Camera Upload Button */}
-                    {isEditing && (
-                      <label className="absolute bottom-2 right-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3 rounded-full cursor-pointer hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:scale-110 transform">
-                        <Camera className="w-5 h-5" />
-                        <input 
-                          ref={fileInputRef} 
-                          type="file" 
-                          accept="image/*" 
-                          onChange={handleImageUpload} 
-                          className="hidden" 
-                        />
-                        {isUploadingAvatar && (
-                          <div className="absolute inset-0 bg-blue-600 rounded-full flex items-center justify-center">
-                            <Loader className="w-5 h-5 animate-spin text-white" />
-                          </div>
-                        )}
-                      </label>
-                    )}
+                   <div className="relative p-1 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-full shadow-2xl">
+  <div className="bg-white dark:bg-gray-800 rounded-full p-1">
+    <div 
+      className="relative overflow-hidden rounded-full group cursor-pointer"
+      onClick={() => !isUploadingAvatar && fileInputRef.current?.click()}
+    >
+      <img
+        src={imagePreview || userInfo?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo?.name || 'User')}&background=6366f1&color=ffffff&size=128`}
+        alt={`${userInfo?.name} ${userInfo?.last_name}`}
+        className="w-32 h-32 rounded-full object-cover border-4 border-white dark:border-gray-800 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-105"
+        style={{
+          filter: 'brightness(1.05) contrast(1.1)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08)'
+        }}
+      />
+      {/* Hover overlay to indicate it's clickable */}
+      <div className={`absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 rounded-full flex items-center justify-center ${isUploadingAvatar ? 'bg-opacity-30' : ''}`}>
+        <div className={`${isUploadingAvatar ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity duration-300`}>
+          {isUploadingAvatar ? (
+            <div className="flex flex-col items-center">
+              <Loader className="w-8 h-8 text-white animate-spin drop-shadow-lg" />
+              <span className="text-white text-xs mt-1 drop-shadow-lg">Uploading...</span>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center">
+              <Camera className="w-6 h-6 text-white drop-shadow-lg" />
+              <span className="text-white text-xs mt-1 drop-shadow-lg">Update</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  {/* Hidden file input for avatar upload */}
+  <input
+    ref={fileInputRef}
+    type="file"
+    accept="image/*"
+    onChange={handleImageUpload}
+    className="hidden"
+    disabled={isUploadingAvatar}
+  />
+  
+  {/* Professional Update Avatar Button - Secondary option */}
+  <div className={`absolute bottom-2 right-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-2 rounded-full shadow-lg transition-all duration-300 ${isUploadingAvatar ? 'opacity-50' : 'hover:scale-105'}`}>
+    {isUploadingAvatar ? (
+      <Loader className="w-4 h-4 animate-spin" />
+    ) : (
+      <Camera className="w-4 h-4" />
+    )}
+  </div>
+</div>
 
                     {/* Premium Online Status Indicator */}
                     <div className="absolute bottom-4 left-4 w-8 h-8 bg-gradient-to-r from-green-400 to-green-500 border-4 border-white dark:border-gray-800 rounded-full flex items-center justify-center shadow-lg">
@@ -2026,178 +1860,227 @@ const UserProfile = () => {
         )}
       </div>
 
-      {/* Appointment Details Modal */}
+      {/* Glass Style Appointment Details Modal */}
       {showAppointmentModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
-                <Calendar className="w-5 h-5 mr-2 text-blue-600" />
-                My Appointments ({appointmentDetails.length})
-              </h2>
-              <button
-                onClick={() => setShowAppointmentModal(false)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-              </button>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 dark:border-gray-700/50 w-full max-w-6xl max-h-[95vh] overflow-hidden">
+            {/* Glass Modal Header */}
+            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-blue-100/80 dark:bg-blue-900/50 backdrop-blur-sm rounded-xl border border-blue-200/30 dark:border-blue-800/30">
+                    <Calendar className="w-5 sm:w-6 h-5 sm:h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                      My Appointments
+                    </h2>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      {appointmentDetails.length} {appointmentDetails.length === 1 ? 'appointment' : 'appointments'} found
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAppointmentModal(false)}
+                  className="p-2 hover:bg-gray-100/70 dark:hover:bg-gray-700/50 rounded-xl transition-all duration-200 group backdrop-blur-sm"
+                >
+                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200" />
+                </button>
+              </div>
             </div>
 
-            {/* Modal Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+            {/* Glass Modal Content */}
+            <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-120px)]">
               {appointmentDetails.length === 0 ? (
-                // No appointments found
-                <div className="text-center py-12">
-                  <Calendar className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    No Appointments Found
+                // Glass No appointments state
+                <div className="text-center py-12 sm:py-16">
+                  <div className="relative mb-6">
+                    <div className="w-20 sm:w-24 h-20 sm:h-24 mx-auto bg-blue-100/80 dark:bg-gray-700/50 backdrop-blur-sm rounded-full flex items-center justify-center border border-blue-200/30 dark:border-gray-600/30">
+                      <Calendar className="w-10 sm:w-12 h-10 sm:h-12 text-blue-500 dark:text-blue-400" />
+                    </div>
+                    <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gray-200/80 dark:bg-gray-600/50 backdrop-blur-sm rounded-full flex items-center justify-center border border-gray-300/30 dark:border-gray-500/30">
+                      <AlertCircle className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2">
+                    No Appointments Scheduled
                   </h3>
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">
-                    You don't have any appointments scheduled yet.
+                  <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto px-4">
+                    You don't have any appointments scheduled yet. Book a consultation with our legal experts to get started.
                   </p>
                   <button
                     onClick={() => setShowAppointmentModal(false)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="px-6 py-3 bg-blue-600 dark:bg-blue-600 text-white rounded-xl hover:bg-blue-700 dark:hover:bg-blue-700 transition-all duration-200 shadow-lg font-medium"
                   >
                     Close
                   </button>
                 </div>
               ) : (
-                // Show appointment details
-                <div className="space-y-4">
-                  <div className="mb-6">
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Here are your scheduled appointments. You can join appointments that are scheduled for today.
-                    </p>
-                  </div>
-
+                // Glass appointment details
+                <div className="space-y-4 sm:space-y-6">
                   {appointmentDetails.map((appointment, index) => (
                     <div
                       key={appointment.id || index}
-                      className={`border rounded-lg p-4 transition-all duration-200 ${
+                      className={`relative overflow-hidden rounded-2xl border transition-all duration-300 hover:shadow-lg backdrop-blur-sm ${
                         appointment.canJoin
-                          ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
-                          : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
+                          ? 'border-green-300/50 bg-green-50/80 dark:border-green-700/50 dark:bg-green-900/20 shadow-green-100/50 dark:shadow-green-900/20'
+                          : appointment.isToday && !appointment.canJoin
+                          ? 'border-orange-300/50 bg-orange-50/80 dark:border-orange-700/50 dark:bg-orange-900/20'
+                          : 'border-gray-200/50 bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 hover:border-gray-300/50 dark:hover:border-gray-600/50'
                       }`}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          {/* Appointment Title */}
-                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                            {appointment.title || appointment.subject || 'Legal Consultation'}
-                          </h4>
-
-                          {/* Appointment Details */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div className="flex items-center text-gray-600 dark:text-gray-400">
-                              <Calendar className="w-4 h-4 mr-2" />
-                              <span>
-                                {appointment.date 
-                                  ? new Date(appointment.date).toLocaleDateString('en-US', {
-                                      weekday: 'long',
-                                      year: 'numeric',
-                                      month: 'long',
-                                      day: 'numeric'
-                                    })
-                                  : 'Date not specified'
-                                }
-                              </span>
+                      {/* Status Indicator Bar */}
+                      {appointment.canJoin && (
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-green-500"></div>
+                      )}
+                      
+                      <div className="p-4 sm:p-6">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0">
+                          <div className="flex-1">
+                            {/* Glass Appointment Header */}
+                            <div className="flex items-start space-x-3 sm:space-x-4 mb-4">
+                              <div className={`p-2.5 sm:p-3 rounded-xl backdrop-blur-sm border ${
+                                appointment.canJoin 
+                                  ? 'bg-green-100/80 dark:bg-green-900/50 border-green-200/30 dark:border-green-800/30' 
+                                  : 'bg-blue-100/80 dark:bg-blue-900/50 border-blue-200/30 dark:border-blue-800/30'
+                              }`}>
+                                <Briefcase className={`w-4 sm:w-5 h-4 sm:h-5 ${
+                                  appointment.canJoin 
+                                    ? 'text-green-600 dark:text-green-400' 
+                                    : 'text-blue-600 dark:text-blue-400'
+                                }`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1 truncate">
+                                  Legal Consultation
+                                </h4>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold capitalize backdrop-blur-sm ${
+                                    appointment.status === 'scheduled'
+                                      ? 'bg-blue-100/80 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 border border-blue-200/30 dark:border-blue-800/30'
+                                      : appointment.status === 'confirmed'
+                                      ? 'bg-green-100/80 text-green-800 dark:bg-green-900/50 dark:text-green-300 border border-green-200/30 dark:border-green-800/30'
+                                      : appointment.status === 'cancelled'
+                                      ? 'bg-red-100/80 text-red-800 dark:bg-red-900/50 dark:text-red-300 border border-red-200/30 dark:border-red-800/30'
+                                      : 'bg-gray-100/80 text-gray-800 dark:bg-gray-700/50 dark:text-gray-300 border border-gray-200/30 dark:border-gray-600/30'
+                                  }`}>
+                                    {appointment.status || 'scheduled'}
+                                  </span>
+                                  
+                                  {appointment.canJoin && (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100/80 text-green-800 dark:bg-green-900/50 dark:text-green-300 border border-green-200/30 dark:border-green-800/30 backdrop-blur-sm">
+                                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse"></div>
+                                      Available Now
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
 
-                            <div className="flex items-center text-gray-600 dark:text-gray-400">
-                              <Clock className="w-4 h-4 mr-2" />
-                              <span>
-                                {appointment.time || 
-                                 (appointment.date 
-                                   ? new Date(appointment.date).toLocaleTimeString('en-US', {
-                                       hour: '2-digit',
-                                       minute: '2-digit'
-                                     })
-                                   : 'Time not specified'
-                                 )}
-                              </span>
+                            {/* Glass Appointment Details Grid */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-4">
+                              {/* Date */}
+                              <div className="flex items-center space-x-3 p-3 bg-gray-50/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-200/30 dark:border-gray-700/30">
+                                <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Date</p>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                    {appointment.appointment_time 
+                                      ? new Date(appointment.appointment_time).toLocaleDateString('en-US', {
+                                          weekday: 'short',
+                                          year: 'numeric',
+                                          month: 'short',
+                                          day: 'numeric'
+                                        })
+                                      : 'Date not specified'
+                                    }
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Time */}
+                              <div className="flex items-center space-x-3 p-3 bg-gray-50/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-200/30 dark:border-gray-700/30">
+                                <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Time</p>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                    {appointment.appointment_time 
+                                      ? new Date(appointment.appointment_time).toLocaleTimeString('en-US', {
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                          hour12: true
+                                        })
+                                      : 'Time not specified'
+                                    }
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Lawyer */}
+                              {appointment.lawyer?.full_name && (
+                                <div className="flex items-center space-x-3 p-3 bg-gray-50/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-200/30 dark:border-gray-700/30">
+                                  <User className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                                  <div className="min-w-0">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Lawyer</p>
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                      {appointment.lawyer.full_name}
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Duration */}
+                              <div className="flex items-center space-x-3 p-3 bg-gray-50/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-200/30 dark:border-gray-700/30">
+                                <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Duration</p>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                    {appointment.duration_minutes || 50} minutes
+                                  </p>
+                                </div>
+                              </div>
                             </div>
-
-                            {appointment.lawyer_name && (
-                              <div className="flex items-center text-gray-600 dark:text-gray-400">
-                                <User className="w-4 h-4 mr-2" />
-                                <span>with {appointment.lawyer_name}</span>
-                              </div>
-                            )}
-
-                            {appointment.type && (
-                              <div className="flex items-center text-gray-600 dark:text-gray-400">
-                                <Briefcase className="w-4 h-4 mr-2" />
-                                <span>{appointment.type}</span>
-                              </div>
-                            )}
                           </div>
 
-                          {/* Appointment Description/Notes */}
-                          {(appointment.description || appointment.notes) && (
-                            <div className="mb-4">
-                              <p className="text-sm text-gray-700 dark:text-gray-300">
-                                {appointment.description || appointment.notes}
-                              </p>
-                            </div>
-                          )}
-
-                          {/* Status Badge */}
-                          <div className="flex items-center space-x-2">
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              appointment.status === 'confirmed'
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                : appointment.status === 'pending'
-                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                                : appointment.status === 'cancelled'
-                                ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                            }`}>
-                              {appointment.status || 'scheduled'}
-                            </span>
-
-                            {appointment.canJoin && (
-                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                Available Today
-                              </span>
+                          {/* Glass Join Button */}
+                          <div className="sm:ml-6 w-full sm:w-auto">
+                            {appointment.canJoin ? (
+                              <button
+                                onClick={() => handleJoinAppointment(appointment.id)}
+                                className="group w-full sm:w-auto px-4 sm:px-6 py-3 bg-green-600 dark:bg-green-600 text-white rounded-xl hover:bg-green-700 dark:hover:bg-green-700 transition-all duration-200 shadow-lg hover:shadow-xl font-medium flex items-center justify-center space-x-2"
+                              >
+                                <Video className="w-4 sm:w-5 h-4 sm:h-5 group-hover:scale-110 transition-transform" />
+                                <span>Join Now</span>
+                              </button>
+                            ) : (
+                              <button
+                                disabled
+                                className="w-full sm:w-auto px-4 sm:px-6 py-3 bg-gray-200/80 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 rounded-xl cursor-not-allowed flex items-center justify-center space-x-2 font-medium backdrop-blur-sm border border-gray-300/30 dark:border-gray-600/30"
+                                title={appointment.isToday ? 'Appointment not yet active' : 'Appointment scheduled for future date'}
+                              >
+                                <Clock className="w-4 sm:w-5 h-4 sm:h-5" />
+                                <span className="hidden sm:inline">{appointment.isToday ? 'Not Active' : 'Upcoming'}</span>
+                                <span className="sm:hidden">{appointment.isToday ? 'Not Active' : 'Soon'}</span>
+                              </button>
                             )}
                           </div>
-                        </div>
-
-                        {/* Join Button */}
-                        <div className="ml-4">
-                          {appointment.canJoin ? (
-                            <button
-                              onClick={() => handleJoinAppointment(appointment.id)}
-                              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-                            >
-                              <Video className="w-4 h-4" />
-                              <span>Join Now</span>
-                            </button>
-                          ) : (
-                            <button
-                              disabled
-                              className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 rounded-lg cursor-not-allowed flex items-center space-x-2"
-                            >
-                              <Video className="w-4 h-4" />
-                              <span>Not Available</span>
-                            </button>
-                          )}
                         </div>
                       </div>
                     </div>
                   ))}
 
-                  {/* Footer */}
-                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex justify-between items-center">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Join buttons are only active for appointments scheduled today.
-                      </p>
+                  {/* Glass Footer */}
+                  <div className="pt-4 sm:pt-6 border-t border-gray-200/50 dark:border-gray-700/50">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                          Green appointments are available to join today
+                        </p>
+                      </div>
                       <button
                         onClick={() => setShowAppointmentModal(false)}
-                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                        className="w-full sm:w-auto px-6 py-2.5 bg-gray-600 dark:bg-gray-600 text-white rounded-xl hover:bg-gray-700 dark:hover:bg-gray-700 transition-all duration-200 font-medium shadow-lg"
                       >
                         Close
                       </button>

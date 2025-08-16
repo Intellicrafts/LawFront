@@ -194,7 +194,7 @@ const MobileSidebar = ({
                     <>
                       <div className="relative">
                         <Avatar 
-                          src={user?.avatar} 
+                          src={user?.avatar_url} 
                           alt={user?.name || 'User'} 
                           name={`${user?.name || ''} ${user?.last_name || ''}`.trim() || 'User'}
                           size={48} 
@@ -206,8 +206,8 @@ const MobileSidebar = ({
                         <h3 className="font-semibold text-base text-gray-900 dark:text-white truncate">
                           {user?.name || 'User'}
                         </h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {user?.email}
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={user?.email || 'No email'}>
+                          {user?.email || 'No email'}
                         </p>
                         <div className="flex items-center justify-between mt-0.5">
                           <div className="flex items-center">

@@ -8,7 +8,7 @@ import Avatar from './common/Avatar';
 import NotificationDropdown from './NotificationDropdown';
 import MobileSidebar from './MobileSidebar';
 import OnboardingTour from './OnboardingTour';
-import { cleanAvatarUrl, generateInitials, getCachedAvatarUrl } from '../utils/avatarUtils';
+
 import { 
   Menu, 
   X, 
@@ -96,8 +96,36 @@ const Navbar = () => {
     }
   }, [isAuthenticated, user?.id]);
 
+  // Listen for avatar updates from Profile component
+  useEffect(() => {
+    const handleAvatarUpdate = (event) => {
+      if (user && event.detail.userId === user.id) {
+        console.log('Navbar: Avatar updated, refreshing user data');
+        setUser(prev => ({ ...prev, avatar_url: event.detail.avatarUrl }));
+        
+        // Also update localStorage to persist the change
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          try {
+            const parsedUser = JSON.parse(userData);
+            parsedUser.avatar_url = event.detail.avatarUrl;
+            localStorage.setItem('user', JSON.stringify(parsedUser));
+          } catch (error) {
+            console.error('Error updating user avatar in localStorage:', error);
+          }
+        }
+      }
+    };
+    
+    window.addEventListener('profile-avatar-updated', handleAvatarUpdate);
+    
+    return () => {
+      window.removeEventListener('profile-avatar-updated', handleAvatarUpdate);
+    };
+  }, [user?.id]);
+
   
-  // Function to check if user is authenticated with enhanced avatar handling
+  // Function to check if user is authenticated
   const checkAuthStatus = () => {
     const token = localStorage.getItem('auth_token');
     const userData = localStorage.getItem('user');
@@ -107,28 +135,6 @@ const Navbar = () => {
       setIsAuthenticated(true);
       try {
         const parsedUser = JSON.parse(userData);
-        
-        // Try to get avatar from enhanced cache first
-        const cachedAvatar = getCachedAvatarUrl(parsedUser.id || 'current');
-        if (cachedAvatar) {
-          console.log('Navbar: Using cached avatar from enhanced cache:', cachedAvatar);
-          parsedUser.avatar = cachedAvatar;
-        } else {
-          // Try old localStorage avatar
-          const oldAvatar = localStorage.getItem('user_avatar');
-          if (oldAvatar) {
-            console.log('Navbar: Processing old avatar from localStorage:', oldAvatar);
-            const cleanedAvatar = cleanAvatarUrl(oldAvatar);
-            if (cleanedAvatar) {
-              parsedUser.avatar = cleanedAvatar;
-              console.log('Navbar: Using cleaned avatar URL:', cleanedAvatar);
-            } else {
-              console.log('Navbar: Failed to clean avatar URL, will use initials');
-              parsedUser.avatar = null;
-            }
-          }
-        }
-        
         setUser(parsedUser);
         
         // Check if we should start tour for first-time user
@@ -400,9 +406,12 @@ const Navbar = () => {
     };
   }, []);
 
-  // Get user initials for avatar using enhanced utilities
+  // Get user initials for avatar fallback
   const getUserInitials = (name, lastName = '') => {
-    return generateInitials(name, lastName);
+    if (!name && !lastName) return 'U';
+    const firstInitial = name ? name.charAt(0).toUpperCase() : '';
+    const lastInitial = lastName ? lastName.charAt(0).toUpperCase() : '';
+    return `${firstInitial}${lastInitial}`.trim() || 'U';
   };
   
   // Tour management functions
@@ -782,58 +791,73 @@ const Navbar = () => {
                     </div> 
 
                     {/* User Dropdown */}
-                    <div className="relative" ref={userDropdownRef}>
-                      <button
-                        onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                        className="flex items-center space-x-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 focus:outline-none"
-                      >
-                        <Avatar 
-                          src={user?.avatar_url} 
-                          alt={user?.name || 'User'} 
-                          name={`${user?.name || ''} ${user?.last_name || ''}`.trim() || 'User'}
-                          size={32} 
-                          className="border-2 border-white dark:border-gray-800"
-                        />
-                        <ChevronDown size={16} className="text-gray-500 dark:text-gray-400" />
-                      </button>
+                  <div className="relative" ref={userDropdownRef}>
+  {/* Dropdown Button */}
+  <button
+    onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+    className="flex items-center space-x-2 px-2 py-1 rounded-full hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-all duration-200 focus:outline-none"
+  >
+    <img
+      src={user?.avatar_url || 'https://ui-avatars.com/api/?name=User&background=random'}
+      alt={user?.name || 'User'}
+      className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"
+    />
+    <ChevronDown size={16} className="text-gray-500 dark:text-gray-400" />
+  </button>
 
-                      {/* User Dropdown Menu */}
-                      <div
-                        className={`absolute right-0 top-full mt-2 py-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100
-                          dark:bg-gray-800 dark:border-gray-700 transform transition-all duration-200 origin-top-right z-50
-                          ${userDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
-                      >
-                        <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name || 'User'}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
-                        </div>
-                        <Link
-                          to="/profile"
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700 transition-colors"
-                          onClick={() => setUserDropdownOpen(false)}
-                        >
-                          <User size={16} className="mr-2" />
-                          Profile
-                        </Link>
-                        <Link
-                          to="/settings"
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700 transition-colors"
-                          onClick={() => setUserDropdownOpen(false)}
-                        >
-                          <Settings size={16} className="mr-2" />
-                          Settings
-                        </Link>
-                        <div className="border-t border-gray-100 dark:border-gray-700 mt-1 pt-1">
-                          <button
-                            onClick={handleLogout}
-                            className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
-                          >
-                            <LogOut size={16} className="mr-2" />
-                            Logout
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+  {/* Dropdown Menu */}
+  <div
+    className={`absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800 transform transition-all duration-200 origin-top-right z-50
+      ${userDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
+  >
+    {/* User Info */}
+    <div className="flex items-center space-x-3 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+      <img
+        src={user?.avatar_url || 'https://ui-avatars.com/api/?name=User&background=random'}
+        alt={user?.name || 'User'}
+        className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-700 shadow-sm flex-shrink-0"
+      />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+          {user?.name || 'User'} {user?.last_name || ''}
+        </p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={user?.email || 'No email'}>
+          {user?.email || 'No email'}
+        </p>
+      </div>
+    </div>
+
+    {/* Links */}
+    <Link
+      to="/profile"
+      className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800/70 transition-colors"
+      onClick={() => setUserDropdownOpen(false)}
+    >
+      <User size={16} className="mr-2 text-gray-400" />
+      Profile
+    </Link>
+    <Link
+      to="/settings"
+      className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800/70 transition-colors"
+      onClick={() => setUserDropdownOpen(false)}
+    >
+      <Settings size={16} className="mr-2 text-gray-400" />
+      Settings
+    </Link>
+
+    {/* Logout */}
+    <div className="border-t border-gray-100 dark:border-gray-800 mt-1">
+      <button
+        onClick={handleLogout}
+        className="flex items-center w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
+      >
+        <LogOut size={16} className="mr-2" />
+        Logout
+      </button>
+    </div>
+  </div>
+</div>
+
                   </>
 
               ) : (
