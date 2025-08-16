@@ -788,7 +788,7 @@ const Navbar = () => {
                         className="flex items-center space-x-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 focus:outline-none"
                       >
                         <Avatar 
-                          src={user?.avatar} 
+                          src={user?.avatar_url} 
                           alt={user?.name || 'User'} 
                           name={`${user?.name || ''} ${user?.last_name || ''}`.trim() || 'User'}
                           size={32} 
