@@ -200,7 +200,7 @@ const UserProfile = () => {
         bio: userData.bio || userData.about || 'No bio available',
         title: userData.title || userData.job_title || userData.profession || '',
         // Use the avatar URL directly from our helper function
-        avatar: avatarUrl,
+        avatar: userData.avatar_url || userData.avatar || '',
         account_type: userData.user_type === 1 ? 'Client' : 
                      userData.user_type === 2 ? 'Lawyer' : 
                      userData.user_type_name || userData.account_type || 'User',
