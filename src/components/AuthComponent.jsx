@@ -447,7 +447,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     let redirectUrl = '/';
     if (urlRedirectParam) {
       redirectUrl = urlRedirectParam;
-    } else if (userType !== 1) {
+    } else if (userType !== 1 || userType =='business') {
       // If not a normal user, send to lawyer admin dashboard
       redirectUrl = '/lawyer-admin';
     }

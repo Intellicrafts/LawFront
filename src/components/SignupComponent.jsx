@@ -663,7 +663,7 @@ export const Signup = ({ onSignupSuccess }) => {
         setTimeout(() => {
           const userType = response?.data?.user?.user_type;
 
-          if (userType === 1) {
+          if (userType === 1 || userType == 'personal') {
             // Normal user – stay on current route or go to homepage
             window.location.href = '/';
           } else {
