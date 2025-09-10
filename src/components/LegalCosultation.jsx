@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { lawyerAPI, apiServices } from '../api/apiService';
-import { MdLocationOn, MdMyLocation, MdLocationSearching } from 'react-icons/md';
+import { MdLocationOn, MdMyLocation, MdLocationSearching, MdVerified } from 'react-icons/md';
 import Lottie from 'react-lottie-player';
 import { useToast } from '../context/ToastContext';
 import { getLawyerBackgroundImage, preloadLawyerBackgroundImages } from '../utils/unsplashService';
@@ -37,118 +37,189 @@ import {
   FaHeart,
   FaStarHalfAlt,
   FaEnvelope,
-  FaVideo
+  FaVideo,
+  FaSpinner,
+  FaExclamationTriangle,
+  FaInfoCircle,
+  FaSync,
+  FaChartLine,
+  FaTrophy,
+  FaHandshake,
+  FaBalanceScale
 } from 'react-icons/fa';
+import { 
+  HiOutlineSparkles,
+  HiOutlineLightningBolt,
+  HiOutlineShieldCheck,
+  HiOutlineStar,
+  HiOutlineLocationMarker
+} from 'react-icons/hi';
 
-// Professional color palette
+// Premium Professional Color Palette for Production App
 const colors = {
   light: {
-    background: '#F8F9FA',
+    background: '#FAFBFC',
     surface: '#FFFFFF',
+    surfaceElevated: '#FFFFFF',
     text: {
-      primary: '#1E293B',
-      secondary: '#64748B',
-      muted: '#94A3B8'
+      primary: '#0F172A',
+      secondary: '#475569',
+      muted: '#64748B',
+      inverse: '#FFFFFF'
     },
     accent: {
-      primary: '#0EA5E9',
-      secondary: '#38BDF8',
-      gradient: 'linear-gradient(135deg, #0EA5E9 0%, #38BDF8 100%)'
+      primary: '#3B82F6',
+      secondary: '#1D4ED8',
+      tertiary: '#60A5FA',
+      gradient: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+      gradientHover: 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)',
+      light: '#EFF6FF'
     },
-    border: '#E2E8F0',
-    success: '#10B981',
-    warning: '#F59E0B',
-    error: '#EF4444'
+    border: {
+      light: '#F1F5F9',
+      default: '#E2E8F0',
+      medium: '#CBD5E1'
+    },
+    success: {
+      primary: '#059669',
+      light: '#ECFDF5',
+      border: '#A7F3D0'
+    },
+    warning: {
+      primary: '#D97706',
+      light: '#FFFBEB',
+      border: '#FED7AA'
+    },
+    error: {
+      primary: '#DC2626',
+      light: '#FEF2F2',
+      border: '#FECACA'
+    },
+    premium: {
+      gold: '#F59E0B',
+      silver: '#6B7280',
+      bronze: '#92400E'
+    },
+    shadow: {
+      sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+      default: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+      md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+      lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+      xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)'
+    }
   },
   dark: {
     background: '#0F172A',
     surface: '#1E293B',
+    surfaceElevated: '#334155',
     text: {
-      primary: '#F1F5F9',
+      primary: '#F8FAFC',
       secondary: '#CBD5E1',
-      muted: '#94A3B8'
+      muted: '#94A3B8',
+      inverse: '#0F172A'
     },
     accent: {
-      primary: '#38BDF8',
-      secondary: '#0EA5E9',
-      gradient: 'linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%)'
+      primary: '#60A5FA',
+      secondary: '#3B82F6',
+      tertiary: '#93C5FD',
+      gradient: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)',
+      gradientHover: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+      light: '#1E3A8A'
     },
-    border: '#334155',
-    success: '#10B981',
-    warning: '#F59E0B',
-    error: '#EF4444'
+    border: {
+      light: '#334155',
+      default: '#475569',
+      medium: '#64748B'
+    },
+    success: {
+      primary: '#10B981',
+      light: '#064E3B',
+      border: '#065F46'
+    },
+    warning: {
+      primary: '#F59E0B',
+      light: '#78350F',
+      border: '#92400E'
+    },
+    error: {
+      primary: '#F87171',
+      light: '#7F1D1D',
+      border: '#991B1B'
+    },
+    premium: {
+      gold: '#FBBF24',
+      silver: '#9CA3AF',
+      bronze: '#D97706'
+    },
+    shadow: {
+      sm: '0 1px 2px 0 rgb(0 0 0 / 0.3)',
+      default: '0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4)',
+      md: '0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4)',
+      lg: '0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4)',
+      xl: '0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.4)'
+    }
   }
 };
 
-// Categories for filtering
+// Professional Categories with Icons for Filtering
 const categories = [
-  'All',
-  'Criminal',
-  'Family',
-  'Corporate',
-  'Immigration',
-  'Civil',
-  'Labor Law',
-  'Tax Law',
-  'Intellectual Property'
+  { 
+    name: 'All', 
+    icon: FaBalanceScale, 
+    color: '#3B82F6', 
+    description: 'All legal specializations' 
+  },
+  { 
+    name: 'Criminal', 
+    icon: FaShieldAlt, 
+    color: '#DC2626', 
+    description: 'Criminal defense & prosecution' 
+  },
+  { 
+    name: 'Family', 
+    icon: FaHeart, 
+    color: '#EC4899', 
+    description: 'Divorce, custody & family matters' 
+  },
+  { 
+    name: 'Corporate', 
+    icon: FaBriefcase, 
+    color: '#059669', 
+    description: 'Business law & corporate affairs' 
+  },
+  { 
+    name: 'Immigration', 
+    icon: HiOutlineLocationMarker, 
+    color: '#7C3AED', 
+    description: 'Visa, citizenship & immigration' 
+  },
+  { 
+    name: 'Civil', 
+    icon: FaHandshake, 
+    color: '#0891B2', 
+    description: 'Civil disputes & litigation' 
+  },
+  { 
+    name: 'Labor Law', 
+    icon: FaUserTie, 
+    color: '#EA580C', 
+    description: 'Employment & labor disputes' 
+  },
+  { 
+    name: 'Tax Law', 
+    icon: FaChartLine, 
+    color: '#16A34A', 
+    description: 'Tax planning & disputes' 
+  },
+  { 
+    name: 'Intellectual Property', 
+    icon: HiOutlineSparkles, 
+    color: '#9333EA', 
+    description: 'Patents, trademarks & IP' 
+  }
 ];
 
-// Sample data for development and fallback
-const sampleLawyers = Array.from({ length: 12 }).map((_, i) => ({
-  id: i + 1,
-  full_name: [
-    'Rajesh Kumar Demo Data',
-    'Priya Sharma Demo Data',
-    'Vikram Singh Demo Data',
-    'Ananya Patel Demo Data',
-    'Arjun Mehta Demo Data',
-    'Neha Gupta Demo Data',
-    'Sanjay Verma Demo Data',
-    'Divya Joshi Demo Data',
-    'Rahul Malhotra Demo Data',
-    'Meera Kapoor Demo Data',
-    'Aditya Reddy Demo Data',
-    'Kavita Nair Demo Data'
-  ][i],
-  specialization: [
-    'Criminal',
-    'Family',
-    'Corporate',
-    'Immigration',
-    'Civil',
-    'Labor Law',
-    'Tax Law',
-    'Intellectual Property',
-    'Criminal',
-    'Family',
-    'Corporate',
-    'Immigration'
-  ][i],
-  years_of_experience: 5 + (i % 15),
-  bar_association: [
-    'Delhi Bar Association',
-    'Mumbai Bar Association',
-    'Bangalore Bar Association',
-    'Chennai Bar Association',
-    'Kolkata Bar Association',
-    'Hyderabad Bar Association',
-    'Pune Bar Association',
-    'Ahmedabad Bar Association',
-    'Lucknow Bar Association',
-    'Jaipur Bar Association',
-    'Chandigarh Bar Association',
-    'Kochi Bar Association'
-  ][i],
-  consultation_fee: 1500 + (i * 500),
-  phone_number: `+91 98765 4${i}${i}${i}${i}`,
-  email: `lawyer${i+1}@example.com`,
-  license_number: `BCI/${100000 + i}/${2010 + (i % 10)}`,
-  is_verified: i % 3 === 0,
-  profile_picture_url: null,
-  reviews_count: i * 5,
-  appointments_count: i * 3,
-  bio: `Experienced ${['Criminal', 'Family', 'Corporate', 'Immigration', 'Civil', 'Labor Law', 'Tax Law', 'Intellectual Property'][i % 8]} lawyer with ${5 + (i % 15)} years of practice. Specializing in complex cases with a high success rate.`
-}));
+// Sample data removed - using only live API data for production
 
 // Time slots
 const timeSlots = [
@@ -616,54 +687,14 @@ const LegalCosultation = () => {
   };
   
   /**
-   * Handle API failure by showing sample data
+   * Handle API failure by showing appropriate error
    */
   const handleApiFailure = (page, isNewSearch) => {
-    console.log('Falling back to sample data');
-    
-    // Filter the sample data based on category and search query
-    let filteredData = [...sampleLawyers];
-    
-    if (selectedCategory !== 'All') {
-      filteredData = filteredData.filter(lawyer => 
-        lawyer.specialization === selectedCategory
-      );
-    }
-    
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filteredData = filteredData.filter(lawyer => 
-        lawyer.full_name.toLowerCase().includes(query) || 
-        lawyer.specialization.toLowerCase().includes(query)
-      );
-    }
-    
-    // Calculate total pages
-    const perPage = 6;
-    const totalItems = filteredData.length;
-    const totalPagesCount = Math.ceil(totalItems / perPage);
-    
-    // Get the current page of data
-    const startIndex = (page - 1) * perPage;
-    const paginatedData = filteredData.slice(startIndex, startIndex + perPage);
-    
-    // Update state based on whether this is a new search or loading more
-    if (isNewSearch) {
-      setLawyers(paginatedData);
-    } else {
-      setLawyers(prevLawyers => [...prevLawyers, ...paginatedData]);
-    }
-    
-    setTotalPages(totalPagesCount);
-    setHasMore(page < totalPagesCount);
-    setCurrentPage(page);
-    
-    // Preload background images for sample data
-    const newImages = preloadLawyerBackgroundImages(paginatedData);
-    setBackgroundImages(prevImages => ({
-      ...prevImages,
-      ...newImages
-    }));
+    console.log('API failure - showing error message');
+    setError('Unable to load lawyers. Please check your connection and try again.');
+    setLoading(false);
+    setLoadingMore(false);
+    setLawyers([]);
   };
 
   // Handle search form submission
@@ -739,22 +770,7 @@ const LegalCosultation = () => {
     // Check if user is authenticated for location-based search
     if (!isAuthenticated) {
       setError('Please login to access location-based search features.');
-      // Show sample data instead
-      setNearbyLoading(true);
-      setTimeout(() => {
-        const filteredSample = sampleLawyers.slice(0, 6);
-        setLawyers(filteredSample);
-        setTotalPages(Math.ceil(filteredSample.length / 6));
-        setHasMore(false);
-        
-        // Generate background images for sample lawyers
-        const sampleImages = preloadLawyerBackgroundImages(filteredSample);
-        setBackgroundImages(prevImages => ({
-          ...prevImages,
-          ...sampleImages
-        }));
         setNearbyLoading(false);
-      }, 1000);
       return;
     }
     
@@ -876,18 +892,7 @@ const LegalCosultation = () => {
       }
     } catch (err) {
       console.error('Error fetching nearby lawyers:', err);
-      // Fallback to sample data
-      const filteredSample = sampleLawyers.slice(0, 6);
-      setLawyers(filteredSample);
-      setTotalPages(Math.ceil(filteredSample.length / 6));
-      setHasMore(false);
-      
-      // Generate background images for sample lawyers
-      const sampleImages = preloadLawyerBackgroundImages(filteredSample);
-      setBackgroundImages(prevImages => ({
-        ...prevImages,
-        ...sampleImages
-      }));
+      setError('Unable to load nearby lawyers. Please try again.');
     } finally {
       setNearbyLoading(false);
     }
@@ -900,23 +905,7 @@ const LegalCosultation = () => {
     // Check if user is authenticated for premium features
     if (!isAuthenticated) {
       setError('Please login to access premium features like top-rated lawyers.');
-      // Show sample data instead
-      setTopRatedLoading(true);
-      setTimeout(() => {
-        // Sort sample data by reviews_count to simulate top-rated
-        const sortedSample = [...sampleLawyers].sort((a, b) => b.reviews_count - a.reviews_count).slice(0, 6);
-        setLawyers(sortedSample);
-        setTotalPages(Math.ceil(sortedSample.length / 6));
-        setHasMore(false);
-        
-        // Generate background images for sample lawyers
-        const sampleImages = preloadLawyerBackgroundImages(sortedSample);
-        setBackgroundImages(prevImages => ({
-          ...prevImages,
-          ...sampleImages
-        }));
         setTopRatedLoading(false);
-      }, 1000);
       return;
     }
     
@@ -1032,19 +1021,7 @@ const LegalCosultation = () => {
       }
     } catch (err) {
       console.error('Error fetching top-rated lawyers:', err);
-      // Fallback to sample data
-      // Sort sample data by reviews_count to simulate top-rated
-      const sortedSample = [...sampleLawyers].sort((a, b) => b.reviews_count - a.reviews_count).slice(0, 6);
-      setLawyers(sortedSample);
-      setTotalPages(Math.ceil(sortedSample.length / 6));
-      setHasMore(false);
-      
-      // Generate background images for sample lawyers
-      const sampleImages = preloadLawyerBackgroundImages(sortedSample);
-      setBackgroundImages(prevImages => ({
-        ...prevImages,
-        ...sampleImages
-      }));
+      setError('Unable to load top-rated lawyers. Please try again.');
     } finally {
       setTopRatedLoading(false);
     }
@@ -1424,280 +1401,453 @@ const LegalCosultation = () => {
     if (view === 'lawyers') {
       return (
         <>
-          {/* Quick Action Buttons - More Compact */}
-          <div className="flex gap-3 mb-4 mt-14">
+          {/* Optimized Quick Action Cards */}
+          <div className="pt-20 sm:pt-24 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <button 
               onClick={fetchNearbyLawyers}
               disabled={nearbyLoading}
-              className={`relative flex items-center flex-1 py-3 px-4 rounded-xl shadow-sm border transition-all duration-200 ${
+                className={`group relative overflow-hidden rounded-xl p-4 transition-all duration-200 hover:scale-[1.02] ${
                 isDarkMode 
-                  ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' 
-                  : 'bg-white border-slate-200 hover:bg-slate-50'
+                    ? 'bg-gradient-to-br from-blue-600/20 to-indigo-600/20 hover:from-blue-600/30 hover:to-indigo-600/30 border border-blue-500/30' 
+                    : 'bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border border-blue-200/50'
               }`}
+                style={{ boxShadow: currentTheme.shadow.sm }}
             >
+                <div className="flex items-center space-x-3">
               {nearbyLoading ? (
-                <div className="flex items-center justify-center">
-                  <Lottie
-                    loop
-                    animationData={locationSearchAnimation}
-                    play
-                    style={{ width: 40, height: 40 }}
-                  />
-                  <span className={`ml-2 font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Loading...</span>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                      <FaSpinner className="text-white text-xs animate-spin" />
                 </div>
               ) : (
-                <>
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center shadow-md">
-                    <MdLocationOn className="text-white text-lg" />
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                      <HiOutlineLocationMarker className="text-white text-sm" />
                   </div>
-                  <div className="ml-3">
+                  )}
+                  <div className="text-left">
                     <h3 className={`font-semibold text-sm ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
-                      Nearby Lawyers
+                      {nearbyLoading ? 'Finding...' : 'Nearby Lawyers'}
                     </h3>
-                    <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                      Find lawyers in your area
+                    <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                      {nearbyLoading ? 'Locating lawyers' : 'In your area'}
                     </p>
                   </div>
-                </>
-              )}
+                </div>
             </button>
             
             <button 
               onClick={fetchTopRatedLawyers}
               disabled={topRatedLoading}
-              className={`relative flex items-center flex-1 py-3 px-4 rounded-xl shadow-sm border transition-all duration-200 ${
+                className={`group relative overflow-hidden rounded-xl p-4 transition-all duration-200 hover:scale-[1.02] ${
                 isDarkMode 
-                  ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' 
-                  : 'bg-white border-slate-200 hover:bg-slate-50'
+                    ? 'bg-gradient-to-br from-amber-600/20 to-yellow-600/20 hover:from-amber-600/30 hover:to-yellow-600/30 border border-amber-500/30' 
+                    : 'bg-gradient-to-br from-amber-50 to-yellow-50 hover:from-amber-100 hover:to-yellow-100 border border-amber-200/50'
               }`}
+                style={{ boxShadow: currentTheme.shadow.sm }}
             >
+                <div className="flex items-center space-x-3">
               {topRatedLoading ? (
-                <div className="flex items-center justify-center">
-                  <Lottie
-                    loop
-                    animationData={lawyerSearchAnimation}
-                    play
-                    style={{ width: 40, height: 40 }}
-                  />
-                  <span className={`ml-2 font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Loading...</span>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-yellow-500 flex items-center justify-center">
+                      <FaSpinner className="text-white text-xs animate-spin" />
                 </div>
               ) : (
-                <>
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-md">
-                    <FaStar className="text-white text-lg" />
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-yellow-500 flex items-center justify-center">
+                      <FaTrophy className="text-white text-sm" />
                   </div>
-                  <div className="ml-3">
+                  )}
+                  <div className="text-left">
                     <h3 className={`font-semibold text-sm ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
-                      Top Rated
+                      {topRatedLoading ? 'Loading...' : 'Top Rated'}
                     </h3>
-                    <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                      Best reviewed lawyers
+                    <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                      {topRatedLoading ? 'Best lawyers' : 'Highest reviews'}
                     </p>
                   </div>
-                </>
-              )}
+                </div>
             </button>
+
+              <button 
+                onClick={() => bookWithRodgerProsacco()}
+                className={`group relative overflow-hidden rounded-xl p-4 transition-all duration-200 hover:scale-[1.02] ${
+                  isDarkMode 
+                    ? 'bg-gradient-to-br from-emerald-600/20 to-green-600/20 hover:from-emerald-600/30 hover:to-green-600/30 border border-emerald-500/30' 
+                    : 'bg-gradient-to-br from-emerald-50 to-green-50 hover:from-emerald-100 hover:to-green-100 border border-emerald-200/50'
+                }`}
+                style={{ boxShadow: currentTheme.shadow.sm }}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center">
+                    <HiOutlineLightningBolt className="text-white text-sm" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className={`font-semibold text-sm ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                      Quick Booking
+                    </h3>
+                    <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                      Instant consultation
+                    </p>
+                  </div>
+                </div>
+              </button>
+            </div>
           </div>
           
-          {/* Professional Filter Bar */}
+          {/* Compact Search & Filter Interface */}
           <div
-            className={`rounded-xl border transition-all duration-300 backdrop-blur-sm mb-5 overflow-hidden ${
+            className={`rounded-xl transition-all duration-300 backdrop-blur-sm mb-5 overflow-hidden ${
               isDarkMode 
-                ? `bg-slate-800/95 border-slate-700 ${isFilterSticky ? 'sticky z-30 shadow-lg border-sky-700/50 rounded-t-none border-t-0' : ''}` 
-                : `bg-white border-slate-200 ${isFilterSticky ? 'sticky z-30 shadow-lg border-sky-200 rounded-t-none border-t-0' : ''}`
+                ? `bg-slate-800/90 ${isFilterSticky ? 'sticky z-30 shadow-xl' : ''}` 
+                : `bg-white/90 ${isFilterSticky ? 'sticky z-30 shadow-xl' : ''}`
             }`}
-            style={{ top: isFilterSticky ? '60px' : '0' }}
+            style={{ 
+              top: isFilterSticky ? '80px' : '0',
+              boxShadow: isFilterSticky ? currentTheme.shadow.lg : currentTheme.shadow.sm
+            }}
           >
-            {/* Header with gradient background */}
-            <div className={`py-3 px-4 flex items-center justify-between ${
-              isDarkMode ? 'bg-gradient-to-r from-slate-800 to-slate-700' : 'bg-gradient-to-r from-sky-50 to-slate-50'
+            {/* Compact Search Header */}
+            <div className={`px-4 py-3 ${
+              isDarkMode 
+                ? 'bg-gradient-to-r from-slate-800/50 to-slate-700/50' 
+                : 'bg-gradient-to-r from-slate-50/50 to-slate-100/50'
             }`}>
-              <h2 className={`font-bold flex items-center ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
-                <FaUserTie className={`mr-2 ${isDarkMode ? 'text-sky-400' : 'text-sky-600'}`} />
-                <span>Find Your Lawyer</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className={`w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mr-2`}>
+                    <FaSearch className="text-white text-xs" />
+                  </div>
+                  <div>
+                    <h2 className={`font-semibold text-sm ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                      Legal Experts
               </h2>
+                    <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                      {lawyers.length} available
+                    </p>
+                  </div>
+                </div>
               
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className={`p-2 rounded-lg flex items-center justify-center transition-all duration-200 ${
-                    isDarkMode 
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                      showFilters
+                        ? 'bg-blue-600 text-white'
+                        : isDarkMode 
                       ? 'bg-slate-700 hover:bg-slate-600 text-slate-300' 
-                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                   }`}
                 >
-                  <FaFilter className="text-sm" />
+                    <FaFilter className="text-xs" />
+                    <span className="hidden sm:inline">Filters</span>
                 </button>
                 
                 <button
                   type="button"
                   onClick={toggleLocationSearch}
-                  className={`p-2 rounded-lg flex items-center justify-center transition-all duration-200 ${
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
                     locationEnabled
-                      ? isDarkMode 
-                        ? 'bg-sky-600 text-white' 
-                        : 'bg-sky-500 text-white'
+                        ? 'bg-green-600 text-white'
                       : isDarkMode 
                         ? 'bg-slate-700 hover:bg-slate-600 text-slate-300' 
-                        : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                   }`}
                 >
                   {locationSearching ? (
-                    <div className="animate-spin">
-                      <FaRegClock className="text-sm" />
-                    </div>
+                      <FaSpinner className="text-xs animate-spin" />
                   ) : (
-                    locationEnabled ? <MdMyLocation className="text-sm" /> : <MdLocationSearching className="text-sm" />
+                      locationEnabled ? <MdMyLocation className="text-xs" /> : <MdLocationSearching className="text-xs" />
                   )}
+                    <span className="hidden sm:inline">
+                      {locationSearching ? 'Finding...' : locationEnabled ? 'Located' : 'Location'}
+                    </span>
                 </button>
+                </div>
               </div>
             </div>
 
-            {/* Search Bar - Always visible */}
-            <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-              <form onSubmit={handleSearch} className="relative w-full">
+            {/* Compact Search Bar */}
+            <div className={`px-4 py-3 border-b ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+              <form onSubmit={handleSearch} className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaSearch className={`text-sm ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`} />
+                  <HiOutlineSparkles className={`text-sm ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`} />
                 </div>
                 <input
                   type="text"
-                  placeholder="Search lawyers by name or expertise..."
+                  placeholder="Search lawyers by name, specialization..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`w-full pl-9 pr-16 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200 ${
+                  className={`w-full pl-9 pr-20 py-2.5 text-sm rounded-lg border focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all duration-200 ${
                     isDarkMode 
-                      ? 'border-slate-600 bg-slate-700 text-slate-200 placeholder-slate-500' 
-                      : 'border-slate-300 bg-white text-slate-700 placeholder-slate-400'
+                      ? 'bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500' 
+                      : 'bg-slate-50 border-slate-200 text-slate-700 placeholder-slate-400'
                   }`}
                 />
                 <button 
                   type="submit" 
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-sky-600 text-white text-xs font-medium rounded-md hover:bg-sky-700 transition-colors"
+                  className={`absolute right-1.5 top-1/2 transform -translate-y-1/2 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs font-medium rounded-md hover:from-blue-700 hover:to-blue-800 transition-all duration-200`}
                 >
                   Search
                 </button>
               </form>
               
               {locationError && (
-                <p className="text-red-500 text-xs mt-1">{locationError}</p>
+                <div className={`mt-2 p-2 rounded-md flex items-center gap-2 text-xs ${
+                  isDarkMode ? 'bg-red-900/20 text-red-400' : 'bg-red-50 text-red-600'
+                }`}>
+                  <FaExclamationTriangle className="text-xs" />
+                  <span>{locationError}</span>
+                </div>
               )}
             </div>
 
-            {/* Filter Options - Collapsible */}
+            {/* Compact Category Filter */}
             <div
               className={`transition-all duration-300 overflow-hidden ${
-                showFilters ? 'max-h-40' : 'max-h-0'
+                showFilters ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0'
               }`}
             >
-              {/* Category Pills */}
-              <div className="p-3 overflow-x-auto">
-                <div className="flex gap-2 min-w-max">
-                  {categories.map((cat) => (
+              <div className="p-4">
+                <div className="flex items-center mb-3">
+                  <FaBalanceScale className={`mr-1.5 text-sm ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                  <h3 className={`font-medium text-sm ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                    Legal Areas
+                  </h3>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+                  {categories.map((category) => {
+                    const IconComponent = category.icon;
+                    const isSelected = selectedCategory === category.name;
+                    
+                    return (
                     <button
-                      key={cat}
+                        key={category.name}
                       onClick={() => {
-                        setSelectedCategory(cat);
-                        setCurrentPage(1); // Reset to first page when changing category
-                      }}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-all duration-200 flex items-center ${
-                        selectedCategory === cat
-                          ? 'text-white bg-gradient-to-r from-sky-500 to-sky-600 shadow-sm'
+                          setSelectedCategory(category.name);
+                          setCurrentPage(1);
+                        }}
+                        className={`group relative p-3 rounded-lg text-left transition-all duration-200 hover:scale-[1.02] ${
+                          isSelected
+                            ? `text-white shadow-md`
                           : isDarkMode
-                            ? 'text-slate-300 bg-slate-700 hover:bg-slate-600 hover:text-slate-200'
-                            : 'text-slate-600 bg-slate-100 hover:bg-slate-200 hover:text-slate-700'
-                      }`}
-                    >
-                      {cat === 'All' && <FaFilter className="mr-1 text-xs" />}
-                      {cat === 'Criminal' && <FaShieldAlt className="mr-1 text-xs" />}
-                      {cat === 'Family' && <FaHeart className="mr-1 text-xs" />}
-                      {cat === 'Corporate' && <FaBriefcase className="mr-1 text-xs" />}
-                      {cat === 'Immigration' && <FaGraduationCap className="mr-1 text-xs" />}
-                      {cat === 'Civil' && <FaUserCheck className="mr-1 text-xs" />}
-                      {cat === 'Labor Law' && <FaMoneyBillWave className="mr-1 text-xs" />}
-                      {cat === 'Tax Law' && <FaEnvelopeOpenText className="mr-1 text-xs" />}
-                      {cat === 'Intellectual Property' && <FaBolt className="mr-1 text-xs" />}
-                      {cat}
+                              ? 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300'
+                              : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/50'
+                        }`}
+                        style={{
+                          backgroundColor: isSelected ? category.color : undefined,
+                          boxShadow: isSelected ? `0 4px 15px -2px ${category.color}30` : undefined
+                        }}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <IconComponent className={`text-sm ${
+                            isSelected ? 'text-white' : isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                          }`} />
+                          {isSelected && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-white opacity-70"></div>
+                          )}
+                        </div>
+                        <h4 className={`font-medium text-xs mb-0.5 ${
+                          isSelected ? 'text-white' : isDarkMode ? 'text-white' : 'text-slate-800'
+                        }`}>
+                          {category.name}
+                        </h4>
+                        <p className={`text-[10px] leading-tight ${
+                          isSelected ? 'text-white/70' : isDarkMode ? 'text-slate-500' : 'text-slate-500'
+                        }`}>
+                          {category.description.split(' ').slice(0, 3).join(' ')}...
+                        </p>
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Loading State */}
+          {/* Compact Loading State */}
           {loading && (
-            <div className="flex flex-col justify-center items-center py-12">
+            <div className={`rounded-xl p-8 text-center ${
+              isDarkMode ? 'bg-slate-800/50' : 'bg-white/50'
+            }`} style={{ boxShadow: currentTheme.shadow.sm }}>
+              <div className="flex flex-col items-center">
+                <div className="relative mb-4">
               <Lottie
                 loop
                 animationData={lawyerSearchAnimation}
                 play
-                style={{ width: 120, height: 120 }}
-              />
-              <p className={`mt-4 font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                Finding the best lawyers for you...
-              </p>
+                    style={{ width: 80, height: 80 }}
+                  />
+                </div>
+                
+                <h3 className={`text-lg font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                  Finding Legal Experts
+                </h3>
+                <p className={`mb-3 text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                  Searching for qualified lawyers...
+                </p>
+                
+                <div className="flex items-center gap-1">
+                  <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isDarkMode ? 'bg-blue-500' : 'bg-blue-600'}`}></div>
+                  <div className={`w-1.5 h-1.5 rounded-full animate-pulse delay-100 ${isDarkMode ? 'bg-blue-500' : 'bg-blue-600'}`}></div>
+                  <div className={`w-1.5 h-1.5 rounded-full animate-pulse delay-200 ${isDarkMode ? 'bg-blue-500' : 'bg-blue-600'}`}></div>
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Error State */}
+          {/* Enhanced Error State */}
           {error && !loading && (
-            <div className={`rounded-xl p-8 mb-8 ${
-              isDarkMode ? 'bg-slate-800 border border-red-800' : 'bg-white border border-red-200 shadow-sm'
-            }`}>
-              <div className="flex flex-col items-center text-center">
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
-                  isDarkMode ? 'bg-red-900/30' : 'bg-red-50'
-                }`}>
-                  <FaTimes className={`text-2xl ${isDarkMode ? 'text-red-400' : 'text-red-500'}`} />
+            <div className={`rounded-2xl p-12 mb-8 text-center ${
+              isDarkMode 
+                ? 'bg-gradient-to-br from-red-900/20 to-slate-800 border border-red-800/50' 
+                : 'bg-gradient-to-br from-red-50 to-white border border-red-200'
+            }`} style={{ boxShadow: currentTheme.shadow.lg }}>
+              <div className="flex flex-col items-center">
+                <div className="relative mb-6">
+                  <div className={`w-20 h-20 rounded-full flex items-center justify-center ${
+                    isDarkMode ? 'bg-red-900/30' : 'bg-red-100'
+                  }`}>
+                    <FaExclamationTriangle className={`text-3xl ${isDarkMode ? 'text-red-400' : 'text-red-600'}`} />
+                  </div>
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                    <FaTimes className="text-white text-xs" />
+                  </div>
                 </div>
                 
-                <h3 className={`text-xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
-                  {error.includes('login') ? 'Authentication Required' : 'Unable to Load Lawyers'}
+                <h3 className={`text-2xl font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                  {error.includes('login') ? '🔐 Authentication Required' : '⚠️ Service Temporarily Unavailable'}
                 </h3>
                 
-                <p className={`mb-6 max-w-md ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                  {error}
+                <p className={`mb-8 max-w-lg text-lg leading-relaxed ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                  {error.includes('login') 
+                    ? 'Please log in to access our comprehensive database of qualified lawyers and book consultations.'
+                    : 'We\'re experiencing temporary difficulties loading lawyer profiles. Our team is working to resolve this quickly.'
+                  }
                 </p>
                 
-                <div className="flex flex-wrap gap-3 justify-center">
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <button 
                     onClick={() => fetchLawyers(1, true)}
-                    className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors flex items-center"
+                    className="group px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
                   >
-                    {/* <FaSync className="mr-2" /> */}
+                    <FaSync className="text-sm group-hover:rotate-180 transition-transform duration-200" />
                     Try Again
                   </button>
                   
                   {error.includes('login') && (
                     <button 
                       onClick={() => {
-                        // Redirect to login page
                         window.location.href = '/auth';
                       }}
-                      className={`px-4 py-2 rounded-lg transition-colors flex items-center ${
-                        isDarkMode 
-                          ? 'bg-green-700 hover:bg-green-600 text-white' 
-                          : 'bg-green-600 hover:bg-green-700 text-white'
-                      }`}
+                      className="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
                     >
-                      <FaUserCheck className="mr-2" />
-                      Login Now
+                      <FaUserCheck className="text-sm" />
+                      Login to Continue
                     </button>
                   )}
+                </div>
+
+                <div className={`mt-8 p-4 rounded-xl ${
+                  isDarkMode ? 'bg-slate-800/50' : 'bg-blue-50/50'
+                }`}>
+                  <div className="flex items-center justify-center gap-2 text-sm">
+                    <FaInfoCircle className={isDarkMode ? 'text-blue-400' : 'text-blue-600'} />
+                    <span className={isDarkMode ? 'text-slate-400' : 'text-slate-600'}>
+                      Need immediate assistance? Contact our support team
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Empty State */}
+          {/* Enhanced Empty State */}
           {!loading && !error && lawyers.length === 0 && (
-            <div className={`rounded-xl p-8 mb-8 text-center ${
-              isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-white border border-slate-200 shadow-sm text-slate-600'
-            }`}>
+            <div className={`rounded-2xl p-12 mb-8 text-center ${
+              isDarkMode 
+                ? 'bg-gradient-to-br from-slate-800 to-slate-700' 
+                : 'bg-gradient-to-br from-blue-50 to-indigo-50'
+            }`} style={{ boxShadow: currentTheme.shadow.lg }}>
               <div className="flex flex-col items-center justify-center">
-                <FaUserTie className={`text-6xl mb-4 ${isDarkMode ? 'text-slate-600' : 'text-slate-300'}`} />
-                <h3 className={`text-xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>No Lawyers Found</h3>
-                <p className="mb-4 max-w-md">We couldn't find any lawyers matching your criteria. Try adjusting your filters or search terms.</p>
+                <div className="relative mb-8">
+                  <div className={`w-24 h-24 rounded-full flex items-center justify-center ${
+                    isDarkMode ? 'bg-slate-700' : 'bg-white'
+                  }`} style={{ boxShadow: currentTheme.shadow.md }}>
+                    <FaUserTie className={`text-4xl ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`} />
+                  </div>
+                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
+                    <FaSearch className="text-white text-xs" />
+                  </div>
+                </div>
+                
+                <h3 className={`text-2xl font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                  🔍 No Lawyers Found
+                </h3>
+                <p className={`mb-8 max-w-lg text-lg leading-relaxed ${
+                  isDarkMode ? 'text-slate-300' : 'text-slate-600'
+                }`}>
+                  We couldn't find any lawyers matching your current search criteria. Try expanding your search or exploring different specializations.
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+                  <button 
+                    onClick={() => {
+                      setSelectedCategory('All');
+                      setSearchQuery('');
+                      setCurrentPage(1);
+                      fetchLawyers(1, true);
+                    }}
+                    className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+                  >
+                    <FaSync className="text-sm" />
+                    Clear All Filters
+                  </button>
+                  
+                  <button 
+                    onClick={() => setShowFilters(true)}
+                    className={`px-8 py-3 font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 ${
+                      isDarkMode 
+                        ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 border border-slate-600' 
+                        : 'bg-white text-slate-700 hover:bg-slate-50 border-2 border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <FaFilter className="text-sm" />
+                    Adjust Filters
+                  </button>
+                </div>
+
+                <div className={`p-6 rounded-xl ${
+                  isDarkMode ? 'bg-slate-800/50' : 'bg-white/80'
+                }`}>
+                  <h4 className={`font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                    💡 Search Tips
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className={isDarkMode ? 'text-slate-300' : 'text-slate-600'}>
+                        Try broader search terms
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <span className={isDarkMode ? 'text-slate-300' : 'text-slate-600'}>
+                        Check different legal areas
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className={isDarkMode ? 'text-slate-300' : 'text-slate-600'}>
+                        Expand location search
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                      <span className={isDarkMode ? 'text-slate-300' : 'text-slate-600'}>
+                        Contact support for help
+                      </span>
+                    </div>
+                  </div>
+                </div>
                 
                 <div className="flex flex-wrap gap-3 justify-center">
                   <button 
@@ -1746,112 +1896,106 @@ const LegalCosultation = () => {
             </div>
           )}
 
-          {/* Lawyers Grid - Improved Card Design */}
+          {/* Professional Lawyers Grid - Compact & Clean */}
           {!loading && !error && lawyers.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               {lawyers.map((lawyer) => (
                 <div
                   key={lawyer.id}
-                  className={`group rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border ${
+                  className={`group relative rounded-xl overflow-hidden transition-all duration-200 hover:scale-[1.01] ${
                     isDarkMode 
-                      ? 'bg-slate-800 border-slate-700 hover:border-sky-700/50' 
-                      : 'bg-white border-slate-200 hover:border-sky-200'
+                      ? 'bg-gradient-to-br from-slate-800/80 to-slate-700/80 hover:from-slate-700/80 hover:to-slate-600/80 border border-slate-600/30' 
+                      : 'bg-gradient-to-br from-white to-slate-50/50 hover:from-slate-50 hover:to-slate-100/50 border border-slate-200/50'
                   }`}
+                  style={{ boxShadow: currentTheme.shadow.sm }}
                 >
-                  <div className="relative">
-                    {/* Professional Background Image */}
-                    <div className="w-full h-32 overflow-hidden relative group-hover:scale-105 transition-transform duration-300">
-                      <img 
-                        src={backgroundImages[lawyer.id] || "https://t3.ftcdn.net/jpg/06/07/78/88/360_F_607788897_v79yS23PWXnwx4nF6dV415075ICLOZkn.jpg"} 
-                        alt={`${lawyer.specialization} background`}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        loading="lazy"
-                        onError={(e) => {
-                          console.error('Image failed to load:', backgroundImages[lawyer.id]);
-                          e.target.onerror = null; // Prevent infinite loop
-                          e.target.src = "https://t3.ftcdn.net/jpg/06/07/78/88/360_F_607788897_v79yS23PWXnwx4nF6dV415075ICLOZkn.jpg";
-                        }}
-                      />
-                      {/* Overlay for better text visibility */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                  {/* Header Section */}
+                  <div className="p-4 border-b border-slate-200/10">
+                    <div className="flex items-start justify-between">
+                      {/* Profile & Info */}
+                      <div className="flex items-center space-x-3">
+                        {lawyer.profile_picture_url ? (
+                          <img
+                            src={lawyer.profile_picture_url}
+                            alt={lawyer.full_name}
+                            className="w-12 h-12 rounded-lg object-cover border-2 border-white shadow-sm"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
+                            {getInitials(lawyer.full_name)}
                     </div>
-
-                    {/* Status Badges - More Compact */}
-                    <div className="absolute top-2 right-2 flex gap-1.5">
+                        )}
+                        
+                        <div className="flex-1 min-w-0">
+                          <h3 className={`font-semibold text-sm truncate ${
+                            isDarkMode ? 'text-white' : 'text-slate-900'
+                          }`}>
+                            {lawyer.full_name}
+                          </h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                              {lawyer.specialization}
+                            </span>
                       {lawyer.is_verified && (
-                        <div className="bg-emerald-500 text-white px-1.5 py-0.5 rounded-md text-xs font-medium flex items-center gap-1 shadow-sm">
-                          <FaCheckCircle className="text-[10px]" />
-                          <span className="text-[10px]">Verified</span>
+                              <div className="flex items-center">
+                                <MdVerified className="text-emerald-500 text-sm" />
                         </div>
                       )}
-                      <div className={`px-1.5 py-0.5 rounded-md text-xs font-medium shadow-sm backdrop-blur-sm ${
-                        isDarkMode 
-                          ? 'bg-slate-700/90 text-slate-200' 
-                          : 'bg-white/90 text-slate-700'
-                      }`}>
-                        <span className="text-[10px]">₹{lawyer.consultation_fee}/hr</span>
+                          </div>
                       </div>
                     </div>
 
-                    {/* Profile Section - Repositioned */}
-                    <div className="absolute -bottom-8 left-4">
-                      {/* Profile image or initials */}
-                      {lawyer.profile_picture_url ? (
-                        <img
-                          src={lawyer.profile_picture_url}
-                          alt={lawyer.full_name}
-                          className="w-16 h-16 rounded-full border-2 border-white shadow-md object-cover"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 rounded-full border-2 border-white shadow-md bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl">
-                          {getInitials(lawyer.full_name)}
+                      {/* Fee Badge */}
+                      <div className={`px-2 py-1 rounded-lg text-xs font-medium ${
+                        isDarkMode ? 'bg-blue-600/20 text-blue-300' : 'bg-blue-50 text-blue-700'
+                      }`}>
+                        ₹{lawyer.consultation_fee}/hr
                         </div>
-                      )}
+                    </div>
                     </div>
 
-                    {/* Rating - Repositioned */}
-                    <div className="absolute bottom-2 right-2 flex items-center gap-0.5 bg-black/40 rounded-md px-1.5 py-0.5">
-                      <div className="flex items-center">
+                  {/* Stats Section */}
+                  <div className="px-4 py-3">
+                    <div className="grid grid-cols-3 gap-3 text-center">
+                      <div>
+                        <div className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                          {lawyer.years_of_experience}
+                        </div>
+                        <div className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                          Years
+                        </div>
+                      </div>
+                      <div>
+                        <div className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                          {lawyer.appointments_count || 0}
+                        </div>
+                        <div className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                          Cases
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-center">
                         {renderStars(lawyer.reviews_count > 0 ? 4.5 : 0).map((star, index) => (
                           <span key={index} className="text-xs">{star}</span>
                         ))}
                       </div>
-                      <span className="text-white text-xs ml-0.5">
-                        {lawyer.reviews_count > 0 ? `(${lawyer.reviews_count})` : '(New)'}
-                      </span>
+                        <div className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                          ({lawyer.reviews_count || 0})
                     </div>
                   </div>
-
-                  <div className="p-4 pt-10">
-                    {/* Lawyer Name and Specialization */}
-                    <div className="mb-2">
-                      <h3 className={`font-bold flex items-center gap-1 ${
-                        isDarkMode ? 'text-slate-200' : 'text-slate-800'
-                      }`}>
-                        <FaUserTie className={`text-xs ${isDarkMode ? 'text-sky-400' : 'text-sky-600'}`} />
-                        {lawyer.full_name}
-                      </h3>
-                      <div className="flex items-center mt-1">
-                        <span className="inline-block px-2 py-0.5 rounded-md bg-gradient-to-r from-sky-500 to-sky-600 text-white text-xs">
-                          {lawyer.specialization}
-                        </span>
-                        <span className={`ml-2 text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                          {lawyer.years_of_experience} years exp.
-                        </span>
                       </div>
                     </div>
                     
-                    {/* Lawyer Info - Compact List */}
-                    <div className="space-y-1.5 mb-3">
+                  {/* Contact Info */}
+                  <div className="px-4 py-2 space-y-1">
                       <div className={`flex items-center text-xs ${
-                        isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                      isDarkMode ? 'text-slate-300' : 'text-slate-600'
                       }`}>
-                        <FaMapMarkerAlt className={`w-3 h-3 mr-1.5 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
-                        <span className="truncate">{lawyer.location || lawyer.bar_association}</span>
+                      <HiOutlineLocationMarker className={`w-3 h-3 mr-1.5 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                      <span className="truncate flex-1">{lawyer.location || lawyer.bar_association}</span>
                         
-                        {/* Distance Badge */}
                         {locationEnabled && lawyer.distance && (
-                          <span className="ml-auto px-1.5 py-0.5 bg-sky-100 text-sky-700 text-[10px] rounded-md">
+                        <span className="ml-1 px-1.5 py-0.5 bg-green-100 text-green-700 text-[10px] rounded">
                             {lawyer.distance < 1 
                               ? `${(lawyer.distance * 1000).toFixed(0)}m` 
                               : `${lawyer.distance.toFixed(1)}km`}
@@ -1860,38 +2004,32 @@ const LegalCosultation = () => {
                       </div>
                       
                       <div className={`flex items-center text-xs ${
-                        isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                      isDarkMode ? 'text-slate-300' : 'text-slate-600'
                       }`}>
-                        <FaPhoneAlt className={`w-3 h-3 mr-1.5 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
+                      <FaPhoneAlt className={`w-3 h-3 mr-1.5 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
                         <span className="truncate">{lawyer.phone_number}</span>
-                      </div>
-                      
-                      <div className={`flex items-center text-xs ${
-                        isDarkMode ? 'text-slate-400' : 'text-slate-600'
-                      }`}>
-                        <FaEnvelope className={`w-3 h-3 mr-1.5 ${isDarkMode ? 'text-sky-400' : 'text-sky-500'}`} />
-                        <span className="truncate">{lawyer.email}</span>
                       </div>
                     </div>
                     
-                    {/* Action Buttons - More Compact */}
-                    <div className="flex gap-2 mt-3 pt-2 border-t border-slate-200 dark:border-slate-700">
+                  {/* Action Buttons */}
+                  <div className="px-4 py-3 pt-2 border-t border-slate-200/10">
+                    <div className="flex gap-2">
                       <button
                         onClick={() => viewLawyerDetails(lawyer)}
-                        className={`flex-1 py-1.5 px-2 text-xs border rounded-md transition-all duration-200 flex items-center justify-center gap-1 ${
+                        className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium border transition-all duration-200 flex items-center justify-center gap-1 ${
                           isDarkMode 
-                            ? 'border-sky-500/50 text-sky-400 hover:bg-slate-700/50' 
-                            : 'border-sky-600/50 text-sky-600 hover:bg-sky-50'
+                            ? 'border-blue-500/50 text-blue-400 hover:bg-blue-500/10' 
+                            : 'border-blue-600/50 text-blue-600 hover:bg-blue-50'
                         }`}
                       >
-                        <FaUserCheck className="text-[10px]" />
+                        <HiOutlineShieldCheck className="text-sm" />
                         Details
                       </button>
                       <button
                         onClick={() => startBooking(lawyer)}
-                        className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-gradient-to-r from-sky-600 to-sky-700 text-white text-xs rounded-md hover:from-sky-700 hover:to-sky-800 transition-all duration-200 shadow-sm"
+                        className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-xs font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
                       >
-                        <FaCalendarAlt className="text-[10px]" />
+                        <FaCalendarAlt className="text-xs" />
                         Book Now
                       </button>
                     </div>
@@ -1929,6 +2067,7 @@ const LegalCosultation = () => {
       );
     } else if (view === 'detail' && selectedLawyer) {
       return (
+        <div className="pt-20 sm:pt-24">
         <div className={`rounded-2xl shadow-lg overflow-hidden mb-12 border transition-colors duration-300 ${
           isDarkMode 
             ? 'bg-slate-800 border-slate-700' 
@@ -2158,13 +2297,14 @@ const LegalCosultation = () => {
                   Book Consultation Now
                 </button>
               </div>
+              </div>
             </div>
           </div>
         </div>
       );
     } else if (view === 'booking' && selectedLawyer) {
       return (
-        <div className={''}>
+        <div className="pt-20 sm:pt-24">
           {/* Booking Header - Uncomment and fix if needed */}
           
           {/* Add CSS animations */}
@@ -2804,18 +2944,26 @@ const LegalCosultation = () => {
   };
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-slate-900' : 'bg-slate-50'} transition-colors duration-300`}>
-      <div className="container mx-auto px-4 py-8" ref={contentRef}>
-        <div className="mb-8 sure">
-          {/* <h1 className={`text-3xl md:text-4xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-            Find Your Legal Expert
-          </h1>
-          <p className={`text-lg ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-            Connect with experienced lawyers specialized in various legal domains
-          </p> */}
+    <div className={`min-h-screen transition-colors duration-300 ${
+      isDarkMode 
+        ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
+        : 'bg-gradient-to-br from-slate-50 via-white to-blue-50'
+    }`}>
+      <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-0" ref={contentRef}>
+        {/* Optimized Content Container */}
+        <div className="w-full max-w-6xl mx-auto">
+          {renderView()}
+        </div>
         </div>
         
-        {renderView()}
+      {/* Subtle Background Elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className={`absolute -top-32 -right-32 w-64 h-64 rounded-full opacity-10 ${
+          isDarkMode ? 'bg-blue-500' : 'bg-blue-200'
+        } blur-3xl`}></div>
+        <div className={`absolute -bottom-32 -left-32 w-80 h-80 rounded-full opacity-10 ${
+          isDarkMode ? 'bg-purple-500' : 'bg-purple-200'
+        } blur-3xl`}></div>
       </div>
     </div>
   );
