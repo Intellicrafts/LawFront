@@ -394,3 +394,31 @@ textarea[disabled].input-loading-lock {
   cursor: not-allowed;
   background-color: var(--input-bg-disabled);
 }
+
+/* Remove browser default blue focus outlines */
+* {
+  outline: none !important;
+}
+
+/* Custom focus styles for better UX */
+input:focus,
+textarea:focus,
+button:focus,
+select:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Prevent blue highlight on mobile */
+input, textarea, button, select, a {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-focus-ring-color: transparent !important;
+  -webkit-appearance: none !important;
+}
+
+/* Remove blue border on focused elements */
+input:focus,
+textarea:focus,
+button:focus {
+  border-color: inherit !important;
+}

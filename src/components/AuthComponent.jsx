@@ -229,13 +229,13 @@ const InputField = ({
                 ? 'border-2 border-red-500 focus:border-red-400 focus:ring-2 focus:ring-red-900 bg-gray-700 text-white placeholder-gray-400' 
                 : disabled
                   ? 'border border-gray-700 bg-gray-800 text-gray-400 cursor-not-allowed placeholder-gray-600'
-                  : 'border border-gray-600 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400'
+                  : 'border border-gray-600 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500 placeholder-gray-400'
               }`
             : `${error 
                 ? 'border-2 border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 placeholder-gray-400' 
                 : disabled
                   ? 'border border-gray-200 bg-gray-50 cursor-not-allowed placeholder-gray-400'
-                  : 'border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 placeholder-gray-400'
+                  : 'border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400 placeholder-gray-400'
               }`
         }`}
         placeholder={placeholder}
@@ -597,7 +597,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                   checked={formState.rememberMe}
                   onChange={handleCheckboxChange}
                   disabled={formState.loading}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-60"
+                  className="h-4 w-4 text-gray-600 focus:ring-gray-500/30 border-gray-300 rounded disabled:opacity-60"
                 />
                 <label htmlFor="rememberMe" className={`ml-2 block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Remember me for 30 days
