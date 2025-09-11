@@ -171,8 +171,8 @@ const InputField = ({ type, id, name, value, onChange, placeholder, icon, rightI
         onChange={onChange}
         className={`block w-full pl-10 pr-10 py-3.5 rounded-lg shadow-sm transition-all duration-300 ${
           isDarkMode 
-            ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500' 
-            : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400'
+            ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500' 
+            : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
         }`}
         placeholder={placeholder}
         required
@@ -849,7 +849,7 @@ export const Signup = ({ onSignupSuccess }) => {
                     type="checkbox"
                     checked={agreeTerms}
                     onChange={(e) => setAgreeTerms(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-gray-600 focus:ring-gray-500/30 border-gray-300 rounded"
                     required
                   />
                   <label htmlFor="agree-terms" className={`ml-2 block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>

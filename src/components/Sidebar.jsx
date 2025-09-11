@@ -154,20 +154,21 @@ export function Sidebar({
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
         style={{ top: '2px' }}
-        className={`absolute -right-10 p-2 rounded-full 
+        className={`absolute -right-10 p-2.5 rounded-xl 
                   ${isDark 
-                    ? 'bg-gray-800/90 hover:bg-gray-700/90 text-sky-400 hover:text-sky-300' 
-                    : 'bg-white/90 hover:bg-gray-50/90 text-[#22577a] hover:text-[#3382a9]'} 
+                    ? 'bg-gray-800/95 hover:bg-gray-700/95 text-gray-300 hover:text-gray-200' 
+                    : 'bg-white/95 hover:bg-gray-50/95 text-gray-600 hover:text-gray-700'} 
                   shadow-md hover:shadow-lg 
                   transition-all duration-300 
                   flex items-center justify-center z-50
-                  border ${isDark ? 'border-gray-700' : 'border-gray-200'}`}
+                  border ${isDark ? 'border-gray-700/50' : 'border-gray-200/50'}
+                  focus:outline-none focus:ring-2 focus:ring-gray-400/20 focus:border-gray-400`}
         aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
       >
         {sidebarOpen ? (
-          <ChevronLeft size={18} className="transition-transform duration-300" />
+          <ChevronLeft size={16} className="transition-transform duration-300" />
         ) : (
-          <Menu size={18} className="transition-transform duration-300" />
+          <Menu size={16} className="transition-transform duration-300" />
         )}
       </button>
 
@@ -215,7 +216,7 @@ export function Sidebar({
                         ? 'border-gray-700 bg-gray-800/70 text-gray-200 placeholder-gray-500' 
                         : 'border-gray-200 bg-gray-100/70 text-gray-800 placeholder-gray-500'} 
                       focus:outline-none focus:ring-1
-                      ${isDark ? 'focus:ring-[#5cacde]/30' : 'focus:ring-[#5cacde]/20'} 
+                      ${isDark ? 'focus:ring-gray-500/20' : 'focus:ring-gray-300/30'} 
                       transition-all duration-300`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

@@ -83,6 +83,10 @@ const Hero = () => {
   const [requestCount, setRequestCount] = useState(0);
   const [showLimitWarning, setShowLimitWarning] = useState(false);
   
+  // File upload state
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [isDragOver, setIsDragOver] = useState(false);
+  
   // Enhanced UI state management
   const [lockedInputHeight, setLockedInputHeight] = useState(null);
   const [userScrolledUp, setUserScrolledUp] = useState(false);
@@ -95,6 +99,7 @@ const Hero = () => {
   const [availableVoices, setAvailableVoices] = useState([]);
   const [selectedVoiceIndex, setSelectedVoiceIndex] = useState(null);
   const [showVoiceSelector, setShowVoiceSelector] = useState(false);
+  const [activeVoiceSelectorId, setActiveVoiceSelectorId] = useState(null);
   const speechSynthesisRef = useRef(null);
   
   // Refs
@@ -250,10 +255,10 @@ const Hero = () => {
     { text: 'Finalizing recommendations...', icon: <CheckCircle size={14} /> }
   ];
 
-  // Enhanced mobile app experience - prevent scrolling on mobile when in chat mode
+  // Enhanced mobile app experience - prevent scrolling when in chat mode
   useEffect(() => {
-    if (isMobile && chatActive) {
-      // Prevent hero section scrolling on mobile for app-like experience
+    if (chatActive) {
+      // Prevent page scrolling when chat is active for app-like experience
       document.body.style.overflow = 'hidden';
       document.documentElement.style.overflow = 'hidden';
       
@@ -262,7 +267,7 @@ const Hero = () => {
         document.documentElement.style.overflow = '';
       };
     }
-  }, [isMobile, chatActive]);
+  }, [chatActive]);
 
   // Check authentication status
   const checkAuthStatus = () => {
@@ -388,10 +393,10 @@ const Hero = () => {
     const utterance = new SpeechSynthesisUtterance(cleanText);
     speechSynthesisRef.current = utterance;
 
-    // Set speech parameters for natural human-like Hindi accent
-    utterance.rate = 0.85; // Slower for more natural human pace
+    // Set speech parameters for natural human-like fast pace
+    utterance.rate = 1.2; // Faster for more natural human pace
     utterance.pitch = 0.95; // Slightly lower pitch for male voice
-    utterance.volume = 0.85; // Clear and comfortable volume
+    utterance.volume = 0.9; // Clear and comfortable volume
 
     // Get available voices
     const voices = speechSynthesis.getVoices();
@@ -401,16 +406,65 @@ const Hero = () => {
     
     // If user has manually selected a voice, use that
     let selectedVoice = null;
-    if (selectedVoiceIndex !== null && voices[selectedVoiceIndex]) {
+    
+    // Check if it's a regional accent selection
+    if (typeof selectedVoiceIndex === 'string' && selectedVoiceIndex.startsWith('regional-')) {
+      const accent = selectedVoiceIndex.replace('regional-', '');
+      console.log('🇮🇳 Using regional accent:', accent);
+      
+      // Apply regional accent settings directly to utterance
+      const regionalSettings = {
+        'hindi': { rate: 0.9, pitch: 0.8, language: 'hi-IN' },
+        'marathi': { rate: 0.95, pitch: 0.85, language: 'mr-IN' },
+        'bengali': { rate: 0.9, pitch: 0.9, language: 'bn-IN' },
+        'tamil': { rate: 0.95, pitch: 0.85, language: 'ta-IN' },
+        'telugu': { rate: 0.95, pitch: 0.8, language: 'te-IN' },
+        'gujarati': { rate: 0.95, pitch: 0.85, language: 'gu-IN' },
+        'punjabi': { rate: 1.0, pitch: 0.8, language: 'pa-IN' },
+        'kannada': { rate: 0.95, pitch: 0.85, language: 'kn-IN' },
+        'malayalam': { rate: 0.9, pitch: 0.9, language: 'ml-IN' },
+        'indian-english': { rate: 1.1, pitch: 0.85, language: 'en-IN' }
+      };
+      
+      const settings = regionalSettings[accent] || regionalSettings['indian-english'];
+      utterance.rate = settings.rate;
+      utterance.pitch = settings.pitch;
+      
+      // Try to find a matching system voice
+      selectedVoice = voices.find(voice => 
+        voice.lang.toLowerCase().includes(settings.language.toLowerCase()) ||
+        voice.name.toLowerCase().includes(accent) ||
+        (settings.language === 'en-IN' && voice.lang.toLowerCase().includes('en-in'))
+      );
+      
+      console.log(`✅ Regional ${accent} voice configured - Rate: ${settings.rate}, Pitch: ${settings.pitch}`);
+    } else if (selectedVoiceIndex !== null && voices[selectedVoiceIndex]) {
       selectedVoice = voices[selectedVoiceIndex];
       console.log('👤 Using manually selected voice:', selectedVoice.name, selectedVoice.lang);
     } else {
       // Automatic voice selection with comprehensive patterns
       const indianVoicePatterns = [
-        'hindi', 'indian', 'india', 'ravi', 'aditi', 'kiran', 'priya', 'veena', 'hemant',
-        'microsoft ravi', 'google hindi', 'nuance vocalizer', 'haruka', 'sayaka',
-        'en-in', 'hi-in', 'marathi', 'bengali', 'tamil', 'telugu', 'malayalam', 'kannada',
-        'microsoft desktop', 'natural', 'premium'
+        // Hindi
+        'hindi', 'hi-in', 'ravi', 'hemant', 'aditi', 'kiran', 
+        // Marathi
+        'marathi', 'mr-in', 'maharashtra', 'mumbai',
+        // Punjabi
+        'punjabi', 'pa-in', 'punjab', 'gurmukhi',
+        // Gujarati
+        'gujarati', 'gu-in', 'gujarat', 'ahmedabad',
+        // Bengali
+        'bengali', 'bn-in', 'kolkata', 'west bengal',
+        // Tamil
+        'tamil', 'ta-in', 'chennai', 'tamil nadu',
+        // Telugu
+        'telugu', 'te-in', 'hyderabad', 'andhra pradesh',
+        // Kannada
+        'kannada', 'kn-in', 'bangalore', 'karnataka',
+        // Malayalam
+        'malayalam', 'ml-in', 'kerala', 'kochi',
+        // Other Indian patterns
+        'indian', 'india', 'en-in', 'priya', 'veena', 'arjun', 'rohan', 'amit', 'raj',
+        'microsoft ravi', 'google hindi', 'nuance vocalizer', 'microsoft desktop', 'natural', 'premium'
       ];
       
       const maleVoicePatterns = [
@@ -487,25 +541,65 @@ const Hero = () => {
       const name = selectedVoice.name.toLowerCase();
       const lang = selectedVoice.lang.toLowerCase();
       
-      // Optimize settings based on voice characteristics
-      if (lang.includes('hi-in') || lang.includes('hi')) {
+      // Optimize settings based on voice characteristics and regional languages
+      if (lang.includes('hi-in') || lang.includes('hi') || name.includes('hindi')) {
         // Hindi voices
-        utterance.rate = 0.7; // Much slower for clear Hindi pronunciation
+        utterance.rate = 1.0; // Natural pace for clear Hindi pronunciation
         utterance.pitch = 0.8; // Lower for male effect
         console.log('✅ Using Hindi voice:', selectedVoice.name);
+      } else if (lang.includes('mr-in') || name.includes('marathi')) {
+        // Marathi voices
+        utterance.rate = 1.0; // Natural pace for Marathi
+        utterance.pitch = 0.85; // Slightly higher for Marathi accent
+        console.log('✅ Using Marathi voice:', selectedVoice.name);
+      } else if (lang.includes('pa-in') || name.includes('punjabi')) {
+        // Punjabi voices
+        utterance.rate = 1.1; // Slightly faster for Punjabi rhythm
+        utterance.pitch = 0.8; // Lower for characteristic Punjabi tone
+        console.log('✅ Using Punjabi voice:', selectedVoice.name);
+      } else if (lang.includes('gu-in') || name.includes('gujarati')) {
+        // Gujarati voices
+        utterance.rate = 1.0; // Natural pace for Gujarati
+        utterance.pitch = 0.85; // Moderate pitch
+        console.log('✅ Using Gujarati voice:', selectedVoice.name);
+      } else if (lang.includes('bn-in') || name.includes('bengali')) {
+        // Bengali voices
+        utterance.rate = 0.95; // Slightly slower for Bengali pronunciation
+        utterance.pitch = 0.9; // Higher pitch for Bengali accent
+        console.log('✅ Using Bengali voice:', selectedVoice.name);
+      } else if (lang.includes('ta-in') || name.includes('tamil')) {
+        // Tamil voices
+        utterance.rate = 1.0; // Natural pace for Tamil
+        utterance.pitch = 0.85; // Moderate pitch
+        console.log('✅ Using Tamil voice:', selectedVoice.name);
+      } else if (lang.includes('te-in') || name.includes('telugu')) {
+        // Telugu voices
+        utterance.rate = 1.0; // Natural pace for Telugu
+        utterance.pitch = 0.8; // Lower pitch
+        console.log('✅ Using Telugu voice:', selectedVoice.name);
+      } else if (lang.includes('kn-in') || name.includes('kannada')) {
+        // Kannada voices
+        utterance.rate = 1.0; // Natural pace for Kannada
+        utterance.pitch = 0.85; // Moderate pitch
+        console.log('✅ Using Kannada voice:', selectedVoice.name);
+      } else if (lang.includes('ml-in') || name.includes('malayalam')) {
+        // Malayalam voices
+        utterance.rate = 0.95; // Slightly slower for Malayalam clarity
+        utterance.pitch = 0.9; // Higher pitch for Malayalam accent
+        console.log('✅ Using Malayalam voice:', selectedVoice.name);
       } else if (lang.includes('en-in') || name.includes('indian') || name.includes('india')) {
         // Indian English voices
-        utterance.rate = 0.75; // Slower for Indian accent
+        utterance.rate = 1.1; // Natural pace for Indian accent
         utterance.pitch = 0.85; // Lower for male effect
         console.log('✅ Using Indian English voice:', selectedVoice.name);
       } else if (name.includes('male') || name.includes('man')) {
         // Confirmed male voices
-        utterance.rate = 0.8; // Natural pace
+        utterance.rate = 1.15; // Natural fast pace
         utterance.pitch = 0.85; // Lower pitch
         console.log('✅ Using male voice:', selectedVoice.name);
       } else {
         // Generic/fallback voices - make them sound more male
-        utterance.rate = 0.75; // Slower for accent effect
+        utterance.rate = 1.1; // Faster for natural effect
         utterance.pitch = 0.7; // Much lower pitch to sound male
         console.log('✅ Using voice with male settings:', selectedVoice.name);
       }
@@ -515,8 +609,8 @@ const Hero = () => {
       console.log('⚠️ No voice found, using system default');
     }
 
-    // Add more human-like pauses and intonation
-    const enhancedText = cleanText
+    // Add more human-like pauses and intonation with regional improvements
+    let enhancedText = cleanText
       .replace(/\./g, '. ') // Add pause after periods
       .replace(/,/g, ', ') // Add slight pause after commas
       .replace(/:/g, ': ') // Add pause after colons
@@ -525,6 +619,28 @@ const Hero = () => {
       .replace(/!/g, '! ') // Add pause after exclamations
       .replace(/\s+/g, ' ') // Clean up multiple spaces
       .trim();
+    
+    // Regional pronunciation improvements
+    if (typeof selectedVoiceIndex === 'string' && selectedVoiceIndex.startsWith('regional-')) {
+      const accent = selectedVoiceIndex.replace('regional-', '');
+      
+      // Common Indian pronunciation adjustments
+      enhancedText = enhancedText
+        // Legal terms pronunciation
+        .replace(/\bvs\b/gi, 'versus')
+        .replace(/\betc\b/gi, 'etcetera')
+        .replace(/\bie\b/gi, 'that is')
+        .replace(/\beg\b/gi, 'for example')
+        // Indian context improvements
+        .replace(/\bRs\b/gi, 'Rupees')
+        .replace(/\bINR\b/gi, 'Indian Rupees')
+        .replace(/\bCrore\b/gi, 'Crore')
+        .replace(/\bLakh\b/gi, 'Lakh')
+        // Add slight pauses for better comprehension
+        .replace(/(\d+)/g, ' $1 ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
     
     utterance.text = enhancedText;
 
@@ -646,13 +762,14 @@ const Hero = () => {
       if (modalDropdownRef.current && !modalDropdownRef.current.contains(event.target)) {
         setShowModalDropdown(false);
       }
-      if (voiceSelectorRef.current && !voiceSelectorRef.current.contains(event.target)) {
-        setShowVoiceSelector(false);
+      // Close voice selector if clicking outside any voice selector
+      if (activeVoiceSelectorId && !event.target.closest('.voice-selector-container')) {
+        setActiveVoiceSelectorId(null);
       }
     };
 
     // Prevent body scroll on mobile when any dropdown is open
-    if (isMobile && (showModalDropdown || showVoiceSelector)) {
+    if (isMobile && (showModalDropdown || activeVoiceSelectorId)) {
       document.body.classList.add('dropdown-open');
     } else {
       document.body.classList.remove('dropdown-open');
@@ -664,7 +781,7 @@ const Hero = () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.body.classList.remove('dropdown-open');
     };
-  }, [showModalDropdown, showVoiceSelector, isMobile]);
+  }, [showModalDropdown, activeVoiceSelectorId, isMobile]);
 
   // Enhanced API Response Parser
   const parseAPIResponse = (rawText) => {
@@ -710,8 +827,8 @@ const Hero = () => {
     
     try {
       // Format main headings - safe and contained
-      formatted = formatted.replace(/^###\s(.+)$/gm, '<div class="text-lg font-bold text-slate-800 dark:text-slate-200 mt-4 mb-2 pb-1 border-b border-sky-200 break-words">$1</div>');
-      formatted = formatted.replace(/^##\s(.+)$/gm, '<div class="text-xl font-bold text-slate-900 dark:text-slate-100 mt-4 mb-3 border-l-4 border-sky-500 pl-3 break-words">$1</div>');
+      formatted = formatted.replace(/^###\s(.+)$/gm, '<div class="text-lg font-bold text-slate-800 dark:text-slate-200 mt-4 mb-2 pb-1 border-b border-slate-300 dark:border-slate-600 break-words">$1</div>');
+      formatted = formatted.replace(/^##\s(.+)$/gm, '<div class="text-xl font-bold text-slate-900 dark:text-slate-100 mt-4 mb-3 border-l-4 border-slate-500 dark:border-slate-400 pl-3 break-words">$1</div>');
       formatted = formatted.replace(/^#\s(.+)$/gm, '<div class="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-4 mb-3 break-words">$1</div>');
       
       // Format bold text - safe inline
@@ -835,7 +952,7 @@ const Hero = () => {
   // Enhanced message submission with input size preservation
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
-    if (!query.trim()) return;
+    if (!query.trim() && uploadedFiles.length === 0) return;
 
     const isUserAuthenticated = checkAuthStatus();
     const currentRequestCount = getRequestCount();
@@ -852,11 +969,12 @@ const Hero = () => {
 
     const newMessage = {
       id: Date.now(),
-      text: query,
+      text: query || (uploadedFiles.length > 0 ? `📎 ${uploadedFiles.length} file${uploadedFiles.length > 1 ? 's' : ''} uploaded` : ''),
       sender: 'user',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       type: detectDocumentRequest(query) ? 'document-request' : 'consultation',
-      selectedAgent: selectedModal // Store which agent was selected for this question
+      selectedAgent: selectedModal, // Store which agent was selected for this question
+      files: uploadedFiles.length > 0 ? [...uploadedFiles] : null // Include uploaded files
     };
     
     const updatedMessages = [...messages, newMessage];
@@ -870,6 +988,8 @@ const Hero = () => {
     
     const userQuery = query;
     setQuery('');
+    // Clear uploaded files after sending
+    setUploadedFiles([]);
     
     // Mobile keyboard handling: Close keyboard smoothly after submit
     if (isMobile && inputRef.current) {
@@ -1188,6 +1308,65 @@ const Hero = () => {
     console.log('Voice button clicked - Modal opening:', newModalState);
   }, [isVoiceModalOpen]);
 
+  // File upload handlers
+  const handleFileUpload = useCallback((files) => {
+    const validFiles = Array.from(files).filter(file => {
+      // Accept common document types
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain',
+        'image/jpeg',
+        'image/png',
+        'image/jpg'
+      ];
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      
+      return allowedTypes.includes(file.type) && file.size <= maxSize;
+    });
+
+    const newFiles = validFiles.map(file => ({
+      id: Date.now() + Math.random(),
+      file,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null
+    }));
+
+    setUploadedFiles(prev => [...prev, ...newFiles]);
+  }, []);
+
+  const handleFileDrop = useCallback((e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const files = e.dataTransfer.files;
+    handleFileUpload(files);
+  }, [handleFileUpload]);
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  }, []);
+
+  const removeFile = useCallback((fileId) => {
+    setUploadedFiles(prev => {
+      const updatedFiles = prev.filter(f => f.id !== fileId);
+      // Clean up preview URLs
+      const fileToRemove = prev.find(f => f.id === fileId);
+      if (fileToRemove && fileToRemove.preview) {
+        URL.revokeObjectURL(fileToRemove.preview);
+      }
+      return updatedFiles;
+    });
+  }, []);
+
   // Lock input field height during loading to prevent UI breaks
   useEffect(() => {
     if (inputRef.current) {
@@ -1461,7 +1640,9 @@ const Hero = () => {
           stiffness: 300,
           damping: 30
         }}
-        className={`flex chat-message ${isUser ? 'justify-end' : 'justify-start'} ${!isPreviousSameSender ? 'mt-6' : 'mt-3'}`}
+        className={`flex chat-message ${isUser ? 'justify-end' : 'justify-start'} ${
+          message.type === 'greeting' ? 'mt-2' : (!isPreviousSameSender ? 'mt-6' : 'mt-3')
+        }`}
       >
         {/* Bot Avatar */}
         {!isUser && !isPreviousSameSender && (
@@ -1536,6 +1717,44 @@ const Hero = () => {
 
             {renderMessageText(message.text, message.sender, message.type, message.isFormatted)}
             
+            {/* File Attachments */}
+            {message.files && message.files.length > 0 && (
+              <div className={`mt-3 ${isUser ? '' : 'border-t border-slate-200 dark:border-slate-700 pt-3'}`}>
+                <div className="flex flex-wrap gap-2">
+                  {message.files.map((file) => (
+                    <div
+                      key={file.id}
+                      className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs ${
+                        isUser 
+                          ? 'bg-white/10 border-white/20 text-white' 
+                          : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      {/* File Icon or Preview */}
+                      <div className="flex-shrink-0">
+                        {file.preview ? (
+                          <img
+                            src={file.preview}
+                            alt={file.name}
+                            className="w-4 h-4 rounded object-cover"
+                          />
+                        ) : (
+                          <FileText size={12} className={isUser ? 'text-white/80' : 'text-slate-500'} />
+                        )}
+                      </div>
+                      
+                      {/* File Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-medium truncate ${isUser ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`}>
+                          {file.name}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             {/* Typing Indicator */}
             {!isUser && isTyping && message.text === '' && (
               <div className="flex items-center space-x-1 py-2">
@@ -1561,9 +1780,9 @@ const Hero = () => {
             {!isUser && messageAnimationComplete && message.text && (
               <div className="flex items-center space-x-2">
                 {/* Voice Selector Button */}
-                <div className="relative" ref={voiceSelectorRef}>
+                <div className="relative voice-selector-container">
                   <button 
-                    onClick={() => setShowVoiceSelector(!showVoiceSelector)}
+                    onClick={() => setActiveVoiceSelectorId(activeVoiceSelectorId === message.id ? null : message.id)}
                     className="text-slate-400 hover:text-blue-500 transition-colors p-1 rounded relative group"
                     title="Select voice"
                   >
@@ -1577,41 +1796,139 @@ const Hero = () => {
                   </button>
                   
                   {/* Voice Selector Dropdown */}
-                  {showVoiceSelector && (
-                    <div className="absolute bottom-full left-0 mb-2 w-64 max-h-40 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg overflow-y-auto z-20">
-                      <div className="p-2 border-b border-slate-200 dark:border-slate-700">
-                        <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                          Choose Voice ({availableVoices.length} available)
+                  {activeVoiceSelectorId === message.id && (
+                    <div className="absolute bottom-full left-0 mb-2 w-56 max-h-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden z-20">
+                      <div className="p-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50">
+                        <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          Select Voice ({availableVoices.length} available)
                         </p>
                       </div>
-                      <div className="max-h-32 overflow-y-auto">
-                        {availableVoices.map((voice, index) => (
+                      <div className="max-h-36 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 scrollbar-track-transparent">
+                        {/* Preferred Indian Regional Voices */}
+                        {[
+                          { name: 'Hindi (हिंदी)', lang: 'hi-IN', isRegional: true, accent: 'hindi' },
+                          { name: 'Marathi (मराठी)', lang: 'mr-IN', isRegional: true, accent: 'marathi' },
+                          { name: 'Bengali (বাংলা)', lang: 'bn-IN', isRegional: true, accent: 'bengali' },
+                          { name: 'Tamil (தமிழ்)', lang: 'ta-IN', isRegional: true, accent: 'tamil' },
+                          { name: 'Telugu (తెలుగు)', lang: 'te-IN', isRegional: true, accent: 'telugu' },
+                          { name: 'Gujarati (ગુજરાતી)', lang: 'gu-IN', isRegional: true, accent: 'gujarati' },
+                          { name: 'Punjabi (ਪੰਜਾਬੀ)', lang: 'pa-IN', isRegional: true, accent: 'punjabi' },
+                          { name: 'Kannada (ಕನ್ನಡ)', lang: 'kn-IN', isRegional: true, accent: 'kannada' },
+                          { name: 'Malayalam (മലയാളം)', lang: 'ml-IN', isRegional: true, accent: 'malayalam' },
+                          { name: 'English (Indian)', lang: 'en-IN', isRegional: true, accent: 'indian-english' }
+                        ].map((voice, index) => (
+                          <button
+                            key={`regional-${index}`}
+                            onClick={() => {
+                              setSelectedVoiceIndex(`regional-${voice.accent}`);
+                              setActiveVoiceSelectorId(null);
+                              console.log('🎙️ Regional voice selected:', voice.name, voice.accent);
+                            }}
+                            className={`w-full text-left px-3 py-2.5 text-xs hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 border-l-2 ${
+                              selectedVoiceIndex === `regional-${voice.accent}` 
+                                ? 'bg-slate-100 dark:bg-slate-700/50 text-slate-800 dark:text-slate-200 border-slate-600 dark:border-slate-400 font-medium' 
+                                : 'border-transparent hover:border-slate-300'
+                            }`}
+                          >
+                            <div className="flex flex-col">
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium truncate text-slate-800 dark:text-slate-200">
+                                  {voice.name}
+                                </span>
+                                <span className={`text-xs px-1.5 py-0.5 rounded text-white font-medium ${
+                                  voice.lang.includes('hi-') ? 'bg-orange-500' :
+                                  voice.lang.includes('mr-') ? 'bg-purple-500' :
+                                  voice.lang.includes('pa-') ? 'bg-green-500' :
+                                  voice.lang.includes('gu-') ? 'bg-blue-500' :
+                                  voice.lang.includes('bn-') ? 'bg-indigo-500' :
+                                  voice.lang.includes('ta-') ? 'bg-red-500' :
+                                  voice.lang.includes('te-') ? 'bg-pink-500' :
+                                  voice.lang.includes('kn-') ? 'bg-yellow-600' :
+                                  voice.lang.includes('ml-') ? 'bg-teal-500' :
+                                  'bg-sky-500'
+                                }`}>
+                                  Regional
+                                </span>
+                              </div>
+                              <span className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center">
+                                🇮🇳 Optimized Indian Accent
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                        
+                        {/* Separator */}
+                        {availableVoices.length > 0 && (
+                          <div className="border-t border-slate-200 dark:border-slate-700 my-2">
+                            <div className="px-3 py-2 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/30">
+                              System Voices
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* System Available Voices */}
+                        {availableVoices
+                          .sort((a, b) => {
+                            // Prioritize Indian regional languages
+                            const aIsIndian = a.lang.includes('-in') || ['hindi', 'marathi', 'punjabi', 'gujarati', 'bengali', 'tamil', 'telugu', 'kannada', 'malayalam'].some(lang => a.name.toLowerCase().includes(lang));
+                            const bIsIndian = b.lang.includes('-in') || ['hindi', 'marathi', 'punjabi', 'gujarati', 'bengali', 'tamil', 'telugu', 'kannada', 'malayalam'].some(lang => b.name.toLowerCase().includes(lang));
+                            
+                            if (aIsIndian && !bIsIndian) return -1;
+                            if (!aIsIndian && bIsIndian) return 1;
+                            
+                            return a.name.localeCompare(b.name);
+                          })
+                          .map((voice, index) => (
                           <button
                             key={index}
                             onClick={() => {
                               setSelectedVoiceIndex(index);
-                              setShowVoiceSelector(false);
+                              setActiveVoiceSelectorId(null);
                               console.log('🎙️ Voice selected:', voice.name, voice.lang);
                             }}
-                            className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ${
-                              selectedVoiceIndex === index ? 'bg-violet-100 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400' : ''
+                            className={`w-full text-left px-3 py-2.5 text-xs hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 border-l-2 ${
+                              selectedVoiceIndex === index 
+                                ? 'bg-slate-100 dark:bg-slate-700/50 text-slate-800 dark:text-slate-200 border-slate-600 dark:border-slate-400 font-medium' 
+                                : 'border-transparent hover:border-slate-300'
                             }`}
                           >
+                            <div className="flex flex-col">
                             <div className="flex items-center justify-between">
-                              <span className="font-medium truncate">
-                                {voice.name}
+                                <span className="font-medium truncate text-slate-800 dark:text-slate-200">
+                                  {voice.name.replace(/Microsoft|Google|Apple/gi, '').trim()}
                               </span>
-                              <span className="text-xs opacity-60 ml-2 flex-shrink-0">
-                                {voice.lang}
+                                <span className={`text-xs px-1.5 py-0.5 rounded text-white font-medium ${
+                                  voice.lang.includes('hi-') ? 'bg-orange-500' :
+                                  voice.lang.includes('mr-') ? 'bg-purple-500' :
+                                  voice.lang.includes('pa-') ? 'bg-green-500' :
+                                  voice.lang.includes('gu-') ? 'bg-blue-500' :
+                                  voice.lang.includes('bn-') ? 'bg-indigo-500' :
+                                  voice.lang.includes('ta-') ? 'bg-red-500' :
+                                  voice.lang.includes('te-') ? 'bg-pink-500' :
+                                  voice.lang.includes('kn-') ? 'bg-yellow-600' :
+                                  voice.lang.includes('ml-') ? 'bg-teal-500' :
+                                  voice.lang.includes('en-in') ? 'bg-sky-500' :
+                                  'bg-slate-500'
+                                }`}>
+                                  {voice.lang.includes('hi-') ? 'हिंदी' :
+                                   voice.lang.includes('mr-') ? 'मराठी' :
+                                   voice.lang.includes('pa-') ? 'ਪੰਜਾਬੀ' :
+                                   voice.lang.includes('gu-') ? 'ગુજરાતી' :
+                                   voice.lang.includes('bn-') ? 'বাংলা' :
+                                   voice.lang.includes('ta-') ? 'தமிழ்' :
+                                   voice.lang.includes('te-') ? 'తెలుగు' :
+                                   voice.lang.includes('kn-') ? 'ಕನ್ನಡ' :
+                                   voice.lang.includes('ml-') ? 'മലയാളം' :
+                                   voice.lang.includes('en-in') ? 'English (IN)' :
+                                   voice.lang.toUpperCase()}
                               </span>
                             </div>
-                            {(voice.lang.includes('hi') || voice.lang.includes('en-IN') || 
-                              voice.name.toLowerCase().includes('indian') || 
-                              voice.name.toLowerCase().includes('hindi')) && (
-                              <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                🇮🇳 Hindi/Indian
-                              </div>
-                            )}
+                              {voice.lang.includes('-in') && (
+                                <span className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center">
+                                  🇮🇳 Indian Regional Voice
+                                </span>
+                              )}
+                            </div>
                           </button>
                         ))}
                       </div>
@@ -1853,10 +2170,10 @@ const Hero = () => {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 10 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="absolute left-0 right-0 top-full mt-3 bg-slate-50/80 dark:bg-slate-900/30 backdrop-blur-sm rounded-2xl z-10"
+        className="absolute left-0 right-0 top-full mt-2 bg-slate-50/80 dark:bg-slate-900/30 backdrop-blur-sm rounded-xl z-10"
         data-tour="suggestions-panel"
       >
-        <div className="p-4 space-y-2">
+        <div className="p-3 space-y-1.5">
           {randomSuggestions.map((suggestion, index) => (
             <motion.button
               key={`${suggestion.id}-${index}`}
@@ -1864,7 +2181,7 @@ const Hero = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.05, duration: 0.2 }}
               onClick={() => onSuggestionClick(suggestion.text)}
-              className="w-full text-left p-3 hover:bg-white/70 dark:hover:bg-slate-800/50 transition-all duration-200 flex items-start rounded-xl group"
+              className="w-full text-left p-2.5 hover:bg-white/70 dark:hover:bg-slate-800/50 transition-all duration-200 flex items-start rounded-lg group"
             >
               <div className="flex items-center mr-3 mt-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
                 {suggestion.category === 'document' ? (
@@ -1874,7 +2191,7 @@ const Hero = () => {
                 )}
               </div>
               <div className="flex-1">
-                <span className="text-sm text-slate-700 dark:text-slate-300 block leading-relaxed group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
+                <span className="text-sm text-slate-700 dark:text-slate-300 block leading-snug group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
                   {suggestion.text}
                 </span>
               </div>
@@ -1907,8 +2224,8 @@ const Hero = () => {
     // Beautiful Professional Voice Icon
     const VoiceIcon = () => (
       <svg 
-        width={isMobile ? "16" : "18"} 
-        height={isMobile ? "16" : "18"} 
+        width={isMobile ? "14" : "16"} 
+        height={isMobile ? "14" : "16"} 
         viewBox="0 0 24 24" 
         fill="none"
         stroke="currentColor"
@@ -1930,7 +2247,7 @@ const Hero = () => {
         onTouchStart={handleClick} // Handle touch as backup
         type="button"
         className={`
-          ${isMobile ? 'w-9 h-9' : 'w-10 h-10'}
+          ${isMobile ? 'w-8 h-8' : 'w-9 h-9'}
           flex items-center justify-center
           rounded-full
           transition-colors duration-200
@@ -2037,7 +2354,7 @@ const Hero = () => {
           whileTap={{ scale: 0.95 }}
           onClick={() => !isLoading && setShowModalDropdown(!showModalDropdown)} // Prevent opening during loading
           disabled={isLoading}
-          className={`flex items-center gap-2 ${isMobile ? 'px-3 py-1.5' : 'px-2.5 py-1'} rounded-lg transition-all duration-200 ${isMobile ? 'text-sm' : 'text-xs'} font-medium border shadow-sm no-select ${isLoading ? 'opacity-50 cursor-not-allowed' : ''} ${
+          className={`flex items-center gap-1.5 ${isMobile ? 'px-2 py-1' : 'px-2 py-0.5'} rounded-md transition-all duration-200 ${isMobile ? 'text-xs' : 'text-xs'} font-medium border shadow-sm no-select ${isLoading ? 'opacity-50 cursor-not-allowed' : ''} ${
             selectedOption?.color === 'violet' 
               ? 'bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300'
               : selectedOption?.color === 'emerald'
@@ -2049,8 +2366,8 @@ const Hero = () => {
               : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
           } ${!isLoading ? 'hover:shadow-md' : ''} z-20`}
         >
-          <div className={`${isMobile ? 'w-4 h-4' : 'w-3 h-3'} flex items-center justify-center`}>
-            {React.cloneElement(selectedOption?.icon, { size: isMobile ? 14 : 11 })}
+          <div className={`${isMobile ? 'w-3 h-3' : 'w-2.5 h-2.5'} flex items-center justify-center`}>
+            {React.cloneElement(selectedOption?.icon, { size: isMobile ? 10 : 9 })}
           </div>
           <span className={`${isMobile ? 'inline' : 'hidden sm:inline'} ${isMobile ? 'text-sm' : 'text-xs'}`}>
             {isMobile ? selectedOption?.label?.split(' ')[0] : selectedOption?.label}
@@ -2064,7 +2381,7 @@ const Hero = () => {
             animate={{ rotate: showModalDropdown ? 180 : 0 }}
             transition={{ duration: 0.2 }}
           >
-            <ChevronDown size={isMobile ? 12 : 9} className="opacity-60" />
+            <ChevronDown size={isMobile ? 10 : 8} className="opacity-60" />
           </motion.div>
         </motion.button>
 
@@ -2362,7 +2679,7 @@ const Hero = () => {
             className={`transition-all duration-500 ease-in-out ${
               chatActive 
                 ? 'h-screen flex flex-col bg-gray-50 dark:bg-slate-900' 
-                : 'py-16 sm:py-20 bg-transparent flex items-center justify-center min-h-[80vh]'
+                : 'py-12 sm:py-16 bg-transparent flex items-center justify-center min-h-[70vh]'
             }`}
           >
             {!chatActive ? (
@@ -2371,16 +2688,16 @@ const Hero = () => {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="flex flex-col items-center text-center max-w-2xl mx-auto"
+                className="flex flex-col items-center text-center max-w-xl mx-auto px-6"
               >
                 {/* Logo/Icon */}
                 <motion.div 
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.2, type: "spring", stiffness: 300, damping: 30 }}
-                  className="mb-8 w-20 h-20 rounded-full bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center shadow-2xl"
+                  className="mb-6 w-16 h-16 rounded-full bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center shadow-lg"
                 >
-                  <Scale size={32} className="text-white" />
+                  <Scale size={24} className="text-white" />
                 </motion.div>
                 
                 {/* Title */}
@@ -2388,7 +2705,7 @@ const Hero = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="text-4xl md:text-5xl font-bold text-slate-800 dark:text-slate-100 mb-4"
+                  className="text-3xl md:text-4xl font-bold text-slate-800 dark:text-slate-100 mb-3"
                 >
                   <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-500 to-sky-600">
                     Mera Bakil
@@ -2399,7 +2716,7 @@ const Hero = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
-                  className="text-xl text-slate-600 dark:text-slate-400 mb-8 leading-relaxed"
+                  className="text-lg text-slate-600 dark:text-slate-400 mb-6 leading-relaxed"
                 >
                  Your AI Legal Assistant for Expert Guidance & Document Generation 
                 </motion.p>
@@ -2410,7 +2727,7 @@ const Hero = () => {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.5 }}
-                    className="mb-8 px-6 py-3 bg-sky-50 dark:bg-sky-900/20 rounded-full flex items-center"
+                    className="mb-6 px-4 py-2.5 bg-sky-50 dark:bg-sky-900/20 rounded-full flex items-center"
                   >
                     <Sparkles size={18} className="text-sky-500 mr-2" />
                     <p className="text-sky-700 dark:text-sky-300 font-medium">
@@ -2439,7 +2756,7 @@ const Hero = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
-                  className="relative mb-8 w-full max-w-2xl"
+                  className="relative mb-6 w-full max-w-xl"
                 >
                   <div className="relative">
                     <input
@@ -2451,13 +2768,13 @@ const Hero = () => {
                       onFocus={handleInputFocus}
                       onBlur={handleInputBlur}
                       placeholder="Ask your legal question..."
-                      className="w-full pl-14 pr-14 py-4 rounded-full border-2 border-slate-200 dark:border-slate-700 focus:outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-500/20 bg-white dark:bg-slate-800 dark:text-slate-100 text-slate-900 text-lg shadow-xl transition-all duration-300"
+                      className="w-full pl-12 pr-12 py-3 rounded-full border-2 border-slate-200 dark:border-slate-700 focus:outline-none focus:border-slate-400 dark:focus:border-slate-500 focus:ring-2 focus:ring-slate-300/20 dark:focus:ring-slate-500/20 bg-white dark:bg-slate-800 dark:text-slate-100 text-slate-900 text-base shadow-lg transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300/20"
                     />
                     
 
                     
                     {/* Clean Voice Button - Fixed Position */}
-                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-30">
+                    <div className="absolute left-2.5 top-1/2 transform -translate-y-1/2 z-30">
                       <CleanVoiceButton 
                         onClick={handleVoiceToggle} 
                         isActive={isVoiceActive || isVoiceModalOpen}
@@ -2465,18 +2782,18 @@ const Hero = () => {
                     </div>
                     
                     {/* Send Button - Fixed Position */}
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <div className="absolute right-2.5 top-1/2 transform -translate-y-1/2">
                       <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={handleSubmit}
                         disabled={!query.trim()}
-                        className={`p-3 rounded-full transition-all duration-200 ${
+                        className={`p-2.5 rounded-full transition-all duration-200 ${
                           !query.trim() 
                             ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed' 
                             : 'bg-gradient-to-r from-sky-500 to-sky-600 text-white hover:shadow-lg shadow-sky-500/25'
                         }`}
                       >
-                        <SendHorizontal size={20} />
+                        <SendHorizontal size={18} />
                       </motion.button>
                     </div>
                   </div>
@@ -2518,7 +2835,7 @@ const Hero = () => {
                       }
                     }, 100);
                   }}
-                  className="px-8 py-4 bg-gradient-to-r from-sky-500 to-sky-600 text-white font-semibold rounded-full shadow-xl hover:shadow-2xl hover:shadow-sky-500/25 transition-all duration-300 flex items-center justify-center text-lg"
+                  className="px-6 py-3 bg-gradient-to-r from-sky-500 to-sky-600 text-white font-semibold rounded-full shadow-lg hover:shadow-xl hover:shadow-sky-500/25 transition-all duration-300 flex items-center justify-center text-base"
                   data-tour="start-consultation"
                 >
                   <MessageSquare size={20} className="mr-2" />
@@ -2535,58 +2852,15 @@ const Hero = () => {
                 transition={{ duration: 0.3 }}
                 className="flex flex-col h-full relative"
               >
-                {/* Clean Centered Header - Hidden on Mobile */}
-                {!isMobile && (
-                  <div className="sticky top-0 z-20 py-6 flex justify-center">
-                    <motion.div 
-                      initial={{ y: -20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ duration: 0.5 }}
-                      className="flex items-center gap-4"
-                    >
-                      {/* Status Indicator */}
-                      <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></div>
-                      
-                      {/* Greeting Text */}
-                      <div className="flex items-center gap-3">
-                        <Scale size={22} className="text-sky-600 dark:text-sky-400" />
-                        <span className="text-slate-800 dark:text-slate-200 font-semibold text-base">
-                          {new Date().getHours() < 12 ? 'Good Morning' : 
-                           new Date().getHours() < 17 ? 'Good Afternoon' : 'Good Evening'}
-                        </span>
-                      </div>
-                      
-                      {/* Date Badge */}
-                      <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full">
-                        <Calendar size={12} className="text-slate-500" />
-                        <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                          {new Date().toLocaleDateString('en-US', {
-                            weekday: 'short',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </span>
-                      </div>
-
-                      {/* Free Questions Counter */}
-                      {!checkAuthStatus() && (
-                        <div className="flex items-center gap-2 px-3 py-1 bg-sky-50 dark:bg-sky-900/20 rounded-full">
-                          <Bell size={12} className="text-sky-500" />
-                          <span className="text-xs text-sky-600 dark:text-sky-300 font-medium">
-                            {API_CONFIG.FREE_REQUEST_LIMIT - requestCount} free left
-                          </span>
-                        </div>
-                      )}
-                    </motion.div>
-                  </div>
-                )}
 
                 {/* Chat Messages Area - Full Height */}
                 <div
                   ref={chatContainerRef}
                   onScroll={handleChatScroll}
-                  className={`flex-1 overflow-y-auto px-6 pb-32 space-y-6 chat-container hero-chat-container ${
-                    isMobile ? 'pt-20' : 'pt-2'
+                  className={`flex-1 overflow-y-auto px-4 pb-32 space-y-4 chat-container hero-chat-container ${
+                    messages.length === 1 && messages[0]?.type === 'greeting' 
+                      ? (isMobile ? 'pt-2' : 'pt-4') 
+                      : (isMobile ? 'pt-4' : 'pt-4')
                   }`}
                   data-tour="chat-container"
                   style={{ 
@@ -2595,8 +2869,8 @@ const Hero = () => {
                     WebkitScrollbar: { display: 'none' }
                   }}
                 >
-                  {/* Initial Welcome Message */}
-                  {messages.length === 0 && (
+                  {/* Messages will appear here */}
+                  {false && (
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -2878,7 +3152,7 @@ const Hero = () => {
                 
                 {/* Professional Input Area - Mobile App Style with Enhanced Positioning */}
                 <div 
-                  className={`mt-auto ${isMobile ? 'p-4 pb-2' : 'p-4 sm:p-6 pb-16 sm:pb-20'} bg-gray-50 dark:bg-slate-900 border-t border-slate-200/50 dark:border-slate-700/50 ${
+                  className={`mt-auto ${isMobile ? 'p-4 pb-2' : 'p-4 sm:p-6 pb-16 sm:pb-20'} bg-gray-50 dark:bg-slate-900 ${
                     isMobile && keyboardVisible ? 'mobile-input-elevated' : ''
                   }`}
                   style={isMobile ? {
@@ -2919,7 +3193,66 @@ const Hero = () => {
                     )}
                     
                     {/* Robust Input Container */}
-                    <div className="relative">
+                    <div 
+                      className={`relative ${isDragOver ? 'ring-2 ring-slate-400 dark:ring-slate-500 ring-offset-2 rounded-2xl' : ''}`}
+                      onDrop={handleFileDrop}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                    >
+                      {/* Uploaded Files Preview */}
+                      {uploadedFiles.length > 0 && (
+                        <div className="mb-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                          <div className="flex items-center gap-2 mb-2">
+                            <FileText size={14} className="text-slate-500" />
+                            <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                              {uploadedFiles.length} file{uploadedFiles.length > 1 ? 's' : ''} attached
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {uploadedFiles.map((file) => (
+                              <div
+                                key={file.id}
+                                className="flex items-center gap-2 bg-white dark:bg-slate-700 rounded-lg p-2 border border-slate-200 dark:border-slate-600 group hover:border-slate-300 dark:hover:border-slate-500 transition-colors"
+                              >
+                                {/* File Icon or Preview */}
+                                <div className="flex-shrink-0">
+                                  {file.preview ? (
+                                    <img
+                                      src={file.preview}
+                                      alt={file.name}
+                                      className="w-6 h-6 rounded object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-6 h-6 rounded bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center">
+                                      <FileText size={12} className="text-sky-600 dark:text-sky-400" />
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* File Info */}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">
+                                    {file.name}
+                                  </p>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    {(file.size / 1024).toFixed(1)} KB
+                                  </p>
+                                </div>
+                                
+                                {/* Remove Button */}
+                                <button
+                                  onClick={() => removeFile(file.id)}
+                                  className="flex-shrink-0 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors opacity-0 group-hover:opacity-100"
+                                  title="Remove file"
+                                >
+                                  <X size={12} className="text-slate-500 dark:text-slate-400" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
                       {/* Main Input Field - Fixed Sizing */}
                       <div className="relative">
                         <motion.textarea
@@ -2933,7 +3266,7 @@ const Hero = () => {
                           data-tour="chat-input"
                           rows={1}
                           disabled={isLoading || isTyping} // Disable during processing
-                          className={`w-full ${isMobile ? 'pl-14 pr-20 py-4 pb-14 mobile-input mobile-app-input mobile-keyboard-transition' : 'pl-12 pr-24 py-3 pb-12'} rounded-2xl border ${isMobile ? 'border-2' : 'border'} border-slate-200 dark:border-slate-700 focus:outline-none focus:border-sky-400 dark:focus:border-sky-500 bg-white dark:bg-slate-800 dark:text-slate-100 text-slate-900 resize-none transition-all duration-300 ${isMobile ? 'text-base' : 'text-base'} leading-relaxed overflow-y-auto scrollbar-hide ${(isLoading || isTyping) ? 'opacity-75 cursor-not-allowed input-loading-lock' : ''} ${
+                          className={`w-full ${isMobile ? 'pl-14 pr-20 py-4 pb-14 mobile-input mobile-app-input mobile-keyboard-transition' : 'pl-12 pr-24 py-3 pb-12'} rounded-2xl border ${isMobile ? 'border-2' : 'border'} border-slate-200 dark:border-slate-700 focus:outline-none focus:border-slate-400 dark:focus:border-slate-500 focus:ring-2 focus:ring-slate-300/20 dark:focus:ring-slate-500/20 bg-white dark:bg-slate-800 dark:text-slate-100 text-slate-900 resize-none transition-all duration-300 ${isMobile ? 'text-base' : 'text-base'} leading-relaxed overflow-y-auto scrollbar-hide ${(isLoading || isTyping) ? 'opacity-75 cursor-not-allowed input-loading-lock' : ''} ${
                             isMobile && keyboardVisible && mobileInputFocused ? 'mobile-input-keyboard-focus' : ''
                           }`}
                           style={{ 
@@ -2976,19 +3309,35 @@ const Hero = () => {
                           {/* Upload Icon - Mobile Compact */}
                           <motion.button
                             whileTap={{ scale: 0.95 }}
-                            className={`${isMobile ? 'p-2' : 'p-2'} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors no-select`}
+                            onClick={() => document.getElementById('file-upload').click()}
+                            className={`${isMobile ? 'p-2' : 'p-2'} rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors no-select relative`}
                             title="Upload Document"
                           >
                             <Upload size={isMobile ? 16 : 16} className="text-slate-500 dark:text-slate-400 hover:text-sky-500" />
+                            {uploadedFiles.length > 0 && (
+                              <div className="absolute -top-1 -right-1 w-4 h-4 bg-sky-500 text-white rounded-full flex items-center justify-center text-xs font-medium">
+                                {uploadedFiles.length}
+                              </div>
+                            )}
                           </motion.button>
+                          
+                          {/* Hidden File Input */}
+                          <input
+                            id="file-upload"
+                            type="file"
+                            multiple
+                            accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+                            onChange={(e) => handleFileUpload(e.target.files)}
+                            className="hidden"
+                          />
                           
                           {/* Send Button - Mobile Priority */}
                           <motion.button
                             whileTap={{ scale: 0.95 }}
                             onClick={handleSubmit}
-                            disabled={isLoading || !query.trim()}
+                            disabled={isLoading || (!query.trim() && uploadedFiles.length === 0)}
                             className={`${isMobile ? 'p-2.5' : 'p-2.5'} rounded-full transition-all duration-200 ml-0.5 no-select ${
-                              isLoading || !query.trim() 
+                              isLoading || (!query.trim() && uploadedFiles.length === 0) 
                                 ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed' 
                                 : `bg-gradient-to-r from-sky-500 to-sky-600 text-white hover:shadow-lg shadow-sky-500/25 hover:scale-105 ${isMobile ? 'shadow-xl' : ''}`
                             }`}
@@ -3020,6 +3369,16 @@ const Hero = () => {
                         </div>
                       </div>
                       
+                      {/* Drag Overlay */}
+                      {isDragOver && (
+                        <div className="absolute inset-0 bg-slate-50/90 dark:bg-slate-800/80 border-2 border-dashed border-slate-400 dark:border-slate-500 rounded-2xl flex items-center justify-center z-50">
+                          <div className="text-center">
+                            <Upload size={32} className="text-slate-600 dark:text-slate-400 mx-auto mb-2" />
+                            <p className="text-slate-700 dark:text-slate-300 font-medium">Drop files here</p>
+                            <p className="text-xs text-slate-500 mt-1">PDF, DOC, TXT, Images</p>
+                          </div>
+                        </div>
+                      )}
 
 
                       {/* Desktop Status Indicators - Only for Desktop */}
