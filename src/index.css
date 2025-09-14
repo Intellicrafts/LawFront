@@ -2,6 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Instagram-style scrollbar hiding */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Premium animations for reels */
+@keyframes heartPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.heart-pulse {
+  animation: heartPulse 0.6s ease-in-out;
+}
+
+/* Snap scroll behavior for reels */
+.snap-container {
+  scroll-snap-type: y mandatory;
+}
+
+.snap-item {
+  scroll-snap-align: start;
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
 /* Leaflet CSS */
 @import 'leaflet/dist/leaflet.css';
 

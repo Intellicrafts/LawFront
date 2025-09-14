@@ -316,36 +316,35 @@ const DocumentReview = () => {
 
   // Document Analysis Component
   const DocumentAnalysisTab = () => (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* AI Document Analyzer Header */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-6"
+        className="text-center space-y-4"
       >
         <div className="flex justify-center">
           <div className="relative">
-            <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-xl">
-              <Brain size={32} className="text-white" />
+            <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
+              <Brain size={28} className="text-white" />
                 </div>
-            <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-              <Sparkles size={16} className="text-white" />
+            <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+              <Sparkles size={12} className="text-white" />
             </div>
         </div>
       </div>
         
-        <div className="space-y-2">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
             AI Legal Document Analyzer
           </h2>
-          <p className={`${isDark ? 'text-dark-text-secondary' : 'text-slate-600'} max-w-2xl mx-auto text-lg transition-colors duration-300`}>
-            Upload your legal document and get instant AI-powered analysis with recommendations, 
-            risk assessment, and compliance checks.
+          <p className={`${isDark ? 'text-dark-text-secondary' : 'text-slate-600'} max-w-xl mx-auto text-sm transition-colors duration-300`}>
+            Upload your legal documents for instant AI-powered analysis
               </p>
             </div>
 
         {/* Features Pills */}
-        <div className="flex flex-wrap justify-center gap-3">
+        <div className="flex flex-wrap justify-center gap-2">
           {[
             { icon: Zap, text: "Instant Analysis" },
             { icon: Shield, text: "Risk Assessment" },
@@ -357,14 +356,14 @@ const DocumentReview = () => {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.1 }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full border shadow-sm transition-colors duration-300 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border shadow-sm transition-colors duration-300 ${
                 isDark 
                   ? 'bg-gradient-to-r from-dark-bg-secondary to-dark-bg-tertiary border-dark-border'
                   : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'
               }`}
             >
-              <feature.icon size={16} className="text-indigo-600" />
-              <span className={`text-sm font-medium ${isDark ? 'text-dark-text-secondary' : 'text-slate-700'} transition-colors duration-300`}>{feature.text}</span>
+              <feature.icon size={14} className="text-indigo-600" />
+              <span className={`text-xs font-medium ${isDark ? 'text-dark-text-secondary' : 'text-slate-700'} transition-colors duration-300`}>{feature.text}</span>
             </motion.div>
           ))}
           </div>
@@ -376,13 +375,13 @@ const DocumentReview = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="max-w-4xl mx-auto"
+          className="max-w-3xl mx-auto"
         >
           <div
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
-            className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 ${
+            className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${
               dragOver 
                 ? 'border-indigo-400 scale-105'
                 : isDark
@@ -404,20 +403,20 @@ const DocumentReview = () => {
               className="hidden"
             />
             
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="flex justify-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <Upload size={32} className="text-white" />
+                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center shadow-md">
+                  <Upload size={24} className="text-white" />
                 </div>
             </div>
 
-              <div className="space-y-2">
-                <h3 className={`text-xl font-semibold transition-colors duration-300 ${
+              <div className="space-y-1">
+                <h3 className={`text-lg font-semibold transition-colors duration-300 ${
                   isDark ? 'text-dark-text' : 'text-slate-800'
                 }`}>
                   Drop your legal document here
                 </h3>
-                <p className={`transition-colors duration-300 ${
+                <p className={`text-sm transition-colors duration-300 ${
                   isDark ? 'text-dark-text-secondary' : 'text-slate-600'
                 }`}>
                   or <button 
@@ -429,19 +428,19 @@ const DocumentReview = () => {
                 </p>
                 </div>
                 
-                <div className={`flex flex-wrap justify-center gap-2 text-sm transition-colors duration-300 ${
+              <div className={`flex flex-wrap justify-center gap-1.5 text-xs transition-colors duration-300 ${
                   isDark ? 'text-dark-text-muted' : 'text-slate-500'
                 }`}>
-                <span className={`px-3 py-1 rounded-full border transition-colors duration-300 ${
+                <span className={`px-2 py-1 rounded-full border transition-colors duration-300 ${
                   isDark ? 'bg-dark-bg-tertiary border-dark-border text-dark-text-secondary' : 'bg-white border-slate-200 text-slate-600'
                 }`}>PDF</span>
-                <span className={`px-3 py-1 rounded-full border transition-colors duration-300 ${
+                <span className={`px-2 py-1 rounded-full border transition-colors duration-300 ${
                   isDark ? 'bg-dark-bg-tertiary border-dark-border text-dark-text-secondary' : 'bg-white border-slate-200 text-slate-600'
                 }`}>DOC</span>
-                <span className={`px-3 py-1 rounded-full border transition-colors duration-300 ${
+                <span className={`px-2 py-1 rounded-full border transition-colors duration-300 ${
                   isDark ? 'bg-dark-bg-tertiary border-dark-border text-dark-text-secondary' : 'bg-white border-slate-200 text-slate-600'
                 }`}>DOCX</span>
-                <span className={`px-3 py-1 rounded-full border transition-colors duration-300 ${
+                <span className={`px-2 py-1 rounded-full border transition-colors duration-300 ${
                   isDark ? 'bg-dark-bg-tertiary border-dark-border text-dark-text-secondary' : 'bg-white border-slate-200 text-slate-600'
                 }`}>TXT</span>
                   </div>
@@ -455,21 +454,21 @@ const DocumentReview = () => {
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="max-w-3xl mx-auto"
+          className="max-w-2xl mx-auto"
         >
-          <div className={`rounded-2xl shadow-xl border p-8 transition-colors duration-300 ${
+          <div className={`rounded-xl shadow-lg border p-6 transition-colors duration-300 ${
             isDark ? 'bg-dark-bg-secondary border-dark-border' : 'bg-white border-slate-200'
           }`}>
-            <div className="text-center space-y-6">
+            <div className="text-center space-y-4">
               {/* AI Brain Animation */}
               <div className="flex justify-center">
                 <div className="relative">
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                    className="w-20 h-20 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-xl"
+                    className="w-16 h-16 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg"
                   >
-                    <Brain size={32} className="text-white" />
+                    <Brain size={28} className="text-white" />
                   </motion.div>
                   
                   {/* Floating particles */}
@@ -477,7 +476,7 @@ const DocumentReview = () => {
                     <motion.div
                       key={i}
                       animate={{
-                        y: [-10, -30, -10],
+                        y: [-8, -24, -8],
                         opacity: [0.3, 1, 0.3],
                         scale: [0.5, 1, 0.5]
                       }}
@@ -487,7 +486,7 @@ const DocumentReview = () => {
                         delay: i * 0.5,
                         ease: "easeInOut"
                       }}
-                      className="absolute w-2 h-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full"
+                      className="absolute w-1.5 h-1.5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full"
                       style={{
                         top: `${20 + i * 15}%`,
                         left: `${30 + i * 20}%`
@@ -497,19 +496,21 @@ const DocumentReview = () => {
               </div>
             </div>
 
-              <div className="space-y-4">
-                <h3 className={`text-xl font-semibold transition-colors duration-300 ${
+              <div className="space-y-3">
+                <h3 className={`text-lg font-semibold transition-colors duration-300 ${
                   isDark ? 'text-dark-text' : 'text-slate-800'
                 }`}>
                   Analyzing Your Document
                           </h3>
                 
-                <p className="text-indigo-600 font-medium">
+                <p className="text-indigo-600 font-medium text-sm">
                   {analysisStage}
                 </p>
 
                 {/* Progress Bar */}
-                <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                <div className={`w-full rounded-full h-1.5 overflow-hidden ${
+                  isDark ? 'bg-dark-bg-tertiary' : 'bg-slate-200'
+                }`}>
                   <motion.div
                     className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"
                     initial={{ width: 0 }}
@@ -518,7 +519,7 @@ const DocumentReview = () => {
                   />
                           </div>
                           
-                <p className={`text-sm transition-colors duration-300 ${
+                <p className={`text-xs transition-colors duration-300 ${
                   isDark ? 'text-dark-text-secondary' : 'text-slate-600'
                 }`}>
                   {Math.round(analysisProgress)}% Complete
@@ -526,7 +527,7 @@ const DocumentReview = () => {
                         </div>
 
               {/* Processing Features */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
                 {[
                   { icon: FileCheck, text: "Content Scan" },
                   { icon: Shield, text: "Risk Analysis" },
@@ -538,16 +539,16 @@ const DocumentReview = () => {
                     initial={{ opacity: 0.3 }}
                     animate={{ 
                       opacity: analysisProgress > (index + 1) * 25 ? 1 : 0.3,
-                      scale: analysisProgress > (index + 1) * 25 ? 1.05 : 1
+                      scale: analysisProgress > (index + 1) * 25 ? 1.02 : 1
                     }}
-                    className="space-y-2"
+                    className="space-y-1"
                   >
-                    <div className={`w-8 h-8 mx-auto rounded-lg flex items-center justify-center ${
+                    <div className={`w-6 h-6 mx-auto rounded-lg flex items-center justify-center ${
                       analysisProgress > (index + 1) * 25 
                         ? 'bg-gradient-to-br from-indigo-500 to-purple-500 text-white' 
-                        : 'bg-slate-200 text-slate-400'
+                        : isDark ? 'bg-dark-bg-tertiary text-slate-400' : 'bg-slate-200 text-slate-400'
                     }`}>
-                      <feature.icon size={16} />
+                      <feature.icon size={12} />
                     </div>
                     <p className={`text-xs font-medium transition-colors duration-300 ${
                       isDark ? 'text-dark-text-secondary' : 'text-slate-600'
@@ -800,24 +801,26 @@ const DocumentReview = () => {
 
   // Document Bucket Component
   const DocumentBucketTab = () => (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-4"
+        className="text-center space-y-3"
       >
         <div className="flex justify-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center shadow-xl">
-            <Upload size={32} className="text-white" />
+          <div className="w-16 h-16 bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
+            <Upload size={28} className="text-white" />
           </div>
         </div>
-        <div className="space-y-2">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
             Document Bucket
           </h2>
-          <p className={`${isDark ? 'text-dark-text-secondary' : 'text-slate-600'} max-w-2xl mx-auto text-lg transition-colors duration-300`}>
-            View all uploaded documents, send them for AI analysis or lawyer review.
+          <p className={`text-sm transition-colors duration-300 ${
+            isDark ? 'text-dark-text-secondary' : 'text-slate-600'
+          }`}>
+            Manage your uploaded documents
           </p>
         </div>
       </motion.div>
@@ -827,9 +830,9 @@ const DocumentReview = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className={`${isDark ? 'bg-dark-bg-secondary border-dark-border' : 'bg-white border-slate-200'} rounded-2xl shadow-xl border p-6 transition-colors duration-300`}
+        className={`${isDark ? 'bg-dark-bg-secondary border-dark-border' : 'bg-white border-slate-200'} rounded-xl shadow-lg border p-4 transition-colors duration-300`}
       >
-        <h3 className={`text-lg font-semibold mb-4 transition-colors duration-300 ${
+        <h3 className={`text-base font-semibold mb-3 transition-colors duration-300 ${
           isDark ? 'text-dark-text' : 'text-slate-800'
         }`}>Upload New Document</h3>
         
@@ -837,7 +840,7 @@ const DocumentReview = () => {
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
-          className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 cursor-pointer ${
+          className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-300 cursor-pointer ${
             dragOver 
               ? 'border-indigo-400 scale-[1.02]'
               : isDark
@@ -860,18 +863,18 @@ const DocumentReview = () => {
             className="hidden"
           />
           
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex justify-center">
-              <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center">
-                <Upload size={24} className="text-white" />
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center">
+                <Upload size={20} className="text-white" />
               </div>
             </div>
-            <p className={`font-medium transition-colors duration-300 ${
+            <p className={`text-sm font-medium transition-colors duration-300 ${
               isDark ? 'text-dark-text' : 'text-slate-800'
             }`}>
               Drop files here or click to browse
             </p>
-            <p className={`text-sm transition-colors duration-300 ${
+            <p className={`text-xs transition-colors duration-300 ${
               isDark ? 'text-dark-text-muted' : 'text-slate-500'
             }`}>
               PDF, DOC, DOCX, TXT files supported
@@ -885,13 +888,13 @@ const DocumentReview = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="space-y-4"
+        className="space-y-3"
       >
-        <h3 className={`text-xl font-bold transition-colors duration-300 ${
+        <h3 className={`text-lg font-bold transition-colors duration-300 ${
           isDark ? 'text-dark-text' : 'text-slate-800'
         }`}>Your Documents ({documentBucket.length})</h3>
         
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {documentBucket.map((doc, index) => {
             const Icon = doc.icon;
             return (
@@ -1376,62 +1379,62 @@ const DocumentReview = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -5, scale: 1.02 }}
+      whileHover={{ y: -2, scale: 1.01 }}
       transition={{ duration: 0.3 }}
-      className={`relative rounded-2xl shadow-xl border-2 transition-all duration-300 overflow-hidden ${
+      className={`relative rounded-xl shadow-lg border transition-all duration-300 overflow-hidden ${
         isDark ? 'bg-dark-bg-secondary border-dark-border' : 'bg-white border-slate-200'
       } ${
-        isSelected ? 'border-indigo-500 ring-4 ring-indigo-100' : isDark ? 'hover:border-indigo-400' : 'hover:border-indigo-300'
+        isSelected ? 'border-indigo-500 ring-2 ring-indigo-100' : isDark ? 'hover:border-indigo-400' : 'hover:border-indigo-300'
       }`}
       onClick={() => setSelectedLawyer(lawyer)}
     >
       {/* Premium Badge */}
       {lawyer.badges.includes("Senior Partner") && (
-        <div className="absolute top-4 right-4 z-10">
-          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+        <div className="absolute top-3 right-3 z-10">
+          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-md">
             PREMIUM
             </div>
           </div>
         )}
 
-      <div className="p-6">
+      <div className="p-4">
         {/* Header */}
-        <div className="flex items-start gap-4 mb-4">
+        <div className="flex items-start gap-3 mb-3">
           <div className="relative">
             <img
               src={lawyer.avatar}
               alt={lawyer.name}
-              className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-lg"
+              className="w-12 h-12 rounded-lg object-cover border-2 border-white shadow-md"
             />
             {lawyer.verified && (
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center border-2 border-white">
-                <CheckCircle size={12} className="text-white" />
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center border-2 border-white">
+                <CheckCircle size={8} className="text-white" />
                   </div>
             )}
                 </div>
           
           <div className="flex-1 min-w-0">
-            <h3 className={`text-lg font-bold truncate transition-colors duration-300 ${
+            <h3 className={`text-base font-bold truncate transition-colors duration-300 ${
               isDark ? 'text-dark-text' : 'text-slate-800'
             }`}>{lawyer.name}</h3>
-            <p className="text-indigo-600 font-medium text-sm">{lawyer.specialization}</p>
+            <p className="text-indigo-600 font-medium text-xs">{lawyer.specialization}</p>
             
             {/* Rating */}
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-1.5 mt-1">
               <div className="flex items-center gap-1">
-                <Star size={14} className="text-yellow-400 fill-current" />
-                <span className="text-sm font-semibold text-slate-700">{lawyer.rating}</span>
+                <Star size={12} className="text-yellow-400 fill-current" />
+                <span className="text-xs font-semibold text-slate-700">{lawyer.rating}</span>
               </div>
               <span className={`text-xs transition-colors duration-300 ${
                 isDark ? 'text-dark-text-muted' : 'text-slate-500'
-              }`}>({lawyer.reviews} reviews)</span>
+              }`}>({lawyer.reviews})</span>
             </div>
                 </div>
               </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className={`rounded-xl p-3 border transition-colors duration-300 ${
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <div className={`rounded-lg p-2 border transition-colors duration-300 ${
             isDark 
               ? 'bg-gradient-to-br from-blue-900/20 to-indigo-900/20 border-blue-800/30' 
               : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200'
@@ -1439,12 +1442,12 @@ const DocumentReview = () => {
             <div className={`text-xs font-medium transition-colors duration-300 ${
               isDark ? 'text-blue-400' : 'text-blue-600'
             }`}>Experience</div>
-            <div className={`text-lg font-bold transition-colors duration-300 ${
+            <div className={`text-sm font-bold transition-colors duration-300 ${
               isDark ? 'text-blue-300' : 'text-blue-700'
             }`}>{lawyer.experience}+ yrs</div>
                   </div>
           
-          <div className={`rounded-xl p-3 border transition-colors duration-300 ${
+          <div className={`rounded-lg p-2 border transition-colors duration-300 ${
             isDark 
               ? 'bg-gradient-to-br from-green-900/20 to-emerald-900/20 border-green-800/30' 
               : 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200'
@@ -1452,7 +1455,7 @@ const DocumentReview = () => {
             <div className={`text-xs font-medium transition-colors duration-300 ${
               isDark ? 'text-green-400' : 'text-green-600'
             }`}>Success Rate</div>
-            <div className={`text-lg font-bold transition-colors duration-300 ${
+            <div className={`text-sm font-bold transition-colors duration-300 ${
               isDark ? 'text-green-300' : 'text-green-700'
             }`}>{lawyer.successRate}%</div>
                       </div>
@@ -1535,30 +1538,32 @@ const DocumentReview = () => {
 
   // Legal Services Component
   const LegalServicesTab = () => (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-4"
+        className="text-center space-y-3"
       >
         <div className="flex justify-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-xl">
-            <Briefcase size={32} className="text-white" />
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
+            <Briefcase size={28} className="text-white" />
           </div>
         </div>
-        <div className="space-y-2">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 bg-clip-text text-transparent">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 bg-clip-text text-transparent">
             Legal Services
           </h2>
-          <p className={`${isDark ? 'text-dark-text-secondary' : 'text-slate-600'} max-w-2xl mx-auto text-lg transition-colors duration-300`}>
-            Professional legal services for document creation, review, and contract management.
+          <p className={`text-sm transition-colors duration-300 ${
+            isDark ? 'text-dark-text-secondary' : 'text-slate-600'
+          }`}>
+            Professional legal services for your business
           </p>
         </div>
       </motion.div>
 
       {/* Services Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
           {
             id: 1,
@@ -1623,38 +1628,38 @@ const DocumentReview = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className={`${isDark ? 'bg-dark-bg-secondary border-dark-border' : 'bg-white border-slate-200'} rounded-2xl shadow-xl border p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 relative overflow-hidden`}
+              className={`${isDark ? 'bg-dark-bg-secondary border-dark-border' : 'bg-white border-slate-200'} rounded-xl shadow-lg border p-4 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 relative overflow-hidden`}
             >
               {service.popular && (
-                <div className="absolute top-4 right-4">
-                  <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                <div className="absolute top-3 right-3">
+                  <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold">
                     POPULAR
                   </div>
                 </div>
               )}
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {/* Service Icon */}
-                <div className={`w-16 h-16 bg-gradient-to-br ${service.gradient} rounded-2xl flex items-center justify-center shadow-lg`}>
-                  <Icon size={32} className="text-white" />
+                <div className={`w-12 h-12 bg-gradient-to-br ${service.gradient} rounded-lg flex items-center justify-center shadow-md`}>
+                  <Icon size={24} className="text-white" />
                 </div>
 
                 {/* Service Info */}
-                <div className="space-y-2">
-                  <h3 className={`text-xl font-bold transition-colors duration-300 ${
+                <div className="space-y-1">
+                  <h3 className={`text-base font-bold transition-colors duration-300 ${
                     isDark ? 'text-dark-text' : 'text-slate-800'
                   }`}>{service.title}</h3>
-                  <p className={`text-sm transition-colors duration-300 ${
+                  <p className={`text-xs transition-colors duration-300 ${
                     isDark ? 'text-dark-text-secondary' : 'text-slate-600'
                   }`}>{service.description}</p>
                 </div>
 
                 {/* Features */}
-                <div className="space-y-2">
-                  {service.features.map((feature, idx) => (
+                <div className="space-y-1">
+                  {service.features.slice(0, 3).map((feature, idx) => (
                     <div key={idx} className="flex items-center gap-2">
-                      <div className={`w-1.5 h-1.5 bg-gradient-to-r ${service.gradient} rounded-full`}></div>
-                      <span className={`text-sm transition-colors duration-300 ${
+                      <div className={`w-1 h-1 bg-gradient-to-r ${service.gradient} rounded-full`}></div>
+                      <span className={`text-xs transition-colors duration-300 ${
                         isDark ? 'text-dark-text-tertiary' : 'text-slate-500'
                       }`}>{feature}</span>
                     </div>
@@ -1662,9 +1667,9 @@ const DocumentReview = () => {
                 </div>
 
                 {/* Price & Action */}
-                <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-dark-border">
-                  <div className="space-y-1">
-                    <div className={`text-2xl font-bold bg-gradient-to-r ${service.gradient} bg-clip-text text-transparent`}>
+                <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-dark-border">
+                  <div className="space-y-0.5">
+                    <div className={`text-lg font-bold bg-gradient-to-r ${service.gradient} bg-clip-text text-transparent`}>
                       {service.price}
                     </div>
                     <div className={`text-xs transition-colors duration-300 ${
@@ -1673,7 +1678,7 @@ const DocumentReview = () => {
                   </div>
                   <button 
                     onClick={() => setSelectedService(service)}
-                    className={`px-4 py-2 bg-gradient-to-r ${service.gradient} text-white rounded-xl font-medium hover:shadow-lg transition-all duration-200 transform hover:scale-105`}
+                    className={`px-3 py-1.5 bg-gradient-to-r ${service.gradient} text-white rounded-lg text-sm font-medium hover:shadow-md transition-all duration-200 transform hover:scale-105`}
                   >
                     Get Started
                   </button>
@@ -1689,7 +1694,7 @@ const DocumentReview = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6 }}
-        className={`${isDark ? 'bg-dark-bg-secondary border-dark-border' : 'bg-white border-slate-200'} rounded-2xl shadow-xl border p-8 text-center transition-colors duration-300`}
+        className={`${isDark ? 'bg-dark-bg-secondary border-dark-border' : 'bg-white border-slate-200'} rounded-xl shadow-lg border p-6 text-center transition-colors duration-300`}
       >
         <div className="space-y-4">
           <h3 className={`text-2xl font-bold transition-colors duration-300 ${
@@ -1710,30 +1715,32 @@ const DocumentReview = () => {
 
   // My Cases Component
   const MyCasesTab = () => (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-4"
+        className="text-center space-y-3"
       >
         <div className="flex justify-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-xl">
-            <FileText size={32} className="text-white" />
+          <div className="w-16 h-16 bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
+            <FileText size={28} className="text-white" />
           </div>
         </div>
-        <div className="space-y-2">
-          <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 bg-clip-text text-transparent">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 bg-clip-text text-transparent">
             My Cases & History
           </h2>
-          <p className={`${isDark ? 'text-dark-text-secondary' : 'text-slate-600'} max-w-2xl mx-auto text-lg transition-colors duration-300`}>
-            Track your legal cases, document reviews, and history of all legal services.
+          <p className={`text-sm transition-colors duration-300 ${
+            isDark ? 'text-dark-text-secondary' : 'text-slate-600'
+          }`}>
+            Track your legal cases and document reviews
           </p>
         </div>
       </motion.div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { title: "Total Cases", value: myCases.length, icon: FileText, color: "from-blue-500 to-cyan-500" },
           { title: "Completed", value: myCases.filter(c => c.status === 'completed').length, icon: CheckCircle, color: "from-green-500 to-emerald-500" },
@@ -1747,17 +1754,17 @@ const DocumentReview = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className={`${isDark ? 'bg-dark-bg-secondary border-dark-border' : 'bg-white border-slate-200'} rounded-2xl shadow-xl border p-6 transition-colors duration-300`}
+              className={`${isDark ? 'bg-dark-bg-secondary border-dark-border' : 'bg-white border-slate-200'} rounded-xl shadow-lg border p-3 transition-colors duration-300`}
             >
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center`}>
-                  <Icon size={24} className="text-white" />
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 bg-gradient-to-br ${stat.color} rounded-lg flex items-center justify-center`}>
+                  <Icon size={20} className="text-white" />
                 </div>
                 <div>
-                  <div className={`text-2xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
+                  <div className={`text-xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
                     {stat.value}
                   </div>
-                  <div className={`text-sm font-medium transition-colors duration-300 ${
+                  <div className={`text-xs font-medium transition-colors duration-300 ${
                     isDark ? 'text-dark-text-secondary' : 'text-slate-600'
                   }`}>{stat.title}</div>
                 </div>
@@ -1772,13 +1779,13 @@ const DocumentReview = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="space-y-6"
+        className="space-y-4"
       >
-        <h3 className={`text-xl font-bold transition-colors duration-300 ${
+        <h3 className={`text-lg font-bold transition-colors duration-300 ${
           isDark ? 'text-dark-text' : 'text-slate-800'
         }`}>Recent Cases</h3>
         
-        <div className="space-y-4">
+        <div className="space-y-3">
           {myCases.map((case_, index) => {
             const Icon = case_.icon;
             return (
@@ -1787,29 +1794,29 @@ const DocumentReview = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className={`${isDark ? 'bg-dark-bg-secondary border-dark-border' : 'bg-white border-slate-200'} rounded-2xl shadow-lg border p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1`}
+                className={`${isDark ? 'bg-dark-bg-secondary border-dark-border' : 'bg-white border-slate-200'} rounded-xl shadow-lg border p-4 transition-all duration-300 hover:shadow-xl hover:-translate-y-1`}
               >
                 <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4">
-                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
+                  <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                       case_.status === 'completed' ? 'bg-gradient-to-br from-green-500 to-emerald-500' :
                       case_.status === 'in-progress' ? 'bg-gradient-to-br from-yellow-500 to-orange-500' :
                       'bg-gradient-to-br from-slate-500 to-slate-600'
                     }`}>
-                      <Icon size={28} className="text-white" />
+                      <Icon size={20} className="text-white" />
                     </div>
                     
                     <div className="flex-1">
-                      <h4 className={`text-lg font-bold transition-colors duration-300 ${
+                      <h4 className={`text-base font-bold transition-colors duration-300 ${
                         isDark ? 'text-dark-text' : 'text-slate-800'
                       }`}>{case_.title}</h4>
-                      <p className={`text-sm transition-colors duration-300 ${
+                      <p className={`text-xs transition-colors duration-300 ${
                         isDark ? 'text-dark-text-secondary' : 'text-slate-600'
                       } mb-2`}>{case_.description}</p>
                       
-                      <div className="flex items-center gap-4 text-sm">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${
+                      <div className="flex items-center gap-3 text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <div className={`w-1.5 h-1.5 rounded-full ${
                             case_.status === 'completed' ? 'bg-green-500' :
                             case_.status === 'in-progress' ? 'bg-yellow-500' : 'bg-slate-500'
                           }`}></div>
@@ -1885,13 +1892,13 @@ const DocumentReview = () => {
 
   // Main Navigation Tabs
   const NavigationTabs = () => (
-    <div className={`${isDark ? 'bg-dark-bg-secondary border-dark-border' : 'bg-white border-slate-200'} rounded-2xl shadow-xl border p-2 mb-8 transition-colors duration-300`}>
+    <div className={`${isDark ? 'bg-dark-bg-secondary border-dark-border' : 'bg-white border-slate-200'} rounded-xl shadow-lg border p-1 mb-6 transition-colors duration-300`}>
       <div className="flex space-x-1">
         {[
-          { id: 'analyze', label: 'AI Document Analyzer', icon: Brain, gradient: 'from-indigo-500 to-purple-500' },
-          { id: 'bucket', label: 'Document Bucket', icon: Upload, gradient: 'from-violet-500 to-purple-500' },
-          { id: 'lawyers', label: 'Expert Lawyers', icon: Users, gradient: 'from-emerald-500 to-green-500' },
-          { id: 'services', label: 'Legal Services', icon: Briefcase, gradient: 'from-blue-500 to-cyan-500' },
+          { id: 'analyze', label: 'AI Analyzer', icon: Brain, gradient: 'from-indigo-500 to-purple-500' },
+          { id: 'bucket', label: 'Documents', icon: Upload, gradient: 'from-violet-500 to-purple-500' },
+          { id: 'lawyers', label: 'Lawyers', icon: Users, gradient: 'from-emerald-500 to-green-500' },
+          { id: 'services', label: 'Services', icon: Briefcase, gradient: 'from-blue-500 to-cyan-500' },
           { id: 'status', label: 'My Cases', icon: FileText, gradient: 'from-orange-500 to-red-500' }
         ].map(tab => {
           const Icon = tab.icon;
@@ -1901,9 +1908,9 @@ const DocumentReview = () => {
             <motion.button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium transition-all duration-300 ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-300 ${
                 isActive
-                  ? `bg-gradient-to-r ${tab.gradient} text-white shadow-lg`
+                  ? `bg-gradient-to-r ${tab.gradient} text-white shadow-md`
                   : isDark 
                     ? 'text-dark-text-secondary hover:bg-dark-bg-tertiary hover:text-dark-text' 
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
@@ -1911,7 +1918,7 @@ const DocumentReview = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              <Icon size={18} />
+              <Icon size={16} />
               <span className="hidden sm:inline">{tab.label}</span>
             </motion.button>
           );
@@ -1921,12 +1928,12 @@ const DocumentReview = () => {
   );
 
   return (
-    <div className={`min-h-screen pt-20 transition-colors duration-300 ${
+    <div className={`min-h-screen pt-16 transition-colors duration-300 ${
       isDark 
         ? 'bg-gradient-to-br from-dark-bg via-dark-bg-secondary to-dark-bg-tertiary' 
         : 'bg-gradient-to-br from-slate-50 via-white to-slate-100'
     }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-4">
         {/* Navigation */}
         <NavigationTabs />
 
@@ -1966,30 +1973,30 @@ const DocumentReview = () => {
               className="space-y-8"
             >
               {/* Header */}
-              <div className="text-center space-y-4">
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
-                  Expert Legal Professionals
+              <div className="text-center space-y-2">
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">
+                  Expert Lawyers
                 </h2>
-                <p className={`max-w-2xl mx-auto transition-colors duration-300 ${
+                <p className={`text-sm transition-colors duration-300 ${
                   isDark ? 'text-dark-text-secondary' : 'text-slate-600'
                 }`}>
-                  Connect with verified lawyers specialized in document review and legal consultations
+                  Connect with verified lawyers for document review
                 </p>
             </div>
 
               {/* Search and Filters */}
-              <div className={`rounded-2xl shadow-xl border p-6 transition-colors duration-300 ${
+              <div className={`rounded-xl shadow-lg border p-4 transition-colors duration-300 ${
                 isDark ? 'bg-dark-bg-secondary border-dark-border' : 'bg-white border-slate-200'
               }`}>
-                <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex flex-col md:flex-row gap-3">
                   <div className="flex-1 relative">
-                    <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+                    <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
                     <input
                       type="text"
-                      placeholder="Search lawyers by name or specialization..."
+                      placeholder="Search lawyers..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className={`w-full pl-10 pr-4 py-3 rounded-xl border transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                      className={`w-full pl-9 pr-4 py-2 rounded-lg border transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm ${
                         isDark 
                           ? 'bg-dark-bg-tertiary border-dark-border text-dark-text placeholder-dark-text-muted' 
                           : 'bg-white border-slate-300'
@@ -2001,7 +2008,7 @@ const DocumentReview = () => {
                     <select
                       value={filterCategory}
                       onChange={(e) => setFilterCategory(e.target.value)}
-                      className={`px-4 py-3 pr-10 rounded-xl border transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer ${
+                      className={`px-3 py-2 pr-8 rounded-lg border transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none cursor-pointer text-sm ${
                         isDark 
                           ? 'bg-dark-bg-tertiary border-dark-border text-dark-text' 
                           : 'bg-white border-slate-300'
@@ -2027,7 +2034,7 @@ const DocumentReview = () => {
             </div>
 
               {/* Lawyers Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {lawyers
                   .filter(lawyer => 
                     lawyer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
