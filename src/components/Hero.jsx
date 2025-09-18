@@ -2695,7 +2695,7 @@ const Hero = () => {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.2, type: "spring", stiffness: 300, damping: 30 }}
-                  className="mb-6 w-16 h-16 rounded-full bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center shadow-lg"
+                  className="mb-6 w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 flex items-center justify-center shadow-lg"
                 >
                   <Scale size={24} className="text-white" />
                 </motion.div>
@@ -2707,7 +2707,7 @@ const Hero = () => {
                   transition={{ delay: 0.3 }}
                   className="text-3xl md:text-4xl font-bold text-slate-800 dark:text-slate-100 mb-3"
                 >
-                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-500 to-sky-600">
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600">
                     Mera Bakil
                   </span>
                 </motion.h1>

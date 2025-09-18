@@ -45,11 +45,30 @@ import {
   Paperclip,
   Smile,
   Settings,
-  VideoOff
+  VideoOff,
+  Building,
+  Scale,
+  Home,
+  Move,
+  Crosshair,
+  Info,
+  Eye,
+  EyeOff,
+  Zap,
+  Target,
+  Building2,
+  Gavel,
+  FileCheck,
+  UserPlus,
+  Camera,
+  Archive,
+  PlusCircle,
+  Download
 } from 'lucide-react';
 import L from 'leaflet';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSelector } from 'react-redux';
+import '../styles/virtualBakil.css';
 
 // Fix for default markers
 delete L.Icon.Default.prototype._getIconUrl;
@@ -59,131 +78,298 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
-// Sample lawyers data for demonstration
-const mockLawyers = [
+// Comprehensive Indian Lawyers Data - Multiple Cities & Specializations
+const COMPREHENSIVE_LAWYERS = [
+  // Delhi NCR Lawyers
   {
-    id: 1,
-    name: "Advocate Rajesh Kumar",
-    specialization: "Civil Law",
-    image: "/api/placeholder/150/150",
-    rating: 4.8,
-    reviews: 127,
-    experience: 15,
-    location: { lat: 28.6139, lng: 77.2090 },
-    consultationFee: 3000,
-    isOnline: true,
-    isInCall: false,
-    responseTime: "5 min",
-    successRate: 92,
-    cases: 450,
-    availability: "Available Now",
-    expertise: ["Civil Law", "Property Law", "Contract Law"],
-    languages: ["English", "Hindi", "Punjabi"]
+    id: 1, name: "Advocate Rajesh Kumar", specialization: "Civil Law",
+    image: "/api/placeholder/150/150", rating: 4.8, reviews: 127, experience: 15,
+    location: { lat: 28.6139, lng: 77.2090 }, consultationFee: 3000,
+    isOnline: true, isInCall: false, responseTime: "5 min", successRate: 92,
+    cases: 450, availability: "Available Now",
+    expertise: ["Civil Law", "Property Law", "Contract Law"], city: "New Delhi",
+    languages: ["English", "Hindi", "Punjabi"], courtAffiliation: "Delhi High Court"
   },
   {
-    id: 2,
-    name: "Advocate Priya Sharma",
-    specialization: "Criminal Law",
-    image: "/api/placeholder/150/150",
-    rating: 4.9,
-    reviews: 89,
-    experience: 12,
-    location: { lat: 28.6239, lng: 77.2190 },
-    consultationFee: 2500,
-    isOnline: true,
-    isInCall: false,
-    responseTime: "3 min",
-    successRate: 95,
-    cases: 320,
-    availability: "Available Now",
-    expertise: ["Criminal Law", "Bail Applications", "Court Representation"],
-    languages: ["English", "Hindi", "Marathi"]
+    id: 2, name: "Advocate Priya Sharma", specialization: "Criminal Law",
+    image: "/api/placeholder/150/150", rating: 4.9, reviews: 89, experience: 12,
+    location: { lat: 28.6239, lng: 77.2190 }, consultationFee: 2500,
+    isOnline: true, isInCall: false, responseTime: "3 min", successRate: 95,
+    cases: 320, availability: "Available Now",
+    expertise: ["Criminal Law", "Bail Applications", "Court Representation"], city: "New Delhi",
+    languages: ["English", "Hindi", "Marathi"], courtAffiliation: "Tis Hazari Court"
+  },
+  
+  // Mumbai Lawyers
+  {
+    id: 3, name: "Advocate Ankit Shah", specialization: "Corporate Law",
+    image: "/api/placeholder/150/150", rating: 4.9, reviews: 245, experience: 16,
+    location: { lat: 19.0760, lng: 72.8777 }, consultationFee: 4500,
+    isOnline: true, isInCall: false, responseTime: "2 min", successRate: 96,
+    cases: 580, availability: "Available Now",
+    expertise: ["Corporate Law", "M&A", "Securities Law"], city: "Mumbai",
+    languages: ["English", "Hindi", "Gujarati", "Marathi"], courtAffiliation: "Bombay High Court"
   },
   {
-    id: 3,
-    name: "Advocate Amit Verma",
-    specialization: "Family Law",
-    image: "/api/placeholder/150/150",
-    rating: 4.7,
-    reviews: 156,
-    experience: 18,
-    location: { lat: 28.6339, lng: 77.2290 },
-    consultationFee: 2800,
-    isOnline: false,
-    isInCall: false,
-    responseTime: "10 min",
-    successRate: 88,
-    cases: 380,
-    availability: "Offline",
-    expertise: ["Family Law", "Divorce", "Child Custody"],
-    languages: ["English", "Hindi", "Bengali"]
+    id: 4, name: "Advocate Sneha Reddy", specialization: "Family Law",
+    image: "/api/placeholder/150/150", rating: 4.7, reviews: 178, experience: 11,
+    location: { lat: 19.0820, lng: 72.8920 }, consultationFee: 2800,
+    isOnline: true, isInCall: true, responseTime: "4 min", successRate: 89,
+    cases: 340, availability: "In Call",
+    expertise: ["Family Law", "Divorce", "Child Custody", "Domestic Violence"], city: "Mumbai",
+    languages: ["English", "Hindi", "Marathi", "Telugu"], courtAffiliation: "Family Court Mumbai"
+  },
+  
+  // Bangalore Lawyers
+  {
+    id: 5, name: "Advocate Vikram Rao", specialization: "IP & Technology Law",
+    image: "/api/placeholder/150/150", rating: 4.9, reviews: 312, experience: 14,
+    location: { lat: 12.9716, lng: 77.5946 }, consultationFee: 4000,
+    isOnline: true, isInCall: false, responseTime: "1 min", successRate: 94,
+    cases: 690, availability: "Available Now",
+    expertise: ["IP Law", "Technology Law", "Software Licensing", "Patents"], city: "Bangalore",
+    languages: ["English", "Hindi", "Kannada", "Tamil"], courtAffiliation: "Karnataka High Court"
   },
   {
-    id: 4,
-    name: "Advocate Neha Gupta",
-    specialization: "Corporate Law",
-    image: "/api/placeholder/150/150",
-    rating: 4.8,
-    reviews: 203,
-    experience: 14,
-    location: { lat: 28.6439, lng: 77.2390 },
-    consultationFee: 3500,
-    isOnline: true,
-    isInCall: true,
-    responseTime: "2 min",
-    successRate: 93,
-    cases: 520,
-    availability: "In Call",
-    expertise: ["Corporate Law", "Company Formation", "Compliance"],
-    languages: ["English", "Hindi", "Gujarati"]
+    id: 6, name: "Advocate Meera Iyer", specialization: "Employment Law",
+    image: "/api/placeholder/150/150", rating: 4.6, reviews: 134, experience: 9,
+    location: { lat: 12.9850, lng: 77.6050 }, consultationFee: 2200,
+    isOnline: false, isInCall: false, responseTime: "15 min", successRate: 87,
+    cases: 220, availability: "Offline",
+    expertise: ["Employment Law", "Labor Disputes", "HR Compliance"], city: "Bangalore",
+    languages: ["English", "Hindi", "Kannada", "Telugu"], courtAffiliation: "Labor Court Bangalore"
+  },
+  
+  // Chennai Lawyers
+  {
+    id: 7, name: "Advocate Ravi Krishnan", specialization: "Constitutional Law",
+    image: "/api/placeholder/150/150", rating: 4.8, reviews: 198, experience: 20,
+    location: { lat: 13.0827, lng: 80.2707 }, consultationFee: 5000,
+    isOnline: true, isInCall: false, responseTime: "6 min", successRate: 91,
+    cases: 420, availability: "Available Now",
+    expertise: ["Constitutional Law", "Public Interest", "Writ Petitions"], city: "Chennai",
+    languages: ["English", "Tamil", "Hindi", "Telugu"], courtAffiliation: "Madras High Court"
+  },
+  
+  // Kolkata Lawyers
+  {
+    id: 8, name: "Advocate Subrata Ghosh", specialization: "Tax Law",
+    image: "/api/placeholder/150/150", rating: 4.7, reviews: 167, experience: 18,
+    location: { lat: 22.5726, lng: 88.3639 }, consultationFee: 3200,
+    isOnline: true, isInCall: false, responseTime: "7 min", successRate: 90,
+    cases: 380, availability: "Available Now",
+    expertise: ["Tax Law", "GST", "Income Tax", "Corporate Taxation"], city: "Kolkata",
+    languages: ["English", "Bengali", "Hindi"], courtAffiliation: "Calcutta High Court"
+  },
+  
+  // Pune Lawyers
+  {
+    id: 9, name: "Advocate Ashwin Patil", specialization: "Real Estate Law",
+    image: "/api/placeholder/150/150", rating: 4.6, reviews: 89, experience: 13,
+    location: { lat: 18.5204, lng: 73.8567 }, consultationFee: 2700,
+    isOnline: true, isInCall: false, responseTime: "8 min", successRate: 88,
+    cases: 290, availability: "Available Now",
+    expertise: ["Real Estate Law", "Property Disputes", "RERA"], city: "Pune",
+    languages: ["English", "Marathi", "Hindi"], courtAffiliation: "District Court Pune"
+  },
+  
+  // Hyderabad Lawyers
+  {
+    id: 10, name: "Advocate Lakshmi Reddy", specialization: "Consumer Protection",
+    image: "/api/placeholder/150/150", rating: 4.5, reviews: 156, experience: 10,
+    location: { lat: 17.3850, lng: 78.4867 }, consultationFee: 2000,
+    isOnline: true, isInCall: false, responseTime: "12 min", successRate: 85,
+    cases: 180, availability: "Available Now",
+    expertise: ["Consumer Protection", "Service Disputes", "E-commerce Issues"], city: "Hyderabad",
+    languages: ["English", "Telugu", "Hindi"], courtAffiliation: "Consumer Forum Hyderabad"
   }
 ];
 
-// Try to import lawyerAPI with fallback
+// Backwards compatibility
+const mockLawyers = COMPREHENSIVE_LAWYERS;
+
+// Try to import APIs with fallback
 let lawyerAPI = null;
+let apiServices = null;
+
 try {
   const apiService = require('../api/apiService');
   lawyerAPI = apiService.lawyerAPI;
+  apiServices = apiService.default || apiService;
 } catch (error) {
-  console.log('lawyerAPI not available, using mock data:', error);
+  console.log('APIs not available, using mock data:', error);
   lawyerAPI = {
-    getNearbyLawyers: () => Promise.resolve(mockLawyers || [])
+    getNearbyLawyers: () => Promise.resolve(COMPREHENSIVE_LAWYERS || []),
+    bookLawyerAppointment: () => Promise.resolve({ success: true })
+  };
+  apiServices = {
+    startCallSession: () => Promise.resolve({ sessionId: 'mock-call' }),
+    startChatSession: () => Promise.resolve({ sessionId: 'mock-chat' })
   };
 }
 
-// Custom lawyer marker icon
-const createLawyerIcon = (isOnline, isSelected) => {
-  const color = isOnline ? '#10b981' : '#6b7280';
-  const pulseColor = isOnline ? '#34d399' : '#9ca3af';
-  const size = isSelected ? 50 : 40;
+// Enhanced custom lawyer marker icon - smaller, more professional
+const createLawyerIcon = (isOnline, isSelected, isInCall = false) => {
+  const size = isSelected ? 36 : 32;
   
   return L.divIcon({
     html: `
-      <div class="relative">
-        <div class="absolute inset-0 bg-${isOnline ? 'green' : 'gray'}-400 rounded-full animate-ping opacity-75" style="width: ${size}px; height: ${size}px;"></div>
-        <div class="relative bg-white rounded-full p-2 shadow-lg border-2 border-${isOnline ? 'green' : 'gray'}-500" style="width: ${size}px; height: ${size}px;">
-          <div class="w-full h-full bg-${isOnline ? 'green' : 'gray'}-500 rounded-full flex items-center justify-center">
-            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+      <div class="relative lawyer-marker">
+        ${isOnline && !isInCall ? `
+          <div class="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-40" style="width: ${size}px; height: ${size}px;"></div>
+          <div class="absolute inset-0 bg-green-300 rounded-full animate-ping opacity-30" style="width: ${size}px; height: ${size}px; animation-delay: 0.5s"></div>
+        ` : ''}
+        <div class="relative bg-white rounded-full shadow-lg border-3 ${
+          isInCall ? 'border-red-500' : isOnline ? 'border-green-500' : 'border-gray-400'
+        }" style="width: ${size}px; height: ${size}px;">
+          <div class="w-full h-full ${
+            isInCall ? 'bg-red-500' : isOnline ? 'bg-green-500' : 'bg-gray-400'
+          } rounded-full flex items-center justify-center p-1">
+            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
             </svg>
           </div>
+          ${isOnline && !isInCall ? `
+            <div class="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white animate-pulse"></div>
+          ` : isInCall ? `
+            <div class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
+          ` : ''}
         </div>
       </div>
     `,
     className: 'custom-lawyer-marker',
     iconSize: [size, size],
-    iconAnchor: [size/2, size/2],
-    popupAnchor: [0, -size/2],
+    iconAnchor: [size/2, size],
+    popupAnchor: [0, -size],
   });
 };
 
-// Professional status indicators
+// Create legal body marker icons
+const createLegalBodyIcon = (type, isSelected = false) => {
+  const size = isSelected ? 36 : 32;
+  const iconConfig = {
+    court: { color: '#3b82f6', icon: 'gavel' },
+    supreme_court: { color: '#7c3aed', icon: 'scale' },
+    bar_council: { color: '#059669', icon: 'shield' },
+    legal_aid: { color: '#dc2626', icon: 'heart' },
+    notary: { color: '#d97706', icon: 'file-check' }
+  };
+  
+  const config = iconConfig[type] || { color: '#6b7280', icon: 'building' };
+  
+  return L.divIcon({
+    html: `
+      <div class="relative legal-body-marker">
+        <div class="relative bg-white rounded-lg shadow-lg border-2" style="width: ${size}px; height: ${size}px; border-color: ${config.color}">
+          <div class="w-full h-full rounded-md flex items-center justify-center" style="background-color: ${config.color}">
+            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+              ${getIconSVG(config.icon)}
+            </svg>
+          </div>
+        </div>
+        <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent" style="border-top-color: ${config.color}"></div>
+      </div>
+    `,
+    className: 'custom-legal-body-marker',
+    iconSize: [size, size + 6],
+    iconAnchor: [size/2, size + 6],
+    popupAnchor: [0, -(size + 6)],
+  });
+};
+
+// Helper function to get SVG paths for different icons
+const getIconSVG = (iconType) => {
+  const icons = {
+    gavel: 'M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0L19.2 12l-4.6-4.6L16 6l6 6-6 6-1.4-1.4z',
+    scale: 'M7 2v2h1l3.29 8.29-.29.71H4v2h16v-2h-7l1-2.59L17.71 4H19V2H7zM4 17v5h2v-3h12v3h2v-5H4z',
+    shield: 'M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7C13.4,7 14.8,8.6 14.8,10V11.5H16V16H8V11.5H9.2V10C9.2,8.6 10.6,7 12,7M12,8.2C11.2,8.2 10.5,8.7 10.5,9.5V11.5H13.5V9.5C13.5,8.7 12.8,8.2 12,8.2Z',
+    heart: 'M12,21.35L10.55,20.03C5.4,15.36 2,12.27 2,8.5 2,5.41 4.42,3 7.5,3C9.24,3 10.91,3.81 12,5.08C13.09,3.81 14.76,3 16.5,3C19.58,3 22,5.41 22,8.5C22,12.27 18.6,15.36 13.45,20.04L12,21.35Z',
+    'file-check': 'M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z',
+    building: 'M19,3H5C3.9,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.9 20.1,3 19,3M12,8A2,2 0 0,1 14,10A2,2 0 0,1 12,12A2,2 0 0,1 10,10A2,2 0 0,1 12,8M16,16H8V15C8,13.67 10.67,13 12,13C13.33,13 16,13.67 16,15V16Z'
+  };
+  return icons[iconType] || icons.building;
+};
+
+// Enhanced Location Picker Component
+const LocationPicker = ({ position, onLocationChange, isDragging, setIsDragging, theme }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (position) {
+      map.setView(position, 13);
+    }
+  }, [position, map]);
+
+  const handleDragEnd = (e) => {
+    const newPosition = [e.target.getLatLng().lat, e.target.getLatLng().lng];
+    onLocationChange(newPosition);
+    setIsDragging(false);
+  };
+
+  const handleDragStart = () => {
+    setIsDragging(true);
+  };
+
+  const locationIcon = L.divIcon({
+    html: `
+      <div class="relative user-location-marker">
+        <div class="absolute inset-0 bg-blue-400 rounded-full animate-ping opacity-40" style="width: 40px; height: 40px;"></div>
+        <div class="relative bg-white rounded-full shadow-xl border-4 border-blue-500" style="width: 40px; height: 40px;">
+          <div class="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-xs bg-blue-500 text-white px-2 py-1 rounded whitespace-nowrap font-medium shadow-lg">
+          ${isDragging ? 'Drop here' : 'You are here'}
+        </div>
+      </div>
+    `,
+    className: 'user-location-marker',
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [0, -40],
+  });
+
+  return position === null ? null : (
+    <Marker 
+      position={position} 
+      icon={locationIcon}
+      draggable={true}
+      eventHandlers={{
+        dragstart: handleDragStart,
+        dragend: handleDragEnd,
+      }}
+    >
+      <Popup>
+        <div className="text-center p-2">
+          <div className="flex items-center justify-center space-x-2 mb-2">
+            <Target className="w-5 h-5 text-blue-500" />
+            <span className="font-bold text-blue-600">Your Current Location</span>
+          </div>
+          <p className="text-sm text-gray-600 mb-2">
+            Drag this marker to explore legal services in different areas
+          </p>
+          <div className="text-xs text-gray-500">
+            Lat: {position[0].toFixed(4)}, Lng: {position[1].toFixed(4)}
+          </div>
+        </div>
+      </Popup>
+    </Marker>
+  );
+};
+
+// Professional status indicators with enhanced animations
 const LawyerStatusIndicator = ({ isOnline, isInCall, responseTime }) => {
   if (isInCall) {
     return (
       <div className="flex items-center space-x-1">
-        <div className="w-2 h-2 bg-red-500 rounded-full status-busy"></div>
-        <span className="text-xs text-red-600">In Call</span>
+        <div className="relative">
+          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+          <div className="absolute inset-0 w-2 h-2 bg-red-400 rounded-full animate-ping"></div>
+        </div>
+        <span className="text-xs text-red-600 font-medium">In Call</span>
       </div>
     );
   }
@@ -191,8 +377,11 @@ const LawyerStatusIndicator = ({ isOnline, isInCall, responseTime }) => {
   if (isOnline) {
     return (
       <div className="flex items-center space-x-1">
-        <div className="w-2 h-2 bg-green-500 rounded-full status-online"></div>
-        <span className="text-xs text-green-600">Online • {responseTime}</span>
+        <div className="relative">
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          <div className="absolute inset-0 w-2 h-2 bg-green-400 rounded-full animate-ping"></div>
+        </div>
+        <span className="text-xs text-green-600 font-medium">Online • {responseTime}</span>
       </div>
     );
   }
@@ -202,6 +391,182 @@ const LawyerStatusIndicator = ({ isOnline, isInCall, responseTime }) => {
       <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
       <span className="text-xs text-gray-500">Offline</span>
     </div>
+  );
+};
+
+// Enhanced Legal Body Info Component
+const LegalBodyInfoModal = ({ legalBody, isOpen, onClose, theme }) => {
+  if (!isOpen || !legalBody) return null;
+
+  const getTypeIcon = (type) => {
+    const icons = {
+      court: Gavel,
+      supreme_court: Scale,
+      bar_council: Shield,
+      legal_aid: Heart,
+      notary: FileCheck
+    };
+    return icons[type] || Building;
+  };
+
+  const getTypeLabel = (type) => {
+    const labels = {
+      court: 'Court',
+      supreme_court: 'Supreme Court',
+      bar_council: 'Bar Council',
+      legal_aid: 'Legal Aid',
+      notary: 'Notary Public'
+    };
+    return labels[type] || 'Legal Office';
+  };
+
+  const TypeIcon = getTypeIcon(legalBody.type);
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          className={`relative w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                  <TypeIcon className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">{legalBody.name}</h2>
+                  <p className="text-indigo-100">{getTypeLabel(legalBody.type)}</p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 space-y-6">
+            {/* Basic Info */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h3 className={`text-lg font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                  Contact Information
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-start space-x-3">
+                    <MapPin className="w-5 h-5 text-gray-500 mt-0.5" />
+                    <div>
+                      <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                        {legalBody.address}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Phone className="w-5 h-5 text-gray-500" />
+                    <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {legalBody.contact}
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Clock className="w-5 h-5 text-gray-500" />
+                    <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {legalBody.workingHours}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className={`text-lg font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                  Details
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <Globe className="w-5 h-5 text-gray-500" />
+                    <div>
+                      <p className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                        Jurisdiction: {legalBody.jurisdiction}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="w-5 h-5 text-gray-500" />
+                    <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Established: {legalBody.established}
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Star className="w-5 h-5 text-yellow-500" />
+                    <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Rating: {legalBody.rating}/5.0
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div>
+              <h3 className={`text-lg font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                About
+              </h3>
+              <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                {legalBody.description}
+              </p>
+            </div>
+
+            {/* Services */}
+            <div>
+              <h3 className={`text-lg font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                Services Offered
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {legalBody.services.map((service, index) => (
+                  <div 
+                    key={index}
+                    className={`flex items-center space-x-2 p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'}`}
+                  >
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {service}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Status */}
+            <div className={`p-4 rounded-lg ${legalBody.isActive ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
+              <div className="flex items-center space-x-2">
+                {legalBody.isActive ? (
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-red-500" />
+                )}
+                <span className={`font-medium ${legalBody.isActive ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                  {legalBody.isActive ? 'Currently Operational' : 'Temporarily Closed'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 
@@ -614,76 +979,468 @@ const SAMPLE_LAWYERS = [
   }
 ];
 
-// Location component to center map on user location
-const LocationMarker = ({ position, setPosition }) => {
-  const map = useMap();
+// Comprehensive Indian Legal Bodies Data - All Major Cities
+const COMPREHENSIVE_LEGAL_BODIES = [
+  // Delhi Legal Bodies
+  {
+    id: 1, name: "Supreme Court of India", type: "supreme_court",
+    location: { lat: 28.6245, lng: 77.2442 },
+    address: "Tilak Marg, New Delhi, Delhi 110001",
+    phone: "+91-11-2338-2792", email: "supremecourt@nic.in",
+    website: "https://www.sci.gov.in/", jurisdiction: "All India",
+    workingHours: "10:30 AM - 4:00 PM", rating: 4.9, isActive: true,
+    services: ["Constitutional Matters", "Appeals from High Courts", "Special Leave Petitions"],
+    establishedYear: 1950, totalJudges: 34, city: "New Delhi",
+    description: "Highest judicial authority in India"
+  },
+  {
+    id: 2, name: "Delhi High Court", type: "court",
+    location: { lat: 28.6269, lng: 77.2395 },
+    address: "Sher Shah Road, New Delhi, Delhi 110003",
+    phone: "+91-11-2338-9596", email: "registrar@delhihighcourt.nic.in",
+    website: "https://www.delhihighcourt.nic.in/", jurisdiction: "Delhi",
+    workingHours: "10:00 AM - 5:00 PM", rating: 4.6, isActive: true,
+    services: ["Civil Cases", "Criminal Appeals", "Writ Petitions", "Company Matters"],
+    establishedYear: 1966, totalJudges: 45, city: "New Delhi",
+    description: "Principal court of the National Capital Territory of Delhi"
+  },
+  {
+    id: 3, name: "Bar Council of Delhi", type: "bar_council",
+    location: { lat: 28.6358, lng: 77.2245 },
+    address: "Legal Aid Building, Near High Court, New Delhi 110003",
+    phone: "+91-11-2338-7540", email: "bcddelhi@gmail.com",
+    website: "https://www.barcouncilofdelhi.com/", jurisdiction: "Delhi",
+    workingHours: "9:00 AM - 5:30 PM", rating: 4.2, isActive: true,
+    services: ["Lawyer Registration", "Legal Ethics", "Disciplinary Actions"],
+    establishedYear: 1958, totalMembers: 15000, city: "New Delhi",
+    description: "Regulatory body for legal profession in Delhi"
+  },
+  
+  // Mumbai Legal Bodies
+  {
+    id: 4, name: "Bombay High Court", type: "court",
+    location: { lat: 18.9270, lng: 72.8314 },
+    address: "Fort, Mumbai, Maharashtra 400001",
+    phone: "+91-22-2262-1612", email: "registrar@bombayhighcourt.nic.in",
+    website: "https://bombayhighcourt.nic.in/", jurisdiction: "Maharashtra & Goa",
+    workingHours: "10:15 AM - 4:30 PM", rating: 4.7, isActive: true,
+    services: ["Civil Appeals", "Criminal Appeals", "Writ Petitions", "Corporate Law"],
+    establishedYear: 1862, totalJudges: 78, city: "Mumbai",
+    description: "One of the oldest High Courts in India"
+  },
+  {
+    id: 5, name: "Bar Council of Maharashtra & Goa", type: "bar_council",
+    location: { lat: 18.9320, lng: 72.8347 },
+    address: "High Court Premises, Mumbai 400001",
+    phone: "+91-22-2262-3628", email: "info@bcmg.org",
+    website: "https://www.bcmg.org/", jurisdiction: "Maharashtra & Goa",
+    workingHours: "9:30 AM - 6:00 PM", rating: 4.1, isActive: true,
+    services: ["Advocate Enrollment", "Professional Standards", "Legal Education"],
+    establishedYear: 1961, totalMembers: 45000, city: "Mumbai",
+    description: "Regulates legal profession in Maharashtra and Goa"
+  },
+  
+  // Bangalore Legal Bodies
+  {
+    id: 6, name: "Karnataka High Court", type: "court",
+    location: { lat: 12.9722, lng: 77.5915 },
+    address: "Attara Kacheri, Bangalore, Karnataka 560001",
+    phone: "+91-80-2221-3962", email: "registrar@karnatakajudiciary.kar.nic.in",
+    website: "https://www.karnatakajudiciary.kar.nic.in/", jurisdiction: "Karnataka",
+    workingHours: "10:30 AM - 4:15 PM", rating: 4.5, isActive: true,
+    services: ["IT Law", "Corporate Disputes", "Constitutional Matters", "Land Disputes"],
+    establishedYear: 1884, totalJudges: 62, city: "Bangalore",
+    description: "High Court with expertise in technology and corporate law"
+  },
+  {
+    id: 7, name: "Karnataka State Legal Services Authority", type: "legal_aid",
+    location: { lat: 12.9750, lng: 77.5980 },
+    address: "MS Building, Bangalore, Karnataka 560001",
+    phone: "+91-80-2235-4501", email: "karnataka@nalsa.gov.in",
+    website: "https://kelsa.kar.nic.in/", jurisdiction: "Karnataka",
+    workingHours: "9:00 AM - 5:30 PM", rating: 4.3, isActive: true,
+    services: ["Free Legal Aid", "Legal Literacy", "Lok Adalat", "Mediation"],
+    establishedYear: 1987, beneficiaries: 50000, city: "Bangalore",
+    description: "Provides free legal services to the underprivileged"
+  },
+  
+  // Chennai Legal Bodies  
+  {
+    id: 8, name: "Madras High Court", type: "court",
+    location: { lat: 13.0825, lng: 80.2709 },
+    address: "High Court Campus, Chennai, Tamil Nadu 600104",
+    phone: "+91-44-2534-1722", email: "registrar@mhc.tn.gov.in",
+    website: "https://www.mhc.tn.gov.in/", jurisdiction: "Tamil Nadu & Puducherry",
+    workingHours: "10:30 AM - 4:30 PM", rating: 4.6, isActive: true,
+    services: ["Constitutional Law", "Service Matters", "Land Revenue", "Criminal Appeals"],
+    establishedYear: 1862, totalJudges: 75, city: "Chennai",
+    description: "Second oldest High Court in India"
+  },
+  {
+    id: 9, name: "Tamil Nadu State Legal Services Authority", type: "legal_aid",
+    location: { lat: 13.0850, lng: 80.2750 },
+    address: "High Court Buildings, Chennai 600104",
+    phone: "+91-44-2534-2750", email: "tnslsa@tn.gov.in",
+    website: "https://www.tnslsa.tn.gov.in/", jurisdiction: "Tamil Nadu",
+    workingHours: "9:30 AM - 5:00 PM", rating: 4.2, isActive: true,
+    services: ["Legal Aid Services", "Alternative Dispute Resolution", "Legal Awareness"],
+    establishedYear: 1987, beneficiaries: 75000, city: "Chennai",
+    description: "Tamil Nadu's premier legal aid organization"
+  },
+  
+  // Kolkata Legal Bodies
+  {
+    id: 10, name: "Calcutta High Court", type: "court",
+    location: { lat: 22.5726, lng: 88.3639 },
+    address: "Esplanade, Kolkata, West Bengal 700001",
+    phone: "+91-33-2243-4289", email: "registrar@calcuttahighcourt.nic.in",
+    website: "https://www.calcuttahighcourt.nic.in/", jurisdiction: "West Bengal & Andaman & Nicobar",
+    workingHours: "10:30 AM - 4:30 PM", rating: 4.4, isActive: true,
+    services: ["Commercial Law", "Intellectual Property", "Constitutional Matters"],
+    establishedYear: 1862, totalJudges: 71, city: "Kolkata",
+    description: "Oldest High Court in India"
+  },
+  
+  // Hyderabad Legal Bodies
+  {
+    id: 11, name: "Telangana High Court", type: "court",
+    location: { lat: 17.4126, lng: 78.4094 },
+    address: "Nayapul, Hyderabad, Telangana 500001",
+    phone: "+91-40-2340-4307", email: "registrar@hcts.nic.in",
+    website: "https://www.hcts.nic.in/", jurisdiction: "Telangana & Andhra Pradesh",
+    workingHours: "10:15 AM - 4:00 PM", rating: 4.5, isActive: true,
+    services: ["IT Disputes", "Real Estate", "Public Interest Litigation", "Tax Matters"],
+    establishedYear: 1954, totalJudges: 42, city: "Hyderabad",
+    description: "High Court serving the Telugu states"
+  },
+  
+  // Additional Important Legal Bodies
+  {
+    id: 12, name: "National Legal Services Authority (NALSA)", type: "legal_aid",
+    location: { lat: 28.6139, lng: 77.2090 },
+    address: "Jawahar Lal Nehru Marg, New Delhi 110002",
+    phone: "+91-11-2338-8922", email: "nalsa@nic.in",
+    website: "https://nalsa.gov.in/", jurisdiction: "All India",
+    workingHours: "9:00 AM - 6:00 PM", rating: 4.7, isActive: true,
+    services: ["National Legal Aid", "Policy Formation", "Training Programs"],
+    establishedYear: 1987, beneficiaries: 500000, city: "New Delhi",
+    description: "Apex body for legal aid services in India"
+  }
+];
 
-  useEffect(() => {
-    if (position) {
-      map.setView(position, 13);
-    }
-  }, [position, map]);
+// Backwards compatibility
+const mockLegalBodies = COMPREHENSIVE_LEGAL_BODIES;
 
-  return position === null ? null : (
-    <Marker position={position}>
-      <Popup>
-        <div className="text-center">
-          <MapPin className="w-4 h-4 inline mr-1" />
-          Your Location
+// Legal Body Marker Component
+const LegalBodyMarker = ({ legalBody, isSelected, onSelect, theme }) => {
+  const icon = createLegalBodyIcon(legalBody.type, isSelected);
+  
+  const getTypeIcon = (type) => {
+    const icons = {
+      court: Gavel,
+      supreme_court: Scale,
+      bar_council: Shield,
+      legal_aid: Heart,
+      notary: FileCheck
+    };
+    return icons[type] || Building;
+  };
+
+  const TypeIcon = getTypeIcon(legalBody.type);
+  
+  return (
+    <Marker 
+      position={[legalBody.location.lat, legalBody.location.lng]} 
+      icon={icon}
+      eventHandlers={{
+        click: () => onSelect(legalBody),
+      }}
+    >
+      <Popup className="legal-body-popup">
+        <div className={`p-3 min-w-[250px] max-w-[300px] ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
+          {/* Header */}
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center">
+              <TypeIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-sm">{legalBody.name}</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{legalBody.type.replace('_', ' ').toUpperCase()}</p>
+            </div>
+          </div>
+          
+          {/* Quick Info */}
+          <div className="space-y-2 mb-3">
+            <div className="flex items-center space-x-2 text-xs">
+              <MapPin className="w-3 h-3 text-gray-500" />
+              <span className="text-gray-600 dark:text-gray-300 truncate">{legalBody.jurisdiction}</span>
+            </div>
+            <div className="flex items-center space-x-2 text-xs">
+              <Clock className="w-3 h-3 text-gray-500" />
+              <span className="text-gray-600 dark:text-gray-300">{legalBody.workingHours}</span>
+            </div>
+            <div className="flex items-center space-x-2 text-xs">
+              <Star className="w-3 h-3 text-yellow-500" />
+              <span className="text-gray-600 dark:text-gray-300">{legalBody.rating}/5.0</span>
+            </div>
+          </div>
+          
+          {/* Status */}
+          <div className={`flex items-center space-x-2 p-2 rounded-lg mb-3 ${legalBody.isActive ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
+            {legalBody.isActive ? (
+              <CheckCircle className="w-3 h-3 text-green-500" />
+            ) : (
+              <XCircle className="w-3 h-3 text-red-500" />
+            )}
+            <span className={`text-xs font-medium ${legalBody.isActive ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+              {legalBody.isActive ? 'Operational' : 'Closed'}
+            </span>
+          </div>
+          
+          {/* Action Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect(legalBody);
+            }}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+          >
+            View Details
+          </button>
         </div>
       </Popup>
     </Marker>
   );
 };
 
-// Professional Map Overlay Component
-const MapOverlay = ({ onlineLawyersCount, theme, onToggleFilters }) => {
+// Compact Bottom Stats Bar - No Header Interference  
+const CompactStatsBar = ({ 
+  onlineLawyersCount, 
+  legalBodiesCount, 
+  theme,
+  isDragging,
+  searchRadius 
+}) => {
   return (
-    <div className="absolute top-6 left-6 right-6 z-[1000] pointer-events-none">
-      <div className="flex items-center justify-between">
-        {/* Online Lawyers Count */}
-        <div className="pointer-events-auto">
-          <div className={`px-4 py-3 rounded-2xl shadow-lg backdrop-blur-md ${
-            theme === 'dark' 
-              ? 'bg-black/70 text-white border border-gray-700' 
-              : 'bg-white/90 text-gray-900 border border-gray-200'
-          }`}>
-            {/* <div className="flex items-center space-x-3">
-              <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center">
-                  <Users className="w-5 h-5 text-white" />
-                </div>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+    <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[1000] pointer-events-none">
+      <div className="pointer-events-auto">
+        <div className={`flex items-center space-x-4 px-6 py-3 rounded-full shadow-xl backdrop-blur-md border ${
+          theme === 'dark' 
+            ? 'bg-black/90 text-white border-gray-600' 
+            : 'bg-white/95 text-gray-900 border-gray-300'
+        }`}>
+          {/* Online Lawyers */}
+          <div className="flex items-center space-x-2">
+            <div className="relative">
+              <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+                <Users className="w-4 h-4 text-white" />
               </div>
-              <div>
-                <div className="text-lg font-bold">{onlineLawyersCount} lawyers online</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Available now</div>
-              </div>
-            </div> */}
+              <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full animate-ping opacity-75"></div>
+              <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full"></div>
+            </div>
+            <div className="text-sm font-semibold">{onlineLawyersCount}</div>
+          </div>
+          
+          <div className="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
+          
+          {/* Legal Bodies */}
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
+              <Building2 className="w-4 h-4 text-white" />
+            </div>
+            <div className="text-sm font-semibold">{legalBodiesCount}</div>
+          </div>
+          
+          <div className="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
+          
+          {/* Status */}
+          <div className="flex items-center space-x-2">
+            {isDragging ? (
+              <>
+                <Move className="w-4 h-4 text-blue-500 animate-bounce" />
+                <span className="text-sm font-medium text-blue-600">Exploring...</span>
+              </>
+            ) : (
+              <>
+                <Target className="w-4 h-4 text-green-500" />
+                <span className="text-sm text-gray-600 dark:text-gray-300">{searchRadius/1000}km</span>
+              </>
+            )}
           </div>
         </div>
-
-        {/* Filter Controls */}
-        {/* <div className="pointer-events-auto">
-          <button
-            onClick={onToggleFilters}
-            className={`p-3 rounded-full shadow-lg backdrop-blur-md ${
-              theme === 'dark' 
-                ? 'bg-black/70 text-white border border-gray-700 hover:bg-gray-800/80' 
-                : 'bg-white/90 text-gray-900 border border-gray-200 hover:bg-gray-50/90'
-            } transition-all duration-200`}
-          >
-            <Settings className="w-5 h-5" />
-          </button>
-        </div> */}
       </div>
     </div>
   );
 };
 
-// Professional animated lawyer marker with wave animation for active lawyers only
+// Floating Side Controls - Right Side Only
+const FloatingSideControls = ({ 
+  theme, 
+  onToggleFilters, 
+  showLegalBodies, 
+  onToggleLegalBodies 
+}) => {
+  return (
+    <div className="absolute top-20 right-4 z-[1000] pointer-events-none">
+      <div className="pointer-events-auto space-y-3">
+        {/* Toggle Legal Bodies */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onToggleLegalBodies}
+          className={`p-3 rounded-2xl shadow-lg backdrop-blur-md transition-all duration-200 border ${
+            showLegalBodies
+              ? 'bg-indigo-600 text-white border-indigo-500 shadow-indigo-500/25'
+              : theme === 'dark' 
+                ? 'bg-black/70 text-white border-gray-700 hover:bg-gray-800/80' 
+                : 'bg-white/90 text-gray-900 border-gray-200 hover:bg-gray-50/90'
+          }`}
+          title="Toggle Legal Bodies"
+        >
+          <Building2 className="w-5 h-5" />
+        </motion.button>
+
+        {/* Filters */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onToggleFilters}
+          className={`p-3 rounded-2xl shadow-lg backdrop-blur-md transition-all duration-200 border ${
+            theme === 'dark' 
+              ? 'bg-black/70 text-white border-gray-700 hover:bg-gray-800/80' 
+              : 'bg-white/90 text-gray-900 border-gray-200 hover:bg-gray-50/90'
+          }`}
+          title="Filters & Settings"
+        >
+          <Settings className="w-5 h-5" />
+        </motion.button>
+
+        {/* Compact Legend */}
+        <div className={`p-3 rounded-2xl shadow-lg backdrop-blur-md border ${
+          theme === 'dark' 
+            ? 'bg-black/80 text-white border-gray-700' 
+            : 'bg-white/95 text-gray-900 border-gray-200'
+        }`}>
+          <div className="space-y-1.5">
+            <div className="flex items-center space-x-2">
+              <div className="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
+              <span className="text-xs">Available</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-2.5 h-2.5 bg-red-500 rounded-full"></div>
+              <span className="text-xs">Busy</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-2.5 h-2.5 bg-indigo-600 rounded-sm"></div>
+              <span className="text-xs">Legal</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Fixed Smooth Zoom Controls - No Infinite Tiles Issue
+const CustomZoomControls = ({ theme }) => {
+  const map = useMap();
+  
+  const handleZoomIn = () => {
+    try {
+      const currentZoom = map.getZoom();
+      if (currentZoom < 18) { // Max zoom limit
+        map.setZoom(currentZoom + 1, { animate: true });
+      }
+    } catch (error) {
+      console.log('Zoom in error:', error);
+    }
+  };
+  
+  const handleZoomOut = () => {
+    try {
+      const currentZoom = map.getZoom();
+      if (currentZoom > 3) { // Min zoom limit
+        map.setZoom(currentZoom - 1, { animate: true });
+      }
+    } catch (error) {
+      console.log('Zoom out error:', error);
+    }
+  };
+  
+  return (
+    <div className="absolute bottom-20 right-4 z-[1000] pointer-events-none">
+      <div className="pointer-events-auto custom-zoom-controls">
+        <div className={`flex flex-col rounded-2xl shadow-xl backdrop-blur-md border overflow-hidden ${
+          theme === 'dark' 
+            ? 'bg-black/90 border-gray-600' 
+            : 'bg-white/95 border-gray-300'
+        }`}>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleZoomIn}
+            className={`p-4 transition-all duration-150 border-b active:scale-95 ${
+              theme === 'dark' 
+                ? 'text-white hover:bg-gray-800/80 active:bg-gray-700/80 border-gray-600' 
+                : 'text-gray-900 hover:bg-gray-50/80 active:bg-gray-100/80 border-gray-200'
+            }`}
+            title="Zoom In"
+            aria-label="Zoom In"
+          >
+            <PlusCircle className="w-5 h-5" />
+          </motion.button>
+          
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleZoomOut}
+            className={`p-4 transition-all duration-150 active:scale-95 ${
+              theme === 'dark' 
+                ? 'text-white hover:bg-gray-800/80 active:bg-gray-700/80' 
+                : 'text-gray-900 hover:bg-gray-50/80 active:bg-gray-100/80'
+            }`}
+            title="Zoom Out"
+            aria-label="Zoom Out"
+          >
+            <div className="w-5 h-5 flex items-center justify-center">
+              <div className="w-4 h-0.5 bg-current rounded-full"></div>
+            </div>
+          </motion.button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Click-to-Move Map Handler
+const MapClickHandler = ({ onLocationChange, setIsDragging }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    const handleClick = (e) => {
+      const newPosition = [e.latlng.lat, e.latlng.lng];
+      setIsDragging(true);
+      
+      // Smooth animation to new position
+      setTimeout(() => {
+        onLocationChange(newPosition);
+        setIsDragging(false);
+      }, 300);
+    };
+    
+    map.on('click', handleClick);
+    
+    return () => {
+      map.off('click', handleClick);
+    };
+  }, [map, onLocationChange, setIsDragging]);
+  
+  return null;
+};
+
+// Enhanced Professional animated lawyer marker
 const LawyerMarker = ({ lawyer, isSelected, onSelect, theme }) => {
-  const icon = createLawyerIcon(lawyer.isOnline, isSelected);
+  const icon = createLawyerIcon(lawyer.isOnline, isSelected, lawyer.isInCall);
   
   return (
     <Marker 
@@ -693,7 +1450,7 @@ const LawyerMarker = ({ lawyer, isSelected, onSelect, theme }) => {
         click: () => onSelect(lawyer),
       }}
     >
-      <Popup>
+      <Popup className="lawyer-popup">
         <div className={`p-4 min-w-[280px] max-w-[320px] ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'} rounded-xl shadow-2xl`}>
           {/* Professional Header */}
           <div className="relative mb-4">
@@ -705,37 +1462,40 @@ const LawyerMarker = ({ lawyer, isSelected, onSelect, theme }) => {
               />
             </div>
             
-            {/* Professional status indicator with wave animation */}
+            {/* Enhanced status indicator with premium animations */}
             <div className="absolute -bottom-2 -right-2">
               {lawyer.isOnline && !lawyer.isInCall && (
                 <div className="relative">
                   <div className="absolute inset-0 rounded-full animate-ping bg-green-400 opacity-40 scale-150"></div>
                   <div className="absolute inset-0 rounded-full animate-ping bg-green-300 opacity-30 scale-125" style={{animationDelay: '0.5s'}}></div>
-                  <div className="w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+                  <div className="w-7 h-7 bg-green-500 rounded-full border-3 border-white flex items-center justify-center shadow-lg">
                     <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                   </div>
                 </div>
               )}
               
               {lawyer.isOnline && lawyer.isInCall && (
-                <div className="w-6 h-6 bg-red-500 rounded-full border-2 border-white flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full animate-ping bg-red-400 opacity-40"></div>
+                  <div className="w-7 h-7 bg-red-500 rounded-full border-3 border-white flex items-center justify-center shadow-lg">
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                  </div>
                 </div>
               )}
               
               {!lawyer.isOnline && (
-                <div className="w-6 h-6 bg-gray-400 rounded-full border-2 border-white"></div>
+                <div className="w-7 h-7 bg-gray-400 rounded-full border-3 border-white shadow-lg"></div>
               )}
             </div>
             
-            {/* Professional badge */}
-            <div className="absolute -top-2 -left-2 w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg">
+            {/* Professional rating badge */}
+            <div className="absolute -top-2 -left-2 w-9 h-9 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg">
               {lawyer.rating}
             </div>
             
-            {/* Verification badge */}
-            <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-              <UserCheck className="w-3 h-3 text-white" />
+            {/* Enhanced verification badge */}
+            <div className="absolute -top-2 -right-2 w-7 h-7 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+              <UserCheck className="w-4 h-4 text-white" />
             </div>
           </div>
           
@@ -747,7 +1507,7 @@ const LawyerMarker = ({ lawyer, isSelected, onSelect, theme }) => {
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{lawyer.specialization}</p>
             </div>
             
-            {/* Professional stats */}
+            {/* Enhanced professional stats */}
             <div className="flex items-center justify-center space-x-4 mb-3">
               <div className="flex items-center space-x-1">
                 <Clock className="w-3 h-3 text-gray-500" />
@@ -1796,22 +2556,33 @@ const LocationModal = ({ isOpen, onAllow, onDeny, theme }) => {
 
 // Main VirtualBakil component - Full Page Professional System
 const VirtualBakil = () => {
+  // Enhanced state management
   const [lawyers, setLawyers] = useState([]);
+  const [legalBodies, setLegalBodies] = useState([]);
   const [selectedLawyer, setSelectedLawyer] = useState(null);
+  const [selectedLegalBody, setSelectedLegalBody] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  
+  // Modal states
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showSearchingModal, setShowSearchingModal] = useState(false);
   const [showLawyerModal, setShowLawyerModal] = useState(false);
+  const [showLegalBodyModal, setShowLegalBodyModal] = useState(false);
   const [showCallModal, setShowCallModal] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   const [showConnectionModal, setShowConnectionModal] = useState(false);
-  const [searchRadius, setSearchRadius] = useState(5000); // 5km
+  
+  // UI states
+  const [searchRadius, setSearchRadius] = useState(20000); // 20km for legal bodies
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [connectionStep, setConnectionStep] = useState('');
   const [onlineLawyersCount, setOnlineLawyersCount] = useState(0);
+  const [legalBodiesCount, setLegalBodiesCount] = useState(0);
   const [showMapOverlay, setShowMapOverlay] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [showLegalBodies, setShowLegalBodies] = useState(true);
 
   // Handle theme with fallback
   const themeState = useSelector((state) => state?.theme?.currentTheme || 'light');
@@ -1821,19 +2592,40 @@ const VirtualBakil = () => {
     initializeComponent();
   }, []);
 
-  // Calculate online lawyers count whenever lawyers data changes
+  // Calculate counts whenever data changes
   useEffect(() => {
     const onlineCount = lawyers.filter(lawyer => lawyer.isOnline && !lawyer.isInCall).length;
     setOnlineLawyersCount(onlineCount);
   }, [lawyers]);
 
+  useEffect(() => {
+    const activeBodiesCount = legalBodies.filter(body => body.isActive).length;
+    setLegalBodiesCount(activeBodiesCount);
+  }, [legalBodies]);
+
   const initializeComponent = async () => {
     try {
       setLoading(true);
       
-      // Initialize with mock data first
-      setLawyers(mockLawyers);
+      // Initialize with enhanced mock data
+      setLawyers(COMPREHENSIVE_LAWYERS);
+      setLegalBodies(COMPREHENSIVE_LEGAL_BODIES);
       setUserLocation([28.6139, 77.2090]); // Default Delhi location
+      
+      // Try to fetch real data from API
+      try {
+        if (lawyerAPI) {
+          const nearbyLawyers = await lawyerAPI.getNearbyLawyers(
+            { latitude: 28.6139, longitude: 77.2090 },
+            searchRadius
+          );
+          if (nearbyLawyers && nearbyLawyers.length > 0) {
+            setLawyers(nearbyLawyers);
+          }
+        }
+      } catch (apiError) {
+        console.log('API unavailable, using mock data:', apiError);
+      }
       
       // Check if user has location permission
       if (navigator.geolocation) {
@@ -1841,7 +2633,11 @@ const VirtualBakil = () => {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const { latitude, longitude } = position.coords;
-            setUserLocation([latitude, longitude]);
+            const newLocation = [latitude, longitude];
+            setUserLocation(newLocation);
+            
+            // Update lawyers and legal bodies for new location
+            updateForNewLocation(newLocation);
             setLoading(false);
           },
           (error) => {
@@ -1866,6 +2662,51 @@ const VirtualBakil = () => {
     }
   };
 
+  const updateForNewLocation = async (newLocation) => {
+    try {
+      // Simulate fetching nearby lawyers and legal bodies for new location
+      // In production, this would call actual APIs
+      if (lawyerAPI) {
+        const nearbyLawyers = await lawyerAPI.getNearbyLawyers(
+          { latitude: newLocation[0], longitude: newLocation[1] },
+          searchRadius
+        );
+        if (nearbyLawyers && nearbyLawyers.length > 0) {
+          setLawyers(nearbyLawyers);
+        }
+      }
+      
+      // Filter legal bodies within radius of new location
+      const nearbyLegalBodies = COMPREHENSIVE_LEGAL_BODIES.filter(body => {
+        const distance = calculateDistance(
+          newLocation[0], newLocation[1],
+          body.location.lat, body.location.lng
+        );
+        return distance <= searchRadius;
+      });
+      setLegalBodies(nearbyLegalBodies);
+      
+    } catch (error) {
+      console.log('Error updating for new location:', error);
+    }
+  };
+
+  // Calculate distance between two points in meters
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = lat1 * Math.PI/180;
+    const φ2 = lat2 * Math.PI/180;
+    const Δφ = (lat2-lat1) * Math.PI/180;
+    const Δλ = (lon2-lon1) * Math.PI/180;
+
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c;
+  };
+
   const handleLocationAllow = () => {
     setShowLocationModal(false);
     setShowSearchingModal(true);
@@ -1874,13 +2715,16 @@ const VirtualBakil = () => {
       (position) => {
         const userPos = [position.coords.latitude, position.coords.longitude];
         setUserLocation(userPos);
+        updateForNewLocation(userPos);
         setShowSearchingModal(false);
       },
       (error) => {
         console.error('Error getting location:', error);
         setShowSearchingModal(false);
         // Continue with default location instead of showing error
-        setUserLocation([28.6139, 77.2090]); // Default Delhi location
+        const defaultLocation = [28.6139, 77.2090];
+        setUserLocation(defaultLocation);
+        updateForNewLocation(defaultLocation);
       }
     );
   };
@@ -1895,6 +2739,16 @@ const VirtualBakil = () => {
     setShowLawyerModal(true);
   };
 
+  const handleLegalBodySelect = (legalBody) => {
+    setSelectedLegalBody(legalBody);
+    setShowLegalBodyModal(true);
+  };
+
+  const handleLocationChange = (newLocation) => {
+    setUserLocation(newLocation);
+    updateForNewLocation(newLocation);
+  };
+
   const handleCall = async (lawyer) => {
     try {
       setSelectedLawyer(lawyer);
@@ -1904,7 +2758,16 @@ const VirtualBakil = () => {
       setConnectionStep('call');
       setShowConnectionModal(true);
       
-      // You can integrate with your existing call API here
+      // Integrate with existing call API
+      if (apiServices && apiServices.startCallSession) {
+        try {
+          const callSession = await apiServices.startCallSession(lawyer.id);
+          console.log('Call session started:', callSession);
+        } catch (apiError) {
+          console.log('API call failed, proceeding with mock:', apiError);
+        }
+      }
+      
       console.log('Starting call with:', lawyer);
       
       // Connection animation will auto-close and show call modal
@@ -1926,7 +2789,16 @@ const VirtualBakil = () => {
       setConnectionStep('chat');
       setShowConnectionModal(true);
       
-      // You can integrate with your existing chat API here
+      // Integrate with existing chat API
+      if (apiServices && apiServices.startChatSession) {
+        try {
+          const chatSession = await apiServices.startChatSession(lawyer.id);
+          console.log('Chat session started:', chatSession);
+        } catch (apiError) {
+          console.log('API chat failed, proceeding with mock:', apiError);
+        }
+      }
+      
       console.log('Starting chat with:', lawyer);
       
       // Connection animation will auto-close and show chat modal
@@ -1943,7 +2815,27 @@ const VirtualBakil = () => {
     try {
       console.log('Booking appointment with:', lawyer);
       setShowLawyerModal(false);
-      alert('Appointment booked successfully!');
+      
+      // Integrate with existing booking API
+      if (lawyerAPI && lawyerAPI.bookLawyerAppointment) {
+        try {
+          const appointmentData = {
+            date: new Date().toISOString().split('T')[0],
+            time: '14:00',
+            type: 'consultation',
+            notes: 'Virtual Bakil booking'
+          };
+          
+          const booking = await lawyerAPI.bookLawyerAppointment(lawyer.id, appointmentData);
+          console.log('Appointment booked:', booking);
+          alert('Appointment booked successfully!');
+        } catch (apiError) {
+          console.log('API booking failed:', apiError);
+          alert('Appointment request sent! You will receive confirmation shortly.');
+        }
+      } else {
+        alert('Appointment request sent! You will receive confirmation shortly.');
+      }
     } catch (error) {
       console.error('Error booking appointment:', error);
       setShowLawyerModal(false);
@@ -1986,43 +2878,90 @@ const VirtualBakil = () => {
     <div className="relative w-full h-screen overflow-hidden">
       {/* Full Page Professional Map Container */}
       <div className="absolute inset-0">
-        {/* Map Container */}
-        <div className="w-full h-full">
-          Professional Map Overlay
-          {/* <MapOverlay 
-            onlineLawyersCount={onlineLawyersCount}
+        {/* Enhanced Map Container - Header Friendly */}
+        <div className="w-full h-full relative">
+          
+          {/* No Header Interference - Floating Side Controls Only */}
+          <FloatingSideControls 
             theme={theme}
             onToggleFilters={() => setShowFilters(!showFilters)}
-          /> */}
+            showLegalBodies={showLegalBodies}
+            onToggleLegalBodies={() => setShowLegalBodies(!showLegalBodies)}
+          />
+
+          {/* Bottom Stats Bar - No Header Conflict */}
+          <CompactStatsBar 
+            onlineLawyersCount={onlineLawyersCount}
+            legalBodiesCount={legalBodiesCount}
+            theme={theme}
+            isDragging={isDragging}
+            searchRadius={searchRadius}
+          />
           
-          {/* Map */}
+          {/* Enhanced Map with Click-to-Move & Smooth Zoom */}
           <MapContainer 
             center={userLocation || [28.6139, 77.2090]} 
-            zoom={12} 
+            zoom={13}
+            minZoom={3}
+            maxZoom={18}
             className="w-full h-full z-0"
             zoomControl={false}
+            scrollWheelZoom={true}
+            doubleClickZoom={true}
+            touchZoom={true}
+            dragging={true}
+            zoomAnimation={true}
+            fadeAnimation={true}
+            markerZoomAnimation={true}
+            zoomSnap={1}
+            zoomDelta={1}
+            wheelPxPerZoomLevel={120}
+            style={{ background: 'transparent' }}
           >
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              maxZoom={18}
+              minZoom={3}
+              keepBuffer={2}
+              updateWhenZooming={false}
+              updateWhenIdle={true}
             />
+
+            {/* Click-to-Move Location Handler */}
+            <MapClickHandler 
+              onLocationChange={handleLocationChange}
+              setIsDragging={setIsDragging}
+            />
+
+            {/* Smooth Custom Zoom Controls Inside Map */}
+            <CustomZoomControls theme={theme} />
             
-            {/* User location marker */}
-            {userLocation && <LocationMarker position={userLocation} setPosition={setUserLocation} />}
+            {/* Enhanced user location picker */}
+            {userLocation && (
+              <LocationPicker 
+                position={userLocation} 
+                onLocationChange={handleLocationChange}
+                isDragging={isDragging}
+                setIsDragging={setIsDragging}
+                theme={theme}
+              />
+            )}
             
-            {/* Search radius circle */}
+            {/* Search radius circle - more subtle */}
             {userLocation && (
               <Circle
                 center={userLocation}
                 radius={searchRadius}
-                fillColor="blue"
-                fillOpacity={0.1}
-                color="blue"
-                weight={1}
+                fillColor={theme === 'dark' ? '#3b82f6' : '#6366f1'}
+                fillOpacity={0.05}
+                color={theme === 'dark' ? '#3b82f6' : '#6366f1'}
+                weight={2}
+                dashArray="5, 5"
               />
             )}
             
-            {/* Lawyer markers */}
+            {/* Enhanced lawyer markers */}
             {lawyers.map((lawyer) => (
               <LawyerMarker
                 key={lawyer.id}
@@ -2032,11 +2971,22 @@ const VirtualBakil = () => {
                 theme={theme}
               />
             ))}
+
+            {/* Legal body markers */}
+            {showLegalBodies && legalBodies.map((legalBody) => (
+              <LegalBodyMarker
+                key={legalBody.id}
+                legalBody={legalBody}
+                isSelected={selectedLegalBody?.id === legalBody.id}
+                onSelect={handleLegalBodySelect}
+                theme={theme}
+              />
+            ))}
           </MapContainer>
         </div>
       </div>
       
-      {/* Professional Modals */}
+      {/* Enhanced Professional Modals */}
       <LocationModal
         isOpen={showLocationModal}
         onAllow={handleLocationAllow}
@@ -2052,7 +3002,7 @@ const VirtualBakil = () => {
       
       <ConnectionAnimation
         isVisible={showConnectionModal}
-        lawyerName={selectedLawyer?.name || 'Lawyer'}
+        lawyerName={selectedLawyer?.name || 'Legal Professional'}
         onComplete={handleConnectionComplete}
       />
       
@@ -2063,6 +3013,13 @@ const VirtualBakil = () => {
         onCall={handleCall}
         onChat={handleChat}
         onBooking={handleBooking}
+        theme={theme}
+      />
+
+      <LegalBodyInfoModal
+        legalBody={selectedLegalBody}
+        isOpen={showLegalBodyModal}
+        onClose={() => setShowLegalBodyModal(false)}
         theme={theme}
       />
       

@@ -5,7 +5,7 @@ import {
   AlertCircle, Loader, FileText, MessageSquare,
   Building, Pencil, Check, Eye, EyeOff,
   Trash2, RefreshCw, Github, Twitter, Linkedin, Facebook,
-  Laptop, Video, Clock
+  Laptop, Video, Clock, Star, ArrowRight
 } from 'lucide-react';
 import { apiServices } from '../../api/apiService';
 import { useSelector } from 'react-redux';
@@ -53,10 +53,13 @@ const UserProfile = () => {
     last_name: 'Doe',
     email: 'john.doe@example.com',
     phone: '+1 (555) 123-4567',
+    address: 'Sector 15',
     location: 'New Delhi, India',
-    website: 'https://johndoe.dev',
+    city: 'New Delhi',
+    state: 'Delhi',
+    country: 'India',
+    zip_code: '110001',
     joinDate: 'January 15, 2023',
-    company: 'MeraBakil Legal Solutions',
     bio: 'Legal professional with expertise in corporate law and intellectual property. Passionate about using technology to make legal services more accessible.',
     title: 'Senior Legal Consultant',
     avatar_url: null, // No default avatar - will show initials
@@ -82,6 +85,10 @@ const UserProfile = () => {
   const [editForm, setEditForm] = useState({});
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [appointmentDetails, setAppointmentDetails] = useState([]);
+  const [showQueriesModal, setShowQueriesModal] = useState(false);
+  const [queriesDetails, setQueriesDetails] = useState([]);
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
+  const [reviewsDetails, setReviewsDetails] = useState([]);
 
   // Show message - updated to use our toast system
   const showMessage = useCallback((type, text, duration = 5000) => {
@@ -151,18 +158,17 @@ const UserProfile = () => {
         last_name: userData.last_name || userData.surname || '',
         email: userData.email || '',
         phone: userData.phone || userData.phone_number || '',
-        location: userData.address || '',
+        address: userData.address || '',
+        location: userData.full_address || '',
         city: userData.city || '',
         state: userData.state || '',
         country: userData.country || '',
         zip_code: userData.zip_code || userData.postal_code || '',
-        website: userData.website || '',
         joinDate: userData.created_at ? new Date(userData.created_at).toLocaleDateString('en-US', { 
           year: 'numeric', 
           month: 'long', 
           day: 'numeric' 
         }) : 'Not available',
-        company: userData.company || userData.organization || '',
         bio: userData.bio || userData.about || 'No bio available',
         title: userData.title || userData.job_title || userData.profession || '',
         avatar_url: userData.avatar_url || null,
@@ -308,13 +314,86 @@ const UserProfile = () => {
     }
   };
 
-  // Handle appointment join
-  const handleJoinAppointment = (appointmentId) => {
-    console.log('Joining appointment:', appointmentId);
-    showSuccess('Joining', 'Redirecting to appointment room...');
-    // Add your join appointment logic here
-    // e.g., navigate to video call or appointment page
+  // Handle appointment join with Google Meet redirect
+  const handleJoinAppointment = (appointment) => {
+    console.log('Joining appointment:', appointment);
+    
+    // Check if appointment has Google Meet link
+    if (appointment.google_meet_link) {
+      // Open Google Meet link in new tab
+      window.open(appointment.google_meet_link, '_blank', 'noopener,noreferrer');
+      showSuccess('Joining', 'Opening Google Meet...');
+    } else {
+      // Fallback: show message that no meeting link is available
+      showWarning('No Meeting Link', 'This appointment does not have a meeting link available.');
+    }
   };
+
+  // Handle queries count click - show queries details
+  const handleQueriesClick = useCallback(async () => {
+    console.log('Queries count clicked, showing queries details');
+    
+    try {
+      // Get queries details from user profile data
+      const queries = userInfo?.legal_queries || [];
+      
+      if (queries.length === 0) {
+        setQueriesDetails([]);
+      } else {
+        // Process queries data
+        const processedQueries = queries.map(query => ({
+          ...query,
+          formattedDate: new Date(query.created_at || query.date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
+        }));
+        
+        setQueriesDetails(processedQueries);
+        console.log('Processed queries:', processedQueries);
+      }
+      
+      setShowQueriesModal(true);
+    } catch (error) {
+      console.error('Error fetching queries details:', error);
+      showError('Error', 'Failed to fetch queries details');
+    }
+  }, [userInfo, showError]);
+
+  // Handle reviews count click - show reviews details
+  const handleReviewsClick = useCallback(async () => {
+    console.log('Reviews count clicked, showing reviews details');
+    
+    try {
+      // Get reviews details from user profile data
+      const reviews = userInfo?.reviews || [];
+      
+      if (reviews.length === 0) {
+        setReviewsDetails([]);
+      } else {
+        // Process reviews data
+        const processedReviews = reviews.map(review => ({
+          ...review,
+          formattedDate: new Date(review.created_at || review.date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })
+        }));
+        
+        setReviewsDetails(processedReviews);
+        console.log('Processed reviews:', processedReviews);
+      }
+      
+      setShowReviewsModal(true);
+    } catch (error) {
+      console.error('Error fetching reviews details:', error);
+      showError('Error', 'Failed to fetch reviews details');
+    }
+  }, [userInfo, showError]);
 
   useEffect(() => {
     fetchUserData();
@@ -336,10 +415,6 @@ const UserProfile = () => {
     
     if (editForm.phone && !/^[+]?[1-9][\d\s\-()]{7,15}$/.test(editForm.phone)) {
       newErrors.phone = 'Invalid phone number';
-    }
-    
-    if (editForm.website && !/^https?:\/\/.+\..+/.test(editForm.website)) {
-      newErrors.website = 'Invalid URL format';
     }
     
     setErrors(newErrors);
@@ -443,7 +518,7 @@ const UserProfile = () => {
       setIsUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
-  }, [showSuccess, showError, showWarning, showInfo, hideToast]);
+  }, [showSuccess, showError, showWarning, showInfo, hideToast, userInfo?.id]);
 
   // Save profile changes - enhanced with better error handling and UX
   const handleSave = useCallback(async () => {
@@ -464,13 +539,11 @@ const UserProfile = () => {
         last_name: editForm.last_name,
         email: editForm.email,
         phone: editForm.phone,
-        address: editForm.location,
+        address: editForm.address,
         city: editForm.city,
         state: editForm.state,
         country: editForm.country,
         zip_code: editForm.zip_code,
-        website: editForm.website,
-        company: editForm.company,
         bio: editForm.bio,
         title: editForm.title,
         // Don't send avatar in the JSON payload if it's a data URL
@@ -850,91 +923,129 @@ const UserProfile = () => {
 
   // Main UI
   return (
-    <div className={`min-h-screen pt-24 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} transition-colors duration-300 relative`}>
+    <div className={`min-h-screen pt-16 sm:pt-20 md:pt-24 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} transition-colors duration-300 relative`}>
       {/* Toast Notification */}
       <Toast toast={toast} onClose={hideToast} />
       
-      {/* Close Button */}
+      {/* Close Button - Better positioned for mobile and desktop */}
       <button 
         onClick={() => window.history.back()}
-        className="fixed top-28 right-6 z-40 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 group"
+        className="fixed top-20 sm:top-24 md:top-28 right-4 sm:right-6 z-50 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-gray-700 dark:text-gray-200 p-2.5 sm:p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-white dark:hover:bg-gray-700 group border border-gray-200 dark:border-gray-600"
         aria-label="Close profile"
       >
-        <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+        <X className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-90 transition-transform duration-300" />
       </button>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
 
-        {/* Tabs - Desktop */}
-        <div className="hidden md:flex mb-8 border-b border-gray-200 dark:border-gray-700">
+        {/* Enhanced Premium Tabs - Desktop */}
+        <div className="hidden md:flex mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-1">
           <button
             onClick={() => setActiveTab('profile')}
-            className={`px-6 py-3 font-medium text-sm focus:outline-none ${
+            className={`flex-1 flex items-center justify-center px-6 py-3 font-medium text-sm rounded-lg transition-all duration-300 focus:outline-none ${
               activeTab === 'profile'
-                ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md transform scale-[1.02]'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
             }`}
           >
-            <User className="w-4 h-4 inline mr-2" />
+            <User className="w-4 h-4 mr-2" />
             Profile
           </button>
           <button
             onClick={() => setActiveTab('security')}
-            className={`px-6 py-3 font-medium text-sm focus:outline-none ${
+            className={`flex-1 flex items-center justify-center px-6 py-3 font-medium text-sm rounded-lg transition-all duration-300 focus:outline-none ${
               activeTab === 'security'
-                ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md transform scale-[1.02]'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
             }`}
           >
-            <Lock className="w-4 h-4 inline mr-2" />
+            <Lock className="w-4 h-4 mr-2" />
             Security
           </button>
           <button
             onClick={() => setActiveTab('notifications')}
-            className={`px-6 py-3 font-medium text-sm focus:outline-none ${
+            className={`flex-1 flex items-center justify-center px-6 py-3 font-medium text-sm rounded-lg transition-all duration-300 focus:outline-none ${
               activeTab === 'notifications'
-                ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md transform scale-[1.02]'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
             }`}
           >
-            <Bell className="w-4 h-4 inline mr-2" />
+            <Bell className="w-4 h-4 mr-2" />
             Notifications
           </button>
           <button
             onClick={() => setActiveTab('preferences')}
-            className={`px-6 py-3 font-medium text-sm focus:outline-none ${
+            className={`flex-1 flex items-center justify-center px-6 py-3 font-medium text-sm rounded-lg transition-all duration-300 focus:outline-none ${
               activeTab === 'preferences'
-                ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md transform scale-[1.02]'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
             }`}
           >
-            <Settings className="w-4 h-4 inline mr-2" />
+            <Settings className="w-4 h-4 mr-2" />
             Preferences
           </button>
         </div>
 
-        {/* Tabs - Mobile */}
+        {/* Enhanced Mobile Tabs */}
         <div className="md:hidden mb-6">
-          <select
-            value={activeTab}
-            onChange={(e) => setActiveTab(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md bg-white dark:bg-gray-800 dark:border-gray-700 text-gray-900 dark:text-white"
-          >
-            <option value="profile">Profile</option>
-            <option value="security">Security</option>
-            <option value="notifications">Notifications</option>
-            <option value="preferences">Preferences</option>
-          </select>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-1">
+            <div className="grid grid-cols-2 gap-1">
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`flex items-center justify-center px-3 py-2.5 text-xs font-medium rounded-lg transition-all duration-300 ${
+                  activeTab === 'profile'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                }`}
+              >
+                <User className="w-3.5 h-3.5 mr-1.5" />
+                Profile
+              </button>
+              <button
+                onClick={() => setActiveTab('security')}
+                className={`flex items-center justify-center px-3 py-2.5 text-xs font-medium rounded-lg transition-all duration-300 ${
+                  activeTab === 'security'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                }`}
+              >
+                <Lock className="w-3.5 h-3.5 mr-1.5" />
+                Security
+              </button>
+              <button
+                onClick={() => setActiveTab('notifications')}
+                className={`flex items-center justify-center px-3 py-2.5 text-xs font-medium rounded-lg transition-all duration-300 ${
+                  activeTab === 'notifications'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                }`}
+              >
+                <Bell className="w-3.5 h-3.5 mr-1.5" />
+                Notifications
+              </button>
+              <button
+                onClick={() => setActiveTab('preferences')}
+                className={`flex items-center justify-center px-3 py-2.5 text-xs font-medium rounded-lg transition-all duration-300 ${
+                  activeTab === 'preferences'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                }`}
+              >
+                <Settings className="w-3.5 h-3.5 mr-1.5" />
+                Preferences
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Profile Tab Content */}
         {activeTab === 'profile' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
             {/* Left Column - Profile Card */}
             <div className="lg:col-span-1">
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
                 {/* Enhanced Premium Profile Header */}
-                <div className="h-40 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 relative overflow-hidden">
+                <div className="h-40 sm:h-44 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 relative overflow-hidden">
                   {/* Background Pattern */}
                   <div className="absolute inset-0 bg-black bg-opacity-10">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-transparent via-white/5 to-white/10"></div>
@@ -942,8 +1053,10 @@ const UserProfile = () => {
                   
                   {/* Account Type Badge */}
                   {userInfo.account_type === 'Lawyer' && (
-                    <div className="absolute top-4 right-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-full text-xs font-semibold flex items-center shadow-lg backdrop-blur-sm">
-                      <Briefcase className="w-3 h-3 mr-2" /> Legal Professional
+                    <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold flex items-center shadow-lg backdrop-blur-sm">
+                      <Briefcase className="w-3 h-3 mr-1.5 sm:mr-2" /> 
+                      <span className="hidden sm:inline">Legal Professional</span>
+                      <span className="sm:hidden">Legal</span>
                     </div>
                   )}
                   
@@ -951,25 +1064,25 @@ const UserProfile = () => {
                   {!isEditing ? (
                     <button 
                       onClick={() => setIsEditing(true)}
-                      className="absolute top-4 left-4 bg-white/20 backdrop-blur-sm text-white p-3 rounded-full hover:bg-white/30 transition-all duration-300 shadow-lg hover:scale-105"
+                      className="absolute top-3 left-3 sm:top-4 sm:left-4 bg-white/20 backdrop-blur-sm text-white p-2.5 sm:p-3 rounded-full hover:bg-white/30 transition-all duration-300 shadow-lg hover:scale-105"
                     >
-                      <Pencil className="w-4 h-4" />
+                      <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
                   ) : (
-                    <div className="absolute top-4 left-4 flex space-x-2">
+                    <div className="absolute top-3 left-3 sm:top-4 sm:left-4 flex space-x-1.5 sm:space-x-2">
                       <button 
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="bg-gradient-to-r from-green-500 to-green-600 text-white p-3 rounded-full hover:from-green-600 hover:to-green-700 transition-all duration-300 disabled:opacity-50 shadow-lg hover:scale-105"
+                        className="bg-gradient-to-r from-green-500 to-green-600 text-white p-2.5 sm:p-3 rounded-full hover:from-green-600 hover:to-green-700 transition-all duration-300 disabled:opacity-50 shadow-lg hover:scale-105"
                       >
-                        {isSaving ? <Loader className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                        {isSaving ? <Loader className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                       </button>
                       <button 
                         onClick={handleCancel}
                         disabled={isSaving}
-                        className="bg-gradient-to-r from-red-500 to-red-600 text-white p-3 rounded-full hover:from-red-600 hover:to-red-700 transition-all duration-300 disabled:opacity-50 shadow-lg hover:scale-105"
+                        className="bg-gradient-to-r from-red-500 to-red-600 text-white p-2.5 sm:p-3 rounded-full hover:from-red-600 hover:to-red-700 transition-all duration-300 disabled:opacity-50 shadow-lg hover:scale-105"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       </button>
                     </div>
                   )}
@@ -1126,25 +1239,40 @@ const UserProfile = () => {
                   {/* Stats */}
                   <div className="mt-6 grid grid-cols-3 gap-4 border-t border-gray-200 dark:border-gray-700 pt-4">
                     <div 
-                      className="text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg p-2 transition-colors duration-200"
+                      className="text-center cursor-pointer hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50 dark:hover:from-blue-900/20 dark:hover:to-cyan-900/20 rounded-xl p-3 transition-all duration-300 hover:shadow-lg hover:scale-105 group"
                       onClick={handleAppointmentClick}
                     >
-                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
+                      <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300">
+                        <Calendar size={20} className="text-white" />
+                      </div>
+                      <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-cyan-700 group-hover:to-teal-700 transition-all duration-300">
                         {(userInfo?.stats?.appointments || 0).toLocaleString()}
                       </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Appointments</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-300">Appointments</p>
                     </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <div 
+                      className="text-center cursor-pointer hover:bg-gradient-to-br hover:from-purple-50 hover:to-pink-50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 rounded-xl p-3 transition-all duration-300 hover:shadow-lg hover:scale-105 group"
+                      onClick={handleQueriesClick}
+                    >
+                      <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300">
+                        <MessageSquare size={20} className="text-white" />
+                      </div>
+                      <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 bg-clip-text text-transparent group-hover:from-purple-700 group-hover:via-pink-700 group-hover:to-rose-700 transition-all duration-300">
                         {(userInfo?.stats?.queries || 0).toLocaleString()}
                       </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Queries</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-300">Queries</p>
                     </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <div 
+                      className="text-center cursor-pointer hover:bg-gradient-to-br hover:from-amber-50 hover:to-orange-50 dark:hover:from-amber-900/20 dark:hover:to-orange-900/20 rounded-xl p-3 transition-all duration-300 hover:shadow-lg hover:scale-105 group"
+                      onClick={handleReviewsClick}
+                    >
+                      <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300">
+                        <Star size={20} className="text-white" />
+                      </div>
+                      <p className="text-2xl font-bold bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 bg-clip-text text-transparent group-hover:from-amber-700 group-hover:via-orange-700 group-hover:to-red-700 transition-all duration-300">
                         {(userInfo?.stats?.reviews || 0).toLocaleString()}
                       </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Reviews</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-300">Reviews</p>
                     </div>
                   </div>
                   
@@ -1244,36 +1372,65 @@ const UserProfile = () => {
                 </div>
               </div>
               
-              {/* Member Since Card */}
-              <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-                <div className="flex items-center">
-                  <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-3" />
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Member Since</h3>
-                    <p className="text-gray-900 dark:text-white font-medium">{userInfo.joinDate}</p>
+              {/* Professional Trust Badge */}
+              <div className="mt-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <div className="p-6">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
+                        <Award className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+                    <div className="ml-4 flex-1">
+                      <div className="flex items-center mb-2">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          Verified Legal Professional
+                        </h3>
+                        <div className="ml-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                        Trusted member of the MeraBakil legal community since {userInfo.joinDate}
+                      </p>
+                      <div className="mt-3 flex items-center">
+                        <div className="flex -space-x-1">
+                          <div className="w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full border border-white dark:border-gray-800"></div>
+                          <div className="w-4 h-4 bg-gradient-to-r from-green-400 to-blue-500 rounded-full border border-white dark:border-gray-800"></div>
+                          <div className="w-4 h-4 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full border border-white dark:border-gray-800"></div>
+                        </div>
+                        <span className="ml-2 text-xs font-medium text-gray-700 dark:text-gray-300">
+                          Excellence & Trust
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
+                <div className="h-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"></div>
               </div>
             </div>
             
             {/* Right Column - Details */}
             <div className="lg:col-span-2 space-y-6">
               {/* Contact Information */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                  <h2 className="text-lg font-medium text-gray-900 dark:text-white">Contact Information</h2>
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <div className="px-4 sm:px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
+                      <Mail className="w-4 h-4 text-white" />
+                    </div>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Contact Information</h2>
+                  </div>
                   {!isEditing && (
                     <button 
                       onClick={() => setIsEditing(true)}
-                      className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center text-sm"
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center shadow-sm"
                     >
-                      <Pencil className="w-4 h-4 mr-1" /> Edit
+                      <Pencil className="w-3.5 h-3.5 mr-1.5" /> Edit
                     </button>
                   )}
                 </div>
                 
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-4 sm:p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     {/* Email */}
                     <div>
                       {isEditing ? (
@@ -1402,66 +1559,140 @@ const UserProfile = () => {
                       )}
                     </div>
                     
-                    {/* Website */}
+                    {/* Address */}
                     <div>
                       {isEditing ? (
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Website
+                            Address
                           </label>
                           <input
-                            type="url"
-                            value={editForm.website || ''}
-                            onChange={(e) => handleInputChange('website', e.target.value)}
-                            className={`w-full px-3 py-2 border ${errors.website ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
+                            type="text"
+                            value={editForm.address || ''}
+                            onChange={(e) => handleInputChange('address', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            placeholder="Enter your address"
                           />
-                          {errors.website && <p className="mt-1 text-sm text-red-500">{errors.website}</p>}
                         </div>
                       ) : (
                         <div className="flex">
-                          <Globe className="w-5 h-5 text-gray-400 mr-3" />
+                          <MapPin className="w-5 h-5 text-gray-400 mr-3" />
                           <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Website</p>
-                            {userInfo.website ? (
-                              <a 
-                                href={userInfo.website} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="text-blue-600 dark:text-blue-400 hover:underline"
-                              >
-                                {userInfo.website}
-                              </a>
-                            ) : (
-                              <p className="text-gray-900 dark:text-white">Not specified</p>
-                            )}
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Address</p>
+                            <p className="text-gray-900 dark:text-white">{userInfo.address || 'Not specified'}</p>
                           </div>
                         </div>
                       )}
                     </div>
                     
-                    {/* Company */}
-                    <div>
-                      {isEditing ? (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Company
-                          </label>
-                          <input
-                            type="text"
-                            value={editForm.company || ''}
-                            onChange={(e) => handleInputChange('company', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex">
-                          <Building className="w-5 h-5 text-gray-400 mr-3" />
+                    {/* City & State */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* City */}
+                      <div>
+                        {isEditing ? (
                           <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Company</p>
-                            <p className="text-gray-900 dark:text-white">{userInfo.company || 'Not specified'}</p>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              City
+                            </label>
+                            <input
+                              type="text"
+                              value={editForm.city || ''}
+                              onChange={(e) => handleInputChange('city', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              placeholder="Enter your city"
+                            />
                           </div>
-                        </div>
-                      )}
+                        ) : (
+                          <div className="flex">
+                            <Building className="w-5 h-5 text-gray-400 mr-3" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">City</p>
+                              <p className="text-gray-900 dark:text-white">{userInfo.city || 'Not specified'}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* State */}
+                      <div>
+                        {isEditing ? (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              State/Province
+                            </label>
+                            <input
+                              type="text"
+                              value={editForm.state || ''}
+                              onChange={(e) => handleInputChange('state', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              placeholder="Enter your state/province"
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex">
+                            <MapPin className="w-5 h-5 text-gray-400 mr-3" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">State/Province</p>
+                              <p className="text-gray-900 dark:text-white">{userInfo.state || 'Not specified'}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Country & ZIP Code */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Country */}
+                      <div>
+                        {isEditing ? (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Country
+                            </label>
+                            <input
+                              type="text"
+                              value={editForm.country || ''}
+                              onChange={(e) => handleInputChange('country', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              placeholder="Enter your country"
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex">
+                            <Globe className="w-5 h-5 text-gray-400 mr-3" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Country</p>
+                              <p className="text-gray-900 dark:text-white">{userInfo.country || 'Not specified'}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* ZIP Code */}
+                      <div>
+                        {isEditing ? (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              ZIP/Postal Code
+                            </label>
+                            <input
+                              type="text"
+                              value={editForm.zip_code || ''}
+                              onChange={(e) => handleInputChange('zip_code', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              placeholder="Enter ZIP/Postal code"
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex">
+                            <Mail className="w-5 h-5 text-gray-400 mr-3" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">ZIP/Postal Code</p>
+                              <p className="text-gray-900 dark:text-white">{userInfo.zip_code || 'Not specified'}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1860,115 +2091,110 @@ const UserProfile = () => {
         )}
       </div>
 
-      {/* Glass Style Appointment Details Modal */}
+      {/* Premium Appointment Details Modal */}
       {showAppointmentModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 dark:border-gray-700/50 w-full max-w-6xl max-h-[95vh] overflow-hidden">
-            {/* Glass Modal Header */}
-            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 w-full max-w-4xl max-h-[85vh] overflow-hidden transition-all duration-300 animate-fadeIn">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-blue-100/80 dark:bg-blue-900/50 backdrop-blur-sm rounded-xl border border-blue-200/30 dark:border-blue-800/30">
-                    <Calendar className="w-5 sm:w-6 h-5 sm:h-6 text-blue-600 dark:text-blue-400" />
+                  <div className="p-2.5 bg-blue-100 dark:bg-blue-900/50 rounded-xl">
+                    <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                       My Appointments
                     </h2>
-                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       {appointmentDetails.length} {appointmentDetails.length === 1 ? 'appointment' : 'appointments'} found
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowAppointmentModal(false)}
-                  className="p-2 hover:bg-gray-100/70 dark:hover:bg-gray-700/50 rounded-xl transition-all duration-200 group backdrop-blur-sm"
+                  className="p-2 hover:bg-gray-200/50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
                 >
-                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-200" />
+                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 </button>
               </div>
             </div>
 
-            {/* Glass Modal Content */}
-            <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-120px)]">
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(85vh-80px)]">
               {appointmentDetails.length === 0 ? (
-                // Glass No appointments state
-                <div className="text-center py-12 sm:py-16">
-                  <div className="relative mb-6">
-                    <div className="w-20 sm:w-24 h-20 sm:h-24 mx-auto bg-blue-100/80 dark:bg-gray-700/50 backdrop-blur-sm rounded-full flex items-center justify-center border border-blue-200/30 dark:border-gray-600/30">
-                      <Calendar className="w-10 sm:w-12 h-10 sm:h-12 text-blue-500 dark:text-blue-400" />
-                    </div>
-                    <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gray-200/80 dark:bg-gray-600/50 backdrop-blur-sm rounded-full flex items-center justify-center border border-gray-300/30 dark:border-gray-500/30">
-                      <AlertCircle className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                    </div>
+                // No appointments state
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 mx-auto bg-blue-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                    <Calendar className="w-8 h-8 text-blue-500 dark:text-blue-400" />
                   </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                     No Appointments Scheduled
                   </h3>
-                  <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto px-4">
-                    You don't have any appointments scheduled yet. Book a consultation with our legal experts to get started.
+                  <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">
+                    You don't have any appointments scheduled yet. Book a consultation with our legal experts.
                   </p>
                   <button
                     onClick={() => setShowAppointmentModal(false)}
-                    className="px-6 py-3 bg-blue-600 dark:bg-blue-600 text-white rounded-xl hover:bg-blue-700 dark:hover:bg-blue-700 transition-all duration-200 shadow-lg font-medium"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                   >
                     Close
                   </button>
                 </div>
               ) : (
-                // Glass appointment details
-                <div className="space-y-4 sm:space-y-6">
+                // Appointment details list
+                <div className="space-y-4">
                   {appointmentDetails.map((appointment, index) => (
                     <div
                       key={appointment.id || index}
-                      className={`relative overflow-hidden rounded-2xl border transition-all duration-300 hover:shadow-lg backdrop-blur-sm ${
+                      className={`rounded-xl border transition-all duration-200 hover:shadow-md ${
                         appointment.canJoin
-                          ? 'border-green-300/50 bg-green-50/80 dark:border-green-700/50 dark:bg-green-900/20 shadow-green-100/50 dark:shadow-green-900/20'
+                          ? 'border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800'
                           : appointment.isToday && !appointment.canJoin
-                          ? 'border-orange-300/50 bg-orange-50/80 dark:border-orange-700/50 dark:bg-orange-900/20'
-                          : 'border-gray-200/50 bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 hover:border-gray-300/50 dark:hover:border-gray-600/50'
+                          ? 'border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-800'
+                          : 'border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
                       }`}
                     >
-                      {/* Status Indicator Bar */}
+                      {/* Status Indicator */}
                       {appointment.canJoin && (
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-green-500"></div>
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-green-500 rounded-t-xl"></div>
                       )}
                       
-                      <div className="p-4 sm:p-6">
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0">
+                      <div className="p-4">
+                        <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            {/* Glass Appointment Header */}
-                            <div className="flex items-start space-x-3 sm:space-x-4 mb-4">
-                              <div className={`p-2.5 sm:p-3 rounded-xl backdrop-blur-sm border ${
+                            {/* Appointment Header */}
+                            <div className="flex items-start space-x-3 mb-3">
+                              <div className={`p-2 rounded-lg ${
                                 appointment.canJoin 
-                                  ? 'bg-green-100/80 dark:bg-green-900/50 border-green-200/30 dark:border-green-800/30' 
-                                  : 'bg-blue-100/80 dark:bg-blue-900/50 border-blue-200/30 dark:border-blue-800/30'
+                                  ? 'bg-green-100 dark:bg-green-900/50' 
+                                  : 'bg-blue-100 dark:bg-blue-900/50'
                               }`}>
-                                <Briefcase className={`w-4 sm:w-5 h-4 sm:h-5 ${
+                                <Briefcase className={`w-4 h-4 ${
                                   appointment.canJoin 
                                     ? 'text-green-600 dark:text-green-400' 
                                     : 'text-blue-600 dark:text-blue-400'
                                 }`} />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <h4 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1 truncate">
+                                <h4 className="text-base font-semibold text-gray-900 dark:text-white truncate">
                                   Legal Consultation
                                 </h4>
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold capitalize backdrop-blur-sm ${
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className={`px-2 py-1 rounded-md text-xs font-medium capitalize ${
                                     appointment.status === 'scheduled'
-                                      ? 'bg-blue-100/80 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 border border-blue-200/30 dark:border-blue-800/30'
+                                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300'
                                       : appointment.status === 'confirmed'
-                                      ? 'bg-green-100/80 text-green-800 dark:bg-green-900/50 dark:text-green-300 border border-green-200/30 dark:border-green-800/30'
+                                      ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
                                       : appointment.status === 'cancelled'
-                                      ? 'bg-red-100/80 text-red-800 dark:bg-red-900/50 dark:text-red-300 border border-red-200/30 dark:border-red-800/30'
-                                      : 'bg-gray-100/80 text-gray-800 dark:bg-gray-700/50 dark:text-gray-300 border border-gray-200/30 dark:border-gray-600/30'
+                                      ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                                      : 'bg-gray-100 text-gray-800 dark:bg-gray-700/50 dark:text-gray-300'
                                   }`}>
                                     {appointment.status || 'scheduled'}
                                   </span>
                                   
                                   {appointment.canJoin && (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100/80 text-green-800 dark:bg-green-900/50 dark:text-green-300 border border-green-200/30 dark:border-green-800/30 backdrop-blur-sm">
+                                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
                                       <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse"></div>
                                       Available Now
                                     </span>
@@ -1977,43 +2203,35 @@ const UserProfile = () => {
                               </div>
                             </div>
 
-                            {/* Glass Appointment Details Grid */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-4">
-                              {/* Date */}
-                              <div className="flex items-center space-x-3 p-3 bg-gray-50/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-200/30 dark:border-gray-700/30">
-                                <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
-                                <div className="min-w-0">
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Date</p>
-                                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                    {appointment.appointment_time 
-                                      ? new Date(appointment.appointment_time).toLocaleDateString('en-US', {
-                                          weekday: 'short',
-                                          year: 'numeric',
-                                          month: 'short',
-                                          day: 'numeric'
-                                        })
-                                      : 'Date not specified'
-                                    }
-                                  </p>
-                                </div>
+                            {/* Appointment Details */}
+                            <div className="grid grid-cols-2 gap-3 mb-3">
+                              <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                                <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400 mx-auto mb-1" />
+                                <p className="text-xs text-gray-600 dark:text-gray-400">Date</p>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {appointment.appointment_time 
+                                    ? new Date(appointment.appointment_time).toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric'
+                                      })
+                                    : 'TBD'
+                                  }
+                                </p>
                               </div>
 
-                              {/* Time */}
-                              <div className="flex items-center space-x-3 p-3 bg-gray-50/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-200/30 dark:border-gray-700/30">
-                                <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
-                                <div className="min-w-0">
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Time</p>
-                                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                    {appointment.appointment_time 
-                                      ? new Date(appointment.appointment_time).toLocaleTimeString('en-US', {
-                                          hour: '2-digit',
-                                          minute: '2-digit',
-                                          hour12: true
-                                        })
-                                      : 'Time not specified'
-                                    }
-                                  </p>
-                                </div>
+                              <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                                <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400 mx-auto mb-1" />
+                                <p className="text-xs text-gray-600 dark:text-gray-400">Time</p>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {appointment.appointment_time 
+                                    ? new Date(appointment.appointment_time).toLocaleTimeString('en-US', {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                        hour12: true
+                                      })
+                                    : 'TBD'
+                                  }
+                                </p>
                               </div>
 
                               {/* Lawyer */}
@@ -2042,20 +2260,21 @@ const UserProfile = () => {
                             </div>
                           </div>
 
-                          {/* Glass Join Button */}
+                          {/* Enhanced Glass Join Button */}
                           <div className="sm:ml-6 w-full sm:w-auto">
                             {appointment.canJoin ? (
                               <button
-                                onClick={() => handleJoinAppointment(appointment.id)}
-                                className="group w-full sm:w-auto px-4 sm:px-6 py-3 bg-green-600 dark:bg-green-600 text-white rounded-xl hover:bg-green-700 dark:hover:bg-green-700 transition-all duration-200 shadow-lg hover:shadow-xl font-medium flex items-center justify-center space-x-2"
+                                onClick={() => handleJoinAppointment(appointment)}
+                                className="group w-full sm:w-auto px-6 sm:px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl font-medium flex items-center justify-center space-x-2 hover:scale-105 transform"
                               >
                                 <Video className="w-4 sm:w-5 h-4 sm:h-5 group-hover:scale-110 transition-transform" />
-                                <span>Join Now</span>
+                                <span>Join Google Meet</span>
+                                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                               </button>
                             ) : (
                               <button
                                 disabled
-                                className="w-full sm:w-auto px-4 sm:px-6 py-3 bg-gray-200/80 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 rounded-xl cursor-not-allowed flex items-center justify-center space-x-2 font-medium backdrop-blur-sm border border-gray-300/30 dark:border-gray-600/30"
+                                className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-gradient-to-r from-gray-200/80 to-gray-300/80 dark:from-gray-700/50 dark:to-gray-800/50 text-gray-500 dark:text-gray-400 rounded-xl cursor-not-allowed flex items-center justify-center space-x-2 font-medium backdrop-blur-sm border border-gray-300/30 dark:border-gray-600/30"
                                 title={appointment.isToday ? 'Appointment not yet active' : 'Appointment scheduled for future date'}
                               >
                                 <Clock className="w-4 sm:w-5 h-4 sm:h-5" />
@@ -2069,23 +2288,223 @@ const UserProfile = () => {
                     </div>
                   ))}
 
-                  {/* Glass Footer */}
-                  <div className="pt-4 sm:pt-6 border-t border-gray-200/50 dark:border-gray-700/50">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0">
+                  {/* Footer */}
+                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex justify-between items-center">
                       <div className="flex items-center space-x-2">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                          Green appointments are available to join today
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Green appointments are available to join
                         </p>
                       </div>
                       <button
                         onClick={() => setShowAppointmentModal(false)}
-                        className="w-full sm:w-auto px-6 py-2.5 bg-gray-600 dark:bg-gray-600 text-white rounded-xl hover:bg-gray-700 dark:hover:bg-gray-700 transition-all duration-200 font-medium shadow-lg"
+                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
                       >
                         Close
                       </button>
                     </div>
                   </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Premium Queries Details Modal */}
+      {showQueriesModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 w-full max-w-4xl max-h-[85vh] overflow-hidden transition-all duration-300 animate-fadeIn">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2.5 bg-purple-100 dark:bg-purple-900/50 rounded-xl">
+                    <MessageSquare className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      My Legal Queries
+                    </h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {queriesDetails.length} {queriesDetails.length === 1 ? 'query' : 'queries'} found
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowQueriesModal(false)}
+                  className="p-2 hover:bg-gray-200/50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(85vh-80px)]">
+              {queriesDetails.length === 0 ? (
+                // No queries state
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 mx-auto bg-purple-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                    <MessageSquare className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    No Legal Queries Found
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">
+                    You haven't submitted any legal queries yet. Start a conversation with our AI legal assistant.
+                  </p>
+                  <button
+                    onClick={() => setShowQueriesModal(false)}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : (
+                // Queries list
+                <div className="space-y-4">
+                  {queriesDetails.map((query, index) => (
+                    <div
+                      key={query.id || index}
+                      className="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 hover:shadow-md transition-all duration-200 hover:border-purple-300 dark:hover:border-purple-600"
+                    >
+                      <div className="p-4">
+                        <div className="flex items-start space-x-3 mb-3">
+                          <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/50">
+                            <MessageSquare className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-base font-semibold text-gray-900 dark:text-white truncate mb-1">
+                              {query.title || 'Legal Query'}
+                            </h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {query.formattedDate}
+                            </p>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <span className="px-2 py-1 rounded-md text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300">
+                                {query.status || 'processed'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200/30 dark:border-gray-700/30 backdrop-blur-sm">
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                            {query.question || query.content || 'No query content available'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Premium Reviews Details Modal */}
+      {showReviewsModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 w-full max-w-4xl max-h-[85vh] overflow-hidden transition-all duration-300 animate-fadeIn">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2.5 bg-amber-100 dark:bg-amber-900/50 rounded-xl">
+                    <Star className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      My Reviews & Feedback
+                    </h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {reviewsDetails.length} {reviewsDetails.length === 1 ? 'review' : 'reviews'} found
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowReviewsModal(false)}
+                  className="p-2 hover:bg-gray-200/50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(85vh-80px)]">
+              {reviewsDetails.length === 0 ? (
+                // No reviews state
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 mx-auto bg-amber-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                    <Star className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2">
+                    No Reviews Found
+                  </h3>
+                  <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto px-4">
+                    You haven't received any reviews yet. Complete some legal consultations to start receiving feedback.
+                  </p>
+                  <button
+                    onClick={() => setShowReviewsModal(false)}
+                    className="px-6 py-3 bg-amber-600 dark:bg-amber-600 text-white rounded-xl hover:bg-amber-700 dark:hover:bg-amber-700 transition-all duration-200 shadow-lg font-medium"
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : (
+                // Enhanced Glass reviews details
+                <div className="space-y-4 sm:space-y-6">
+                  {reviewsDetails.map((review, index) => (
+                    <div
+                      key={review.id || index}
+                      className="relative overflow-hidden rounded-2xl border border-gray-200/50 bg-gradient-to-br from-white/90 to-gray-50/90 dark:from-gray-800/50 dark:to-gray-900/50 transition-all duration-300 hover:shadow-xl backdrop-blur-sm hover:scale-[1.02] hover:border-amber-300/50 dark:hover:border-amber-600/50"
+                    >
+                      <div className="p-4 sm:p-6">
+                        <div className="flex items-start space-x-3 sm:space-x-4 mb-4">
+                          <div className="p-2.5 sm:p-3 rounded-xl backdrop-blur-sm border bg-amber-100/80 dark:bg-amber-900/50 border-amber-200/30 dark:border-amber-800/30">
+                            <Star className="w-4 sm:w-5 h-4 sm:h-5 text-amber-600 dark:text-amber-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h4 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
+                                {review.title || 'Review'}
+                              </h4>
+                              <div className="flex items-center">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`w-4 h-4 ${
+                                      i < (review.rating || 5)
+                                        ? 'text-amber-400 fill-current'
+                                        : 'text-gray-300 dark:text-gray-600'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                              {review.formattedDate}
+                            </p>
+                            <div className="flex items-center space-x-2">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100/80 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 border border-amber-200/30 dark:border-amber-800/30 backdrop-blur-sm">
+                                {review.type || 'feedback'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200/30 dark:border-gray-700/30 backdrop-blur-sm">
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                            {review.comment || review.content || 'No review content available'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
