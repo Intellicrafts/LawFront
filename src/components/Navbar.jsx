@@ -70,11 +70,19 @@ const Navbar = () => {
         checkAuthStatus();
       }
     };
+
+    // Listen for authentication status changes
+    const handleAuthStatusChange = (event) => {
+      console.log('Navbar: Auth status changed, refreshing authentication state');
+      checkAuthStatus();
+    };
     
     window.addEventListener('avatar-updated', handleAvatarUpdate);
+    window.addEventListener('auth-status-changed', handleAuthStatusChange);
     
     return () => {
       window.removeEventListener('avatar-updated', handleAvatarUpdate);
+      window.removeEventListener('auth-status-changed', handleAuthStatusChange);
     };
   }, [user?.id]);
 
@@ -233,6 +241,11 @@ const Navbar = () => {
       // Clear local storage
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
+      
+      // Dispatch event to notify other components of authentication change
+      window.dispatchEvent(new CustomEvent('auth-status-changed', {
+        detail: { authenticated: false, user: null }
+      }));
       
       // Update state
       setIsAuthenticated(false);

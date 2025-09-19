@@ -442,6 +442,11 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
         tokenManager.setUser(response.data.user);
       }
 
+      // Dispatch event to notify other components of authentication change
+      window.dispatchEvent(new CustomEvent('auth-status-changed', {
+        detail: { authenticated: true, user: response.data.user }
+      }));
+
       showToast(
         `Welcome back${response.data.user?.name ? `, ${response.data.user.name}` : ''}! Redirecting...`,
         'success'
@@ -522,9 +527,14 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
         // Store authentication data
         tokenManager.setToken(response.data.data.token);
         
-        if (response.data.user) {
+        if (response.data.data.user) {
           tokenManager.setUser(response.data.data.user);
         }
+
+        // Dispatch event to notify other components of authentication change
+        window.dispatchEvent(new CustomEvent('auth-status-changed', {
+          detail: { authenticated: true, user: response.data.data.user }
+        }));
 
         showToast(
           `Welcome${response.data.data.user?.name ? `, ${response.data.data.user.name}` : ''}! Redirecting...`,
