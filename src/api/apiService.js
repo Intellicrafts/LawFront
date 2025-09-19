@@ -315,6 +315,21 @@ export const authAPI = {
   // Login user
   login: (credentials) => apiClient.post('/login', credentials),
 
+  // Google OAuth login
+  googleLogin: async (googleToken) => {
+    try {
+      console.log('Google login with token:', googleToken);
+      const response = await apiClient.post('/auth/google', {
+        token: googleToken
+      });
+      console.log('Google login API response:', response);
+      return response;
+    } catch (error) {
+      console.error('Google login API error:', error.response || error);
+      throw error;
+    }
+  },
+
   // Logout user
   logout: () => apiClient.post('/logout'),
 
@@ -350,7 +365,7 @@ export const tokenManager = {
   },
 
   isAuthenticated: () => {
-    return !!localStorage.getItem('auth_token');
+    return !localStorage.getItem('auth_token');
   }
 };
 

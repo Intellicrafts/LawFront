@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { FaFacebook, FaGoogle, FaLinkedin, FaEye, FaEyeSlash, FaShieldAlt, FaUser, FaBriefcase, FaCheck, FaCheckCircle, FaExclamationCircle, FaUpload, FaFileAlt, FaIdCard, FaGavel } from 'react-icons/fa';
+import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import { authAPI, tokenManager } from '../api/apiService'; // Import your API service
 
@@ -131,17 +132,47 @@ const Button = ({ children, loading, onClick, className, type = "button", disabl
   );
 };
 
-// Enhanced Social login buttons
-const SocialButtons = () => {
+// Enhanced Social login buttons with Google OAuth integration
+const SocialButtons = ({ onSocialLogin, loading, onGoogleLogin }) => {
+  const googleLogin = useGoogleLogin({
+    onSuccess: (tokenResponse) => {
+      console.log('Google signup successful:', tokenResponse);
+      if (onGoogleLogin) {
+        onGoogleLogin(tokenResponse.access_token);
+      }
+    },
+    onError: (error) => {
+      console.error('Google signup failed:', error);
+      if (onSocialLogin) {
+        onSocialLogin('google', { error: 'Google signup failed. Please try again.' });
+      }
+    }
+  });
+
   return (
     <div className="flex justify-center space-x-5 mt-5">
-      <button className="w-12 h-12 rounded-full bg-blue-800 flex items-center justify-center text-white transition-all duration-300 hover:bg-blue-900 hover:scale-110 hover:shadow-lg">
+      <button 
+        onClick={() => onSocialLogin && onSocialLogin('facebook')}
+        disabled={loading}
+        className="w-12 h-12 rounded-full bg-blue-800 flex items-center justify-center text-white transition-all duration-300 hover:bg-blue-900 hover:scale-110 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+        aria-label="Sign up with Facebook"
+      >
         <FaFacebook size={20} />
       </button>
-      <button className="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center text-white transition-all duration-300 hover:bg-red-600 hover:scale-110 hover:shadow-lg">
+      <button 
+        onClick={() => googleLogin()}
+        disabled={loading}
+        className="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center text-white transition-all duration-300 hover:bg-red-600 hover:scale-110 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+        aria-label="Sign up with Google"
+      >
         <FaGoogle size={20} />
       </button>
-      <button className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white transition-all duration-300 hover:bg-blue-600 hover:scale-110 hover:shadow-lg">
+      <button 
+        onClick={() => onSocialLogin && onSocialLogin('linkedin')}
+        disabled={loading}
+        className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white transition-all duration-300 hover:bg-blue-600 hover:scale-110 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+        aria-label="Sign up with LinkedIn"
+      >
         <FaLinkedin size={20} />
       </button>
     </div>
@@ -663,7 +694,7 @@ export const Signup = ({ onSignupSuccess }) => {
         setTimeout(() => {
           const userType = response?.data?.user?.user_type;
 
-          if (userType === 1 || userType == 'personal') {
+          if (userType === 1 || userType === 'personal') {
             // Normal user – stay on current route or go to homepage
             window.location.href = '/';
           } else {
@@ -723,6 +754,95 @@ export const Signup = ({ onSignupSuccess }) => {
         // Generic error
         showToast('Registration failed. Please try again later.', 'error');
         console.error('Unhandled error during registration:', error);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle social signup
+  const handleSocialSignup = (provider, error = null) => {
+    if (loading) return;
+    
+    if (error) {
+      showToast(error.error || 'Social signup failed', 'error');
+      return;
+    }
+    
+    if (provider !== 'google') {
+      showToast(`${provider.charAt(0).toUpperCase() + provider.slice(1)} signup coming soon!`, 'info');
+    }
+    // Google signup is handled by onGoogleSignup function
+  };
+
+  // Handle Google OAuth signup
+  const handleGoogleSignup = async (googleToken) => {
+    if (loading) return;
+    
+    setLoading(true);
+    
+    try {
+      showToast('Signing up with Google...', 'info');
+      
+      // Call the Google login API (which can also handle signup)
+      const response = await authAPI.googleLogin(googleToken);
+      
+      console.log('Google signup successful:', response.data);
+      
+      if (response.data.access_token) {
+        // Store authentication data
+        tokenManager.setToken(response.data.access_token);
+        
+        if (response.data.user) {
+          tokenManager.setUser(response.data.user);
+        }
+
+        showToast(
+          `Welcome${response.data.user?.name ? `, ${response.data.user.name}` : ''}! Registration successful!`,
+          'success'
+        );
+
+        // Call parent callback if provided
+        if (onSignupSuccess) {
+          onSignupSuccess(response.data);
+        }
+
+        // Redirect after showing success message
+        setTimeout(() => {
+          const userType = response?.data?.user?.user_type;
+
+          if (userType === 1 || userType === 'personal') {
+            // Normal user – stay on current route or go to homepage
+            window.location.href = '/';
+          } else {
+            // Lawyer or other admin-type – redirect to Lawyer Admin Dashboard
+            window.location.href = '/lawyer-admin';
+          }
+        }, 1500);
+
+      } else {
+        showToast('Google signup completed but authentication token was not received. Please try again.', 'warning');
+      }
+      
+    } catch (error) {
+      console.error('Google signup error:', error);
+      
+      // Handle different types of errors
+      if (error.response?.status === 422) {
+        const validationErrors = error.response.data.errors;
+        if (validationErrors) {
+          const firstErrorField = Object.keys(validationErrors)[0];
+          const firstErrorMessage = validationErrors[firstErrorField][0];
+          showToast(firstErrorMessage || 'Please check your input and try again', 'error');
+        } else {
+          showToast('Please check your input and try again', 'error');
+        }
+      } else if (error.response?.status === 409) {
+        showToast('This Google account is already registered. Please try logging in instead.', 'error');
+      } else if (error.response?.data?.message) {
+        showToast(error.response.data.message, 'error');
+      } else {
+        showToast('Google signup failed. Please try again later.', 'error');
       }
     } finally {
       setLoading(false);
@@ -1021,7 +1141,11 @@ export const Signup = ({ onSignupSuccess }) => {
                   </div>
                 </div>
                 
-                <SocialButtons />
+                <SocialButtons 
+                  onSocialLogin={handleSocialSignup} 
+                  onGoogleLogin={handleGoogleSignup}
+                  loading={loading} 
+                />
               </div>
               
               <p className={`mt-8 text-center text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
