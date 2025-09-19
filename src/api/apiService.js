@@ -338,6 +338,37 @@ export const authAPI = {
 
   // Refresh token (if your API supports it)
   refreshToken: () => apiClient.post('/refresh'),
+
+  // Save additional user details (for Google users or profile completion)
+  saveAdditionalDetails: async (payload) => {
+    try {
+      console.log('Saving additional details with payload:', payload);
+      
+      // Check if payload is FormData (for file uploads)
+      const isFormData = payload instanceof FormData;
+      
+      const config = {
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      };
+
+      // Set appropriate content type for FormData
+      if (isFormData) {
+        config.headers['Content-Type'] = 'multipart/form-data';
+      } else {
+        config.headers['Content-Type'] = 'application/json';
+      }
+
+      const response = await apiClient.post('/auth/save/additional', payload, config);
+      console.log('Save additional details API response:', response);
+      return response;
+    } catch (error) {
+      console.error('Save additional details API error:', error.response || error);
+      throw error;
+    }
+  },
 };
 
 // Utility functions for token management

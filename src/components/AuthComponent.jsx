@@ -461,20 +461,30 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
       setTimeout(() => {
         const userType = response?.data?.user?.user_type;
 
-    // If a redirect URL is explicitly provided in query string, use that
-    const urlRedirectParam = new URLSearchParams(window.location.search).get('redirect');
+        // If a redirect URL is explicitly provided in query string, use that
+        const urlRedirectParam = new URLSearchParams(window.location.search).get('redirect');
 
-    // Determine final redirect destination
-    let redirectUrl = '/';
-    if (urlRedirectParam) {
-      redirectUrl = urlRedirectParam;
-    } else if (userType !== 1 || userType === 'business') {
-      // If not a normal user, send to lawyer admin dashboard
-      redirectUrl = '/lawyer-admin';
-    }
+        // Determine final redirect destination
+        let redirectUrl = '/';
+        
+        if (urlRedirectParam) {
+          redirectUrl = urlRedirectParam;
+        } else if (userType === null || userType === undefined || userType === 0) {
+          // User has no user_type set (null, undefined, or 0), redirect to profile type selection
+          redirectUrl = '/profile-setup/type-selection';
+        } else if (userType === 1) {
+          // Regular user, redirect to home
+          redirectUrl = '/';
+        } else if (userType === 2 || userType === 'business') {
+          // Lawyer user, redirect to lawyer admin dashboard
+          redirectUrl = '/lawyer-admin';
+        } else {
+          // Default fallback
+          redirectUrl = '/';
+        }
 
-    window.location.href = redirectUrl;
-  }, 1500);
+        window.location.href = redirectUrl;
+      }, 1500);
 
 } else {
   showToast('Login completed but authentication token was not received. Please try again.', 'warning');
@@ -555,11 +565,21 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
 
           // Determine final redirect destination
           let redirectUrl = '/';
+          
           if (urlRedirectParam) {
             redirectUrl = urlRedirectParam;
-          } else if (userType !== 1 || userType === 'business') {
-            // If not a normal user, send to lawyer admin dashboard
+          } else if (userType === null || userType === undefined || userType === 0) {
+            // User has no user_type set (null, undefined, or 0), redirect to profile type selection
+            redirectUrl = '/profile-setup/type-selection';
+          } else if (userType === 1) {
+            // Regular user, redirect to home
+            redirectUrl = '/';
+          } else if (userType === 2 || userType === 'business') {
+            // Lawyer user, redirect to lawyer admin dashboard
             redirectUrl = '/lawyer-admin';
+          } else {
+            // Default fallback
+            redirectUrl = '/';
           }
 
           window.location.href = redirectUrl;

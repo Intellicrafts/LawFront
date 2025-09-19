@@ -38,6 +38,8 @@ import LegalAIPortfolio from './components/LegalAIPortfolio';
 import { tokenManager } from './api/apiService';
 import PersonalRoom from './components/PersonalRoom';
 import LawyerAdmin from './components/Lawyer/LawyerAdmin';
+import ProfileTypeSelection from './components/ProfileTypeSelection';
+import LawyerAdditionalDetails from './components/LawyerAdditionalDetails';
 import TestEnhancedComponents from './components/TestEnhancedComponents';
 
 // Layout wrapper to conditionally render Navbar and Footer
@@ -152,6 +154,10 @@ const App = () => {
                   <Route path="/auth" element={isAuthenticated ? <Navigate to="/" replace /> : <AuthComponent />} />
                   <Route path="/signup" element={isAuthenticated ? <Navigate to="/" replace /> : <SignupComponent />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
+
+                  {/* Profile Setup Routes */}
+                  <Route path="/profile-setup/type-selection" element={isAuthenticated ? <ProfileTypeSelection /> : <Navigate to="/auth" replace />} />
+                  <Route path="/profile-setup/lawyer-details" element={isAuthenticated ? <LawyerAdditionalDetails /> : <Navigate to="/auth" replace />} />
 
                   {/* Protected Routes */}
                   <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/auth" replace />} />
