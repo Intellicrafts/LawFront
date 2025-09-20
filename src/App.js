@@ -38,6 +38,7 @@ import { tokenManager } from './api/apiService';
 import PersonalRoom from './components/PersonalRoom';
 import LawyerAdmin from './components/Lawyer/LawyerAdmin';
 import TestEnhancedComponents from './components/TestEnhancedComponents';
+import UserOnboarding from './components/UserOnboarding';
 
 // Layout wrapper to conditionally render Navbar and Footer
 const AppLayout = ({ children }) => {
@@ -153,6 +154,7 @@ const App = () => {
 
                   {/* Protected Routes */}
                   <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/auth" replace />} />
+                  <Route path="/user-onboard" element={isAuthenticated ? <UserOnboarding /> : <Navigate to="/auth" replace />} />
 
                   {/* Catch-all Route */}
                   <Route path="*" element={<Navigate to="/" replace />} />
