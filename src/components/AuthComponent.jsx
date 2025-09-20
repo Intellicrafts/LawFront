@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { FaFacebook, FaGoogle, FaLinkedin, FaEye, FaEyeSlash, FaShieldAlt, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
+import { useGoogleLogin } from '@react-oauth/google';
 import { authAPI, tokenManager } from '../api/apiService';
 
 // Enhanced Toast notification component with different types
@@ -157,8 +158,23 @@ const Button = ({ children, loading, onClick, type = "button", className = "", d
   );
 };
 
-// Social login buttons
-const SocialButtons = ({ onSocialLogin, loading }) => {
+// Social login buttons with Google OAuth integration
+const SocialButtons = ({ onSocialLogin, loading, onGoogleLogin }) => {
+  const googleLogin = useGoogleLogin({
+    onSuccess: (tokenResponse) => {
+      console.log('Google login successful:', tokenResponse);
+      if (onGoogleLogin) {
+        onGoogleLogin(tokenResponse.access_token);
+      }
+    },
+    onError: (error) => {
+      console.error('Google login failed:', error);
+      if (onSocialLogin) {
+        onSocialLogin('google', { error: 'Google login failed. Please try again.' });
+      }
+    }
+  });
+
   return (
     <div className="flex justify-center space-x-5 mt-5">
       <button 
@@ -170,7 +186,7 @@ const SocialButtons = ({ onSocialLogin, loading }) => {
         <FaFacebook size={20} />
       </button>
       <button 
-        onClick={() => onSocialLogin('google')}
+        onClick={() => googleLogin()}
         disabled={loading}
         className="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center text-white transition-all duration-300 hover:bg-red-600 hover:scale-110 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
         aria-label="Sign in with Google"
@@ -426,6 +442,11 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
         tokenManager.setUser(response.data.user);
       }
 
+      // Dispatch event to notify other components of authentication change
+      window.dispatchEvent(new CustomEvent('auth-status-changed', {
+        detail: { authenticated: true, user: response.data.user }
+      }));
+
       showToast(
         `Welcome back${response.data.user?.name ? `, ${response.data.user.name}` : ''}! Redirecting...`,
         'success'
@@ -440,20 +461,30 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
       setTimeout(() => {
         const userType = response?.data?.user?.user_type;
 
-    // If a redirect URL is explicitly provided in query string, use that
-    const urlRedirectParam = new URLSearchParams(window.location.search).get('redirect');
+        // If a redirect URL is explicitly provided in query string, use that
+        const urlRedirectParam = new URLSearchParams(window.location.search).get('redirect');
 
-    // Determine final redirect destination
-    let redirectUrl = '/';
-    if (urlRedirectParam) {
-      redirectUrl = urlRedirectParam;
-    } else if (userType !== 1 || userType =='business') {
-      // If not a normal user, send to lawyer admin dashboard
-      redirectUrl = '/lawyer-admin';
-    }
+        // Determine final redirect destination
+        let redirectUrl = '/';
+        
+        if (urlRedirectParam) {
+          redirectUrl = urlRedirectParam;
+        } else if (userType === null || userType === undefined || userType === 0) {
+          // User has no user_type set (null, undefined, or 0), redirect to profile type selection
+          redirectUrl = '/profile-setup/type-selection';
+        } else if (userType === 1) {
+          // Regular user, redirect to home
+          redirectUrl = '/';
+        } else if (userType === 2 || userType === 'business') {
+          // Lawyer user, redirect to lawyer admin dashboard
+          redirectUrl = '/lawyer-admin';
+        } else {
+          // Default fallback
+          redirectUrl = '/';
+        }
 
-    window.location.href = redirectUrl;
-  }, 1500);
+        window.location.href = redirectUrl;
+      }, 1500);
 
 } else {
   showToast('Login completed but authentication token was not received. Please try again.', 'warning');
@@ -474,12 +505,97 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
   };
 
   // Handle social login
-  const handleSocialLogin = (provider) => {
+  const handleSocialLogin = (provider, error = null) => {
     if (formState.loading) return;
     
-    showToast(`${provider.charAt(0).toUpperCase() + provider.slice(1)} login coming soon!`, 'info');
-    // Implement social login logic here
-    // window.location.href = `/auth/${provider}`;
+    if (error) {
+      showToast(error.error || 'Social login failed', 'error');
+      return;
+    }
+    
+    if (provider !== 'google') {
+      showToast(`${provider.charAt(0).toUpperCase() + provider.slice(1)} login coming soon!`, 'info');
+    }
+    // Google login is handled by onGoogleLogin function
+  };
+
+  // Handle Google OAuth login
+  const handleGoogleLogin = async (googleToken) => {
+    if (formState.loading) return;
+    
+    setFormState(prev => ({ ...prev, loading: true }));
+    
+    try {
+      showToast('Signing in with Google...', 'info');
+      
+      // Call the Google login API
+      const response = await authAPI.googleLogin(googleToken);
+      
+      console.log('Google login successful:', response.data.data);
+      
+      if (response.data.data.token) {
+        // Store authentication data
+        tokenManager.setToken(response.data.data.token);
+        
+        if (response.data.data.user) {
+          tokenManager.setUser(response.data.data.user);
+        }
+
+        // Dispatch event to notify other components of authentication change
+        window.dispatchEvent(new CustomEvent('auth-status-changed', {
+          detail: { authenticated: true, user: response.data.data.user }
+        }));
+
+        showToast(
+          `Welcome${response.data.data.user?.name ? `, ${response.data.data.user.name}` : ''}! Redirecting...`,
+          'success'
+        );
+
+        // Call parent callback if provided
+        if (onLoginSuccess) {
+          onLoginSuccess(response.data);
+        }
+
+        // Redirect after showing success message
+        setTimeout(() => {
+          const userType = response?.data?.data?.user?.user_type;
+
+          // If a redirect URL is explicitly provided in query string, use that
+          const urlRedirectParam = new URLSearchParams(window.location.search).get('redirect');
+
+          // Determine final redirect destination
+          let redirectUrl = '/';
+          
+          if (urlRedirectParam) {
+            redirectUrl = urlRedirectParam;
+          } else if (userType === null || userType === undefined || userType === 0) {
+            // User has no user_type set (null, undefined, or 0), redirect to profile type selection
+            redirectUrl = '/profile-setup/type-selection';
+          } else if (userType === 1) {
+            // Regular user, redirect to home
+            redirectUrl = '/';
+          } else if (userType === 2 || userType === 'business') {
+            // Lawyer user, redirect to lawyer admin dashboard
+            redirectUrl = '/lawyer-admin';
+          } else {
+            // Default fallback
+            redirectUrl = '/';
+          }
+
+          window.location.href = redirectUrl;
+        }, 1500);
+
+      } else {
+        showToast('Google login completed but authentication token was not received. Please try again.', 'warning');
+      }
+      
+    } catch (error) {
+      console.error('Google login error:', error);
+      const errorMessage = parseApiError(error);
+      showToast(errorMessage, 'error');
+    } finally {
+      setFormState(prev => ({ ...prev, loading: false }));
+    }
   };
 
   // Handle navigation to register
@@ -626,7 +742,11 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
               </div>
             </div>
 
-            <SocialButtons onSocialLogin={handleSocialLogin} loading={formState.loading} />
+            <SocialButtons 
+              onSocialLogin={handleSocialLogin} 
+              onGoogleLogin={handleGoogleLogin}
+              loading={formState.loading} 
+            />
           </div>
 
           <p className={`mt-8 text-center text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
