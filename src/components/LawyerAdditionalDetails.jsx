@@ -1,7 +1,7 @@
 // LawyerAdditionalDetails.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { FaFileAlt, FaUpload, FaCheckCircle, FaExclamationCircle, FaShieldAlt, FaIdCard } from 'react-icons/fa';
+import { FaFileAlt, FaUpload, FaCheckCircle, FaExclamationCircle, FaShieldAlt, FaIdCard, FaDollarSign, FaGraduationCap, FaUser } from 'react-icons/fa';
 import { authAPI, tokenManager } from '../api/apiService';
 
 // Toast notification component
@@ -233,12 +233,152 @@ const InputField = ({ type, id, name, value, onChange, placeholder, icon, requir
   );
 };
 
+// Textarea Field component
+const TextareaField = ({ id, name, value, onChange, placeholder, rows = 4, required = false }) => {
+  // Get theme from Redux
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
+
+  return (
+    <textarea
+      id={id}
+      name={name}
+      value={value}
+      onChange={onChange}
+      rows={rows}
+      className={`block w-full px-4 py-3.5 rounded-lg shadow-sm transition-all duration-300 resize-none ${
+        isDarkMode 
+          ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500' 
+          : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
+      }`}
+      placeholder={placeholder}
+      required={required}
+    />
+  );
+};
+
+// Multi-select component
+const MultiSelectField = ({ id, name, label, options, selectedValues, onChange, required = false }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  // Get theme from Redux
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
+
+  const handleOptionToggle = (option) => {
+    const newValues = selectedValues.includes(option)
+      ? selectedValues.filter(val => val !== option)
+      : [...selectedValues, option];
+    onChange(newValues);
+  };
+
+  return (
+    <div className="relative">
+      <label htmlFor={id} className={`block text-sm font-medium mb-2 ${
+        isDarkMode ? 'text-gray-300' : 'text-gray-700'
+      }`}>
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className={`w-full px-4 py-3.5 text-left rounded-lg shadow-sm transition-all duration-300 ${
+            isDarkMode 
+              ? 'border border-gray-600 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500' 
+              : 'border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
+          }`}
+        >
+          <span className={selectedValues.length === 0 ? 'text-gray-400' : ''}>
+            {selectedValues.length === 0 
+              ? `Select ${label}` 
+              : `${selectedValues.length} selected`
+            }
+          </span>
+          <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {isOpen && (
+          <div className={`absolute z-10 w-full mt-1 rounded-lg shadow-lg ${
+            isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-200'
+          }`}>
+            <div className="max-h-48 overflow-y-auto p-2">
+              {options.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => handleOptionToggle(option)}
+                  className={`w-full text-left px-3 py-2 rounded-md transition-colors duration-200 ${
+                    selectedValues.includes(option)
+                      ? isDarkMode
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-blue-100 text-blue-900'
+                      : isDarkMode
+                        ? 'hover:bg-gray-600 text-gray-300'
+                        : 'hover:bg-gray-50 text-gray-700'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedValues.includes(option)}
+                      onChange={() => {}}
+                      className="mr-2 text-blue-600"
+                    />
+                    {option}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {selectedValues.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {selectedValues.map((value) => (
+            <span
+              key={value}
+              className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                isDarkMode
+                  ? 'bg-blue-900 text-blue-300 border border-blue-700'
+                  : 'bg-blue-100 text-blue-800 border border-blue-200'
+              }`}
+            >
+              {value}
+              <button
+                type="button"
+                onClick={() => handleOptionToggle(value)}
+                className="ml-2 text-blue-500 hover:text-blue-700"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Lawyer Additional Details Component
 const LawyerAdditionalDetails = () => {
   const [enrollmentNo, setEnrollmentNo] = useState('');
   const [copCertificate, setCopCertificate] = useState(null);
   const [enrollmentCertificate, setEnrollmentCertificate] = useState(null);
   const [addressProof, setAddressProof] = useState(null);
+  
+  // Additional profile fields
+  const [practiceAreas, setPracticeAreas] = useState([]);
+  const [experience, setExperience] = useState('');
+  const [courtPractice, setCourtPractice] = useState([]);
+  const [bio, setBio] = useState('');
+  const [consultationFee, setConsultationFee] = useState('');
+  const [languages, setLanguages] = useState([]);
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
   const [fadeIn, setFadeIn] = useState(false);
@@ -247,6 +387,27 @@ const LawyerAdditionalDetails = () => {
   // Get theme from Redux
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
+
+  // Practice areas options
+  const practiceAreasOptions = [
+    'Corporate Law', 'Criminal Law', 'Family Law', 'Property Law', 'Tax Law',
+    'Labor Law', 'Intellectual Property', 'Constitutional Law', 'Environmental Law',
+    'Banking Law', 'Insurance Law', 'Immigration Law', 'Consumer Protection',
+    'Cyber Law', 'Real Estate Law'
+  ];
+
+  // Court practice options
+  const courtOptions = [
+    'Supreme Court', 'High Court', 'District Court', 'Sessions Court',
+    'Magistrate Court', 'Family Court', 'Commercial Court', 'Tribunal',
+    'Consumer Court', 'NCLT', 'NCLAT'
+  ];
+
+  // Languages options
+  const languageOptions = [
+    'English', 'Hindi', 'Bengali', 'Telugu', 'Marathi', 'Tamil', 'Gujarati',
+    'Kannada', 'Malayalam', 'Punjabi', 'Assamese', 'Odia', 'Urdu'
+  ];
 
   useEffect(() => {
     // Trigger fade-in animation after component mounts
@@ -281,6 +442,36 @@ const LawyerAdditionalDetails = () => {
       return;
     }
 
+    if (!experience || experience < 0) {
+      showToast('Please enter valid years of experience', 'error');
+      return;
+    }
+
+    if (!consultationFee || consultationFee < 0) {
+      showToast('Please enter a valid consultation fee', 'error');
+      return;
+    }
+
+    if (practiceAreas.length === 0) {
+      showToast('Please select at least one practice area', 'error');
+      return;
+    }
+
+    if (courtPractice.length === 0) {
+      showToast('Please select at least one court of practice', 'error');
+      return;
+    }
+
+    if (languages.length === 0) {
+      showToast('Please select at least one language', 'error');
+      return;
+    }
+
+    if (!bio.trim() || bio.trim().length < 50) {
+      showToast('Please provide a professional bio with at least 50 characters', 'error');
+      return;
+    }
+
     if (!enrollmentCertificate) {
       showToast('Please upload your Certificate of Enrollment', 'error');
       return;
@@ -297,6 +488,12 @@ const LawyerAdditionalDetails = () => {
       // Prepare FormData for file uploads
       const formData = new FormData();
       formData.append('enrollment_no', enrollmentNo.trim());
+      formData.append('experience_years', experience);
+      formData.append('consultation_fee', consultationFee);
+      formData.append('practice_areas', JSON.stringify(practiceAreas));
+      formData.append('court_practice', JSON.stringify(courtPractice));
+      formData.append('languages_spoken', JSON.stringify(languages));
+      formData.append('professional_bio', bio.trim());
       
       if (enrollmentCertificate) {
         formData.append('enrollment_certificate', enrollmentCertificate);
@@ -310,13 +507,17 @@ const LawyerAdditionalDetails = () => {
         formData.append('address_proof', addressProof);
       }
 
+      if (profilePhoto) {
+        formData.append('profile_photo', profilePhoto);
+      }
+
       // Call the additional details API
       const response = await authAPI.saveAdditionalDetails(formData);
       
       console.log('Lawyer details saved:', response.data);
 
       if (response.data.success) {
-        showToast('Lawyer details saved successfully! Redirecting...', 'success');
+        showToast('Lawyer profile created successfully! Redirecting to your dashboard...', 'success');
 
         // Dispatch event to notify other components
         window.dispatchEvent(new CustomEvent('auth-status-changed', {
@@ -326,14 +527,26 @@ const LawyerAdditionalDetails = () => {
         setTimeout(() => {
           // Redirect to lawyer admin dashboard
           window.location.href = '/lawyer-admin';
-        }, 2000);
+        }, 2500);
       } else {
         showToast('Failed to save lawyer details. Please try again.', 'error');
       }
     } catch (error) {
       console.error('Lawyer details save error:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to save lawyer details. Please try again.';
-      showToast(errorMessage, 'error');
+      
+      // Handle validation errors from server
+      if (error.response?.status === 422) {
+        const validationErrors = error.response.data.errors;
+        if (validationErrors) {
+          const firstError = Object.values(validationErrors)[0][0];
+          showToast(firstError, 'error');
+        } else {
+          showToast('Please check your form data and try again.', 'error');
+        }
+      } else {
+        const errorMessage = error.response?.data?.message || 'Failed to save lawyer details. Please try again.';
+        showToast(errorMessage, 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -393,57 +606,194 @@ const LawyerAdditionalDetails = () => {
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-6">
                 
-                {/* Enrollment Number */}
-                <div>
-                  <label className={`block text-sm font-medium mb-2 ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Bar Council Enrollment Number <span className="text-red-500">*</span>
-                  </label>
-                  <InputField
-                    type="text"
-                    id="enrollmentNo"
-                    name="enrollmentNo"
-                    value={enrollmentNo}
-                    onChange={(e) => setEnrollmentNo(e.target.value)}
-                    placeholder="Enter your enrollment number"
-                    icon={<FaIdCard />}
-                    required
+                {/* Basic Information Section */}
+                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-blue-50'}`}>
+                  <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Basic Professional Information
+                  </h3>
+                  
+                  {/* Enrollment Number */}
+                  <div className="mb-4">
+                    <label className={`block text-sm font-medium mb-2 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Bar Council Enrollment Number <span className="text-red-500">*</span>
+                    </label>
+                    <InputField
+                      type="text"
+                      id="enrollmentNo"
+                      name="enrollmentNo"
+                      value={enrollmentNo}
+                      onChange={(e) => setEnrollmentNo(e.target.value)}
+                      placeholder="Enter your enrollment number"
+                      icon={<FaIdCard />}
+                      required
+                    />
+                  </div>
+
+                  {/* Years of Experience */}
+                  <div className="mb-4">
+                    <label className={`block text-sm font-medium mb-2 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Years of Experience <span className="text-red-500">*</span>
+                    </label>
+                    <InputField
+                      type="number"
+                      id="experience"
+                      name="experience"
+                      value={experience}
+                      onChange={(e) => setExperience(e.target.value)}
+                      placeholder="Enter years of experience"
+                      icon={<FaGraduationCap />}
+                      required
+                    />
+                  </div>
+
+                  {/* Consultation Fee */}
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Consultation Fee (₹) <span className="text-red-500">*</span>
+                    </label>
+                    <InputField
+                      type="number"
+                      id="consultationFee"
+                      name="consultationFee"
+                      value={consultationFee}
+                      onChange={(e) => setConsultationFee(e.target.value)}
+                      placeholder="Enter consultation fee amount"
+                      icon={<FaDollarSign />}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Practice Areas and Courts */}
+                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-green-50'}`}>
+                  <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Practice Details
+                  </h3>
+                  
+                  {/* Practice Areas */}
+                  <div className="mb-4">
+                    <MultiSelectField
+                      id="practiceAreas"
+                      name="practiceAreas"
+                      label="Practice Areas"
+                      options={practiceAreasOptions}
+                      selectedValues={practiceAreas}
+                      onChange={setPracticeAreas}
+                      required
+                    />
+                  </div>
+
+                  {/* Court Practice */}
+                  <div className="mb-4">
+                    <MultiSelectField
+                      id="courtPractice"
+                      name="courtPractice"
+                      label="Courts of Practice"
+                      options={courtOptions}
+                      selectedValues={courtPractice}
+                      onChange={setCourtPractice}
+                      required
+                    />
+                  </div>
+
+                  {/* Languages */}
+                  <div>
+                    <MultiSelectField
+                      id="languages"
+                      name="languages"
+                      label="Languages Spoken"
+                      options={languageOptions}
+                      selectedValues={languages}
+                      onChange={setLanguages}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Professional Bio */}
+                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-purple-50'}`}>
+                  <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Professional Profile
+                  </h3>
+                  
+                  <div className="mb-4">
+                    <label className={`block text-sm font-medium mb-2 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Professional Bio <span className="text-red-500">*</span>
+                    </label>
+                    <TextareaField
+                      id="bio"
+                      name="bio"
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      placeholder="Write a brief description about your expertise, achievements, and what makes you unique as a lawyer..."
+                      rows={4}
+                      required
+                    />
+                  </div>
+
+                  {/* Profile Photo */}
+                  <FileUploadField
+                    id="profilePhoto"
+                    name="profilePhoto"
+                    label="Profile Photo"
+                    icon={<FaUser />}
+                    onChange={setProfilePhoto}
+                    required={false}
+                    accept="image/*"
                   />
                 </div>
 
-                {/* Certificate of Enrollment */}
-                <FileUploadField
-                  id="enrollmentCertificate"
-                  name="enrollmentCertificate"
-                  label="Certificate of Enrollment"
-                  icon={<FaFileAlt />}
-                  onChange={setEnrollmentCertificate}
-                  required
-                  accept="application/pdf,image/*"
-                />
+                {/* Documents Section */}
+                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-yellow-50'}`}>
+                  <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Required Documents
+                  </h3>
+                  
+                  {/* Certificate of Enrollment */}
+                  <div className="mb-4">
+                    <FileUploadField
+                      id="enrollmentCertificate"
+                      name="enrollmentCertificate"
+                      label="Certificate of Enrollment"
+                      icon={<FaFileAlt />}
+                      onChange={setEnrollmentCertificate}
+                      required
+                      accept="application/pdf,image/*"
+                    />
+                  </div>
 
-                {/* Certificate of Practice (CoP) */}
-                <FileUploadField
-                  id="copCertificate"
-                  name="copCertificate"
-                  label="Certificate of Practice (CoP)"
-                  icon={<FaFileAlt />}
-                  onChange={setCopCertificate}
-                  required
-                  accept="application/pdf,image/*"
-                />
+                  {/* Certificate of Practice (CoP) */}
+                  <div className="mb-4">
+                    <FileUploadField
+                      id="copCertificate"
+                      name="copCertificate"
+                      label="Certificate of Practice (CoP)"
+                      icon={<FaFileAlt />}
+                      onChange={setCopCertificate}
+                      required
+                      accept="application/pdf,image/*"
+                    />
+                  </div>
 
-                {/* Address Proof (Optional) */}
-                <FileUploadField
-                  id="addressProof"
-                  name="addressProof"
-                  label="Address Proof (Optional)"
-                  icon={<FaFileAlt />}
-                  onChange={setAddressProof}
-                  required={false}
-                  accept="application/pdf,image/*"
-                />
+                  {/* Address Proof (Optional) */}
+                  <FileUploadField
+                    id="addressProof"
+                    name="addressProof"
+                    label="Address Proof (Optional)"
+                    icon={<FaFileAlt />}
+                    onChange={setAddressProof}
+                    required={false}
+                    accept="application/pdf,image/*"
+                  />
+                </div>
 
                 {/* Submit Button */}
                 <button
@@ -465,7 +815,7 @@ const LawyerAdditionalDetails = () => {
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
                     ) : null}
-                    {loading ? 'Saving Details...' : 'Complete Setup'}
+                    {loading ? 'Creating Your Profile...' : 'Complete Lawyer Setup'}
                   </span>
                   <div className="absolute top-0 left-0 w-full h-full opacity-0 hover:opacity-20 bg-white transform -translate-x-full hover:translate-x-0 transition-transform duration-500"></div>
                 </button>
