@@ -647,6 +647,135 @@ export const apiServices = {
     }
   },
 
+  // ======================================================================================================================================
+
+  // Client Management APIs  in lawyer admin panel
+  // These endpoints manage clients, their activities, cases, appointments, documents, and statistics.
+  // They also include status updates and other client-related functionalities.
+ 
+  // ======================================================================================================================================
+
+  getClients: async (params = {}) => {
+    try {
+      const response = await apiClient.get('/clients', { params });
+      console.log('Clients API response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Clients API error:', error.response || error);
+      throw error;
+    }
+  },
+
+  getClient: async (clientId) => {
+    try {
+      const response = await apiClient.get(`/clients/${clientId}`);
+      console.log('Client details response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Client details error:', error.response || error);
+      throw error;
+    }
+  },
+
+  createClient: async (clientData) => {
+    try {
+      const response = await apiClient.post('/clients', clientData);
+      console.log('Create client response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Create client error:', error.response || error);
+      throw error;
+    }
+  },
+
+  updateClient: async (clientId, clientData) => {
+    try {
+      const response = await apiClient.put(`/clients/${clientId}`, clientData);
+      console.log('Update client response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Update client error:', error.response || error);
+      throw error;
+    }
+  },
+
+  deleteClient: async (clientId) => {
+    try {
+      const response = await apiClient.delete(`/clients/${clientId}`);
+      console.log('Delete client response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Delete client error:', error.response || error);
+      throw error;
+    }
+  },
+
+  getClientActivities: async (clientId, params = {}) => {
+    try {
+      const response = await apiClient.get(`/clients/${clientId}/activities`, { params });
+      console.log('Client activities response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Client activities error:', error.response || error);
+      throw error;
+    }
+  },
+
+  getClientCases: async (clientId, params = {}) => {
+    try {
+      const response = await apiClient.get(`/clients/${clientId}/cases`, { params });
+      console.log('Client cases response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Client cases error:', error.response || error);
+      throw error;
+    }
+  },
+
+  getClientAppointments: async (clientId, params = {}) => {
+    try {
+      const response = await apiClient.get(`/clients/${clientId}/appointments`, { params });
+      console.log('Client appointments response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Client appointments error:', error.response || error);
+      throw error;
+    }
+  },
+
+  getClientDocuments: async (clientId, params = {}) => {
+    try {
+      const response = await apiClient.get(`/clients/${clientId}/documents`, { params });
+      console.log('Client documents response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Client documents error:', error.response || error);
+      throw error;
+    }
+  },
+
+  updateClientStatus: async (clientId, status) => {
+    try {
+      const response = await apiClient.patch(`/clients/${clientId}/status`, { status });
+      console.log('Update client status response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Update client status error:', error.response || error);
+      throw error;
+    }
+  },
+
+  getClientStatistics: async () => {
+    try {
+      const response = await apiClient.get('/clients/statistics');
+      console.log('Client statistics response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Client statistics error:', error.response || error);
+      throw error;
+    }
+  },
+
   // Authentication APIs - These are now handled by authAPI, keeping for backward compatibility
   register: async (userData) => {
     console.warn('Using deprecated apiServices.register. Please use authAPI.register instead.');
