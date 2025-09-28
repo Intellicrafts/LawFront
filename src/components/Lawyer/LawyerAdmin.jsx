@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { apiServices, authAPI, tokenManager } from '../../api/apiService';
 import NotificationDropdown from '../NotificationDropdown';
 import Avatar from '../common/Avatar';
+import LawyerAppointments from '../LawyerAdmin/LawyerAppointments';
+import LawyerClients from '../LawyerAdmin/LawyerClients';
 import { 
   Home, 
   Calendar, 
@@ -1556,9 +1558,9 @@ const LawyerAdmin = () => {
       case 'dashboard':
         return <LawyerDashboard darkMode={darkMode} userData={userData} />;
       case 'appointments':
-        return <PlaceholderComponent title="Appointments" darkMode={darkMode} />;
+        return <LawyerAppointments darkMode={darkMode} userData={userData} />;
       case 'clients':
-        return <PlaceholderComponent title="Clients" darkMode={darkMode} />;
+        return <LawyerClients darkMode={darkMode} userData={userData} />;
       case 'cases':
         return <PlaceholderComponent title="Cases" darkMode={darkMode} />;
       case 'documents':
