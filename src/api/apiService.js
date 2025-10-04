@@ -371,6 +371,501 @@ export const authAPI = {
   },
 };
 
+/**
+ * Cases API Service
+ * Handles all case-related API calls
+ */
+export const casesAPI = {
+  /**
+   * Get all cases for the authenticated lawyer
+   * @param {Object} params - Query parameters for filtering
+   * @returns {Promise} - API response
+   */
+  getCases: async (params = {}) => {
+    try {
+      const response = await apiClient.get('/cases', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching cases:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get a specific case by ID
+   * @param {number} id - Case ID
+   * @returns {Promise} - API response
+   */
+  getCase: async (id) => {
+    try {
+      const response = await apiClient.get(`/cases/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching case with ID ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Create a new case
+   * @param {Object} caseData - Case details
+   * @returns {Promise} - API response
+   */
+  createCase: async (caseData) => {
+    try {
+      console.log('Creating case with data:', caseData);
+      const response = await apiClient.post('/cases', caseData);
+      console.log('Case creation response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating case:', error);
+      console.error('Error response:', error.response?.data);
+      throw error;
+    }
+  },
+
+  /**
+   * Update an existing case
+   * @param {number} id - Case ID
+   * @param {Object} caseData - Updated case details
+   * @returns {Promise} - API response
+   */
+  updateCase: async (id, caseData) => {
+    try {
+      console.log(`Updating case ${id} with data:`, caseData);
+      const response = await apiClient.put(`/cases/${id}`, caseData);
+      console.log('Case update response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating case ${id}:`, error);
+      console.error('Error response:', error.response?.data);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete a case
+   * @param {number} id - Case ID
+   * @returns {Promise} - API response
+   */
+  deleteCase: async (id) => {
+    try {
+      const response = await apiClient.delete(`/cases/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting case ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get case statistics for dashboard
+   * @returns {Promise} - API response
+   */
+  getCaseStats: async () => {
+    try {
+      const response = await apiClient.get('/cases/statistics');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching case statistics:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update case status
+   * @param {number} id - Case ID
+   * @param {string} status - New status
+   * @returns {Promise} - API response
+   */
+  updateCaseStatus: async (id, status) => {
+    try {
+      const response = await apiClient.patch(`/cases/${id}/status`, { status });
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating case ${id} status:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Upload case document
+   * @param {number} caseId - Case ID
+   * @param {FormData} formData - Document form data
+   * @returns {Promise} - API response
+   */
+  uploadDocument: async (caseId, formData) => {
+    try {
+      const response = await apiClient.post(`/cases/${caseId}/documents`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error uploading document for case ${caseId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get case documents
+   * @param {number} caseId - Case ID
+   * @returns {Promise} - API response
+   */
+  getCaseDocuments: async (caseId) => {
+    try {
+      const response = await apiClient.get(`/cases/${caseId}/documents`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching documents for case ${caseId}:`, error);
+      throw error;
+    }
+  }
+};
+
+/**
+ * Documents API Service
+ * Handles all document-related API calls including drafting requests, case documents, and history
+ */
+export const documentsAPI = {
+  /**
+   * Get document drafting requests
+   * @param {Object} params - Query parameters for filtering and sorting
+   * @returns {Promise} - API response with drafting requests
+   */
+  getDraftingRequests: async (params = {}) => {
+    try {
+      const response = await apiClient.get('/documents/drafting-requests', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching drafting requests:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get specific drafting request details
+   * @param {number} id - Request ID
+   * @returns {Promise} - API response with request details
+   */
+  getDraftingRequest: async (id) => {
+    try {
+      const response = await apiClient.get(`/documents/drafting-requests/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching drafting request ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update drafting request status
+   * @param {number} id - Request ID
+   * @param {string} status - New status (pending, accepted, rejected, in_progress, review, completed)
+   * @returns {Promise} - API response
+   */
+  updateRequestStatus: async (id, status) => {
+    try {
+      const response = await apiClient.patch(`/documents/drafting-requests/${id}/status`, { status });
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating drafting request ${id} status:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Accept a drafting request bid
+   * @param {number} id - Request ID
+   * @param {Object} acceptanceData - Additional data for acceptance
+   * @returns {Promise} - API response
+   */
+  acceptDraftingRequest: async (id, acceptanceData = {}) => {
+    try {
+      const response = await apiClient.post(`/documents/drafting-requests/${id}/accept`, acceptanceData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error accepting drafting request ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Reject a drafting request
+   * @param {number} id - Request ID
+   * @param {string} reason - Rejection reason
+   * @returns {Promise} - API response
+   */
+  rejectDraftingRequest: async (id, reason = '') => {
+    try {
+      const response = await apiClient.post(`/documents/drafting-requests/${id}/reject`, { reason });
+      return response.data;
+    } catch (error) {
+      console.error(`Error rejecting drafting request ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Submit completed document for review
+   * @param {number} id - Request ID
+   * @param {FormData} formData - Document files and completion data
+   * @returns {Promise} - API response
+   */
+  submitCompletedDocument: async (id, formData) => {
+    try {
+      const response = await apiClient.post(`/documents/drafting-requests/${id}/submit`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error submitting completed document for request ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get case documents
+   * @param {Object} params - Query parameters for filtering
+   * @returns {Promise} - API response with case documents
+   */
+  getCaseDocuments: async (params = {}) => {
+    try {
+      const response = await apiClient.get('/documents/case-documents', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching case documents:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get documents for a specific case
+   * @param {string} caseId - Case ID
+   * @returns {Promise} - API response with case documents
+   */
+  getCaseDocumentsByCaseId: async (caseId) => {
+    try {
+      const response = await apiClient.get(`/documents/case-documents/case/${caseId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching documents for case ${caseId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Upload documents for a case
+   * @param {string} caseId - Case ID
+   * @param {FormData} formData - Document files and metadata
+   * @returns {Promise} - API response
+   */
+  uploadCaseDocuments: async (caseId, formData) => {
+    try {
+      const response = await apiClient.post(`/documents/case-documents/case/${caseId}/upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error uploading documents for case ${caseId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update document status
+   * @param {number} documentId - Document ID
+   * @param {string} status - New status (pending_review, reviewed, verified, rejected)
+   * @returns {Promise} - API response
+   */
+  updateDocumentStatus: async (documentId, status) => {
+    try {
+      const response = await apiClient.patch(`/documents/case-documents/${documentId}/status`, { status });
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating document ${documentId} status:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Download document
+   * @param {number} documentId - Document ID
+   * @returns {Promise} - File blob
+   */
+  downloadDocument: async (documentId) => {
+    try {
+      const response = await apiClient.get(`/documents/case-documents/${documentId}/download`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error downloading document ${documentId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete document
+   * @param {number} documentId - Document ID
+   * @returns {Promise} - API response
+   */
+  deleteDocument: async (documentId) => {
+    try {
+      const response = await apiClient.delete(`/documents/case-documents/${documentId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting document ${documentId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get document history for the lawyer
+   * @param {Object} params - Query parameters for filtering and pagination
+   * @returns {Promise} - API response with document history
+   */
+  getDocumentHistory: async (params = {}) => {
+    try {
+      const response = await apiClient.get('/documents/history', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching document history:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get document drafting statistics
+   * @returns {Promise} - API response with statistics
+   */
+  getDocumentStats: async () => {
+    try {
+      const response = await apiClient.get('/documents/statistics');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching document statistics:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Search documents across all types
+   * @param {string} query - Search query
+   * @param {Object} filters - Additional filters
+   * @returns {Promise} - API response with search results
+   */
+  searchDocuments: async (query, filters = {}) => {
+    try {
+      const params = { query, ...filters };
+      const response = await apiClient.get('/documents/search', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error searching documents:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get document templates
+   * @param {string} category - Document category
+   * @returns {Promise} - API response with templates
+   */
+  getDocumentTemplates: async (category = null) => {
+    try {
+      const params = category ? { category } : {};
+      const response = await apiClient.get('/documents/templates', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching document templates:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Create document from template
+   * @param {number} templateId - Template ID
+   * @param {Object} templateData - Data to fill the template
+   * @returns {Promise} - API response with generated document
+   */
+  createFromTemplate: async (templateId, templateData) => {
+    try {
+      const response = await apiClient.post(`/documents/templates/${templateId}/create`, templateData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error creating document from template ${templateId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Share document with client or other parties
+   * @param {number} documentId - Document ID
+   * @param {Object} shareData - Sharing permissions and recipients
+   * @returns {Promise} - API response
+   */
+  shareDocument: async (documentId, shareData) => {
+    try {
+      const response = await apiClient.post(`/documents/case-documents/${documentId}/share`, shareData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error sharing document ${documentId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get document versions/history
+   * @param {number} documentId - Document ID
+   * @returns {Promise} - API response with document versions
+   */
+  getDocumentVersions: async (documentId) => {
+    try {
+      const response = await apiClient.get(`/documents/case-documents/${documentId}/versions`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching versions for document ${documentId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Add comment/note to document
+   * @param {number} documentId - Document ID
+   * @param {string} comment - Comment text
+   * @returns {Promise} - API response
+   */
+  addDocumentComment: async (documentId, comment) => {
+    try {
+      const response = await apiClient.post(`/documents/case-documents/${documentId}/comments`, { comment });
+      return response.data;
+    } catch (error) {
+      console.error(`Error adding comment to document ${documentId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get document comments
+   * @param {number} documentId - Document ID
+   * @returns {Promise} - API response with comments
+   */
+  getDocumentComments: async (documentId) => {
+    try {
+      const response = await apiClient.get(`/documents/case-documents/${documentId}/comments`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching comments for document ${documentId}:`, error);
+      throw error;
+    }
+  }
+};
+
 // Utility functions for token management
 export const tokenManager = {
   setToken: (token) => {

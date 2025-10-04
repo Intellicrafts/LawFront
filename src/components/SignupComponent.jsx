@@ -1,7 +1,8 @@
 // SignupComponent.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { FaFacebook, FaGoogle, FaLinkedin, FaEye, FaEyeSlash, FaShieldAlt, FaUser, FaBriefcase, FaCheck, FaCheckCircle, FaExclamationCircle, FaUpload, FaFileAlt, FaIdCard, FaGavel } from 'react-icons/fa';
+import { FaFacebook, FaGoogle, FaLinkedin, FaEye, FaEyeSlash, FaShieldAlt, FaUser, FaBriefcase, FaCheck, FaCheckCircle, FaExclamationCircle, FaUpload, FaFileAlt, FaIdCard, FaGavel, FaApple, FaMicrosoft } from 'react-icons/fa';
+import { Scale, Check } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import { authAPI, tokenManager } from '../api/apiService'; // Import your API service
@@ -77,48 +78,73 @@ const Toast = ({ message, type, onClose }) => {
   );
 };
 
-// Legal strip component at the top
+// Premium Legal strip component with black/silver/blue accents
 const LegalStrip = () => {
   return (
-    <div className="w-full py-2 px-4 bg-gradient-to-r from-blue-900 to-blue-800 text-white text-xs font-light flex items-center justify-between">
-      <div className="flex items-center">
-        <FaShieldAlt className="mr-2" />
-        <span>Secure Authentication | ISO 27001 Certified</span>
+    <div className="relative w-full py-2.5 px-4 bg-gradient-to-r from-gray-900 via-black to-gray-900 text-gray-200 text-xs font-light flex items-center justify-between overflow-hidden border-b border-gray-800">
+      {/* Silver shine effect */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-700/10 to-transparent"></div>
+      {/* Blue accent line */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
+      
+      <div className="relative z-10 flex items-center">
+        <FaShieldAlt className="mr-2 text-blue-400" />
+        <span className="text-gray-300">Secure Authentication | ISO 27001 Certified</span>
       </div>
-      <div>
-        <a href="#" className="hover:underline transition-all duration-200">Privacy Policy</a>
-        <span className="mx-2">|</span>
-        <a href="#" className="hover:underline transition-all duration-200">Terms of Service</a>
+      <div className="relative z-10">
+        <a href="#" className="hover:text-blue-400 hover:underline transition-all duration-200">Privacy Policy</a>
+        <span className="mx-2 text-gray-600">|</span>
+        <a href="#" className="hover:text-blue-400 hover:underline transition-all duration-200">Terms of Service</a>
       </div>
     </div>
   );
 };
 
-// Enhanced Logo component with gradient
+// Premium Logo component with black/silver gradient and Scale icon
 const Logo = () => {
   return (
-    <div className="flex justify-center mb-6 animate-fadeIn">
+    <div className="flex justify-center mb-4 animate-fadeIn">
       <div 
-        className="w-20 h-20 rounded-lg flex items-center justify-center text-white text-3xl font-bold shadow-lg transform hover:rotate-3 transition-all duration-300"
-        style={{ background: "linear-gradient(to right, rgb(34, 87, 122), rgb(92, 172, 222))" }}
+        className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-300 overflow-hidden border border-gray-700/50"
+        style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)" }}
       >
-        <span className="drop-shadow-md">M</span>
+        {/* Silver shine effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-gray-400/10 to-transparent"></div>
+        <Scale size={24} className="relative z-10 text-white drop-shadow-lg" strokeWidth={2} />
       </div>
     </div>
   );
 };
 
-// Enhanced Button component with gradient
+// Premium Button component with black/silver/blue shine - Compact version
 const Button = ({ children, loading, onClick, className, type = "button", disabled = false }) => {
   return (
     <button
       onClick={onClick}
       disabled={loading || disabled}
       type={type}
-      className={`w-full py-3 px-4 rounded-md flex items-center justify-center text-white font-medium shadow-md transition-all duration-300 transform hover:scale-102 hover:shadow-xl relative overflow-hidden ${disabled && !loading ? 'opacity-70 cursor-not-allowed' : ''} ${className}`}
-      style={{ background: loading || disabled ? "#64a6db" : "linear-gradient(to right, rgb(34, 87, 122), rgb(92, 172, 222))" }}
+      className={`group w-full py-2.5 px-4 rounded-lg flex items-center justify-center text-white text-sm font-semibold shadow-md transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg relative overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none border ${className}`}
+      style={{ 
+        background: (loading || disabled) 
+          ? "linear-gradient(135deg, #4a5568 0%, #2d3748 100%)" 
+          : "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 25%, #1a1a1a 50%, #2563eb 75%, #1e40af 100%)",
+        borderColor: disabled ? "#4a5568" : "rgba(59, 130, 246, 0.3)"
+      }}
     >
-      <span className="relative z-10 flex items-center">
+      {/* Silver shine animation */}
+      {!loading && !disabled && (
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-400/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
+      )}
+      
+      {/* Blue accent glow */}
+      {!loading && !disabled && (
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      )}
+      
+      {/* Top highlight for depth */}
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-transparent via-transparent to-white/5"></div>
+      
+      <span className="relative z-10 flex items-center tracking-wide">
         {loading ? (
           <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -127,13 +153,68 @@ const Button = ({ children, loading, onClick, className, type = "button", disabl
         ) : null}
         {children}
       </span>
-      <div className="absolute top-0 left-0 w-full h-full opacity-0 hover:opacity-20 bg-white transform -translate-x-full hover:translate-x-0 transition-transform duration-500"></div>
     </button>
   );
 };
 
-// Enhanced Social login buttons with Google OAuth integration
+// Premium Custom Checkbox Component
+const CustomCheckbox = ({ id, checked, onChange, label, disabled = false, isDarkMode }) => {
+  return (
+    <div className="flex items-center">
+      <div className="relative flex items-center">
+        {/* Hidden native checkbox for accessibility */}
+        <input
+          id={id}
+          type="checkbox"
+          checked={checked}
+          onChange={onChange}
+          disabled={disabled}
+          className="sr-only"
+        />
+        {/* Custom checkbox visual */}
+        <label
+          htmlFor={id}
+          className={`flex items-center justify-center w-5 h-5 rounded border-2 transition-all duration-200 cursor-pointer ${
+            disabled ? 'opacity-60 cursor-not-allowed' : 'hover:scale-110'
+          } ${
+            checked
+              ? isDarkMode
+                ? 'bg-white border-white'
+                : 'bg-gray-900 border-gray-900'
+              : isDarkMode
+              ? 'bg-gray-800 border-gray-600 hover:border-gray-500'
+              : 'bg-white border-gray-300 hover:border-gray-400'
+          }`}
+        >
+          {/* Checkmark icon */}
+          {checked && (
+            <Check 
+              size={14} 
+              className={`${isDarkMode ? 'text-gray-900' : 'text-white'} animate-in zoom-in duration-200`} 
+              strokeWidth={3}
+            />
+          )}
+        </label>
+      </div>
+      {/* Label text */}
+      <label 
+        htmlFor={id} 
+        className={`ml-2.5 block text-xs cursor-pointer select-none ${
+          isDarkMode ? 'text-gray-400' : 'text-gray-600'
+        } ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+      >
+        {label}
+      </label>
+    </div>
+  );
+};
+
+// Professional Social Login Buttons
 const SocialButtons = ({ onSocialLogin, loading, onGoogleLogin }) => {
+  // Get theme from Redux
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
+
   const googleLogin = useGoogleLogin({
     onSuccess: (tokenResponse) => {
       console.log('Google signup successful:', tokenResponse);
@@ -149,32 +230,53 @@ const SocialButtons = ({ onSocialLogin, loading, onGoogleLogin }) => {
     }
   });
 
+  const socialButtonClass = `w-full py-2.5 px-4 rounded-lg flex items-center justify-center space-x-3 font-medium transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none ${
+    isDarkMode 
+      ? 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 hover:border-gray-500' 
+      : 'bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-200 hover:border-gray-300 shadow-sm'
+  }`;
+
   return (
-    <div className="flex justify-center space-x-5 mt-5">
-      <button 
-        onClick={() => onSocialLogin && onSocialLogin('facebook')}
-        disabled={loading}
-        className="w-12 h-12 rounded-full bg-blue-800 flex items-center justify-center text-white transition-all duration-300 hover:bg-blue-900 hover:scale-110 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
-        aria-label="Sign up with Facebook"
-      >
-        <FaFacebook size={20} />
-      </button>
+    <div className="space-y-2.5">
       <button 
         onClick={() => googleLogin()}
         disabled={loading}
-        className="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center text-white transition-all duration-300 hover:bg-red-600 hover:scale-110 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
-        aria-label="Sign up with Google"
+        className={socialButtonClass}
+        aria-label="Continue with Google"
       >
-        <FaGoogle size={20} />
+        <FaGoogle className="text-red-500" size={18} />
+        <span className="text-sm">Continue with Google</span>
       </button>
-      <button 
-        onClick={() => onSocialLogin && onSocialLogin('linkedin')}
+      
+      {/* <button 
+        onClick={() => onSocialLogin && onSocialLogin('apple')}
         disabled={loading}
-        className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white transition-all duration-300 hover:bg-blue-600 hover:scale-110 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
-        aria-label="Sign up with LinkedIn"
+        className={socialButtonClass}
+        aria-label="Continue with Apple"
       >
-        <FaLinkedin size={20} />
+        <FaApple className="text-gray-900" size={18} />
+        <span className="text-sm">Continue with Apple</span>
       </button>
+      
+      <button 
+        onClick={() => onSocialLogin && onSocialLogin('microsoft')}
+        disabled={loading}
+        className={socialButtonClass}
+        aria-label="Continue with Microsoft"
+      >
+        <FaMicrosoft className="text-blue-600" size={16} />
+        <span className="text-sm">Continue with Microsoft</span>
+      </button>
+      
+      <button 
+        onClick={() => onSocialLogin && onSocialLogin('facebook')}
+        disabled={loading}
+        className={socialButtonClass}
+        aria-label="Continue with Facebook"
+      >
+        <FaFacebook className="text-blue-600" size={18} />
+        <span className="text-sm">Continue with Facebook</span>
+      </button> */}
     </div>
   );
 };
@@ -189,8 +291,8 @@ const InputField = ({ type, id, name, value, onChange, placeholder, icon, rightI
     <div className="relative group">
       <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${
         isDarkMode 
-          ? 'text-gray-500 group-focus-within:text-blue-400' 
-          : 'text-gray-400 group-focus-within:text-blue-500'
+          ? 'text-gray-500 group-focus-within:text-gray-300' 
+          : 'text-gray-400 group-focus-within:text-gray-600'
       } transition-colors duration-200`}>
         {icon}
       </div>
@@ -200,7 +302,7 @@ const InputField = ({ type, id, name, value, onChange, placeholder, icon, rightI
         type={type}
         value={value}
         onChange={onChange}
-        className={`block w-full pl-10 pr-10 py-3.5 rounded-lg shadow-sm transition-all duration-300 ${
+        className={`block w-full pl-9 pr-10 py-2.5 text-sm rounded-lg shadow-sm transition-all duration-300 ${
           isDarkMode 
             ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500' 
             : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
@@ -403,61 +505,61 @@ const AccountTypeSelector = ({ selectedType, setSelectedType }) => {
   const isDarkMode = mode === 'dark';
 
   return (
-    <div className="grid grid-cols-2 gap-4 mb-4">
+    <div className="grid grid-cols-2 gap-3 mb-3">
       <button
         type="button"
         onClick={() => setSelectedType('personal')}
-        className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all duration-200 ${
+        className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all duration-200 ${
           selectedType === 'personal' 
             ? isDarkMode
-              ? 'border-blue-600 bg-blue-900 bg-opacity-20' 
-              : 'border-blue-500 bg-blue-50'
+              ? 'border-white bg-gray-700' 
+              : 'border-gray-900 bg-gray-50'
             : isDarkMode
               ? 'border-gray-700 hover:border-gray-600'
               : 'border-gray-200 hover:border-gray-300'
         }`}
       >
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1.5 ${
           selectedType === 'personal' 
             ? isDarkMode
-              ? 'bg-blue-800 text-blue-400'
-              : 'bg-blue-100 text-blue-600' 
+              ? 'bg-white text-gray-900'
+              : 'bg-gray-900 text-white' 
             : isDarkMode
               ? 'bg-gray-800 text-gray-400'
               : 'bg-gray-100 text-gray-500'
         }`}>
-          <FaUser size={18} />
+          <FaUser size={14} />
         </div>
-        <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Personal</span>
-        <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>I am User</span>
+        <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Personal</span>
+        <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-0.5`}>I am User</span>
       </button>
       
       <button
         type="button"
         onClick={() => setSelectedType('business')}
-        className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all duration-200 ${
+        className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all duration-200 ${
           selectedType === 'business' 
             ? isDarkMode
-              ? 'border-blue-600 bg-blue-900 bg-opacity-20' 
-              : 'border-blue-500 bg-blue-50'
+              ? 'border-white bg-gray-700' 
+              : 'border-gray-900 bg-gray-50'
             : isDarkMode
               ? 'border-gray-700 hover:border-gray-600'
               : 'border-gray-200 hover:border-gray-300'
         }`}
       >
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1.5 ${
           selectedType === 'business' 
             ? isDarkMode
-              ? 'bg-blue-800 text-blue-400'
-              : 'bg-blue-100 text-blue-600' 
+              ? 'bg-white text-gray-900'
+              : 'bg-gray-900 text-white' 
             : isDarkMode
               ? 'bg-gray-800 text-gray-400'
               : 'bg-gray-100 text-gray-500'
         }`}>
-          <FaBriefcase size={18} />
+          <FaBriefcase size={14} />
         </div>
-        <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Business</span>
-        <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>I am Lawyer</span>
+        <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Business</span>
+        <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-0.5`}>I am Lawyer</span>
       </button>
     </div>
   );
@@ -542,9 +644,9 @@ export const Signup = ({ onSignupSuccess }) => {
       return;
     }
 
-    // Password strength validation
-    if (getPasswordStrength(password) < 3) {
-      showToast('Please create a stronger password with uppercase, numbers, and special characters', 'error');
+    // Password strength validation - All 4 requirements must be met
+    if (getPasswordStrength(password) < 4) {
+      showToast('Password must contain 8+ characters, uppercase, number, and special character', 'error');
       return;
     }
 
@@ -883,39 +985,59 @@ export const Signup = ({ onSignupSuccess }) => {
       
       <LegalStrip />
       
-      <div className="flex-1 flex items-center justify-center p-6 z-10">
+      <div className="flex-1 flex items-center justify-center p-4 z-10">
         <div 
-          className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-xl p-8 w-full max-w-md transition-all duration-700 transform ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-          style={{ boxShadow: isDarkMode 
-            ? '0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)' 
-            : '0 10px 25px -5px rgba(34, 87, 122, 0.1), 0 10px 10px -5px rgba(92, 172, 222, 0.05)' 
-          }}
+          className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-xl p-6 w-full max-w-md transition-all duration-700 transform ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+          style={{ boxShadow: isDarkMode ? '0 10px 25px -5px rgba(0, 0, 0, 0.3)' : '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
         >
-          <div className="text-center mb-6">
+          <div className="text-center mb-5">
             <Logo />
-            <h2 className={`text-2xl font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Create your account</h2>
-            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Join MeraBakil and start your journey</p>
+            <h2 className={`text-xl font-bold mb-1.5 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Create Account</h2>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Join MeraBakil today</p>
           </div>
           
           {/* Step indicator */}
           {step === 2 && (
-            <div className="flex items-center justify-center mb-6">
-              <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-center mb-4">
+              <div className="flex items-center space-x-2">
                 <div className="flex items-center space-x-1">
-                  <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs">
-                    <FaCheck />
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-gray-900 text-white'}`}>
+                    <FaCheck size={10} />
                   </div>
-                  <span className="text-sm font-medium text-blue-500">Account</span>
+                  <span className={`text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>Account</span>
                 </div>
-                <div className="w-8 h-0.5 bg-blue-500"></div>
+                <div className={`w-6 h-0.5 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
                 <div className="flex items-center space-x-1">
-                  <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-gray-900 text-white'}`}>
                     2
                   </div>
-                  <span className="text-sm font-medium text-blue-500">Details</span>
+                  <span className={`text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>Details</span>
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Social Login Buttons Section - Only show on step 1 */}
+          {step === 1 && (
+            <>
+              <div className="mb-4">
+                <SocialButtons 
+                  onSocialLogin={handleSocialSignup} 
+                  onGoogleLogin={handleGoogleSignup}
+                  loading={loading} 
+                />
+              </div>
+
+              {/* OR Divider */}
+              <div className="relative mb-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className={`w-full border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}></div>
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className={`px-3 ${isDarkMode ? 'bg-gray-800 text-gray-500' : 'bg-white text-gray-500'} font-medium`}>OR</span>
+                </div>
+              </div>
+            </>
           )}
 
           <form onSubmit={step === 1 ? goToNextStep : handleSignup} className="space-y-4">
@@ -923,7 +1045,7 @@ export const Signup = ({ onSignupSuccess }) => {
               <>
                 <AccountTypeSelector selectedType={accountType} setSelectedType={setAccountType} />
                 
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <label htmlFor="email" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Email Address</label>
                   <InputField
                     type="email"
@@ -933,7 +1055,7 @@ export const Signup = ({ onSignupSuccess }) => {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     icon={
-                      <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                         <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                       </svg>
@@ -941,7 +1063,7 @@ export const Signup = ({ onSignupSuccess }) => {
                   />
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <label htmlFor="password" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Create Password</label>
                   <InputField
                     type={showPassword ? "text" : "password"}
@@ -951,11 +1073,11 @@ export const Signup = ({ onSignupSuccess }) => {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     icon={
-                      <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                       </svg>
                     }
-                    rightIcon={showPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
+                    rightIcon={showPassword ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
                     onRightIconClick={() => setShowPassword(!showPassword)}
                   />
                   <PasswordStrengthIndicator password={password} />
@@ -963,30 +1085,55 @@ export const Signup = ({ onSignupSuccess }) => {
                 </div>
 
                 <div className="flex items-center">
-                  <input
-                    id="agree-terms"
-                    name="agree-terms"
-                    type="checkbox"
-                    checked={agreeTerms}
-                    onChange={(e) => setAgreeTerms(e.target.checked)}
-                    className="h-4 w-4 text-gray-600 focus:ring-gray-500/30 border-gray-300 rounded"
-                    required
-                  />
-                  <label htmlFor="agree-terms" className={`ml-2 block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                    I agree to the <a href="#" className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} hover:underline`}>Terms of Service</a> and <a href="#" className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} hover:underline`}>Privacy Policy</a>
+                  <div className="relative flex items-center">
+                    {/* Hidden native checkbox for accessibility */}
+                    <input
+                      id="agree-terms"
+                      type="checkbox"
+                      checked={agreeTerms}
+                      onChange={(e) => setAgreeTerms(e.target.checked)}
+                      className="sr-only"
+                      required
+                    />
+                    {/* Custom checkbox visual */}
+                    <label
+                      htmlFor="agree-terms"
+                      className={`flex items-center justify-center w-5 h-5 rounded border-2 transition-all duration-200 cursor-pointer hover:scale-110 ${
+                        agreeTerms
+                          ? isDarkMode
+                            ? 'bg-white border-white'
+                            : 'bg-gray-900 border-gray-900'
+                          : isDarkMode
+                          ? 'bg-gray-800 border-gray-600 hover:border-gray-500'
+                          : 'bg-white border-gray-300 hover:border-gray-400'
+                      }`}
+                    >
+                      {/* Checkmark icon */}
+                      {agreeTerms && (
+                        <Check 
+                          size={14} 
+                          className={`${isDarkMode ? 'text-gray-900' : 'text-white'} animate-in zoom-in duration-200`} 
+                          strokeWidth={3}
+                        />
+                      )}
+                    </label>
+                  </div>
+                  {/* Label text with links */}
+                  <label htmlFor="agree-terms" className={`ml-2.5 block text-xs cursor-pointer select-none ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    I agree to the <a href="#" onClick={(e) => e.stopPropagation()} className={`${isDarkMode ? 'text-white hover:text-gray-300' : 'text-gray-900 hover:text-gray-700'} underline`}>Terms</a> and <a href="#" onClick={(e) => e.stopPropagation()} className={`${isDarkMode ? 'text-white hover:text-gray-300' : 'text-gray-900 hover:text-gray-700'} underline`}>Privacy Policy</a>
                   </label>
                 </div>
 
-                <div className="pt-2">
-                  <Button type="submit" disabled={!email || password.length < 8 || !agreeTerms}>
+                <div className="pt-1">
+                  <Button type="submit" disabled={!email || getPasswordStrength(password) < 4 || !agreeTerms}>
                     Continue
                   </Button>
                 </div>
               </>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
                     <label htmlFor="first-name" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>First Name</label>
                     <InputField
                       type="text"
@@ -995,10 +1142,10 @@ export const Signup = ({ onSignupSuccess }) => {
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       placeholder="John"
-                      icon={<FaUser className="h-5 w-5" />}
+                      icon={<FaUser className="h-4 w-4" />}
                     />
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <label htmlFor="last-name" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Last Name</label>
                     <InputField
                       type="text"
@@ -1007,12 +1154,12 @@ export const Signup = ({ onSignupSuccess }) => {
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       placeholder="Doe"
-                      icon={<FaUser className="h-5 w-5" />}
+                      icon={<FaUser className="h-4 w-4" />}
                     />
                   </div>
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <label htmlFor="confirm-password" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Confirm Password</label>
                   <InputField
                     type={showConfirmPassword ? "text" : "password"}
@@ -1043,8 +1190,8 @@ export const Signup = ({ onSignupSuccess }) => {
                     </h3>
                     
                     <div className="space-y-4">
-                      <div className="space-y-1">
-                        <label htmlFor="enrollment-no" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <div className="space-y-2">
+                        <label htmlFor="enrollment-no" className={`block text-base font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                           Enrollment Number <span className="text-red-500">*</span>
                         </label>
                         <InputField
@@ -1101,7 +1248,7 @@ export const Signup = ({ onSignupSuccess }) => {
                   <button
                     type="button"
                     onClick={goBackToStep}
-                    className={`w-full py-3 px-4 rounded-md flex items-center justify-center font-medium transition-all duration-300 ${
+                    className={`w-full py-2.5 px-4 rounded-lg flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
                       isDarkMode 
                         ? 'text-gray-300 border border-gray-700 hover:bg-gray-800' 
                         : 'text-gray-600 border border-gray-300 hover:bg-gray-50'
@@ -1130,27 +1277,10 @@ export const Signup = ({ onSignupSuccess }) => {
           </form>
 
           {step === 1 && (
-            <>
-              <div className="mt-8">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className={`w-full border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className={`px-4 ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'}`}>or sign up with</span>
-                  </div>
-                </div>
-                
-                <SocialButtons 
-                  onSocialLogin={handleSocialSignup} 
-                  onGoogleLogin={handleGoogleSignup}
-                  loading={loading} 
-                />
-              </div>
-              
+            <>              
               <p className={`mt-8 text-center text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Already have an account?{' '}
-                <a href="/auth" className={`font-medium ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'} transition-all duration-200 underline-offset-2 hover:underline`}>
+                <a href="/auth" className={`font-medium ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-900 hover:text-gray-700'} transition-all duration-200 underline-offset-2 hover:underline`}>
                   Sign in instead
                 </a>
               </p>

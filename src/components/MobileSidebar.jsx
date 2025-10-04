@@ -520,32 +520,47 @@ const MobileSidebar = ({
                       </motion.div>
                     </div>
                   ) : (
-                    <div className="flex gap-2">
-                      {/* Sign In Button */}
-                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
+                    <div className="flex gap-3">
+                      {/* Professional Mobile Login Button */}
+                      <motion.div 
+                        whileTap={{ scale: 0.95 }} 
+                        className="flex-1"
+                      >
                         <Link
                           to="/Auth"
                           onClick={onClose}
-                          className="flex items-center justify-center p-2 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-300 group"
+                          className="flex items-center justify-center py-3.5 px-4 rounded-2xl
+                                   text-white active:text-white font-bold transition-all duration-300
+                                   bg-gradient-to-br from-gray-900 via-gray-800 to-black
+                                   shadow-lg active:shadow-xl"
                         >
-                          <div className="flex items-center justify-center w-5 h-5 rounded-md bg-white/20 mr-1.5 group-hover:bg-white/30">
-                            <LogIn size={12} className="text-white" />
+                          <div className="flex items-center justify-center w-5 h-5 rounded-lg 
+                                        bg-gray-700/50 mr-2.5">
+                            <LogIn size={14} className="text-white" strokeWidth={2.5} />
                           </div>
-                          <span className="text-xs font-semibold">Sign In</span>
+                          <span className="text-sm text-white">Login</span>
                         </Link>
                       </motion.div>
                       
-                      {/* Create Account Button */}
-                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
+                      {/* Professional Mobile Register Button */}
+                      <motion.div 
+                        whileTap={{ scale: 0.95 }} 
+                        className="flex-1"
+                      >
                         <Link
                           to="/signup"
                           onClick={onClose}
-                          className="flex items-center justify-center p-2 rounded-lg border-2 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-all duration-300 group"
+                          className="flex items-center justify-center py-3.5 px-4 rounded-2xl
+                                   font-bold transition-all duration-300
+                                   bg-gradient-to-br from-gray-100 via-gray-50 to-white text-gray-900
+                                   dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 dark:text-white
+                                   shadow-lg active:shadow-xl"
                         >
-                          <div className="flex items-center justify-center w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-800/50 mr-1.5 group-hover:bg-blue-200 dark:group-hover:bg-blue-700/50">
-                            <UserPlus size={12} className="text-blue-600 dark:text-blue-400" />
+                          <div className="flex items-center justify-center w-5 h-5 rounded-lg 
+                                        bg-gray-300/50 dark:bg-gray-600/50 mr-2.5">
+                            <UserPlus size={14} className="text-gray-700 dark:text-gray-200" strokeWidth={2.5} />
                           </div>
-                          <span className="text-xs font-semibold">Register</span>
+                          <span className="text-sm">Register</span>
                         </Link>
                       </motion.div>
                     </div>

@@ -1,7 +1,8 @@
 // AuthComponents.jsx - Production Ready
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { FaFacebook, FaGoogle, FaLinkedin, FaEye, FaEyeSlash, FaShieldAlt, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
+import { FaFacebook, FaGoogle, FaLinkedin, FaEye, FaEyeSlash, FaShieldAlt, FaCheckCircle, FaExclamationCircle, FaApple, FaMicrosoft } from 'react-icons/fa';
+import { Scale, Check } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { authAPI, tokenManager } from '../api/apiService';
 
@@ -99,50 +100,73 @@ const Toast = ({ message, type = 'success', onClose }) => {
   );
 };
 
-// Legal strip component
+// Premium Legal strip component with black/silver/blue accents
 const LegalStrip = () => {
   return (
-    <div className="w-full py-2 px-4 bg-gradient-to-r from-blue-900 to-blue-800 text-white text-xs font-light flex items-center justify-between">
-      <div className="flex items-center">
-        <FaShieldAlt className="mr-2" />
-        <span>Secure Authentication | ISO 27001 Certified</span>
+    <div className="relative w-full py-2.5 px-4 bg-gradient-to-r from-gray-900 via-black to-gray-900 text-gray-200 text-xs font-light flex items-center justify-between overflow-hidden border-b border-gray-800">
+      {/* Silver shine effect */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-700/10 to-transparent"></div>
+      {/* Blue accent line */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
+      
+      <div className="relative z-10 flex items-center">
+        <FaShieldAlt className="mr-2 text-blue-400" />
+        <span className="text-gray-300">Secure Authentication | ISO 27001 Certified</span>
       </div>
-      <div>
-        <a href="/privacy" className="hover:underline transition-all duration-200">Privacy Policy</a>
-        <span className="mx-2">|</span>
-        <a href="/terms" className="hover:underline transition-all duration-200">Terms of Service</a>
+      <div className="relative z-10">
+        <a href="/privacy" className="hover:text-blue-400 hover:underline transition-all duration-200">Privacy Policy</a>
+        <span className="mx-2 text-gray-600">|</span>
+        <a href="/terms" className="hover:text-blue-400 hover:underline transition-all duration-200">Terms of Service</a>
       </div>
     </div>
   );
 };
 
-// Logo component
+// Premium Logo component with black/silver gradient and Scale icon
 const Logo = () => {
   return (
-    <div className="flex justify-center mb-6 animate-fadeIn">
+    <div className="flex justify-center mb-4 animate-fadeIn">
       <div 
-        className="w-20 h-20 rounded-lg flex items-center justify-center text-white text-3xl font-bold shadow-lg transform hover:rotate-3 transition-all duration-300"
-        style={{ background: "linear-gradient(to right, rgb(34, 87, 122), rgb(92, 172, 222))" }}
+        className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-300 overflow-hidden border border-gray-700/50"
+        style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)" }}
       >
-        <span className="drop-shadow-md">M</span>
+        {/* Silver shine effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-gray-400/10 to-transparent"></div>
+        <Scale size={24} className="relative z-10 text-white drop-shadow-lg" strokeWidth={2} />
       </div>
     </div>
   );
 };
 
-// Enhanced Button component
+// Premium Button component with black/silver/blue shine - Compact version
 const Button = ({ children, loading, onClick, type = "button", className = "", disabled = false }) => {
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={loading || disabled}
-      className={`w-full py-3 px-4 rounded-md flex items-center justify-center text-white font-medium shadow-md transition-all duration-300 transform hover:scale-102 hover:shadow-xl relative overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none ${className}`}
+      className={`group w-full py-2.5 px-4 rounded-lg flex items-center justify-center text-white text-sm font-semibold shadow-md transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg relative overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none border ${className}`}
       style={{ 
-        background: (loading || disabled) ? "#64a6db" : "linear-gradient(to right, rgb(34, 87, 122), rgb(92, 172, 222))" 
+        background: (loading || disabled) 
+          ? "linear-gradient(135deg, #4a5568 0%, #2d3748 100%)" 
+          : "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 25%, #1a1a1a 50%, #2563eb 75%, #1e40af 100%)",
+        borderColor: disabled ? "#4a5568" : "rgba(59, 130, 246, 0.3)"
       }}
     >
-      <span className="relative z-10 flex items-center">
+      {/* Silver shine animation */}
+      {!loading && !disabled && (
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-400/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
+      )}
+      
+      {/* Blue accent glow */}
+      {!loading && !disabled && (
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      )}
+      
+      {/* Top highlight for depth */}
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-transparent via-transparent to-white/5"></div>
+      
+      <span className="relative z-10 flex items-center tracking-wide">
         {loading ? (
           <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -151,15 +175,69 @@ const Button = ({ children, loading, onClick, type = "button", className = "", d
         ) : null}
         {children}
       </span>
-      {!loading && !disabled && (
-        <div className="absolute top-0 left-0 w-full h-full opacity-0 hover:opacity-20 bg-white transform -translate-x-full hover:translate-x-0 transition-transform duration-500"></div>
-      )}
     </button>
   );
 };
 
-// Social login buttons with Google OAuth integration
+// Premium Custom Checkbox Component
+const CustomCheckbox = ({ id, name, checked, onChange, label, disabled = false, isDarkMode }) => {
+  return (
+    <div className="flex items-center">
+      <div className="relative flex items-center">
+        {/* Hidden native checkbox for accessibility */}
+        <input
+          id={id}
+          name={name || id}
+          type="checkbox"
+          checked={checked}
+          onChange={onChange}
+          disabled={disabled}
+          className="sr-only"
+        />
+        {/* Custom checkbox visual */}
+        <label
+          htmlFor={id}
+          className={`flex items-center justify-center w-5 h-5 rounded border-2 transition-all duration-200 cursor-pointer ${
+            disabled ? 'opacity-60 cursor-not-allowed' : 'hover:scale-110'
+          } ${
+            checked
+              ? isDarkMode
+                ? 'bg-white border-white'
+                : 'bg-gray-900 border-gray-900'
+              : isDarkMode
+              ? 'bg-gray-800 border-gray-600 hover:border-gray-500'
+              : 'bg-white border-gray-300 hover:border-gray-400'
+          }`}
+        >
+          {/* Checkmark icon */}
+          {checked && (
+            <Check 
+              size={14} 
+              className={`${isDarkMode ? 'text-gray-900' : 'text-white'} animate-in zoom-in duration-200`} 
+              strokeWidth={3}
+            />
+          )}
+        </label>
+      </div>
+      {/* Label text */}
+      <label 
+        htmlFor={id} 
+        className={`ml-2.5 block text-xs cursor-pointer select-none ${
+          isDarkMode ? 'text-gray-400' : 'text-gray-600'
+        } ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+      >
+        {label}
+      </label>
+    </div>
+  );
+};
+
+// Professional Social Login Buttons
 const SocialButtons = ({ onSocialLogin, loading, onGoogleLogin }) => {
+  // Get theme from Redux
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
+
   const googleLogin = useGoogleLogin({
     onSuccess: (tokenResponse) => {
       console.log('Google login successful:', tokenResponse);
@@ -175,32 +253,53 @@ const SocialButtons = ({ onSocialLogin, loading, onGoogleLogin }) => {
     }
   });
 
+  const socialButtonClass = `w-full py-2.5 px-4 rounded-lg flex items-center justify-center space-x-3 font-medium transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none ${
+    isDarkMode 
+      ? 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 hover:border-gray-500' 
+      : 'bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-200 hover:border-gray-300 shadow-sm'
+  }`;
+
   return (
-    <div className="flex justify-center space-x-5 mt-5">
-      <button 
-        onClick={() => onSocialLogin('facebook')}
-        disabled={loading}
-        className="w-12 h-12 rounded-full bg-blue-800 flex items-center justify-center text-white transition-all duration-300 hover:bg-blue-900 hover:scale-110 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
-        aria-label="Sign in with Facebook"
-      >
-        <FaFacebook size={20} />
-      </button>
+    <div className="space-y-2.5">
       <button 
         onClick={() => googleLogin()}
         disabled={loading}
-        className="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center text-white transition-all duration-300 hover:bg-red-600 hover:scale-110 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
-        aria-label="Sign in with Google"
+        className={socialButtonClass}
+        aria-label="Continue with Google"
       >
-        <FaGoogle size={20} />
+        <FaGoogle className="text-red-500" size={18} />
+        <span className="text-sm">Continue with Google</span>
       </button>
-      <button 
-        onClick={() => onSocialLogin('linkedin')}
+      
+      {/* <button 
+        onClick={() => onSocialLogin('apple')}
         disabled={loading}
-        className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white transition-all duration-300 hover:bg-blue-600 hover:scale-110 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
-        aria-label="Sign in with LinkedIn"
+        className={socialButtonClass}
+        aria-label="Continue with Apple"
       >
-        <FaLinkedin size={20} />
+        <FaApple className="text-gray-900" size={18} />
+        <span className="text-sm">Continue with Apple</span>
       </button>
+      
+      <button 
+        onClick={() => onSocialLogin('microsoft')}
+        disabled={loading}
+        className={socialButtonClass}
+        aria-label="Continue with Microsoft"
+      >
+        <FaMicrosoft className="text-blue-600" size={16} />
+        <span className="text-sm">Continue with Microsoft</span>
+      </button>
+      
+      <button 
+        onClick={() => onSocialLogin('facebook')}
+        disabled={loading}
+        className={socialButtonClass}
+        aria-label="Continue with Facebook"
+      >
+        <FaFacebook className="text-blue-600" size={18} />
+        <span className="text-sm">Continue with Facebook</span>
+      </button> */}
     </div>
   );
 };
@@ -227,7 +326,7 @@ const InputField = ({
   return (
     <div className="relative group">
       <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors duration-200 ${
-        error ? 'text-red-400' : disabled ? 'text-gray-300' : isDarkMode ? 'text-gray-500 group-focus-within:text-blue-400' : 'text-gray-400 group-focus-within:text-blue-500'
+        error ? 'text-red-400' : disabled ? 'text-gray-300' : isDarkMode ? 'text-gray-500 group-focus-within:text-gray-300' : 'text-gray-400 group-focus-within:text-gray-600'
       }`}>
         {icon}
       </div>
@@ -239,7 +338,7 @@ const InputField = ({
         onChange={onChange}
         disabled={disabled}
         autoComplete={autoComplete}
-        className={`block w-full pl-10 pr-10 py-3.5 rounded-lg shadow-sm transition-all duration-300 ${
+        className={`block w-full pl-9 pr-10 py-2.5 text-sm rounded-lg shadow-sm transition-all duration-300 ${
           isDarkMode 
             ? `${error 
                 ? 'border-2 border-red-500 focus:border-red-400 focus:ring-2 focus:ring-red-900 bg-gray-700 text-white placeholder-gray-400' 
@@ -316,7 +415,13 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
   };
 
   const validatePassword = (password) => {
-    return password.length >= 6; // Minimum 6 characters
+    // Check all password requirements
+    const hasMinLength = password.length >= 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[^A-Za-z0-9]/.test(password);
+    
+    return hasMinLength && hasUppercase && hasNumber && hasSpecialChar;
   };
 
   const validateForm = () => {
@@ -331,7 +436,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     if (!formData.password) {
       errors.password = 'Password is required';
     } else if (!validatePassword(formData.password)) {
-      errors.password = 'Password must be at least 6 characters long';
+      errors.password = 'Password must contain 8+ characters, uppercase, number, and special character';
     }
 
     setFormState(prev => ({ ...prev, errors }));
@@ -628,21 +733,40 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
       
       <LegalStrip />
       
-      <div className="flex-1 flex items-center justify-center p-6 z-10">
+      <div className="flex-1 flex items-center justify-center p-4 z-10">
         <div 
-          className={`${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-xl shadow-xl p-8 w-full max-w-md transition-all duration-700 transform ${
+          className={`${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-xl shadow-xl p-6 w-full max-w-md transition-all duration-700 transform ${
             formState.fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
           }`}
-          style={{ boxShadow: isDarkMode ? '0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)' : '0 10px 25px -5px rgba(34, 87, 122, 0.1), 0 10px 10px -5px rgba(92, 172, 222, 0.05)' }}
+          style={{ boxShadow: isDarkMode ? '0 10px 25px -5px rgba(0, 0, 0, 0.3)' : '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
         >
-          <div className="text-center mb-8">
+          <div className="text-center mb-5">
             <Logo />
-            <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'} mb-2`}>Welcome to MeraBakil</h1>
-            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Sign in to your account to continue</p>
+            <h1 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-1.5`}>Welcome Back</h1>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Sign in to continue to MeraBakil</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-5" noValidate>
-            <div className="space-y-1">
+          {/* Social Login Buttons Section */}
+          <div className="mb-5">
+            <SocialButtons 
+              onSocialLogin={handleSocialLogin} 
+              onGoogleLogin={handleGoogleLogin}
+              loading={formState.loading} 
+            />
+          </div>
+
+          {/* OR Divider */}
+          <div className="relative mb-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className={`w-full border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}></div>
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className={`px-3 ${isDarkMode ? 'bg-gray-800 text-gray-500' : 'bg-white text-gray-500'} font-medium`}>OR</span>
+            </div>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-4" noValidate>
+            <div className="space-y-1.5">
               <label htmlFor="email" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                 Email Address <span className="text-red-500">*</span>
               </label>
@@ -657,28 +781,28 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                 error={!!formState.errors.email}
                 disabled={formState.loading}
                 icon={
-                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                     <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                   </svg>
                 }
               />
               {formState.errors.email && (
-                <p id="email-error" className="text-sm text-red-600 mt-1">{formState.errors.email}</p>
+                <p id="email-error" className="text-xs text-red-600 mt-1">{formState.errors.email}</p>
               )}
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <div className="flex justify-between items-center">
                 <label htmlFor="password" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Password <span className="text-red-500">*</span>
                 </label>
                 <a 
                   href="/forgot-password" 
-                  className={`text-sm ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'} transition-colors duration-200 focus:outline-none focus:underline`}
+                  className={`text-xs ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'} transition-colors duration-200 focus:outline-none focus:underline`}
                   tabIndex={formState.loading ? -1 : 0}
                 >
-                  Forgot password?
+                  Forgot?
                 </a>
               </div>
               <InputField
@@ -692,72 +816,50 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                 error={!!formState.errors.password}
                 disabled={formState.loading}
                 icon={
-                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                   </svg>
                 }
-                rightIcon={formState.showPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
+                rightIcon={formState.showPassword ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
                 onRightIconClick={() => setFormState(prev => ({ ...prev, showPassword: !prev.showPassword }))}
               />
               {formState.errors.password && (
-                <p id="password-error" className="text-sm text-red-600 mt-1">{formState.errors.password}</p>
+                <p id="password-error" className="text-xs text-red-600 mt-1">{formState.errors.password}</p>
               )}
             </div>
 
-            <div className="flex items-center">
-              <div className="relative flex items-center">
-                <input
-                  id="rememberMe"
-                  name="rememberMe"
-                  type="checkbox"
-                  checked={formState.rememberMe}
-                  onChange={handleCheckboxChange}
-                  disabled={formState.loading}
-                  className="h-4 w-4 text-gray-600 focus:ring-gray-500/30 border-gray-300 rounded disabled:opacity-60"
-                />
-                <label htmlFor="rememberMe" className={`ml-2 block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Remember me for 30 days
-                </label>
-              </div>
+            <div className="flex items-center justify-between">
+              <CustomCheckbox
+                id="rememberMe"
+                name="rememberMe"
+                checked={formState.rememberMe}
+                onChange={handleCheckboxChange}
+                label="Remember me"
+                disabled={formState.loading}
+                isDarkMode={isDarkMode}
+              />
             </div>
 
-            <div className="pt-2">
+            <div className="pt-1">
               <Button 
                 type="submit" 
                 loading={formState.loading}
-                disabled={formState.loading}
+                disabled={formState.loading || !formData.email || !formData.password || !validatePassword(formData.password)}
               >
-                {formState.loading ? 'Signing in...' : 'Sign in to account'}
+                {formState.loading ? 'Signing in...' : 'Sign in'}
               </Button>
             </div>
           </form>
 
-          <div className="mt-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className={`px-4 ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'}`}>or continue with</span>
-              </div>
-            </div>
-
-            <SocialButtons 
-              onSocialLogin={handleSocialLogin} 
-              onGoogleLogin={handleGoogleLogin}
-              loading={formState.loading} 
-            />
-          </div>
-
-          <p className={`mt-8 text-center text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          <p className={`mt-5 text-center text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             Don't have an account?{' '}
             <button
               type="button"
               onClick={handleSwitchToRegister}
               disabled={formState.loading}
-              className={`font-medium ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'} transition-all duration-200 underline-offset-2 hover:underline focus:outline-none focus:underline disabled:opacity-60 disabled:cursor-not-allowed`}
+              className={`font-medium ${isDarkMode ? 'text-white hover:text-gray-300' : 'text-gray-900 hover:text-gray-700'} transition-all duration-200 underline-offset-2 hover:underline focus:outline-none focus:underline disabled:opacity-60 disabled:cursor-not-allowed`}
             >
-              Create a free account
+              Create account
             </button>
           </p>
         </div>
