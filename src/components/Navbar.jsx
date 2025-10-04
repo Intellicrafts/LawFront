@@ -8,6 +8,8 @@ import Avatar from './common/Avatar';
 import NotificationDropdown from './NotificationDropdown';
 import MobileSidebar from './MobileSidebar';
 import OnboardingTour from './OnboardingTour';
+import { useGoogleLogin } from '@react-oauth/google';
+import { FaGoogle } from 'react-icons/fa';
 
 import { 
   Menu, 
@@ -37,8 +39,110 @@ import {
   AlertCircle,
   Loader,
   Compass,
-  PlayCircle
+  PlayCircle,
+  CheckCircle
 } from 'lucide-react';
+
+// Sleek One Tap Sign-in Prompt - Black, White & Silver Theme
+const OneTapPrompt = ({ onGoogleLogin, onDismiss, isDarkMode }) => {
+  const [isVisible, setIsVisible] = useState(true);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  const handleDismiss = () => {
+    setIsAnimating(true);
+    setTimeout(() => {
+      setIsVisible(false);
+      onDismiss();
+    }, 300);
+  };
+
+  if (!isVisible) return null;
+
+  return (
+    <div 
+      className={`fixed top-20 right-6 z-50 transition-all duration-300 ${
+        isAnimating ? 'opacity-0 translate-y-2 scale-95' : 'opacity-100 translate-y-0 scale-100'
+      }`}
+      style={{ maxWidth: '320px' }}
+    >
+      <div 
+        className={`relative overflow-hidden rounded-lg shadow-2xl border ${
+          isDarkMode 
+            ? 'bg-black border-gray-800' 
+            : 'bg-white border-gray-200'
+        }`}
+      >
+        {/* Silver metallic shine effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-300/10 via-transparent to-gray-400/5 pointer-events-none"></div>
+        <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-radial from-gray-200/20 to-transparent blur-2xl pointer-events-none"></div>
+        <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-gradient-radial from-gray-300/15 to-transparent blur-2xl pointer-events-none"></div>
+        
+        <div className="relative p-5">
+          {/* Close button */}
+          <button
+            onClick={handleDismiss}
+            className={`absolute top-3 right-3 p-1 rounded-full transition-all duration-200 ${
+              isDarkMode 
+                ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-800' 
+                : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
+            }`}
+            aria-label="Dismiss"
+          >
+            <X size={14} />
+          </button>
+
+          {/* Google Logo & Header */}
+          <div className="text-center mb-4">
+            <div className="inline-flex items-center justify-center mb-3">
+              <FaGoogle className="text-[#4285F4]" size={18} />
+            </div>
+            <p className={`text-xs font-medium ${
+              isDarkMode ? 'text-gray-400' : 'text-gray-600'
+            }`}>
+              Sign in to merabakil.com with google.com
+            </p>
+          </div>
+
+          {/* Divider line with silver accent */}
+          <div className="relative mb-4">
+            <div className={`h-px ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}></div>
+            <div className={`absolute inset-0 h-px bg-gradient-to-r from-transparent via-gray-400/30 to-transparent`}></div>
+          </div>
+
+          {/* Google Sign-in Button - Enhanced Silver Theme */}
+          <button
+            onClick={onGoogleLogin}
+            className={`group relative w-full py-2.5 px-4 rounded-md flex items-center justify-center space-x-2.5 
+                      text-sm font-medium transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99]
+                      shadow-md hover:shadow-lg overflow-hidden ${
+              isDarkMode 
+                ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400' 
+                : 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400'
+            }`}
+          >
+            {/* Silver shine animation overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
+                          translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+            
+            <FaGoogle className="relative z-10" size={16} />
+            <span className="relative z-10">Continue with Google</span>
+          </button>
+
+          {/* Privacy footer - Compact */}
+          <p className={`mt-3 text-[10px] text-center leading-tight ${
+            isDarkMode ? 'text-gray-600' : 'text-gray-500'
+          }`}>
+            To continue, Google will share your name, email address, and profile picture with this site.{' '}
+            <a href="#" className="text-blue-500 hover:text-blue-400 underline">Learn more</a>
+          </p>
+
+          {/* Silver accent line at bottom */}
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-400/40 to-transparent"></div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -54,6 +158,7 @@ const Navbar = () => {
   const [notificationsError, setNotificationsError] = useState(null);
   const [notificationsDropdownOpen, setNotificationsDropdownOpen] = useState(false);
   const [showOnboardingTour, setShowOnboardingTour] = useState(false);
+  const [showOneTapPrompt, setShowOneTapPrompt] = useState(false);
   const { mode } = useSelector((state) => state.theme);
   const dispatch = useDispatch();
   const userDropdownRef = useRef(null);
@@ -62,6 +167,7 @@ const Navbar = () => {
   // Check authentication status on component mount
   useEffect(() => {
     checkAuthStatus();
+    checkFirstTimeVisitor();
     
     // Listen for avatar updates
     const handleAvatarUpdate = (event) => {
@@ -75,6 +181,7 @@ const Navbar = () => {
     const handleAuthStatusChange = (event) => {
       console.log('Navbar: Auth status changed, refreshing authentication state');
       checkAuthStatus();
+      setShowOneTapPrompt(false); // Hide prompt after auth
     };
     
     window.addEventListener('avatar-updated', handleAvatarUpdate);
@@ -166,6 +273,76 @@ const Navbar = () => {
       setIsAuthenticated(false);
       setUser(null);
     }
+  };
+
+  // Check if user is first-time visitor
+  const checkFirstTimeVisitor = () => {
+    const hasSeenPrompt = localStorage.getItem('hasSeenOneTapPrompt');
+    const hasDismissedPrompt = sessionStorage.getItem('dismissedOneTapPrompt');
+    const isAuth = localStorage.getItem('auth_token');
+    
+    // Show prompt if:
+    // 1. User has never seen it (first visit ever)
+    // 2. User hasn't dismissed it in current session
+    // 3. User is not authenticated
+    if (!hasSeenPrompt && !hasDismissedPrompt && !isAuth) {
+      console.log('First-time visitor detected, showing One Tap prompt');
+      // Show after a short delay for better UX
+      setTimeout(() => {
+        setShowOneTapPrompt(true);
+        localStorage.setItem('hasSeenOneTapPrompt', 'true');
+      }, 2000); // Show after 2 seconds
+    }
+  };
+
+  // Google Login Handler
+  const handleGoogleLoginSuccess = async (accessToken) => {
+    try {
+      console.log('Google login successful, access token:', accessToken);
+      
+      // Call your backend API to authenticate with Google token
+      const response = await authAPI.googleLogin(accessToken);
+      
+      if (response.data.token && response.data.user) {
+        // Store token and user data
+        tokenManager.setToken(response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        
+        // Update state
+        setIsAuthenticated(true);
+        setUser(response.data.user);
+        setShowOneTapPrompt(false);
+        
+        // Dispatch event to notify other components
+        window.dispatchEvent(new CustomEvent('auth-status-changed', {
+          detail: { authenticated: true, user: response.data.user }
+        }));
+        
+        console.log('✅ Google login complete:', response.data.user);
+      }
+    } catch (error) {
+      console.error('❌ Google login failed:', error);
+      // You can show an error toast here
+    }
+  };
+
+  // Initialize Google Login
+  const googleLogin = useGoogleLogin({
+    onSuccess: (tokenResponse) => {
+      console.log('Google OAuth success:', tokenResponse);
+      handleGoogleLoginSuccess(tokenResponse.access_token);
+    },
+    onError: (error) => {
+      console.error('Google OAuth error:', error);
+      // You can show an error toast here
+    }
+  });
+
+  // Handle prompt dismissal
+  const handleDismissOneTapPrompt = () => {
+    setShowOneTapPrompt(false);
+    sessionStorage.setItem('dismissedOneTapPrompt', 'true');
+    console.log('One Tap prompt dismissed for current session');
   };
   
   // Function to fetch user notifications
@@ -662,29 +839,139 @@ const Navbar = () => {
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-8">
             {/* Logo */}
-            <div className="flex-shrink-0 flex items-center">
+            <div className="flex-shrink-0 flex items-center min-w-fit">
               <Link to="/" className="flex items-center group">
-                <div 
-                  className="h-10 w-10 rounded-lg flex items-center justify-center text-white font-bold mr-3 overflow-hidden transition-all duration-300 group-hover:scale-105"
-                  style={{ background: 'linear-gradient(to right, #22577a, #5cacde)' }}
-                >
-                  <span className="text-xl">M</span>
+                {/* Professional Vakil Logo - Circular Design */}
+                <div className="relative h-11 w-11 mr-3 transition-all duration-300 group-hover:scale-110">
+                  {/* Outer circular ring with metallic gradient */}
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-gray-900 via-gray-800 to-black 
+                                shadow-xl group-hover:shadow-2xl transition-all duration-300 overflow-hidden
+                                ring-2 ring-gray-700 group-hover:ring-gray-600">
+                    {/* Animated shine effect */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/30 to-transparent 
+                                  -translate-x-full -translate-y-full group-hover:translate-x-full group-hover:translate-y-full 
+                                  transition-transform duration-1000 ease-out"></div>
+                  </div>
+                  
+                  {/* Inner content - Professional Vakil Icon */}
+                  <div className="relative h-full w-full flex items-center justify-center">
+                    <svg 
+                      viewBox="0 0 48 48" 
+                      fill="none" 
+                      className="w-7 h-7 text-white transition-all duration-300"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <defs>
+                        <linearGradient id="vakilGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#f3f4f6" />
+                          <stop offset="50%" stopColor="#ffffff" />
+                          <stop offset="100%" stopColor="#d1d5db" />
+                        </linearGradient>
+                        <linearGradient id="goldAccent" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor="#fbbf24" />
+                          <stop offset="50%" stopColor="#fcd34d" />
+                          <stop offset="100%" stopColor="#f59e0b" />
+                        </linearGradient>
+                      </defs>
+                      
+                      {/* Lawyer silhouette with briefcase */}
+                      {/* Head */}
+                      <circle cx="24" cy="10" r="4.5" fill="url(#vakilGradient)" className="drop-shadow-md"/>
+                      
+                      {/* Body - Professional Suit */}
+                      <path 
+                        d="M24 15 L19 19 L19 34 L29 34 L29 19 L24 15 Z" 
+                        fill="url(#vakilGradient)" 
+                        className="drop-shadow-md"
+                      />
+                      
+                      {/* Coat lapels - detailed */}
+                      <path 
+                        d="M24 16 L20 20 L20 30 M24 16 L28 20 L28 30" 
+                        stroke="currentColor" 
+                        strokeWidth="1.5" 
+                        strokeLinecap="round"
+                        opacity="0.4"
+                      />
+                      
+                      {/* Tie with prominent gold accent - more visible */}
+                      <path 
+                        d="M24 15 L24 30 L22.5 33 L24 36 L25.5 33 L24 30 Z" 
+                        fill="url(#goldAccent)" 
+                        className="drop-shadow-lg"
+                      />
+                      
+                      {/* Tie knot */}
+                      <circle cx="24" cy="16" r="1.5" fill="#f59e0b" className="drop-shadow-md"/>
+                      
+                      {/* Briefcase */}
+                      <rect 
+                        x="16" 
+                        y="38" 
+                        width="16" 
+                        height="8" 
+                        rx="1.5" 
+                        fill="url(#vakilGradient)"
+                        className="drop-shadow-lg"
+                      />
+                      
+                      {/* Briefcase handle */}
+                      <path 
+                        d="M21 38 L21 36 C21 35 22 34 24 34 C26 34 27 35 27 36 L27 38" 
+                        stroke="currentColor" 
+                        strokeWidth="1.5" 
+                        strokeLinecap="round"
+                        opacity="0.5"
+                      />
+                      
+                      {/* Briefcase lock detail - gold */}
+                      <rect 
+                        x="23" 
+                        y="40" 
+                        width="2" 
+                        height="4" 
+                        rx="0.5" 
+                        fill="url(#goldAccent)"
+                      />
+                    </svg>
+                  </div>
+                  
+                  {/* Professional badge indicator */}
+                  <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600 
+                               rounded-full shadow-lg flex items-center justify-center ring-2 ring-gray-900
+                               group-hover:scale-110 transition-transform duration-300">
+                    <svg viewBox="0 0 24 24" fill="none" className="w-2.5 h-2.5 text-white">
+                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" 
+                            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
                 </div>
+                
+                {/* Text Logo with Premium Metallic Effect */}
                 <div className="flex flex-col">
-                  <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-                    MeraBakil
+                  <span className="text-xl font-bold tracking-tight relative">
+                    <span className="bg-gradient-to-r from-gray-900 via-gray-700 to-black bg-clip-text text-transparent
+                                   dark:from-gray-100 dark:via-white dark:to-gray-200
+                                   group-hover:from-black group-hover:via-gray-800 group-hover:to-gray-900
+                                   dark:group-hover:from-white dark:group-hover:via-gray-100 dark:group-hover:to-gray-300
+                                   transition-all duration-300 font-extrabold drop-shadow-sm">
+                      Mera Vakil
+                    </span>
                   </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 -mt-1">
-                    Professional Solutions
+                  <span className="text-[11px] text-gray-600 dark:text-gray-400 -mt-0.5 font-semibold tracking-wider uppercase
+                               group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors
+                               flex items-center gap-1">
+                    <Scale size={10} className="text-amber-500" />
+                    Legal Hub
                   </span>
                 </div>
               </Link>
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden lg:flex lg:items-center lg:space-x-1">
+            <div className="hidden lg:flex lg:items-center lg:space-x-4 flex-1 justify-center">
               {navItems.map((item, index) => (
                 <div key={item.name} className="relative group">
                   {item.dropdown ? (
@@ -740,7 +1027,9 @@ const Navbar = () => {
             </div>
 
             {/* Desktop Right Side - Auth & Theme */}
-            <div className="hidden lg:flex lg:items-center lg:space-x-3">
+            <div className="hidden lg:flex lg:items-center lg:space-x-4 min-w-fit">
+              {/* Elegant divider */}
+              <div className="h-8 w-px bg-gray-300 dark:bg-gray-700"></div>
               {/* Theme Toggle Button */}
               <button
                 className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200
@@ -875,23 +1164,66 @@ const Navbar = () => {
 
               ) : (
                 <>
+                  {/* Premium Login Button - Black with Silver Shine */}
                   <Link
                     to="/Auth"
-                    className="px-5 py-2 rounded-full text-white font-medium transition-all duration-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 hover:scale-105 flex items-center"
-                    style={{ background: 'linear-gradient(to right, #22577a, #5cacde)' }}
+                    className="group relative px-6 py-2.5 rounded-xl text-white font-semibold transition-all duration-300 
+                              hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 
+                              hover:-translate-y-0.5 flex items-center gap-2.5 overflow-hidden
+                              bg-gradient-to-br from-gray-900 via-black to-gray-900
+                              shadow-lg hover:shadow-black/60 border border-gray-800/50
+                              dark:border-gray-700/50"
                   >
-                    <LogIn size={18} className="mr-1.5" />
-                    Login
+                    {/* Silver shine animation */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-400/20 to-transparent 
+                                  -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
+                    
+                    {/* Icon container with metallic effect */}
+                    <div className="relative flex items-center justify-center w-5 h-5 rounded-lg 
+                                  bg-gradient-to-br from-gray-700 to-gray-800 
+                                  shadow-inner transition-all duration-300 group-hover:scale-110">
+                      <LogIn size={14} className="text-gray-200" strokeWidth={2.5} />
+                    </div>
+                    
+                    {/* Text with silver glow */}
+                    <span className="relative text-sm font-bold tracking-wide text-gray-100 group-hover:text-white transition-colors">
+                      Login
+                    </span>
+                    
+                    {/* Subtle highlight edge */}
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-transparent via-transparent to-white/5"></div>
                   </Link>
+
+                  {/* Premium Register Button - White/Silver with Shine */}
                   <Link
                     to="/signup"
-                    className="px-5 py-2 rounded-full bg-white text-gray-800 font-medium border border-gray-200 
-                              hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 hover:shadow-md 
-                              focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2
-                              dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 dark:hover:bg-gray-700 dark:focus:ring-offset-gray-900 hover:scale-105 flex items-center"
+                    className="group relative px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 
+                              hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2
+                              hover:-translate-y-0.5 flex items-center gap-2.5 overflow-hidden
+                              bg-gradient-to-br from-white via-gray-50 to-gray-100 text-gray-900
+                              dark:from-gray-800 dark:via-gray-750 dark:to-gray-800 dark:text-white
+                              shadow-lg hover:shadow-gray-400/50 dark:hover:shadow-gray-900/60
+                              border border-gray-200/80 dark:border-gray-700/50"
                   >
-                    <UserPlus size={18} className="mr-1.5" />
-                    Register
+                    {/* Silver shine animation */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-gray-600/30 to-transparent 
+                                  -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
+                    
+                    {/* Icon container with metallic effect */}
+                    <div className="relative flex items-center justify-center w-5 h-5 rounded-lg 
+                                  bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600
+                                  shadow-inner transition-all duration-300 group-hover:scale-110">
+                      <UserPlus size={14} className="text-gray-700 dark:text-gray-200" strokeWidth={2.5} />
+                    </div>
+                    
+                    {/* Text with metallic effect */}
+                    <span className="relative text-sm font-bold tracking-wide text-gray-900 dark:text-gray-100 
+                                   group-hover:text-black dark:group-hover:text-white transition-colors">
+                      Register
+                    </span>
+                    
+                    {/* Subtle highlight edge */}
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-transparent via-transparent to-white/20 dark:to-white/5"></div>
                   </Link>
                 </>
               )}
@@ -949,6 +1281,15 @@ const Navbar = () => {
         onClose={handleTourClose}
         onComplete={handleTourComplete}
       />
+
+      {/* One Tap Sign-in Prompt */}
+      {showOneTapPrompt && !isAuthenticated && (
+        <OneTapPrompt
+          onGoogleLogin={googleLogin}
+          onDismiss={handleDismissOneTapPrompt}
+          isDarkMode={mode === 'dark'}
+        />
+      )}
     </>
   );
 };

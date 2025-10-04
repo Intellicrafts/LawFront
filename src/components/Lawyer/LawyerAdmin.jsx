@@ -6,6 +6,8 @@ import NotificationDropdown from '../NotificationDropdown';
 import Avatar from '../common/Avatar';
 import LawyerAppointments from '../LawyerAdmin/LawyerAppointments';
 import LawyerClients from '../LawyerAdmin/LawyerClients';
+import LawyerCases from '../LawyerAdmin/LawyerCases';
+import LawyerDocuments from '../LawyerAdmin/LawyerDocuments';
 import { 
   Home, 
   Calendar, 
@@ -1562,9 +1564,9 @@ const LawyerAdmin = () => {
       case 'clients':
         return <LawyerClients darkMode={darkMode} userData={userData} />;
       case 'cases':
-        return <PlaceholderComponent title="Cases" darkMode={darkMode} />;
+        return <LawyerCases darkMode={darkMode} userData={userData} />;
       case 'documents':
-        return <PlaceholderComponent title="Documents" darkMode={darkMode} />;
+        return <LawyerDocuments darkMode={darkMode} userData={userData} />;
       case 'analytics':
         return <PlaceholderComponent title="Analytics" darkMode={darkMode} />;
       case 'notifications':

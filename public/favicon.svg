@@ -1,0 +1,54 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#111827;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1f2937;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="silver" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f3f4f6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d1d5db;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#fcd34d;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Circular background -->
+  <circle cx="32" cy="32" r="32" fill="url(#bg)"/>
+  
+  <!-- Inner circle with ring -->
+  <circle cx="32" cy="32" r="28" fill="none" stroke="#374151" stroke-width="1.5" opacity="0.6"/>
+  
+  <!-- Lawyer Icon -->
+  <g transform="translate(16, 12)">
+    <!-- Head -->
+    <circle cx="16" cy="8" r="5" fill="url(#silver)"/>
+    
+    <!-- Body - Professional Suit -->
+    <path d="M16 14 L11 18 L11 36 L21 36 L21 18 L16 14 Z" fill="url(#silver)"/>
+    
+    <!-- Coat details -->
+    <path d="M16 15 L13 19 L13 32 M16 15 L19 19 L19 32" stroke="#111827" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
+    
+    <!-- Tie -->
+    <path d="M16 14 L16 32 L15 35 L16 37 L17 35 L16 32 Z" fill="url(#gold)"/>
+    
+    <!-- Briefcase -->
+    <rect x="9" y="40" width="14" height="9" rx="1.5" fill="url(#silver)"/>
+    
+    <!-- Briefcase handle -->
+    <path d="M13 40 L13 38 C13 37 13.5 36 16 36 C18.5 36 19 37 19 38 L19 40" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+    
+    <!-- Briefcase lock -->
+    <rect x="15" y="43" width="2" height="3" rx="0.5" fill="url(#gold)"/>
+  </g>
+  
+  <!-- Professional badge -->
+  <circle cx="50" cy="50" r="7" fill="url(#gold)"/>
+  <circle cx="50" cy="50" r="6" fill="none" stroke="#111827" stroke-width="1"/>
+  <path d="M47 50l2 2 4-4" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
