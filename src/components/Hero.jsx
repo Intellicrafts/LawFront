@@ -12,6 +12,7 @@ import {
 import { Sidebar } from './Sidebar';
 import VoiceModal from '../components/VoiceModal';
 import OnboardingTour from './OnboardingTour';
+import ActiveChat from './ActiveChat';
 import { useAuth } from '../context/AuthContext'; 
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -852,7 +853,7 @@ const Hero = () => {
       formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<span class="font-semibold text-slate-900 dark:text-slate-100">$1</span>');
       
       // Format bullet points - contained and safe with flex-wrap
-      formatted = formatted.replace(/^[\*\-]\s(.+)$/gm, '<div class="flex items-start my-2 flex-wrap"><div class="flex-shrink-0 text-sky-500 mr-2 mt-1.5 text-xs">●</div><div class="flex-1 text-slate-700 dark:text-slate-300 break-words min-w-0">$1</div></div>');
+      formatted = formatted.replace(/^[\*\-]\s(.+)$/gm, '<div class="flex items-start my-2 flex-wrap"><div class="flex-shrink-0 text-slate-500 mr-2 mt-1.5 text-xs">●</div><div class="flex-1 text-slate-700 dark:text-slate-300 break-words min-w-0">$1</div></div>');
       
       // Format numbered lists - safe with proper containment
       formatted = formatted.replace(/^(\d+)\.\s(.+)$/gm, '<div class="flex items-start my-2 flex-wrap"><div class="flex-shrink-0 text-emerald-600 dark:text-emerald-400 mr-3 font-semibold min-w-[1.5rem]">$1.</div><div class="flex-1 text-slate-700 dark:text-slate-300 break-words min-w-0">$2</div></div>');
@@ -1614,7 +1615,7 @@ const Hero = () => {
         processed = processed.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold safe-text-render">$1</strong>');
         
         // Lists with safe flex classes
-        processed = processed.replace(/^[\*\-]\s(.+)$/gm, '<div class="flex items-start my-1 flex-wrap"><span class="text-blue-500 mr-2 flex-shrink-0">•</span><span class="flex-1 safe-text-render min-w-0">$1</span></div>');
+        processed = processed.replace(/^[\*\-]\s(.+)$/gm, '<div class="flex items-start my-1 flex-wrap"><span class="text-slate-500 mr-2 flex-shrink-0">•</span><span class="flex-1 safe-text-render min-w-0">$1</span></div>');
         
         // Line breaks
         processed = processed.replace(/\n/g, '<br class="select-none">');
@@ -1667,7 +1668,7 @@ const Hero = () => {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="w-9 h-9 rounded-full bg-gradient-to-br from-sky-500 to-sky-600 flex items-center justify-center mr-3 shadow-lg"
+            className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center mr-3 shadow-lg"
           >
             <Scale size={18} className="text-white" />
           </motion.div>
@@ -1679,20 +1680,20 @@ const Hero = () => {
           <div
             className={`px-4 py-3 relative ${
               isUser
-                ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-2xl rounded-br-md'
+                ? 'bg-gradient-to-r from-slate-700 to-slate-800 text-white rounded-2xl rounded-br-md'
                 : 'text-slate-900 dark:text-slate-100'
             }`}
           >
             {/* Document Type Indicator */}
             {message.type === 'document-request' && isUser && (
-              <div className="flex items-center mb-2 text-sky-100">
+              <div className="flex items-center mb-2 text-slate-100">
                 <FileText size={14} className="mr-1" />
                 <span className="text-xs font-medium">Document Request</span>
               </div>
             )}
             
             {message.type === 'document' && !isUser && (
-              <div className="flex items-center mb-3 text-sky-600 dark:text-sky-400">
+              <div className="flex items-center mb-3 text-slate-600 dark:text-slate-400">
                 <FileText size={14} className="mr-1" />
                 <span className="text-xs font-medium">Legal Document Generated</span>
               </div>
@@ -1776,9 +1777,9 @@ const Hero = () => {
             {!isUser && isTyping && message.text === '' && (
               <div className="flex items-center space-x-1 py-2">
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-sky-500 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-sky-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-sky-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                 </div>
                 <span className="text-xs text-slate-500 ml-2">
                   {messageAgent?.label || 'AI Assistant'} is typing...
@@ -1800,7 +1801,7 @@ const Hero = () => {
                 <div className="relative voice-selector-container">
                   <button 
                     onClick={() => setActiveVoiceSelectorId(activeVoiceSelectorId === message.id ? null : message.id)}
-                    className="text-slate-400 hover:text-blue-500 transition-colors p-1 rounded relative group"
+                    className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded relative group"
                     title="Select voice"
                   >
                     <Settings size={12} />
@@ -1856,13 +1857,13 @@ const Hero = () => {
                                   voice.lang.includes('hi-') ? 'bg-orange-500' :
                                   voice.lang.includes('mr-') ? 'bg-purple-500' :
                                   voice.lang.includes('pa-') ? 'bg-green-500' :
-                                  voice.lang.includes('gu-') ? 'bg-blue-500' :
+                                  voice.lang.includes('gu-') ? 'bg-slate-500' :
                                   voice.lang.includes('bn-') ? 'bg-indigo-500' :
                                   voice.lang.includes('ta-') ? 'bg-red-500' :
                                   voice.lang.includes('te-') ? 'bg-pink-500' :
                                   voice.lang.includes('kn-') ? 'bg-yellow-600' :
                                   voice.lang.includes('ml-') ? 'bg-teal-500' :
-                                  'bg-sky-500'
+                                  'bg-slate-500'
                                 }`}>
                                   Regional
                                 </span>
@@ -1918,13 +1919,13 @@ const Hero = () => {
                                   voice.lang.includes('hi-') ? 'bg-orange-500' :
                                   voice.lang.includes('mr-') ? 'bg-purple-500' :
                                   voice.lang.includes('pa-') ? 'bg-green-500' :
-                                  voice.lang.includes('gu-') ? 'bg-blue-500' :
+                                  voice.lang.includes('gu-') ? 'bg-slate-500' :
                                   voice.lang.includes('bn-') ? 'bg-indigo-500' :
                                   voice.lang.includes('ta-') ? 'bg-red-500' :
                                   voice.lang.includes('te-') ? 'bg-pink-500' :
                                   voice.lang.includes('kn-') ? 'bg-yellow-600' :
                                   voice.lang.includes('ml-') ? 'bg-teal-500' :
-                                  voice.lang.includes('en-in') ? 'bg-sky-500' :
+                                  voice.lang.includes('en-in') ? 'bg-slate-500' :
                                   'bg-slate-500'
                                 }`}>
                                   {voice.lang.includes('hi-') ? 'हिंदी' :
@@ -1990,7 +1991,7 @@ const Hero = () => {
                   onClick={() => {
                     navigator.clipboard.writeText(message.text);
                   }}
-                  className="text-slate-400 hover:text-sky-500 transition-colors p-1 rounded"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1 rounded"
                   title="Copy response"
                 >
                   <Copy size={14} />
@@ -2006,7 +2007,7 @@ const Hero = () => {
                 {message.type === 'document' && (
                   <button 
                     onClick={() => setShowDocumentGenerator(true)}
-                    className="text-slate-400 hover:text-sky-500 transition-colors p-1 rounded"
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1 rounded"
                     title="Edit document"
                   >
                     <Edit size={14} />
@@ -2032,11 +2033,11 @@ const Hero = () => {
               className="mt-3 p-3"
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-sky-600 dark:text-sky-400">
+                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
                   Document Actions
                 </span>
                 <div className="flex space-x-2">
-                  <button className="px-3 py-1 bg-sky-500 text-white text-xs rounded-md hover:bg-sky-600 transition-colors flex items-center">
+                  <button className="px-3 py-1 bg-slate-600 text-white text-xs rounded-md hover:bg-slate-700 transition-colors flex items-center">
                     <Download size={12} className="mr-1" />
                     Download
                   </button>
@@ -2061,24 +2062,24 @@ const Hero = () => {
       transition={{ duration: 0.3 }}
       className="flex items-start max-w-[80%]"
     >
-      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky-500 to-sky-600 mr-3 flex items-center justify-center shadow-lg">
+      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 mr-3 flex items-center justify-center shadow-lg">
         <Scale size={18} className="text-white" />
       </div>
       
       <div className="flex flex-col p-4 flex-1">
         <div className="flex items-center gap-2 mb-3">
           {loadingState.icon && (
-            <div className="text-sky-500">
+            <div className="text-slate-500">
               {loadingState.icon}
             </div>
           )}
-          <span className="text-sm text-sky-600 dark:text-sky-400 font-medium">
+          <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">
             {loadingState.text || 'Analyzing...'}
           </span>
           <div className="flex space-x-1 ml-2">
-            <div className="w-1.5 h-1.5 bg-sky-500 rounded-full animate-pulse"></div>
-            <div className="w-1.5 h-1.5 bg-sky-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-            <div className="w-1.5 h-1.5 bg-sky-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+            <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-pulse"></div>
+            <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+            <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
           </div>
         </div>
         
@@ -2125,7 +2126,7 @@ const Hero = () => {
                   
                   <button
                     onClick={() => navigate('/Auth')}
-                    className="text-sm bg-gradient-to-r from-sky-500 to-sky-600 text-white px-4 py-2 rounded-lg hover:shadow-md transition-all duration-200 flex items-center"
+                    className="text-sm bg-gradient-to-r from-slate-700 to-slate-800 text-white px-4 py-2 rounded-lg hover:shadow-md transition-all duration-200 flex items-center"
                   >
                     <span>Sign In</span>
                     <ArrowRight size={16} className="ml-1" />
@@ -2204,7 +2205,7 @@ const Hero = () => {
                 {suggestion.category === 'document' ? (
                   <FileText size={14} className="text-emerald-500" />
                 ) : (
-                  <MessageSquare size={14} className="text-sky-500" />
+                  <MessageSquare size={14} className="text-slate-500" />
                 )}
               </div>
               <div className="flex-1">
@@ -2618,13 +2619,13 @@ const Hero = () => {
           
           /* Mobile input keyboard focus state */
           .mobile-input-keyboard-focus {
-            border-color: rgb(59, 130, 246) !important;
+            border-color: rgb(100, 116, 139) !important;
             background: rgba(255, 255, 255, 0.98) !important;
           }
           
           .dark .mobile-input-keyboard-focus {
             background: rgba(15, 23, 42, 0.98) !important;
-            border-color: rgb(59, 130, 246) !important;
+            border-color: rgb(148, 163, 184) !important;
           }
           
           /* Ensure dropdown stays above everything on mobile */
@@ -2896,73 +2897,86 @@ const Hero = () => {
                               }}
                             >
                               {/* Header */}
-                              <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800 border-b border-slate-200 dark:border-slate-600">
-                                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                                  <Bot size={16} className="text-slate-600 dark:text-slate-400" />
-                                  Select AI Assistant
-                                </h3>
-                              </div>
-                              
-                              {/* Agent Options */}
-                              <div className="p-2 max-h-80 overflow-y-auto">
-                                {modalOptions.map((option) => (
-                                  <motion.button
-                                    key={option.id}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={() => {
-                                      setSelectedModal(option.id);
-                                      setShowModalDropdown(false);
-                                    }}
-                                    className={`w-full p-3 rounded-xl text-left transition-all duration-200 mb-1.5 ${
-                                      selectedModal === option.id
-                                        ? 'bg-slate-700 dark:bg-slate-600 text-white shadow-md'
-                                        : 'bg-slate-50 dark:bg-slate-750 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
-                                    }`}
-                                  >
-                                    <div className="flex items-start gap-3">
-                                      {/* Icon Container */}
-                                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                                        selectedModal === option.id
-                                          ? 'bg-white/20 dark:bg-slate-500/30'
-                                          : 'bg-white dark:bg-slate-800'
-                                      }`}>
-                                        {option.icon}
-                                      </div>
-                                      
-                                      {/* Details */}
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <h4 className={`text-sm font-bold ${
-                                            selectedModal === option.id
-                                              ? 'text-white'
-                                              : 'text-slate-800 dark:text-slate-200'
-                                          }`}>
-                                            {option.label}
-                                          </h4>
-                                          {selectedModal === option.id && (
-                                            <CheckCircle size={14} className="text-green-400" />
-                                          )}
-                                        </div>
-                                        <p className={`text-xs ${
-                                          selectedModal === option.id
-                                            ? 'text-slate-200'
-                                            : 'text-slate-600 dark:text-slate-400'
-                                        }`}>
-                                          {option.description}
-                                        </p>
-                                        <div className={`text-[10px] mt-1 font-medium ${
-                                          selectedModal === option.id
-                                            ? 'text-slate-300'
-                                            : 'text-slate-500 dark:text-slate-500'
-                                        }`}>
-                                          {option.specialty}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </motion.button>
-                                ))}
-                              </div>
+                             
+                             <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-b border-slate-200 dark:border-slate-700">
+  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+    <Bot size={16} className="text-slate-600 dark:text-slate-400" />
+    Select AI Assistant
+  </h3>
+</div>
+
+{/* Agent Options */}
+<div className="p-2 max-h-80 overflow-y-auto bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
+  {modalOptions.map((option) => (
+    <motion.button
+      key={option.id}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => {
+        setSelectedModal(option.id);
+        setShowModalDropdown(false);
+      }}
+      className={`w-full p-3 rounded-xl text-left transition-all duration-200 mb-1.5 border ${
+        selectedModal === option.id
+          ? 'bg-slate-700 dark:bg-slate-700 border-slate-600 text-white shadow-md'
+          : 'bg-slate-100 dark:bg-slate-800 border-transparent hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200'
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        {/* Icon Container */}
+        <div
+          className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors duration-200 ${
+            selectedModal === option.id
+              ? 'bg-slate-600 dark:bg-slate-600'
+              : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'
+          }`}
+        >
+          {option.icon}
+        </div>
+
+        {/* Details */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h4
+              className={`text-sm font-bold ${
+                selectedModal === option.id
+                  ? 'text-white'
+                  : 'text-slate-900 dark:text-slate-100'
+              }`}
+            >
+              {option.label}
+            </h4>
+            {selectedModal === option.id && (
+              <CheckCircle size={14} className="text-green-400" />
+            )}
+          </div>
+
+          <p
+            className={`text-xs leading-snug ${
+              selectedModal === option.id
+                ? 'text-slate-200'
+                : 'text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            {option.description}
+          </p>
+
+          <div
+            className={`text-[10px] mt-1 font-medium ${
+              selectedModal === option.id
+                ? 'text-slate-300'
+                : 'text-slate-500 dark:text-slate-500'
+            }`}
+          >
+            {option.specialty}
+          </div>
+        </div>
+      </div>
+    </motion.button>
+  ))}
+</div>
+
+
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -3022,7 +3036,7 @@ const Hero = () => {
                     </div>
                   </div>
                   
-                  {/* Query Suggestions */}
+                  {/* Query Suggestons */}
                   <AnimatePresence>
                     <QuerySuggestions 
                       visible={showSuggestions && inputFocused && !chatActive}
@@ -3053,15 +3067,56 @@ const Hero = () => {
                 </motion.div>
               </motion.div>
             ) : (
-              /* Chat Active State - This will be your full chat interface */
-              <div className="h-full flex flex-col">
-                <div className="flex-1 overflow-hidden">
-                  <div className="h-full flex flex-col">
-                    {/* Messages would go here */}
-                    <p className="text-center text-slate-500 mt-10">Chat interface coming soon...</p>
-                  </div>
-                </div>
-              </div>
+              /* Active Chat State - Full Chat Interface */
+              <ActiveChat
+                // State
+                messages={messages}
+                isLoading={isLoading}
+                query={query}
+                setQuery={setQuery}
+                uploadedFiles={uploadedFiles}
+                isDragOver={isDragOver}
+                setIsDragOver={setIsDragOver}
+                inputFocused={inputFocused}
+                setInputFocused={setInputFocused}
+                isVoiceActive={isVoiceActive}
+                isVoiceModalOpen={isVoiceModalOpen}
+                requestCount={requestCount}
+                isAuthenticated={isAuthenticated}
+                
+                // Refs
+                inputRef={inputRef}
+                chatContainerRef={chatContainerRef}
+                
+                // Handlers
+                handleSubmit={handleSubmit}
+                handleReset={handleReset}
+                handleVoiceToggle={handleVoiceToggle}
+                handleFileUpload={handleFileUpload}
+                removeFile={removeFile}
+                handleFileDrop={handleFileDrop}
+                handleDragOver={handleDragOver}
+                handleDragLeave={handleDragLeave}
+                handleInputChange={handleInputChange}
+                handleKeyPress={handleKeyPress}
+                setSidebarOpen={setSidebarOpen}
+                setChatActive={setChatActive}
+                
+                // Mobile
+                isMobile={isMobile}
+                mobileHandleInputFocus={mobileHandleInputFocus}
+                mobileHandleInputBlur={mobileHandleInputBlur}
+                keyboardVisible={keyboardVisible}
+                keyboardHeight={keyboardHeight}
+                
+                // Components & Functions
+                renderMessage={renderMessage}
+                renderLoadingSkeleton={renderLoadingSkeleton}
+                ModalDropdown={ModalDropdown}
+                
+                // Config
+                API_CONFIG={API_CONFIG}
+              />
             )}
           </div>
         </div>
