@@ -43,17 +43,23 @@ import LawyerAdditionalDetails from './components/LawyerAdditionalDetails';
 import TestEnhancedComponents from './components/TestEnhancedComponents';
 import UserOnboarding from './components/UserOnboarding';
 
+// Home Route component
+const HomeRoute = () => {
+  return <Hero />;
+};
+
 // Layout wrapper to conditionally render Navbar and Footer
 const AppLayout = ({ children }) => {
   const location = useLocation();
   const isLawyerAdmin = location.pathname.startsWith('/lawyer-admin');
+  const isHomePage = location.pathname === '/';
   
   return (
     <>
       {!isLawyerAdmin && <Navbar />}
       <ScrollToTop />
       {children}
-      {!isLawyerAdmin && <Footer />}
+      {!isLawyerAdmin && !isHomePage && <Footer />}
       {!isLawyerAdmin && <FloatingThemeToggle />}
     </>
   );
@@ -122,17 +128,7 @@ const App = () => {
               <AppLayout>
                 <Routes>
                   {/* Home Route */}
-                  <Route path="/" element={
-                    <>
-                      <Hero />
-                      <Services />
-                      <PracticeAreas />
-                      <About />
-                      <Testimonials />
-                      <Founders />
-                      <Contact />
-                    </>
-                  } />
+                  <Route path="/" element={<HomeRoute />} />
 
                   {/* Public Routes */}
                   <Route path="/about" element={<About />} />

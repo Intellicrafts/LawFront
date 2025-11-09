@@ -40,7 +40,9 @@ import {
   Loader,
   Compass,
   PlayCircle,
-  CheckCircle
+  CheckCircle,
+  Search,
+  MoreVertical
 } from 'lucide-react';
 
 // Sleek One Tap Sign-in Prompt - Black, White & Silver Theme
@@ -832,16 +834,15 @@ const Navbar = () => {
   return (
     <>
       <nav 
-        className="fixed top-0 w-full z-40 transition-all duration-300 py-3 bg-white/95 backdrop-blur-sm shadow-md dark:bg-gray-900/95 dark:shadow-gray-800/30"
+        className="fixed top-0 w-full z-40 transition-all duration-300 py-2.5 
+                   bg-white dark:bg-[#0A0A0A]"
         data-tour="navbar"
-        style={{
-          borderBottom: '1px solid rgba(82, 152, 219, 0.1)',
-        }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between gap-8">
-            {/* Logo */}
-            <div className="flex-shrink-0 flex items-center min-w-fit">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-end gap-4">
+
+            {/* Hidden Original Logo for reference */}
+            <div className="hidden">
               <Link to="/" className="flex items-center group">
                 {/* Professional Vakil Logo - Circular Design */}
                 <div className="relative h-11 w-11 mr-3 transition-all duration-300 group-hover:scale-110">

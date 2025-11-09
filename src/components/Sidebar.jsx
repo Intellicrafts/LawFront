@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import { 
   ChevronLeft, Menu, Plus, Star, MoreVertical, Edit, Archive, 
   Trash2, Clock, Search, MessageSquare, Filter, X, 
   BookmarkCheck, History, Inbox, AlertCircle, CheckCircle,
-  Sparkles, MessageCircle
+  Sparkles, MessageCircle, Home, Grid3x3, BookOpen, Wallet
 } from 'lucide-react';
 
 export function Sidebar({
@@ -134,56 +135,62 @@ export function Sidebar({
     }
   };
 
+  // Navigation items matching the image
+  const navItems = [
+    { name: 'Home', icon: Home, active: true },
+    { name: 'Templates', icon: Grid3x3, active: false },
+    { name: 'Explore', icon: BookOpen, active: false },
+    { name: 'History', icon: Clock, active: false },
+    { name: 'Wallet', icon: Wallet, active: false },
+  ];
+
+  // Group chat history by date (matching image structure)
+  const groupedChats = filteredChats.reduce((acc, chat) => {
+    const date = chat.date || 'Other';
+    if (!acc[date]) {
+      acc[date] = [];
+    }
+    acc[date].push(chat);
+    return acc;
+  }, {});
+
+  // Date groups matching image
+  const dateGroups = [
+    { label: 'Tomorrow', chats: groupedChats['Tomorrow'] || [] },
+    { label: '10 days Ago', chats: groupedChats['10 days Ago'] || [] },
+  ];
+
   return (
-    <div
+    <motion.div
       ref={sidebarRef}
-      style={{ top: '95px' }}
-      className={`fixed left-0 bottom-4 z-40 w-64 sm:w-72 md:w-80 
-                bg-white/95 dark:bg-gray-900/95 
-                shadow-xl hover:shadow-2xl backdrop-blur-md 
-                transform transition-all duration-300 ease-in-out 
-                rounded-2xl border border-gray-100/30 dark:border-gray-700/30
-                ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      initial={{ x: -320 }}
+      animate={{ x: sidebarOpen ? 0 : -320 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+      className={`fixed left-0 top-0 z-40 w-64 sm:w-72 md:w-80 h-screen
+                bg-[#2C2C2C] dark:bg-[#2C2C2C] 
+                bg-white dark:bg-[#2C2C2C]
+                border-r border-[#3A3A3A] dark:border-[#3A3A3A]
+                border-r border-gray-200 dark:border-[#3A3A3A]`}
       data-tour="chat-history"
     >
-      {/* Decorative elements for premium look */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-sky-400/10 to-indigo-400/5 rounded-full blur-3xl -z-10"></div>
-      <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-emerald-400/10 to-sky-400/5 rounded-full blur-3xl -z-10"></div>
 
-      {/* Toggle button with enhanced styling */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        style={{ top: '2px' }}
-        className={`absolute -right-10 p-2.5 rounded-xl 
-                  ${isDark 
-                    ? 'bg-gray-800/95 hover:bg-gray-700/95 text-gray-300 hover:text-gray-200' 
-                    : 'bg-white/95 hover:bg-gray-50/95 text-gray-600 hover:text-gray-700'} 
-                  shadow-md hover:shadow-lg 
-                  transition-all duration-300 
-                  flex items-center justify-center z-50
-                  border ${isDark ? 'border-gray-700/50' : 'border-gray-200/50'}
-                  focus:outline-none focus:ring-2 focus:ring-gray-400/20 focus:border-gray-400`}
-        aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
-      >
-        {sidebarOpen ? (
-          <ChevronLeft size={16} className="transition-transform duration-300" />
-        ) : (
-          <Menu size={16} className="transition-transform duration-300" />
-        )}
-      </button>
-
-      {/* Header with logo/title */}
-      <div className="pt-4 pb-2 px-5 border-b border-gray-200/30 dark:border-gray-700/30 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          {/* <div className={`w-7 h-7 rounded-full flex items-center justify-center 
-                        ${isDark ? 'bg-gradient-to-br from-sky-700 to-sky-900' : 'bg-gradient-to-br from-sky-500 to-sky-700'} 
-                        text-white shadow-sm`}>
-            <MessageSquare size={14} />
-          </div> */}
-          <h2 className={`text-base font-medium ${isDark ? 'text-white' : 'text-gray-800'}`}>
-            Chat History
+      {/* Header with Mera Vakil Logo */}
+      <div className="pt-5 pb-4 px-5 border-b border-[#3A3A3A] dark:border-[#3A3A3A] flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <img src="https://e7.pngegg.com/pngimages/437/159/png-clipart-coat-of-arms-of-india-lion-capital-of-ashoka-pillars-of-ashoka-sarnath-museum-ashoka-chakra-state-emblem-of-india-national-mammal-text-thumbnail.png" alt="Ashok Chakra - Mera Vakil" className="w-10 h-10 object-contain"/>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+            Mera Vakil
           </h2>
         </div>
+        {sidebarOpen && (
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className={`p-1.5 rounded-lg transition-all duration-200 ${isDark ? 'hover:bg-[#3A3A3A]' : 'bg-gray-200 hover:bg-gray-300'}`}
+            aria-label="Close sidebar"
+          >
+            <X size={18} className={isDark ? 'text-white' : 'text-gray-900'} strokeWidth={1.5} />
+          </button>
+        )}
       </div>
 
       {/* New Conversation Button with colorful styling */}
@@ -204,158 +211,81 @@ export function Sidebar({
         </button>
       </div> */}
 
-      {/* Enhanced Search with clear button */}
-      <div className="px-4 py-2">
-        <div className={`relative transition-all duration-300 ${isSearchFocused ? 'scale-[1.01]' : ''}`}>
+      {/* Search Chats Input - Matching Image */}
+      <div className="px-4 py-3">
+        <div className="relative">
           <input
             ref={searchInputRef}
             type="text"
-            placeholder="Search conversations..."
-            className={`w-full px-3 py-2 pl-8 rounded-lg text-xs
-                      border ${isDark 
-                        ? 'border-gray-700 bg-gray-800/70 text-gray-200 placeholder-gray-500' 
-                        : 'border-gray-200 bg-gray-100/70 text-gray-800 placeholder-gray-500'} 
-                      focus:outline-none focus:ring-1
-                      ${isDark ? 'focus:ring-gray-500/20' : 'focus:ring-gray-300/30'} 
-                      transition-all duration-300`}
+            placeholder="Search chats"
+            className="w-full px-3 py-2.5 pl-9 pr-9 rounded-lg text-sm
+                      bg-gray-100 dark:bg-[#1A1A1A]
+                      border border-gray-300 dark:border-[#3A3A3A]
+                      text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500
+                      focus:outline-none focus:ring-1 focus:ring-[#3A3A3A]
+                      transition-all duration-300"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
           />
           <Search 
-            size={14} 
-            className={`absolute left-2.5 top-1/2 transform -translate-y-1/2 
-                      ${isDark ? 'text-gray-500' : 'text-gray-500'}`} 
+            size={16} 
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-white" 
           />
-          {searchQuery && (
-            <button 
-              onClick={clearSearch}
-              className={`absolute right-2.5 top-1/2 transform -translate-y-1/2 
-                        ${isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'} 
-                        transition-colors duration-200`}
+          <button 
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-white hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+            onClick={() => setShowFilterMenu(!showFilterMenu)}
+          >
+            <Grid3x3 size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* Navigation Links - Matching Image */}
+      <div className="px-6 py-2">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.name}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1
+                        transition-all duration-200
+                        ${item.active 
+                          ? 'bg-gray-200 dark:bg-[#3A3A3A] text-gray-900 dark:text-white' 
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#3A3A3A]/50 hover:text-gray-900 dark:hover:text-white'}`}
             >
-              <X size={14} />
+              <Icon size={18} className="text-gray-700 dark:text-white" />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">{item.name}</span>
             </button>
-          )}
-        </div>
+          );
+        })}
       </div>
 
-      {/* Enhanced Filter UI */}
-      <div className="px-4 py-1.5 relative filter-menu-container">
-        <div 
-          onClick={() => setShowFilterMenu(!showFilterMenu)}
-          className={`flex items-center justify-between px-3 py-1.5 rounded-lg cursor-pointer
-                    ${isDark 
-                      ? 'bg-gray-800/70 hover:bg-gray-700/70 border border-gray-700' 
-                      : 'bg-gray-100/70 hover:bg-gray-200/70 border border-gray-200'} 
-                    transition-colors duration-200`}
-        >
-          <div className="flex items-center gap-1.5">
-            {getFilterIcon()}
-            <span className={`text-xs font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-              {getFilterLabel()}
-            </span>
-          </div>
-          <ChevronLeft 
-            size={14} 
-            className={`transform transition-transform duration-300 
-                      ${showFilterMenu ? 'rotate-90' : '-rotate-90'} 
-                      ${isDark ? 'text-gray-400' : 'text-gray-500'}`} 
-          />
-        </div>
 
-        {/* Filter dropdown menu */}
-        {showFilterMenu && (
-          <div className={`absolute left-4 right-4 mt-1.5 rounded-lg shadow-lg z-50 overflow-hidden
-                        border ${isDark ? 'border-gray-700' : 'border-gray-200'}
-                        ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
-            <ul>
-              <li 
-                onClick={() => { setFilter('all'); setShowFilterMenu(false); }}
-                className={`px-3 py-2 flex items-center gap-2 cursor-pointer
-                          ${filter === 'all' 
-                            ? (isDark ? 'bg-gray-700/50' : 'bg-gray-100/50') 
-                            : ''} 
-                          ${isDark 
-                            ? 'hover:bg-gray-700/70 text-gray-200' 
-                            : 'hover:bg-gray-100/70 text-gray-800'} 
-                          transition-colors duration-200`}
-              >
-                <MessageSquare size={14} className={filter === 'all' ? 'text-sky-400' : 'text-gray-400'} />
-                <span className="text-xs">All Conversations</span>
-                {filter === 'all' && <CheckCircle size={12} className="ml-auto text-sky-400" />}
-              </li>
-              <li 
-                onClick={() => { setFilter('starred'); setShowFilterMenu(false); }}
-                className={`px-3 py-2 flex items-center gap-2 cursor-pointer
-                          ${filter === 'starred' 
-                            ? (isDark ? 'bg-gray-700/50' : 'bg-gray-100/50') 
-                            : ''} 
-                          ${isDark 
-                            ? 'hover:bg-gray-700/70 text-gray-200' 
-                            : 'hover:bg-gray-100/70 text-gray-800'} 
-                          transition-colors duration-200`}
-              >
-                <Star size={14} className={filter === 'starred' ? 'text-amber-400' : 'text-gray-400'} />
-                <span className="text-xs">Starred</span>
-                {filter === 'starred' && <CheckCircle size={12} className="ml-auto text-sky-400" />}
-              </li>
-              <li 
-                onClick={() => { setFilter('recent'); setShowFilterMenu(false); }}
-                className={`px-3 py-2 flex items-center gap-2 cursor-pointer
-                          ${filter === 'recent' 
-                            ? (isDark ? 'bg-gray-700/50' : 'bg-gray-100/50') 
-                            : ''} 
-                          ${isDark 
-                            ? 'hover:bg-gray-700/70 text-gray-200' 
-                            : 'hover:bg-gray-100/70 text-gray-800'} 
-                          transition-colors duration-200`}
-              >
-                <History size={14} className={filter === 'recent' ? 'text-sky-400' : 'text-gray-400'} />
-                <span className="text-xs">Recent</span>
-                {filter === 'recent' && <CheckCircle size={12} className="ml-auto text-sky-400" />}
-              </li>
-              <li 
-                onClick={() => { setFilter('archived'); setShowFilterMenu(false); }}
-                className={`px-3 py-2 flex items-center gap-2 cursor-pointer
-                          ${filter === 'archived' 
-                            ? (isDark ? 'bg-gray-700/50' : 'bg-gray-100/50') 
-                            : ''} 
-                          ${isDark 
-                            ? 'hover:bg-gray-700/70 text-gray-200' 
-                            : 'hover:bg-gray-100/70 text-gray-800'} 
-                          transition-colors duration-200`}
-              >
-                <Archive size={14} className={filter === 'archived' ? 'text-purple-400' : 'text-gray-400'} />
-                <span className="text-xs">Archived</span>
-                {filter === 'archived' && <CheckCircle size={12} className="ml-auto text-sky-400" />}
-              </li>
-            </ul>
-          </div>
-        )}
-      </div>
-
-      {/* Chat History with enhanced styling and invisible scrollbar */}
+      {/* Chat History - Matching Image Structure */}
       <div 
         ref={chatListRef}
-        className="mt-2 mb-3 px-4 overflow-y-auto max-h-[calc(100vh-250px)] 
-                  scrollbar-thin scrollbar-track-transparent scrollbar-thumb-transparent 
-                  hover:scrollbar-thumb-gray-300/30 dark:hover:scrollbar-thumb-gray-700/30"
+        className="mt-2 mb-3 px-4 overflow-y-auto max-h-[calc(100vh-400px)] 
+                  scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[#3A3A3A] 
+                  hover:scrollbar-thumb-[#4A4A4A]"
       >
-        {filteredChats.length > 0 ? (
-          displayedChats.map((chat) => (
-            <div
-              key={chat.id}
-              className={`mb-2 rounded-lg overflow-hidden 
-                        ${isDark 
-                          ? 'bg-gray-800/50 hover:bg-gray-700/70 border border-gray-700/50' 
-                          : 'bg-white/50 hover:bg-gray-50/70 border border-gray-200/50'} 
-                        cursor-pointer transition-all duration-200 
-                        transform hover:scale-[1.01] hover:shadow-sm`}
-            >
-              <div className="px-3 py-2">
-                <div className="flex justify-between items-start">
+        {dateGroups.map((group, groupIndex) => (
+          group.chats.length > 0 && (
+            <div key={groupIndex} className="mb-4">
+              {/* Date Heading */}
+              <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-400 mb-2 px-2">
+                {group.label}
+              </h3>
+              
+              {/* Chat Items */}
+              {group.chats.slice(0, 3).map((chat) => (
+                <div
+                  key={chat.id}
+                  className="mb-1.5 px-2 py-1.5 rounded-lg cursor-pointer 
+                            hover:bg-[#3A3A3A]/50 dark:hover:bg-[#3A3A3A]/50
+                            transition-all duration-200"
+                >
                   {renamingChatId === chat.id ? (
                     <input
                       type="text"
@@ -364,139 +294,56 @@ export function Sidebar({
                       onChange={(e) => setNewTitle(e.target.value)}
                       onKeyDown={(e) => handleKeyDown(e, chat.id)}
                       onBlur={() => handleBlur(chat.id)}
-                      className={`text-xs font-medium bg-transparent 
-                                border-b focus:outline-none w-full pr-2
-                                ${isDark 
-                                  ? 'text-gray-200 border-gray-600' 
-                                  : 'text-gray-800 border-gray-300'}`}
-                      style={{ boxShadow: 'none' }}
+                      className="w-full text-xs font-medium bg-transparent 
+                                border-b border-[#3A3A3A] focus:outline-none focus:border-white
+                                text-white placeholder-gray-500"
                     />
                   ) : (
-                    <h3
-                      className={`text-xs font-medium line-clamp-1 pr-2 
-                                ${chat.unread 
-                                  ? (isDark ? 'text-[#5cacde] font-semibold' : 'text-[#22577a] font-semibold') 
-                                  : (isDark ? 'text-gray-200' : 'text-gray-800')}`}
-                    >
+                    <p className="text-xs text-gray-300 dark:text-gray-300 line-clamp-1">
                       {chat.title}
-                    </h3>
-                  )}
-
-                  <div className="flex items-center space-x-1 flex-shrink-0">
-                    <button 
-                      onClick={() => toggleStar(chat.id)} 
-                      className={`p-1 rounded-full transition-colors duration-200
-                                ${chat.starred 
-                                  ? 'text-amber-400' 
-                                  : (isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600')}`}
-                    >
-                      <Star size={12} fill={chat.starred ? '#FBBF24' : 'none'} />
-                    </button>
-                    <div className="relative group">
-                      <button 
-                        className={`p-1 rounded-full transition-colors duration-200
-                                  ${isDark 
-                                    ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-700/50' 
-                                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100/50'}`}
-                      >
-                        <MoreVertical size={12} />
-                      </button>
-                      <div 
-                        className={`absolute right-0 mt-1 w-40 rounded-lg shadow-lg 
-                                  border ${isDark ? 'border-gray-700' : 'border-gray-200'} 
-                                  ${isDark ? 'bg-gray-800' : 'bg-white'} 
-                                  opacity-0 invisible group-hover:opacity-100 group-hover:visible 
-                                  transition-all duration-200 z-50 overflow-hidden`}
-                      >
-                        <ul>
-                          <li
-                            onClick={() => handleRename(chat.id, chat.title)}
-                            className={`px-3 py-2 text-xs 
-                                      ${isDark 
-                                        ? 'text-gray-300 hover:bg-gray-700/70' 
-                                        : 'text-gray-700 hover:bg-gray-100/70'} 
-                                      flex items-center cursor-pointer transition-colors duration-200`}
-                          >
-                            <Edit size={12} className="mr-2" /> Rename
-                          </li>
-                          <li
-                            onClick={() => archiveChat(chat.id)}
-                            className={`px-3 py-2 text-xs 
-                                      ${isDark 
-                                        ? 'text-gray-300 hover:bg-gray-700/70' 
-                                        : 'text-gray-700 hover:bg-gray-100/70'} 
-                                      flex items-center cursor-pointer transition-colors duration-200`}
-                          >
-                            <Archive size={12} className="mr-2" /> Archive
-                          </li>
-                          <li
-                            onClick={() => deleteChat(chat.id)}
-                            className={`px-3 py-2 text-xs text-red-500 
-                                      ${isDark ? 'hover:bg-gray-700/70' : 'hover:bg-gray-100/70'} 
-                                      flex items-center cursor-pointer transition-colors duration-200`}
-                          >
-                            <Trash2 size={12} className="mr-2" /> Delete
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <p className={`text-[11px] mt-1 line-clamp-2 
-                              ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {chat.preview}
-                </p>
-                
-                <div className="flex items-center justify-between mt-1.5">
-                  <span className={`text-[10px] flex items-center 
-                                  ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                    <Clock size={10} className="mr-1" />
-                    {chat.date}
-                  </span>
-                  {chat.unread && (
-                    <span className={`px-1.5 py-0.5 text-[10px] rounded-full 
-                                    ${isDark 
-                                      ? 'bg-[#5cacde]/20 text-[#5cacde]' 
-                                      : 'bg-[#22577a]/10 text-[#22577a]'}`}>
-                      New
-                    </span>
+                    </p>
                   )}
                 </div>
-              </div>
+              ))}
             </div>
-          ))
-        ) : (
-          <div className={`flex flex-col items-center justify-center py-8 px-3 text-center rounded-lg 
-                          ${isDark 
-                            ? 'bg-gray-800/30 border border-gray-700/50' 
-                            : 'bg-gray-100/30 border border-gray-200/50'}`}>
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 
-                            ${isDark ? 'bg-gray-700/70 text-gray-400' : 'bg-gray-200/70 text-gray-500'}`}>
-              <Inbox size={16} />
-            </div>
-            <h3 className={`text-xs font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-              No conversations found
+          )
+        ))}
+        
+        {/* Fallback for other chats */}
+        {filteredChats.filter(chat => 
+          !dateGroups.some(g => g.chats.includes(chat))
+        ).length > 0 && (
+          <div className="mb-4">
+            <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-400 mb-2 px-2">
+              Other
             </h3>
-            <p className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-              {searchQuery 
-                ? 'Try a different search term' 
-                : 'Start a new conversation to get help'}
-            </p>
+            {filteredChats
+              .filter(chat => !dateGroups.some(g => g.chats.includes(chat)))
+              .slice(0, 5)
+              .map((chat) => (
+                <div
+                  key={chat.id}
+                  className="mb-1.5 px-2 py-1.5 rounded-lg cursor-pointer 
+                            hover:bg-[#3A3A3A]/50 dark:hover:bg-[#3A3A3A]/50
+                            transition-all duration-200"
+                >
+                  <p className="text-xs text-gray-300 dark:text-gray-300 line-clamp-1">
+                    {chat.title}
+                  </p>
+                </div>
+              ))}
           </div>
         )}
         
-        {/* Loading indicator when more chats are available */}
-        {visibleChats < filteredChats.length && (
-          <div className="py-2 flex justify-center">
-            <div className="flex space-x-1">
-              <div className={`w-1.5 h-1.5 rounded-full animate-bounce ${isDark ? 'bg-gray-600' : 'bg-gray-400'}`} style={{ animationDelay: '0ms' }}></div>
-              <div className={`w-1.5 h-1.5 rounded-full animate-bounce ${isDark ? 'bg-gray-600' : 'bg-gray-400'}`} style={{ animationDelay: '150ms' }}></div>
-              <div className={`w-1.5 h-1.5 rounded-full animate-bounce ${isDark ? 'bg-gray-600' : 'bg-gray-400'}`} style={{ animationDelay: '300ms' }}></div>
-            </div>
+        {filteredChats.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-8 px-3 text-center">
+            <Inbox size={20} className="text-gray-500 mb-2" />
+            <p className="text-xs text-gray-400">
+              {searchQuery ? 'No chats found' : 'No chat history'}
+            </p>
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
