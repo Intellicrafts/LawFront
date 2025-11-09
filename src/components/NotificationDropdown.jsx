@@ -71,9 +71,9 @@ const NotificationDropdown = ({
       case 'appointment':
         return 'bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400';
       case 'message':
-        return 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400';
+        return 'bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400';
       default:
-        return 'bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400';
+        return 'bg-gray-100 text-gray-600 dark:bg-gray-500/20 dark:text-gray-400';
     }
   };
 
@@ -131,7 +131,7 @@ const NotificationDropdown = ({
     <div className="relative">
       {/* Notification Bell Button */}
       <motion.button 
-        className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 focus:outline-none relative"
+        className="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-[#3A3A3A] focus:outline-none relative"
         onClick={onToggle}
         aria-label="Notifications"
         whileTap={{ scale: 0.95 }}
@@ -141,14 +141,14 @@ const NotificationDropdown = ({
         }}
       >
         {notificationsCount > 0 ? (
-          <FaBell size={20} className="text-blue-500 dark:text-blue-400" />
+          <FaBell size={20} className="text-gray-600 dark:text-gray-400" />
         ) : (
           <Bell size={20} />
         )}
         
         {notificationsLoading ? (
           <motion.span 
-            className="absolute -top-1 -right-1 h-5 w-5 bg-gray-300 dark:bg-gray-600 text-white text-xs rounded-full flex items-center justify-center shadow-sm"
+            className="absolute -top-1 -right-1 h-5 w-5 bg-gray-400 dark:bg-gray-600 text-white text-xs rounded-full flex items-center justify-center shadow-sm"
             animate={{ scale: [1, 1.1, 1] }}
             transition={{ repeat: Infinity, duration: 1.5 }}
           >
@@ -156,7 +156,7 @@ const NotificationDropdown = ({
           </motion.span>
         ) : notificationsCount > 0 ? (
           <motion.span 
-            className="absolute -top-1 -right-1 h-5 w-5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xs font-medium rounded-full flex items-center justify-center shadow-sm"
+            className="absolute -top-1 -right-1 h-5 w-5 bg-gray-600 dark:bg-gray-500 text-white text-xs font-medium rounded-full flex items-center justify-center shadow-sm"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 500, damping: 15 }}
@@ -170,20 +170,20 @@ const NotificationDropdown = ({
       <AnimatePresence>
         {isOpen && (
           <motion.div 
-            className="absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden"
+            className="absolute right-0 mt-3 w-96 bg-white dark:bg-[#2C2C2C] border border-gray-200/80 dark:border-[#3A3A3A]/80 rounded-2xl shadow-xl z-50 overflow-hidden"
             variants={dropdownVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
           >
         {/* Header */}
-        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-750">
+        <div className="px-4 py-3 border-b border-gray-200/60 dark:border-[#3A3A3A]/60 flex justify-between items-center bg-white dark:bg-[#2C2C2C]">
           <div className="flex items-center">
-            <FaBell size={16} className="text-blue-600 dark:text-blue-400 mr-2" />
+            <FaBell size={16} className="text-gray-700 dark:text-gray-400 mr-2" />
             <p className="text-sm font-semibold text-gray-800 dark:text-white">Notifications</p>
             {notificationsCount > 0 && (
               <motion.span 
-                className="ml-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full"
+                className="ml-2 px-2 py-0.5 text-xs font-medium bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-full"
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: "spring", stiffness: 500, damping: 15 }}
@@ -196,7 +196,7 @@ const NotificationDropdown = ({
             {notificationsCount > 0 && (
               <motion.button 
                 onClick={onMarkAllAsRead}
-                className="text-xs px-2 py-1 rounded bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 dark:from-blue-600 dark:to-indigo-700 dark:hover:from-blue-700 dark:hover:to-indigo-800 transition-colors flex items-center shadow-sm"
+                className="text-xs px-2 py-1 rounded bg-gray-300 text-gray-900 hover:bg-gray-400 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center shadow-sm"
                 disabled={notificationsLoading}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -210,7 +210,7 @@ const NotificationDropdown = ({
                 animate={{ rotate: 360 }}
                 transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
               >
-                <Loader size={14} className="text-blue-500" />
+                <Loader size={14} className="text-gray-600 dark:text-gray-400" />
               </motion.div>
             )}
           </div>
@@ -235,7 +235,7 @@ const NotificationDropdown = ({
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-3">There was a problem loading your notifications</p>
             <motion.button 
               onClick={() => onRefresh(userId)}
-              className="mt-1 px-4 py-2 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm"
+              className="mt-1 px-4 py-2 text-xs bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors shadow-sm dark:bg-gray-700 dark:hover:bg-gray-600"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -267,12 +267,12 @@ const NotificationDropdown = ({
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">We'll notify you when something arrives</p>
           </motion.div>
         ) : (
-          <ul className="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
+          <ul className="max-h-72 overflow-y-auto divide-y divide-gray-200/60 dark:divide-[#3A3A3A]/40">
             {notifications.map((notification, index) => (
               <motion.li 
                 key={notification.id} 
-                className={`px-4 py-3 flex items-start hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer
-                  ${!notification.read_at ? 'bg-blue-50/70 dark:bg-blue-900/10' : ''}`}
+                className={`px-4 py-3 flex items-start hover:bg-gray-50 dark:hover:bg-[#3A3A3A]/50 transition-colors cursor-pointer
+                  ${!notification.read_at ? 'bg-gray-50/70 dark:bg-gray-700/20' : ''}`}
                 onClick={() => onNotificationClick(notification)}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -289,7 +289,7 @@ const NotificationDropdown = ({
                     </p>
                     {!notification.read_at && (
                       <motion.span 
-                        className="ml-2 inline-block w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"
+                        className="ml-2 inline-block w-2 h-2 bg-gray-600 dark:bg-gray-400 rounded-full flex-shrink-0"
                         animate={{ scale: [1, 1.2, 1] }}
                         transition={{ repeat: Infinity, duration: 2 }}
                       ></motion.span>
@@ -301,7 +301,7 @@ const NotificationDropdown = ({
                       {formatDate(notification.created_at)}
                     </div>
                     {notification.link && (
-                      <span className="text-xs text-blue-600 dark:text-blue-400 flex items-center">
+                      <span className="text-xs text-gray-600 dark:text-gray-400 flex items-center hover:text-gray-900 dark:hover:text-gray-300 transition-colors">
                         View details
                         <ChevronRight size={14} className="ml-1" />
                       </span>
@@ -314,10 +314,10 @@ const NotificationDropdown = ({
         )}
         
         {/* Footer */}
-        <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-750 text-sm flex justify-between items-center">
+        <div className="px-4 py-3 border-t border-gray-200/60 dark:border-[#3A3A3A]/60 bg-white dark:bg-[#2C2C2C] text-sm flex justify-between items-center">
           <motion.button 
             onClick={() => onRefresh(userId)}
-            className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 flex items-center transition-colors"
+            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300 flex items-center transition-colors"
             disabled={notificationsLoading}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -341,7 +341,7 @@ const NotificationDropdown = ({
           >
             <Link 
               to="/notifications" 
-              className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-xs font-medium transition-colors shadow-sm flex items-center" 
+              className="px-3 py-1.5 rounded-lg bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 text-white text-xs font-medium transition-colors shadow-sm flex items-center" 
               onClick={onToggle}
             >
               View all notifications

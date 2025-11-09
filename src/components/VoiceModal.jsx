@@ -93,15 +93,15 @@ const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceR
     
     if (isDark) {
       return {
-        // Dark mode - deep tech blue gradients compatible with GIF
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 25%, #312e81 50%, #1e1b4b 75%, #0f172a 100%)',
-        overlayColor: 'rgba(15, 23, 42, 0.85)'
+        // Dark mode - matches Hero section background (#0A0A0A)
+        background: '#0A0A0A',
+        overlayColor: 'rgba(10, 10, 10, 0.95)'
       };
     } else {
       return {
-        // Light mode - soft blue-gray gradients
-        background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 25%, #cbd5e1 50%, #e2e8f0 75%, #f1f5f9 100%)',
-        overlayColor: 'rgba(241, 245, 249, 0.9)'
+        // Light mode - matches Hero section background (white)
+        background: '#ffffff',
+        overlayColor: 'rgba(255, 255, 255, 0.98)'
       };
     }
   }, []);
@@ -655,8 +655,8 @@ const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceR
                     ? 'rgba(99, 102, 241, 0.9)' 
                     : 'rgba(59, 130, 246, 0.9)'
                   : document.documentElement.classList.contains('dark')
-                    ? 'rgba(30, 41, 59, 0.8)'
-                    : 'rgba(248, 250, 252, 0.9)',
+                    ? 'rgba(44, 44, 44, 0.85)'
+                    : 'rgba(255, 255, 255, 0.95)',
                 backdropFilter: 'blur(20px)',
                 border: `1px solid ${
                   isVoiceActive 
@@ -664,16 +664,16 @@ const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceR
                       ? 'rgba(99, 102, 241, 0.6)'
                       : 'rgba(59, 130, 246, 0.6)'
                     : document.documentElement.classList.contains('dark')
-                      ? 'rgba(71, 85, 105, 0.3)'
-                      : 'rgba(203, 213, 225, 0.4)'
+                      ? 'rgba(58, 58, 58, 0.4)'
+                      : 'rgba(200, 213, 225, 0.4)'
                 }`,
                 boxShadow: isVoiceActive 
                   ? document.documentElement.classList.contains('dark')
                     ? '0 8px 32px rgba(99, 102, 241, 0.4), 0 0 0 1px rgba(99, 102, 241, 0.1)'
                     : '0 8px 32px rgba(59, 130, 246, 0.3), 0 0 0 1px rgba(59, 130, 246, 0.1)'
                   : document.documentElement.classList.contains('dark')
-                    ? '0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(71, 85, 105, 0.1)'
-                    : '0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(203, 213, 225, 0.2)',
+                    ? '0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(58, 58, 58, 0.1)'
+                    : '0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(200, 213, 225, 0.2)',
                 color: isVoiceActive 
                   ? '#ffffff'
                   : document.documentElement.classList.contains('dark') ? '#e2e8f0' : '#475569'
@@ -772,17 +772,17 @@ const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceR
             className="absolute top-6 right-6 w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300 z-50 group"
             style={{
               backgroundColor: document.documentElement.classList.contains('dark')
-                ? 'rgba(15, 23, 42, 0.8)'
-                : 'rgba(248, 250, 252, 0.95)',
+                ? 'rgba(44, 44, 44, 0.9)'
+                : 'rgba(255, 255, 255, 0.98)',
               backdropFilter: 'blur(20px)',
               border: `1px solid ${
                 document.documentElement.classList.contains('dark')
-                  ? 'rgba(71, 85, 105, 0.3)'
-                  : 'rgba(203, 213, 225, 0.4)'
+                  ? 'rgba(58, 58, 58, 0.4)'
+                  : 'rgba(200, 213, 225, 0.4)'
               }`,
               boxShadow: document.documentElement.classList.contains('dark')
-                ? '0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(71, 85, 105, 0.2)'
-                : '0 4px 20px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(203, 213, 225, 0.3)',
+                ? '0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(58, 58, 58, 0.2)'
+                : '0 4px 20px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(200, 213, 225, 0.3)',
               color: document.documentElement.classList.contains('dark') ? '#e2e8f0' : '#475569'
             }}
           >

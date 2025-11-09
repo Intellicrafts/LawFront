@@ -972,7 +972,7 @@ const Navbar = () => {
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden lg:flex lg:items-center lg:space-x-4 flex-1 justify-center">
+            <div className="hidden lg:flex lg:items-center lg:space-x-4 flex-1 justify-center ml-60">
               {navItems.map((item, index) => (
                 <div key={item.name} className="relative group">
                   {item.dropdown ? (
@@ -991,8 +991,8 @@ const Navbar = () => {
                       
                       {/* Dropdown Menu */}
                       <div 
-                        className={`absolute top-full left-0 mt-1 py-2 w-56 bg-white rounded-lg shadow-lg border border-gray-100
-                                  dark:bg-gray-800 dark:border-gray-700 transform transition-all duration-200 origin-top-left
+                        className={`absolute top-full left-0 mt-1 py-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200/80
+                                  dark:bg-[#2C2C2C] dark:border-[#3A3A3A]/80 transform transition-all duration-200 origin-top-left
                                   ${activeDropdown === index ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
                       >
                         {item.dropdown.map(subItem => (
@@ -1000,7 +1000,7 @@ const Navbar = () => {
                             key={subItem.name}
                             to={subItem.path}
                             className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 dark:text-gray-200 
-                                     dark:hover:bg-gray-700 dark:hover:text-blue-400 transition-colors"
+                                     dark:hover:bg-[#3A3A3A]/50 dark:hover:text-blue-400 transition-colors"
                             onClick={() => {setActiveDropdown(null); setIsMenuOpen(false);}}
                           >
                             {subItem.icon}
