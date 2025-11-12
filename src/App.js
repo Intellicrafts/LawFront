@@ -53,13 +53,14 @@ const AppLayout = ({ children }) => {
   const location = useLocation();
   const isLawyerAdmin = location.pathname.startsWith('/lawyer-admin');
   const isHomePage = location.pathname === '/';
+  const isProfilePage = location.pathname === '/profile';
   
   return (
     <>
       {!isLawyerAdmin && <Navbar />}
       <ScrollToTop />
       {children}
-      {!isLawyerAdmin && !isHomePage && <Footer />}
+      {!isLawyerAdmin && !isHomePage && !isProfilePage && <Footer />}
       {!isLawyerAdmin && <FloatingThemeToggle />}
     </>
   );

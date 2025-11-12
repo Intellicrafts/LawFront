@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Mail, Phone, MapPin, Calendar, Briefcase, Globe, Camera, X,
   Award, Settings, Lock, Bell, Share2, Download,
   AlertCircle, Loader, FileText, MessageSquare,
   Building, Pencil, Check, Eye, EyeOff,
   Trash2, RefreshCw, Github, Twitter, Linkedin, Facebook,
-  Laptop, Video, Clock, Star, ArrowRight
+  Laptop, Video, Clock, Star, ArrowRight, ChevronRight,
+  Sparkles, Shield, Lock as LockIcon
 } from 'lucide-react';
 import { apiServices } from '../../api/apiService';
 import { useSelector } from 'react-redux';
@@ -637,11 +639,6 @@ const UserProfile = () => {
       }
       
       showSuccess('Profile Updated', 'Your profile has been updated successfully!');
-      
-      // Reload page after a short delay to show the success message and reflect all changes
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
     } catch (error) {
       console.error('Profile update failed:', error);
       
@@ -905,7 +902,7 @@ const UserProfile = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button 
               onClick={fetchUserData}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md flex items-center justify-center"
+              className="px-6 py-3 bg-gradient-to-r from-slate-500 to-slate-600 text-white rounded-lg hover:from-slate-600 hover:to-slate-700 transition-colors shadow-md flex items-center justify-center"
             >
               <RefreshCw className="w-4 h-4 mr-2" /> Retry
             </button>
@@ -921,142 +918,81 @@ const UserProfile = () => {
     );
   }
 
-  // Main UI
+  // Main UI with Professional Premium Design
   return (
-    <div className={`min-h-screen pt-16 sm:pt-20 md:pt-24 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} transition-colors duration-300 relative`}>
+    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-gradient-to-br from-slate-50 to-blue-50'}`}>
       {/* Toast Notification */}
       <Toast toast={toast} onClose={hideToast} />
-      
-      {/* Close Button - Better positioned for mobile and desktop */}
-      <button 
-        onClick={() => window.history.back()}
-        className="fixed top-20 sm:top-24 md:top-28 right-4 sm:right-6 z-50 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm text-gray-700 dark:text-gray-200 p-2.5 sm:p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-white dark:hover:bg-gray-700 group border border-gray-200 dark:border-gray-600"
-        aria-label="Close profile"
-      >
-        <X className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-90 transition-transform duration-300" />
-      </button>
-
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
-
-        {/* Enhanced Premium Tabs - Desktop */}
-        <div className="hidden md:flex mb-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-1">
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`flex-1 flex items-center justify-center px-6 py-3 font-medium text-sm rounded-lg transition-all duration-300 focus:outline-none ${
-              activeTab === 'profile'
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md transform scale-[1.02]'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-            }`}
-          >
-            <User className="w-4 h-4 mr-2" />
-            Profile
-          </button>
-          <button
-            onClick={() => setActiveTab('security')}
-            className={`flex-1 flex items-center justify-center px-6 py-3 font-medium text-sm rounded-lg transition-all duration-300 focus:outline-none ${
-              activeTab === 'security'
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md transform scale-[1.02]'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-            }`}
-          >
-            <Lock className="w-4 h-4 mr-2" />
-            Security
-          </button>
-          <button
-            onClick={() => setActiveTab('notifications')}
-            className={`flex-1 flex items-center justify-center px-6 py-3 font-medium text-sm rounded-lg transition-all duration-300 focus:outline-none ${
-              activeTab === 'notifications'
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md transform scale-[1.02]'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-            }`}
-          >
-            <Bell className="w-4 h-4 mr-2" />
-            Notifications
-          </button>
-          <button
-            onClick={() => setActiveTab('preferences')}
-            className={`flex-1 flex items-center justify-center px-6 py-3 font-medium text-sm rounded-lg transition-all duration-300 focus:outline-none ${
-              activeTab === 'preferences'
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md transform scale-[1.02]'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-            }`}
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            Preferences
-          </button>
-        </div>
-
-        {/* Enhanced Mobile Tabs */}
-        <div className="md:hidden mb-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-1">
-            <div className="grid grid-cols-2 gap-1">
-              <button
-                onClick={() => setActiveTab('profile')}
-                className={`flex items-center justify-center px-3 py-2.5 text-xs font-medium rounded-lg transition-all duration-300 ${
-                  activeTab === 'profile'
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+      <div className="max-w-7xl mx-auto px-4 sm:px-3 lg:px-8 pt-24 sm:pt-24 pb-4 sm:pb-4 md:h-[calc(100vh-120px)] md:overflow-y-auto md:pr-2">
+        {/* Premium Tab Navigation with Framer Motion */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`mb-4 sm:mb-5 rounded-xl backdrop-blur-xl border ${isDarkMode ? 'bg-[#1A1A1A]/80 border-[#3A3A3A]' : 'bg-white/80 border-slate-200/50'} shadow-sm p-0.5 flex flex-wrap sm:flex-nowrap gap-0.5 sm:gap-0`}
+        >
+          {[
+            { id: 'profile', label: 'Profile', icon: User },
+            { id: 'security', label: 'Security', icon: Shield },
+            { id: 'notifications', label: 'Notifications', icon: Bell },
+            { id: 'preferences', label: 'Preferences', icon: Settings }
+          ].map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <motion.button
+                key={tab.id}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 flex items-center justify-center px-2 sm:px-4 py-2 font-semibold text-xs sm:text-sm rounded-lg transition-all duration-300 ${
+                  isActive
+                    ? isDarkMode
+                      ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-md'
+                      : 'bg-gradient-to-r from-slate-500 to-slate-600 text-white shadow-md'
+                    : isDarkMode
+                    ? 'text-gray-400 hover:text-white hover:bg-white/5'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
                 }`}
               >
-                <User className="w-3.5 h-3.5 mr-1.5" />
-                Profile
-              </button>
-              <button
-                onClick={() => setActiveTab('security')}
-                className={`flex items-center justify-center px-3 py-2.5 text-xs font-medium rounded-lg transition-all duration-300 ${
-                  activeTab === 'security'
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                }`}
-              >
-                <Lock className="w-3.5 h-3.5 mr-1.5" />
-                Security
-              </button>
-              <button
-                onClick={() => setActiveTab('notifications')}
-                className={`flex items-center justify-center px-3 py-2.5 text-xs font-medium rounded-lg transition-all duration-300 ${
-                  activeTab === 'notifications'
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                }`}
-              >
-                <Bell className="w-3.5 h-3.5 mr-1.5" />
-                Notifications
-              </button>
-              <button
-                onClick={() => setActiveTab('preferences')}
-                className={`flex items-center justify-center px-3 py-2.5 text-xs font-medium rounded-lg transition-all duration-300 ${
-                  activeTab === 'preferences'
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                }`}
-              >
-                <Settings className="w-3.5 h-3.5 mr-1.5" />
-                Preferences
-              </button>
-            </div>
-          </div>
-        </div>
+                <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">{tab.label}</span>
+                {isActive && <motion.div layoutId="activeTab" className="absolute inset-0 rounded-lg" />}
+              </motion.button>
+            );
+          })}
+        </motion.div>
 
         {/* Profile Tab Content */}
+        <AnimatePresence mode="wait">
         {activeTab === 'profile' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-            {/* Left Column - Profile Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5"
+          >
+            {/* Left Column - Premium Profile Card */}
             <div className="lg:col-span-1">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4 }}
+                className={`rounded-xl sm:rounded-2xl shadow-lg overflow-hidden backdrop-blur-xl border ${isDarkMode ? 'bg-gradient-to-br from-[#1A1A1A] to-[#2C2C2C] border-[#3A3A3A]' : 'bg-gradient-to-br from-white to-slate-50 border-slate-200/50'}`}
+              >
                 {/* Enhanced Premium Profile Header */}
-                <div className="h-40 sm:h-44 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 relative overflow-hidden">
-                  {/* Background Pattern */}
-                  <div className="absolute inset-0 bg-black bg-opacity-10">
-                    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-transparent via-white/5 to-white/10"></div>
+                <div className="h-28 sm:h-32 bg-gradient-to-r from-slate-300/40 via-slate-400/40 to-slate-500/40 relative overflow-hidden">
+                  {/* Smooth Light Background Pattern */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-slate-200/20 to-slate-300/20 dark:from-slate-900/30 dark:to-slate-800/30">
+                    <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/10 to-transparent dark:via-white/5"></div>
                   </div>
                   
                   {/* Account Type Badge */}
                   {userInfo.account_type === 'Lawyer' && (
-                    <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold flex items-center shadow-lg backdrop-blur-sm">
-                      <Briefcase className="w-3 h-3 mr-1.5 sm:mr-2" /> 
-                      <span className="hidden sm:inline">Legal Professional</span>
-                      <span className="sm:hidden">Legal</span>
+                    <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-gradient-to-r from-slate-500 to-slate-600 text-white px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs font-semibold flex items-center shadow-md backdrop-blur-sm hover:shadow-lg transition-all duration-300">
+                      <Briefcase className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1 sm:mr-1.5" /> 
+                      <span className="hidden sm:inline">Professional</span>
+                      <span className="sm:hidden">Pro</span>
                     </div>
                   )}
                   
@@ -1064,97 +1000,97 @@ const UserProfile = () => {
                   {!isEditing ? (
                     <button 
                       onClick={() => setIsEditing(true)}
-                      className="absolute top-3 left-3 sm:top-4 sm:left-4 bg-white/20 backdrop-blur-sm text-white p-2.5 sm:p-3 rounded-full hover:bg-white/30 transition-all duration-300 shadow-lg hover:scale-105"
+                      className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-gradient-to-r from-slate-400/70 to-slate-500/70 backdrop-blur-sm text-white p-2 sm:p-2.5 rounded-lg hover:from-slate-500/80 hover:to-slate-600/80 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center"
+                      title="Edit Profile"
                     >
-                      <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <Pencil className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                   ) : (
-                    <div className="absolute top-3 left-3 sm:top-4 sm:left-4 flex space-x-1.5 sm:space-x-2">
+                    <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex gap-1 sm:gap-2">
                       <button 
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="bg-gradient-to-r from-green-500 to-green-600 text-white p-2.5 sm:p-3 rounded-full hover:from-green-600 hover:to-green-700 transition-all duration-300 disabled:opacity-50 shadow-lg hover:scale-105"
+                        className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-2 sm:p-2.5 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 disabled:opacity-50 shadow-md hover:shadow-lg flex items-center justify-center"
+                        title="Save Changes"
                       >
-                        {isSaving ? <Loader className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                        {isSaving ? <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" /> : <Check className="w-4 h-4 sm:w-5 sm:h-5" />}
                       </button>
                       <button 
                         onClick={handleCancel}
                         disabled={isSaving}
-                        className="bg-gradient-to-r from-red-500 to-red-600 text-white p-2.5 sm:p-3 rounded-full hover:from-red-600 hover:to-red-700 transition-all duration-300 disabled:opacity-50 shadow-lg hover:scale-105"
+                        className="bg-gradient-to-r from-slate-400/70 to-slate-500/70 text-white p-2 sm:p-2.5 rounded-lg hover:from-slate-500/80 hover:to-slate-600/80 transition-all duration-300 disabled:opacity-50 shadow-md hover:shadow-lg flex items-center justify-center"
+                        title="Cancel Editing"
                       >
-                        <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <X className="w-4 h-4 sm:w-5 sm:h-5" />
                       </button>
                     </div>
                   )}
                 </div>
                 
                 {/* Enhanced Premium Avatar Section */}
-                <div className="relative -mt-20 px-6 pb-4">
+                <div className="relative -mt-12 sm:-mt-14 px-4 sm:px-6 pb-3 sm:pb-4">
                   <div className="relative inline-block">
-                    {/* Premium Avatar Container */}
-                   <div className="relative p-1 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-full shadow-2xl">
-  <div className="bg-white dark:bg-gray-800 rounded-full p-1">
-    <div 
-      className="relative overflow-hidden rounded-full group cursor-pointer"
-      onClick={() => !isUploadingAvatar && fileInputRef.current?.click()}
-    >
-      <img
-        src={imagePreview || userInfo?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo?.name || 'User')}&background=6366f1&color=ffffff&size=128`}
-        alt={`${userInfo?.name} ${userInfo?.last_name}`}
-        className="w-32 h-32 rounded-full object-cover border-4 border-white dark:border-gray-800 shadow-xl transition-all duration-500 hover:shadow-2xl hover:scale-105"
-        style={{
-          filter: 'brightness(1.05) contrast(1.1)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08)'
-        }}
-      />
-      {/* Hover overlay to indicate it's clickable */}
-      <div className={`absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 rounded-full flex items-center justify-center ${isUploadingAvatar ? 'bg-opacity-30' : ''}`}>
-        <div className={`${isUploadingAvatar ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity duration-300`}>
-          {isUploadingAvatar ? (
-            <div className="flex flex-col items-center">
-              <Loader className="w-8 h-8 text-white animate-spin drop-shadow-lg" />
-              <span className="text-white text-xs mt-1 drop-shadow-lg">Uploading...</span>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center">
-              <Camera className="w-6 h-6 text-white drop-shadow-lg" />
-              <span className="text-white text-xs mt-1 drop-shadow-lg">Update</span>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  {/* Hidden file input for avatar upload */}
-  <input
-    ref={fileInputRef}
-    type="file"
-    accept="image/*"
-    onChange={handleImageUpload}
-    className="hidden"
-    disabled={isUploadingAvatar}
-  />
-  
-  {/* Professional Update Avatar Button - Secondary option */}
-  <div className={`absolute bottom-2 right-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-2 rounded-full shadow-lg transition-all duration-300 ${isUploadingAvatar ? 'opacity-50' : 'hover:scale-105'}`}>
-    {isUploadingAvatar ? (
-      <Loader className="w-4 h-4 animate-spin" />
-    ) : (
-      <Camera className="w-4 h-4" />
-    )}
-  </div>
-</div>
-
-                    {/* Premium Online Status Indicator */}
-                    <div className="absolute bottom-4 left-4 w-8 h-8 bg-gradient-to-r from-green-400 to-green-500 border-4 border-white dark:border-gray-800 rounded-full flex items-center justify-center shadow-lg">
-                      <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                    {/* Premium Avatar Container - Silver/Gray Gradient */}
+                    <div className="relative p-0.5 sm:p-1 bg-gradient-to-br from-slate-300 via-slate-400 to-slate-500 rounded-full shadow-lg">
+                      <div className={`rounded-full p-0.5 sm:p-1 ${isDarkMode ? 'bg-[#1A1A1A]' : 'bg-white'}`}>
+                        <div 
+                          className="relative overflow-hidden rounded-full group cursor-pointer"
+                          onClick={() => !isUploadingAvatar && fileInputRef.current?.click()}
+                        >
+                          <img
+                            src={imagePreview || userInfo?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo?.name || 'User')}&background=6366f1&color=ffffff&size=96`}
+                            alt={`${userInfo?.name} ${userInfo?.last_name}`}
+                            className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-3 sm:border-4 border-white dark:border-[#1A1A1A] shadow-md transition-all duration-500 hover:shadow-lg hover:scale-105"
+                            style={{
+                              filter: 'brightness(1.05) contrast(1.1)',
+                              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06)'
+                            }}
+                          />
+                          {/* Hover overlay to indicate it's clickable */}
+                          <div className={`absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 rounded-full flex items-center justify-center ${isUploadingAvatar ? 'bg-opacity-30' : ''}`}>
+                            <div className={`${isUploadingAvatar ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity duration-300`}>
+                              {isUploadingAvatar ? (
+                                <div className="flex flex-col items-center">
+                                  <Loader className="w-5 h-5 sm:w-6 sm:h-6 text-white animate-spin drop-shadow-lg" />
+                                  <span className="text-white text-2xs sm:text-xs mt-0.5 drop-shadow-lg">Uploading</span>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-center">
+                                  <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-white drop-shadow-lg" />
+                                  <span className="text-white text-2xs sm:text-xs mt-0.5 drop-shadow-lg">Change</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Hidden file input for avatar upload */}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        disabled={isUploadingAvatar}
+                      />
+                      
+                      {/* Professional Update Avatar Button - Secondary option */}
+                      <div className={`absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-gradient-to-r from-slate-400 to-slate-600 text-white p-1.5 sm:p-2 rounded-full shadow-md transition-all duration-300 ${isUploadingAvatar ? 'opacity-50' : 'hover:scale-110'}`}>
+                        {isUploadingAvatar ? (
+                          <Loader className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                        ) : (
+                          <Camera className="w-3 h-3 sm:w-4 sm:h-4" />
+                        )}
+                      </div>
                     </div>
+
+
                     
                     {/* Verification Badge for Premium Users */}
                     {userInfo.is_verified && (
-                      <div className="absolute top-2 right-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-2 rounded-full shadow-lg">
-                        <Award className="w-4 h-4" />
+                      <div className="absolute -top-1 right-0 sm:-top-2 sm:right-1 bg-gradient-to-r from-slate-400 to-slate-600 text-white p-1 sm:p-1.5 rounded-full shadow-md">
+                        <Award className="w-3 h-3 sm:w-4 sm:h-4" />
                       </div>
                     )}
                     
@@ -1171,7 +1107,7 @@ const UserProfile = () => {
                 </div>
                 
                 {/* Profile Info */}
-                <div className="px-6 py-4">
+                <div className="px-4 sm:px-6 py-3 sm:py-4">
                   {isEditing ? (
                     <div className="space-y-3 mb-4">
                       <div>
@@ -1237,42 +1173,42 @@ const UserProfile = () => {
                   </div>
                   
                   {/* Stats */}
-                  <div className="mt-6 grid grid-cols-3 gap-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <div className="mt-3 sm:mt-4 grid grid-cols-3 gap-2 sm:gap-3 border-t border-gray-200 dark:border-gray-700 pt-3 sm:pt-4">
                     <div 
-                      className="text-center cursor-pointer hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50 dark:hover:from-blue-900/20 dark:hover:to-cyan-900/20 rounded-xl p-3 transition-all duration-300 hover:shadow-lg hover:scale-105 group"
+                      className="text-center cursor-pointer hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50 dark:hover:from-blue-900/20 dark:hover:to-cyan-900/20 rounded-lg p-2 sm:p-3 transition-all duration-300 hover:shadow-md hover:scale-105 group"
                       onClick={handleAppointmentClick}
                     >
-                      <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300">
-                        <Calendar size={20} className="text-white" />
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 mx-auto mb-1.5 sm:mb-2 bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
+                        <Calendar size={16} className="text-white" />
                       </div>
-                      <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-cyan-700 group-hover:to-teal-700 transition-all duration-300">
+                      <p className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-cyan-700 group-hover:to-teal-700 transition-all duration-300">
                         {(userInfo?.stats?.appointments || 0).toLocaleString()}
                       </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-300">Appointments</p>
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-300">Appointments</p>
                     </div>
                     <div 
-                      className="text-center cursor-pointer hover:bg-gradient-to-br hover:from-purple-50 hover:to-pink-50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 rounded-xl p-3 transition-all duration-300 hover:shadow-lg hover:scale-105 group"
+                      className="text-center cursor-pointer hover:bg-gradient-to-br hover:from-purple-50 hover:to-pink-50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 rounded-lg p-2 sm:p-3 transition-all duration-300 hover:shadow-md hover:scale-105 group"
                       onClick={handleQueriesClick}
                     >
-                      <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300">
-                        <MessageSquare size={20} className="text-white" />
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 mx-auto mb-1.5 sm:mb-2 bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
+                        <MessageSquare size={16} className="text-white" />
                       </div>
-                      <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 bg-clip-text text-transparent group-hover:from-purple-700 group-hover:via-pink-700 group-hover:to-rose-700 transition-all duration-300">
+                      <p className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 bg-clip-text text-transparent group-hover:from-purple-700 group-hover:via-pink-700 group-hover:to-rose-700 transition-all duration-300">
                         {(userInfo?.stats?.queries || 0).toLocaleString()}
                       </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-300">Queries</p>
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-300">Queries</p>
                     </div>
                     <div 
-                      className="text-center cursor-pointer hover:bg-gradient-to-br hover:from-amber-50 hover:to-orange-50 dark:hover:from-amber-900/20 dark:hover:to-orange-900/20 rounded-xl p-3 transition-all duration-300 hover:shadow-lg hover:scale-105 group"
+                      className="text-center cursor-pointer hover:bg-gradient-to-br hover:from-amber-50 hover:to-orange-50 dark:hover:from-amber-900/20 dark:hover:to-orange-900/20 rounded-lg p-2 sm:p-3 transition-all duration-300 hover:shadow-md hover:scale-105 group"
                       onClick={handleReviewsClick}
                     >
-                      <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300">
-                        <Star size={20} className="text-white" />
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 mx-auto mb-1.5 sm:mb-2 bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
+                        <Star size={16} className="text-white" />
                       </div>
-                      <p className="text-2xl font-bold bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 bg-clip-text text-transparent group-hover:from-amber-700 group-hover:via-orange-700 group-hover:to-red-700 transition-all duration-300">
+                      <p className="text-lg sm:text-xl font-bold bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 bg-clip-text text-transparent group-hover:from-amber-700 group-hover:via-orange-700 group-hover:to-red-700 transition-all duration-300">
                         {(userInfo?.stats?.reviews || 0).toLocaleString()}
                       </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-300">Reviews</p>
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-300">Reviews</p>
                     </div>
                   </div>
                   
@@ -1354,83 +1290,86 @@ const UserProfile = () => {
                   
                   {/* Action Buttons */}
                   {!isEditing && (
-                    <div className="mt-6 flex space-x-3">
+                    <div className="mt-6 flex gap-2">
                       <button 
                         onClick={handleShare} 
-                        className="flex-1 flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none"
+                        className="p-2 sm:p-2.5 rounded-lg shadow-sm font-medium transition-all duration-200 bg-gradient-to-r from-slate-500 to-slate-600 text-white hover:from-slate-600 hover:to-slate-700 flex items-center justify-center"
+                        title="Share Profile"
                       >
-                        <Share2 className="w-4 h-4 mr-2" /> Share
+                        <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
                       </button>
                       <button 
                         onClick={handleExport} 
-                        className="flex-1 flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none"
+                        className="p-2 sm:p-2.5 rounded-lg shadow-sm font-medium transition-all duration-200 bg-gradient-to-r from-slate-500 to-slate-600 text-white hover:from-slate-600 hover:to-slate-700 flex items-center justify-center"
+                        title="Export Profile"
                       >
-                        <Download className="w-4 h-4 mr-2" /> Export
+                        <Download className="w-4 h-4 sm:w-5 sm:h-5" />
                       </button>
                     </div>
                   )}
                 </div>
-              </div>
-              
-              {/* Professional Trust Badge */}
-              <div className="mt-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden">
-                <div className="p-6">
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-lg">
-                        <Award className="w-6 h-6 text-white" />
-                      </div>
-                    </div>
-                    <div className="ml-4 flex-1">
-                      <div className="flex items-center mb-2">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                          Verified Legal Professional
-                        </h3>
-                        <div className="ml-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                      </div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                        Trusted member of the MeraBakil legal community since {userInfo.joinDate}
-                      </p>
-                      <div className="mt-3 flex items-center">
-                        <div className="flex -space-x-1">
-                          <div className="w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full border border-white dark:border-gray-800"></div>
-                          <div className="w-4 h-4 bg-gradient-to-r from-green-400 to-blue-500 rounded-full border border-white dark:border-gray-800"></div>
-                          <div className="w-4 h-4 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full border border-white dark:border-gray-800"></div>
+                
+                {/* Professional Trust Badge */}
+                <div className="mt-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden">
+                  <div className="p-6">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 bg-gradient-to-br from-slate-500 to-slate-600 rounded-full flex items-center justify-center shadow-lg">
+                          <Award className="w-6 h-6 text-white" />
                         </div>
-                        <span className="ml-2 text-xs font-medium text-gray-700 dark:text-gray-300">
-                          Excellence & Trust
-                        </span>
+                      </div>
+                      <div className="ml-4 flex-1">
+                        <div className="flex items-center mb-2">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Verified Legal Professional
+                          </h3>
+                          <div className="ml-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        </div>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                          Trusted member of the MeraBakil legal community since {userInfo.joinDate}
+                        </p>
+                        <div className="mt-3 flex items-center">
+                          <div className="flex -space-x-1">
+                            <div className="w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full border border-white dark:border-gray-800"></div>
+                            <div className="w-4 h-4 bg-gradient-to-r from-green-400 to-blue-500 rounded-full border border-white dark:border-gray-800"></div>
+                            <div className="w-4 h-4 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full border border-white dark:border-gray-800"></div>
+                          </div>
+                          <span className="ml-2 text-xs font-medium text-gray-700 dark:text-gray-300">
+                            Excellence & Trust
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
+                  <div className="h-1 bg-gradient-to-r from-slate-500 via-slate-600 to-slate-700"></div>
                 </div>
-                <div className="h-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"></div>
-              </div>
+              </motion.div>
             </div>
             
             {/* Right Column - Details */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4">
               {/* Contact Information */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden">
-                <div className="px-4 sm:px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <div className={`rounded-lg sm:rounded-xl shadow-sm border overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-[#1A1A1A] border-[#3A3A3A]' : 'bg-white border-blue-200/50'}`}>
+                <div className={`px-4 py-3 border-b flex justify-between items-center transition-colors duration-300 ${isDarkMode ? 'bg-[#2C2C2C] border-[#3A3A3A]' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200/50'}`}>
                   <div className="flex items-center">
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3">
-                      <Mail className="w-4 h-4 text-white" />
+                    <div className="w-7 h-7 bg-gradient-to-br from-slate-500 to-slate-600 rounded-lg flex items-center justify-center mr-2.5 shadow-md">
+                      <Mail className="w-3.5 h-3.5 text-white" />
                     </div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Contact Information</h2>
+                    <h2 className={`text-sm sm:text-base font-semibold transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Contact</h2>
                   </div>
                   {!isEditing && (
                     <button 
                       onClick={() => setIsEditing(true)}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center shadow-sm"
+                      className={`p-1.5 sm:p-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center justify-center shadow-sm ${isDarkMode ? 'bg-slate-600 hover:bg-slate-700 text-white' : 'bg-slate-500 hover:bg-slate-600 text-white'}`}
+                      title="Edit Contact"
                     >
-                      <Pencil className="w-3.5 h-3.5 mr-1.5" /> Edit
+                      <Pencil className="w-3 h-3 sm:w-4 sm:h-4" />
                     </button>
                   )}
                 </div>
                 
-                <div className="p-4 sm:p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                <div className="p-3 sm:p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                     {/* Email */}
                     <div>
                       {isEditing ? (
@@ -1699,20 +1638,12 @@ const UserProfile = () => {
               </div>
               
               {/* Skills */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                  <h2 className="text-lg font-medium text-gray-900 dark:text-white">Skills</h2>
-                  {!isEditing && (
-                    <button 
-                      onClick={() => setIsEditing(true)}
-                      className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center text-sm"
-                    >
-                      <Pencil className="w-4 h-4 mr-1" /> Edit
-                    </button>
-                  )}
+              <div className={`rounded-lg sm:rounded-xl shadow-sm border overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-[#1A1A1A] border-[#3A3A3A]' : 'bg-white border-blue-200/50'}`}>
+                <div className={`px-4 py-3 border-b transition-colors duration-300 ${isDarkMode ? 'bg-[#2C2C2C] border-[#3A3A3A]' : 'bg-gradient-to-r from-purple-50 to-pink-50 border-blue-200/50'}`}>
+                  <h2 className={`text-sm sm:text-base font-semibold transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Skills</h2>
                 </div>
                 
-                <div className="p-6">
+                <div className="p-3 sm:p-4">
                   {isEditing ? (
                     <div>
                       <div className="flex mb-4">
@@ -1727,7 +1658,7 @@ const UserProfile = () => {
                         />
                         <button
                           onClick={handleAddSkill}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 focus:outline-none"
+                          className="px-4 py-2 bg-gradient-to-r from-slate-500 to-slate-600 text-white rounded-r-md hover:from-slate-600 hover:to-slate-700 focus:outline-none"
                         >
                           Add
                         </button>
@@ -1774,68 +1705,84 @@ const UserProfile = () => {
               </div>
               
               {/* Achievements */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                  <h2 className="text-lg font-medium text-gray-900 dark:text-white">Achievements</h2>
+              <div className={`rounded-lg sm:rounded-xl shadow-sm border overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-[#1A1A1A] border-[#3A3A3A]' : 'bg-white border-blue-200/50'}`}>
+                <div className={`px-4 py-3 border-b transition-colors duration-300 ${isDarkMode ? 'bg-[#2C2C2C] border-[#3A3A3A]' : 'bg-gradient-to-r from-orange-50 to-amber-50 border-blue-200/50'}`}>
+                  <h2 className={`text-sm sm:text-base font-semibold transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Achievements</h2>
                 </div>
                 
-                <div className="p-6">
+                <div className="p-3 sm:p-4">
                   {userInfo.achievements?.length > 0 ? (
-                    <ul className="space-y-3">
+                    <ul className="space-y-2 sm:space-y-2.5">
                       {userInfo.achievements.map((achievement, index) => (
                         <li key={index} className="flex items-start">
-                          <Award className="w-5 h-5 text-yellow-500 mr-3 mt-0.5" />
-                          <span className="text-gray-900 dark:text-white">{achievement}</span>
+                          <Award className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 mr-2 sm:mr-3 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-gray-900 dark:text-white">{achievement}</span>
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-gray-500 dark:text-gray-400 text-sm">No achievements added yet</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">No achievements added yet</p>
                   )}
                 </div>
               </div>
               
               {/* Recent Activity */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                  <h2 className="text-lg font-medium text-gray-900 dark:text-white">Recent Activity</h2>
+              <div className={`rounded-lg sm:rounded-xl shadow-sm border overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-[#1A1A1A] border-[#3A3A3A]' : 'bg-white border-blue-200/50'}`}>
+                <div className={`px-4 py-3 border-b transition-colors duration-300 ${isDarkMode ? 'bg-[#2C2C2C] border-[#3A3A3A]' : 'bg-gradient-to-r from-green-50 to-emerald-50 border-blue-200/50'}`}>
+                  <h2 className={`text-sm sm:text-base font-semibold transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Activity</h2>
                 </div>
                 
-                <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                <div className={`divide-y transition-colors duration-300 ${isDarkMode ? 'divide-[#3A3A3A]' : 'divide-gray-200'}`}>
                   {userInfo.recentActivity?.length > 0 ? (
                     userInfo.recentActivity.map((activity) => (
-                      <div key={activity.id} className="p-6 flex items-start">
-                        <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-full mr-4">
+                      <div key={activity.id} className="p-3 sm:p-4 flex items-start">
+                        <div className="bg-blue-100 dark:bg-blue-900 p-1.5 sm:p-2 rounded-full mr-2.5 sm:mr-3 flex-shrink-0">
                           {activity.type === 'case' ? (
-                            <Briefcase className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                            <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
                           ) : activity.type === 'document' ? (
-                            <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                            <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
                           ) : (
-                            <MessageSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                            <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
                           )}
                         </div>
-                        <div>
-                          <p className="text-gray-900 dark:text-white">{activity.description}</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{activity.date}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-900 dark:text-white line-clamp-2">{activity.description}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{activity.date}</p>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="p-6">
-                      <p className="text-gray-500 dark:text-gray-400 text-sm">No recent activity</p>
+                    <div className="p-3 sm:p-4">
+                      <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">No recent activity</p>
                     </div>
                   )}
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
         
         {/* Security Tab Content */}
+        <AnimatePresence mode="wait">
         {activeTab === 'security' && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white">Security Settings</h2>
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className={`rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl border ${isDarkMode ? 'bg-gradient-to-br from-[#1A1A1A] to-[#2C2C2C] border-[#3A3A3A]' : 'bg-gradient-to-br from-white to-slate-50 border-slate-200/50'}`}
+          >
+            <div className={`px-6 py-6 border-b ${isDarkMode ? 'border-[#3A3A3A] bg-gradient-to-r from-[#1A1A1A] to-[#2C2C2C]' : 'border-slate-200/50 bg-gradient-to-r from-white to-slate-50'}`}>
+              <div className="flex items-center space-x-4">
+                <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-slate-600/20' : 'bg-slate-100'}`}>
+                  <LockIcon className={`w-6 h-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`} />
+                </div>
+                <div>
+                  <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Security Settings</h2>
+                  <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Protect your account with advanced security options</p>
+                </div>
+              </div>
             </div>
             
             <div className="p-6">
@@ -1887,7 +1834,7 @@ const UserProfile = () => {
                       />
                     </div>
                     
-                    <button className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none">
+                    <button className="mt-2 px-4 py-2 bg-gradient-to-r from-slate-500 to-slate-600 text-white rounded-md hover:from-slate-600 hover:to-slate-700 focus:outline-none">
                       Update Password
                     </button>
                   </div>
@@ -1926,14 +1873,30 @@ const UserProfile = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
         
         {/* Notifications Tab Content */}
+        <AnimatePresence mode="wait">
         {activeTab === 'notifications' && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white">Notification Preferences</h2>
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className={`rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl border ${isDarkMode ? 'bg-gradient-to-br from-[#1A1A1A] to-[#2C2C2C] border-[#3A3A3A]' : 'bg-gradient-to-br from-white to-slate-50 border-slate-200/50'}`}
+          >
+            <div className={`px-6 py-6 border-b ${isDarkMode ? 'border-[#3A3A3A] bg-gradient-to-r from-[#1A1A1A] to-[#2C2C2C]' : 'border-slate-200/50 bg-gradient-to-r from-white to-slate-50'}`}>
+              <div className="flex items-center space-x-4">
+                <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-purple-600/20' : 'bg-purple-100'}`}>
+                  <Bell className={`w-6 h-6 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
+                </div>
+                <div>
+                  <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Notification Preferences</h2>
+                  <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Customize how you receive important updates</p>
+                </div>
+              </div>
             </div>
             
             <div className="p-6">
@@ -1951,7 +1914,7 @@ const UserProfile = () => {
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" className="sr-only peer" defaultChecked />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 dark:peer-focus:ring-slate-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-slate-600"></div>
                       </label>
                     </div>
                     
@@ -1962,7 +1925,7 @@ const UserProfile = () => {
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" className="sr-only peer" defaultChecked />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 dark:peer-focus:ring-slate-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-slate-600"></div>
                       </label>
                     </div>
                     
@@ -1973,7 +1936,7 @@ const UserProfile = () => {
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 dark:peer-focus:ring-slate-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-slate-600"></div>
                       </label>
                     </div>
                   </div>
@@ -1990,7 +1953,7 @@ const UserProfile = () => {
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" className="sr-only peer" defaultChecked />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 dark:peer-focus:ring-slate-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-slate-600"></div>
                       </label>
                     </div>
                     
@@ -2001,21 +1964,37 @@ const UserProfile = () => {
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 dark:peer-focus:ring-slate-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-slate-600"></div>
                       </label>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
         
         {/* Preferences Tab Content */}
+        <AnimatePresence mode="wait">
         {activeTab === 'preferences' && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white">Account Preferences</h2>
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className={`rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl border ${isDarkMode ? 'bg-gradient-to-br from-[#1A1A1A] to-[#2C2C2C] border-[#3A3A3A]' : 'bg-gradient-to-br from-white to-slate-50 border-slate-200/50'}`}
+          >
+            <div className={`px-6 py-6 border-b ${isDarkMode ? 'border-[#3A3A3A] bg-gradient-to-r from-[#1A1A1A] to-[#2C2C2C]' : 'border-slate-200/50 bg-gradient-to-r from-white to-slate-50'}`}>
+              <div className="flex items-center space-x-4">
+                <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-emerald-600/20' : 'bg-emerald-100'}`}>
+                  <Settings className={`w-6 h-6 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                </div>
+                <div>
+                  <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Account Preferences</h2>
+                  <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Personalize your experience and settings</p>
+                </div>
+              </div>
             </div>
             
             <div className="p-6">
@@ -2055,7 +2034,7 @@ const UserProfile = () => {
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" className="sr-only peer" defaultChecked />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 dark:peer-focus:ring-slate-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-slate-600"></div>
                       </label>
                     </div>
                     
@@ -2066,7 +2045,7 @@ const UserProfile = () => {
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" className="sr-only peer" defaultChecked />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 dark:peer-focus:ring-slate-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-slate-600"></div>
                       </label>
                     </div>
                   </div>
@@ -2087,8 +2066,9 @@ const UserProfile = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
       </div>
 
       {/* Premium Appointment Details Modal */}
@@ -2096,7 +2076,7 @@ const UserProfile = () => {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 w-full max-w-4xl max-h-[85vh] overflow-hidden transition-all duration-300 animate-fadeIn">
             {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900/20 dark:to-slate-800/20">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="p-2.5 bg-blue-100 dark:bg-blue-900/50 rounded-xl">
@@ -2136,7 +2116,7 @@ const UserProfile = () => {
                   </p>
                   <button
                     onClick={() => setShowAppointmentModal(false)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    className="px-4 py-2 bg-gradient-to-r from-slate-500 to-slate-600 text-white rounded-lg hover:from-slate-600 hover:to-slate-700 transition-colors font-medium"
                   >
                     Close
                   </button>
