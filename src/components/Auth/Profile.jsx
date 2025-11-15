@@ -13,7 +13,6 @@ import { apiServices } from '../../api/apiService';
 import { useSelector } from 'react-redux';
 import Toast from '../common/Toast';
 import useToast from '../../hooks/useToast';
-import ProfileSkeleton from '../common/ProfileSkeleton';
 
 
 
@@ -117,8 +116,97 @@ const UserProfile = () => {
   
 
 
+  // Background fetch without showing loading state
+  const fetchUserDataInBackground = useCallback(async () => {
+    try {
+      const response = await apiServices.getUserProfile();
+      const userData = response.data || response;
+      
+      let skills = [];
+      if (userData.skills) {
+        if (Array.isArray(userData.skills)) {
+          skills = userData.skills;
+        } else if (typeof userData.skills === 'string') {
+          skills = userData.skills.split(',').map(skill => skill.trim()).filter(Boolean);
+        } else if (typeof userData.skills === 'object') {
+          skills = Object.values(userData.skills).filter(Boolean);
+        }
+      }
+      
+      const social = {
+        twitter: userData.twitter_url || userData.social?.twitter || '',
+        linkedin: userData.linkedin_url || userData.social?.linkedin || '',
+        github: userData.github_url || userData.social?.github || '',
+        facebook: userData.facebook_url || userData.social?.facebook || ''
+      };
+      
+      const transformedData = {
+        id: userData.id,
+        name: userData.name || userData.first_name || '',
+        last_name: userData.last_name || userData.surname || '',
+        email: userData.email || '',
+        phone: userData.phone || userData.phone_number || '',
+        address: userData.address || '',
+        location: userData.full_address || '',
+        city: userData.city || '',
+        state: userData.state || '',
+        country: userData.country || '',
+        zip_code: userData.zip_code || userData.postal_code || '',
+        joinDate: userData.created_at ? new Date(userData.created_at).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        }) : 'Not available',
+        bio: userData.bio || userData.about || 'No bio available',
+        title: userData.title || userData.job_title || userData.profession || '',
+        avatar_url: userData.avatar_url || null,
+        account_type: userData.user_type === 1 ? 'Client' : 
+                     userData.user_type === 2 ? 'Lawyer' : 
+                     userData.user_type_name || userData.account_type || 'User',
+        is_verified: userData.is_verified || userData.verified || false,
+        email_verified_at: userData.email_verified_at,
+        active: userData.active || userData.is_active || true,
+        stats: {
+          appointments: userData.recent_activity?.appointment_summary?.total || 0,
+          queries: userData.recent_activity?.legal_queries?.length || 0,
+          reviews: userData.recent_activity?.reviews?.length || 0
+        },
+        skills: skills,
+        achievements: userData.achievements || [],
+        social: social,
+        appointments: userData.recent_activity?.appointments || [],
+        legal_queries: userData.recent_activity?.legal_queries || [],
+        reviews: userData.recent_activity?.reviews || []
+      };
+      
+      setUserInfo(transformedData);
+      setEditForm(transformedData);
+      localStorage.setItem('user_profile_transformed', JSON.stringify(transformedData));
+    } catch (error) {
+      console.error('Background fetch failed (non-critical):', error);
+    }
+  }, []);
+
   // Fetch user data from API - simplified with direct avatar_url usage
-  const fetchUserData = useCallback(async () => {
+  const fetchUserData = useCallback(async (skipLoading = false) => {
+    // Check if we have cached data first - if yes, skip loading state
+    if (skipLoading) {
+      const cachedProfile = localStorage.getItem('user_profile_transformed');
+      if (cachedProfile) {
+        try {
+          const parsedProfile = JSON.parse(cachedProfile);
+          setUserInfo(parsedProfile);
+          setEditForm(parsedProfile);
+          setIsLoading(false);
+          // Fetch fresh data in background without showing loading
+          fetchUserDataInBackground();
+          return;
+        } catch (parseError) {
+          console.error('Error parsing cached profile:', parseError);
+        }
+      }
+    }
+    
     setIsLoading(true);
     try {
       // Get user profile data
@@ -398,7 +486,7 @@ const UserProfile = () => {
   }, [userInfo, showError]);
 
   useEffect(() => {
-    fetchUserData();
+    fetchUserData(true);
   }, [fetchUserData]);
 
   // Validate form
@@ -834,57 +922,13 @@ const UserProfile = () => {
     }
   }, [handleAddSkill]);
 
-  // Loading state - improved with skeleton loading
+  // Loading state - minimal clean loading
   if (isLoading) {
     return (
-      <div className="min-h-screen pt-20 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-1/4 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-2/5 mt-2 animate-pulse"></div>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Profile Card Skeleton */}
-            <div className="lg:col-span-1">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-                <ProfileSkeleton />
-              </div>
-            </div>
-            
-            {/* Right Column - Details Skeleton */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Contact Information Skeleton */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden animate-pulse">
-                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                  <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/3"></div>
-                </div>
-                
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {[...Array(4)].map((_, i) => (
-                      <div key={i} className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              
-              {/* Skills Skeleton */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden animate-pulse">
-                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                  <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/4"></div>
-                </div>
-                
-                <div className="p-6">
-                  <div className="flex flex-wrap gap-2">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-24"></div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <div className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-gradient-to-br from-slate-50 to-blue-50'}`}>
+        <div className="flex flex-col items-center gap-4">
+          <div className={`w-12 h-12 border-4 rounded-full animate-spin ${isDarkMode ? 'border-[#3A3A3A] border-t-blue-500' : 'border-gray-200 border-t-blue-500'}`}></div>
+          <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading profile...</p>
         </div>
       </div>
     );

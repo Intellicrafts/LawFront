@@ -1110,15 +1110,15 @@ const Navbar = () => {
 
   {/* Dropdown Menu */}
   <div
-    className={`absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800 transform transition-all duration-200 origin-top-right z-50
+    className={`absolute right-0 top-full mt-2 w-64 bg-white dark:bg-[#1A1A1A] rounded-xl shadow-lg border border-gray-100 dark:border-[#3A3A3A] transform transition-all duration-200 origin-top-right z-50
       ${userDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
   >
     {/* User Info */}
-    <div className="flex items-center space-x-3 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+    <div className="flex items-center space-x-3 px-4 py-3 border-b border-gray-100 dark:border-[#3A3A3A]">
       <img
         src={user?.avatar_url || 'https://ui-avatars.com/api/?name=User&background=random'}
         alt={user?.name || 'User'}
-        className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-700 shadow-sm flex-shrink-0"
+        className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-[#3A3A3A] shadow-sm flex-shrink-0"
       />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
@@ -1133,7 +1133,7 @@ const Navbar = () => {
     {/* Links */}
     <Link
       to="/profile"
-      className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800/70 transition-colors"
+      className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-[#2C2C2C] transition-colors"
       onClick={() => setUserDropdownOpen(false)}
     >
       <User size={16} className="mr-2 text-gray-400" />
@@ -1141,7 +1141,7 @@ const Navbar = () => {
     </Link>
     <Link
       to="/settings"
-      className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800/70 transition-colors"
+      className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-[#2C2C2C] transition-colors"
       onClick={() => setUserDropdownOpen(false)}
     >
       <Settings size={16} className="mr-2 text-gray-400" />
@@ -1149,7 +1149,7 @@ const Navbar = () => {
     </Link>
 
     {/* Logout */}
-    <div className="border-t border-gray-100 dark:border-gray-800 mt-1">
+    <div className="border-t border-gray-100 dark:border-[#3A3A3A] mt-1">
       <button
         onClick={handleLogout}
         className="flex items-center w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
