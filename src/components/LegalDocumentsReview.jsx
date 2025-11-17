@@ -1930,8 +1930,8 @@ const DocumentReview = () => {
   return (
     <div className={`min-h-screen pt-16 transition-colors duration-300 ${
       isDark 
-        ? 'bg-gradient-to-br from-dark-bg via-dark-bg-secondary to-dark-bg-tertiary' 
-        : 'bg-gradient-to-br from-slate-50 via-white to-slate-100'
+        ? 'bg-[#0A0A0A]' 
+        : 'bg-white'
     }`}>
       <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-4">
         {/* Navigation */}

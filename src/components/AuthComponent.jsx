@@ -714,7 +714,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} relative overflow-hidden`}>
+    <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-white'} relative overflow-hidden`}>
       {/* Toast notification */}
       {toast && (
         <Toast 

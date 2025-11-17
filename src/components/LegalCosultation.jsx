@@ -55,16 +55,16 @@ import {
   HiOutlineLocationMarker
 } from 'react-icons/hi';
 
-// Premium Professional Color Palette for Production App
+// Premium Professional Color Palette matching Hero and Sidebar - Production App
 const colors = {
   light: {
-    background: '#FAFBFC',
+    background: '#FFFFFF',
     surface: '#FFFFFF',
-    surfaceElevated: '#FFFFFF',
+    surfaceElevated: '#F3F4F6',
     text: {
-      primary: '#0F172A',
-      secondary: '#475569',
-      muted: '#64748B',
+      primary: '#111827',
+      secondary: '#4B5563',
+      muted: '#6B7280',
       inverse: '#FFFFFF'
     },
     accent: {
@@ -76,9 +76,9 @@ const colors = {
       light: '#EFF6FF'
     },
     border: {
-      light: '#F1F5F9',
-      default: '#E2E8F0',
-      medium: '#CBD5E1'
+      light: '#E5E7EB',
+      default: '#D1D5DB',
+      medium: '#9CA3AF'
     },
     success: {
       primary: '#059669',
@@ -109,14 +109,14 @@ const colors = {
     }
   },
   dark: {
-    background: '#0F172A',
-    surface: '#1E293B',
-    surfaceElevated: '#334155',
+    background: '#0A0A0A',
+    surface: '#2C2C2C',
+    surfaceElevated: '#3A3A3A',
     text: {
       primary: '#F8FAFC',
       secondary: '#CBD5E1',
       muted: '#94A3B8',
-      inverse: '#0F172A'
+      inverse: '#0A0A0A'
     },
     accent: {
       primary: '#60A5FA',
@@ -127,9 +127,9 @@ const colors = {
       light: '#1E3A8A'
     },
     border: {
-      light: '#334155',
-      default: '#475569',
-      medium: '#64748B'
+      light: '#3A3A3A',
+      default: '#4A4A4A',
+      medium: '#5A5A5A'
     },
     success: {
       primary: '#10B981',
@@ -1422,34 +1422,34 @@ const LegalCosultation = () => {
     if (view === 'lawyers') {
       return (
         <>
-          {/* Optimized Quick Action Cards */}
+          {/* Premium Quick Action Cards */}
           <div className="pt-20 sm:pt-24 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <button 
               onClick={fetchNearbyLawyers}
               disabled={nearbyLoading}
-                className={`group relative overflow-hidden rounded-xl p-4 transition-all duration-200 hover:scale-[1.02] ${
+                className={`group relative overflow-hidden rounded-xl p-4 transition-all duration-200 hover:scale-[1.02] border ${
                 isDarkMode 
-                    ? 'bg-gradient-to-br from-blue-600/20 to-indigo-600/20 hover:from-blue-600/30 hover:to-indigo-600/30 border border-blue-500/30' 
-                    : 'bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border border-blue-200/50'
+                    ? 'bg-gradient-to-br from-slate-700/50 to-slate-600/50 hover:from-slate-700 hover:to-slate-600 border-slate-600/50 hover:border-slate-500' 
+                    : 'bg-gradient-to-br from-gray-100 to-gray-50 hover:from-gray-150 hover:to-gray-100 border-gray-300/50 hover:border-gray-400'
               }`}
                 style={{ boxShadow: currentTheme.shadow.sm }}
             >
                 <div className="flex items-center space-x-3">
               {nearbyLoading ? (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center">
                       <FaSpinner className="text-white text-xs animate-spin" />
                 </div>
               ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center">
                       <HiOutlineLocationMarker className="text-white text-sm" />
                   </div>
                   )}
                   <div className="text-left">
-                    <h3 className={`font-semibold text-sm ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                    <h3 className={`font-semibold text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                       {nearbyLoading ? 'Finding...' : 'Nearby Lawyers'}
                     </h3>
-                    <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                    <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>
                       {nearbyLoading ? 'Locating lawyers' : 'In your area'}
                     </p>
                   </div>
@@ -1459,28 +1459,28 @@ const LegalCosultation = () => {
             <button 
               onClick={fetchTopRatedLawyers}
               disabled={topRatedLoading}
-                className={`group relative overflow-hidden rounded-xl p-4 transition-all duration-200 hover:scale-[1.02] ${
+                className={`group relative overflow-hidden rounded-xl p-4 transition-all duration-200 hover:scale-[1.02] border ${
                 isDarkMode 
-                    ? 'bg-gradient-to-br from-amber-600/20 to-yellow-600/20 hover:from-amber-600/30 hover:to-yellow-600/30 border border-amber-500/30' 
-                    : 'bg-gradient-to-br from-amber-50 to-yellow-50 hover:from-amber-100 hover:to-yellow-100 border border-amber-200/50'
+                    ? 'bg-gradient-to-br from-slate-700/50 to-slate-600/50 hover:from-slate-700 hover:to-slate-600 border-slate-600/50 hover:border-slate-500' 
+                    : 'bg-gradient-to-br from-gray-100 to-gray-50 hover:from-gray-150 hover:to-gray-100 border-gray-300/50 hover:border-gray-400'
               }`}
                 style={{ boxShadow: currentTheme.shadow.sm }}
             >
                 <div className="flex items-center space-x-3">
               {topRatedLoading ? (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-yellow-500 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center">
                       <FaSpinner className="text-white text-xs animate-spin" />
                 </div>
               ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-yellow-500 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center">
                       <FaTrophy className="text-white text-sm" />
                   </div>
                   )}
                   <div className="text-left">
-                    <h3 className={`font-semibold text-sm ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                    <h3 className={`font-semibold text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                       {topRatedLoading ? 'Loading...' : 'Top Rated'}
                     </h3>
-                    <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                    <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>
                       {topRatedLoading ? 'Best lawyers' : 'Highest reviews'}
                     </p>
                   </div>
@@ -1489,22 +1489,22 @@ const LegalCosultation = () => {
 
               <button 
                 onClick={() => bookWithRodgerProsacco()}
-                className={`group relative overflow-hidden rounded-xl p-4 transition-all duration-200 hover:scale-[1.02] ${
+                className={`group relative overflow-hidden rounded-xl p-4 transition-all duration-200 hover:scale-[1.02] border ${
                   isDarkMode 
-                    ? 'bg-gradient-to-br from-emerald-600/20 to-green-600/20 hover:from-emerald-600/30 hover:to-green-600/30 border border-emerald-500/30' 
-                    : 'bg-gradient-to-br from-emerald-50 to-green-50 hover:from-emerald-100 hover:to-green-100 border border-emerald-200/50'
+                    ? 'bg-gradient-to-br from-slate-700/50 to-slate-600/50 hover:from-slate-700 hover:to-slate-600 border-slate-600/50 hover:border-slate-500' 
+                    : 'bg-gradient-to-br from-gray-100 to-gray-50 hover:from-gray-150 hover:to-gray-100 border-gray-300/50 hover:border-gray-400'
                 }`}
                 style={{ boxShadow: currentTheme.shadow.sm }}
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center">
                     <HiOutlineLightningBolt className="text-white text-sm" />
                   </div>
                   <div className="text-left">
-                    <h3 className={`font-semibold text-sm ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                    <h3 className={`font-semibold text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                       Quick Booking
                     </h3>
-                    <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                    <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>
                       Instant consultation
                     </p>
                   </div>
@@ -1513,35 +1513,35 @@ const LegalCosultation = () => {
             </div>
           </div>
           
-          {/* Compact Search & Filter Interface */}
+          {/* Professional Search & Filter Interface */}
           <div
-            className={`rounded-xl transition-all duration-300 backdrop-blur-sm mb-5 overflow-hidden ${
+            className={`rounded-2xl transition-all duration-300 backdrop-blur-sm mb-5 overflow-hidden border ${
               isDarkMode 
-                ? `bg-slate-800/90 ${isFilterSticky ? 'sticky z-30 shadow-xl' : ''}` 
-                : `bg-white/90 ${isFilterSticky ? 'sticky z-30 shadow-xl' : ''}`
+                ? `bg-gradient-to-br from-slate-800 to-slate-700/90 border-slate-700/50 ${isFilterSticky ? 'sticky z-30 shadow-xl' : ''}` 
+                : `bg-gradient-to-br from-white to-gray-50 border-gray-300/50 ${isFilterSticky ? 'sticky z-30 shadow-xl' : ''}`
             }`}
             style={{ 
               top: isFilterSticky ? '80px' : '0',
-              boxShadow: isFilterSticky ? currentTheme.shadow.lg : currentTheme.shadow.sm
+              boxShadow: isFilterSticky ? currentTheme.shadow.lg : currentTheme.shadow.md
             }}
           >
-            {/* Compact Search Header */}
-            <div className={`px-4 py-3 ${
+            {/* Premium Search Header */}
+            <div className={`px-5 py-4 border-b ${
               isDarkMode 
-                ? 'bg-gradient-to-r from-slate-800/50 to-slate-700/50' 
-                : 'bg-gradient-to-r from-slate-50/50 to-slate-100/50'
+                ? 'border-slate-700/50 bg-gradient-to-r from-slate-800/50 to-slate-700/50' 
+                : 'border-gray-200 bg-gradient-to-r from-gray-50 to-white'
             }`}>
               <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className={`w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center mr-2`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center`}>
                     <FaSearch className="text-white text-xs" />
                   </div>
                   <div>
-                    <h2 className={`font-semibold text-sm ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                    <h2 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                       Legal Experts
               </h2>
-                    <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                      {lawyers.length} available
+                    <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>
+                      {lawyers.length} available professionals
                     </p>
                   </div>
                 </div>
@@ -1549,12 +1549,14 @@ const LegalCosultation = () => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border ${
                       showFilters
-                        ? 'bg-emerald-600 text-white'
+                        ? isDarkMode
+                          ? 'bg-slate-600 text-white border-slate-500'
+                          : 'bg-gray-800 text-white border-gray-700'
                         : isDarkMode 
-                          ? 'bg-slate-700 hover:bg-slate-600 text-slate-300' 
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                          ? 'bg-slate-700 hover:bg-slate-600 text-slate-300 border-slate-600' 
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300'
                     }`}
                 >
                     <FaFilter className="text-xs" />
@@ -1564,12 +1566,14 @@ const LegalCosultation = () => {
                 <button
                   type="button"
                   onClick={toggleLocationSearch}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border ${
                     locationEnabled
-                        ? 'bg-green-600 text-white'
+                        ? isDarkMode
+                          ? 'bg-slate-600 text-white border-slate-500'
+                          : 'bg-gray-800 text-white border-gray-700'
                       : isDarkMode 
-                        ? 'bg-slate-700 hover:bg-slate-600 text-slate-300' 
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                        ? 'bg-slate-700 hover:bg-slate-600 text-slate-300 border-slate-600' 
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300'
                   }`}
                 >
                   {locationSearching ? (
@@ -1585,26 +1589,26 @@ const LegalCosultation = () => {
               </div>
             </div>
 
-            {/* Compact Search Bar */}
-            <div className={`px-4 py-3 border-b ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+            {/* Professional Search Bar */}
+            <div className={`px-5 py-4 border-b ${isDarkMode ? 'border-slate-700/50' : 'border-gray-200'}`}>
               <form onSubmit={handleSearch} className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <HiOutlineSparkles className={`text-sm ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`} />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <HiOutlineSparkles className={`text-sm ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`} />
                 </div>
                 <input
                   type="text"
                   placeholder="Search lawyers by name, specialization..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`w-full pl-9 pr-20 py-2.5 text-sm rounded-lg border focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all duration-200 ${
+                  className={`w-full pl-10 pr-24 py-2.5 text-sm rounded-lg border focus:outline-none focus:ring-2 focus:ring-slate-400 transition-all duration-200 ${
                     isDarkMode 
-                      ? 'bg-slate-700 border-slate-600 text-slate-200 placeholder-slate-500' 
-                      : 'bg-slate-50 border-slate-200 text-slate-700 placeholder-slate-400'
+                      ? 'bg-slate-700/50 border-slate-600 text-slate-100 placeholder-slate-500' 
+                      : 'bg-gray-100 border-gray-300 text-gray-800 placeholder-gray-500'
                   }`}
                 />
                 <button 
                   type="submit" 
-                  className={`absolute right-1.5 top-1/2 transform -translate-y-1/2 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white text-xs font-medium rounded-md hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200`}
+                  className={`absolute right-1 top-1/2 transform -translate-y-1/2 px-4 py-1.5 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white text-xs font-semibold rounded-md transition-all duration-200 border border-slate-500`}
                 >
                   Search
                 </button>
@@ -1620,21 +1624,20 @@ const LegalCosultation = () => {
               )}
             </div>
 
-            {/* Compact Category Filter */}
+            {/* Professional Category Filter */}
             <div
-              className={`transition-all duration-300 overflow-hidden ${
-                showFilters ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0'
-              }`}
+              className={`transition-all duration-300 overflow-hidden border-t ${isDarkMode ? 'border-slate-700/50' : 'border-gray-200'}`}
+              style={{ maxHeight: showFilters ? '500px' : '0px' }}
             >
-              <div className="p-4">
-                <div className="flex items-center mb-3">
-                  <FaBalanceScale className={`mr-1.5 text-sm ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                  <h3 className={`font-medium text-sm ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
-                    Legal Areas
+              <div className={`p-5 ${isDarkMode ? 'bg-slate-800/50' : 'bg-gray-50'}`}>
+                <div className="flex items-center mb-4">
+                  <FaBalanceScale className={`mr-2 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`} />
+                  <h3 className={`font-semibold text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Legal Specializations
                   </h3>
                 </div>
                 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+                <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 max-h-64 overflow-y-auto transition-all duration-300 opacity-100`}>
                   {categories.map((category) => {
                     const IconComponent = category.icon;
                     const isSelected = selectedCategory === category.name;
@@ -1646,35 +1649,35 @@ const LegalCosultation = () => {
                           setSelectedCategory(category.name);
                           setCurrentPage(1);
                         }}
-                        className={`group relative p-3 rounded-lg text-left transition-all duration-200 hover:scale-[1.02] ${
+                        className={`group relative p-3 rounded-lg text-left transition-all duration-200 border ${
                           isSelected
-                            ? `text-white shadow-md`
+                            ? `text-white shadow-md border-slate-500`
                           : isDarkMode
-                              ? 'bg-slate-700/50 hover:bg-slate-600/50 text-slate-300'
-                              : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/50'
+                              ? 'bg-slate-700/30 hover:bg-slate-700/50 text-slate-300 border-slate-600/30 hover:border-slate-600'
+                              : 'bg-white hover:bg-gray-100 text-gray-700 border-gray-300/50 hover:border-gray-400'
                         }`}
                         style={{
-                          backgroundColor: isSelected ? category.color : undefined,
-                          boxShadow: isSelected ? `0 4px 15px -2px ${category.color}30` : undefined
+                          backgroundColor: isSelected ? '#4B5563' : undefined,
+                          boxShadow: isSelected ? `0 4px 12px -2px rgba(75, 85, 99, 0.3)` : undefined
                         }}
                       >
                         <div className="flex items-center justify-between mb-1">
                           <IconComponent className={`text-sm ${
-                            isSelected ? 'text-white' : isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                            isSelected ? 'text-gray-200' : isDarkMode ? 'text-slate-400' : 'text-gray-600'
                           }`} />
                           {isSelected && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-white opacity-70"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-slate-200 opacity-70"></div>
                           )}
                         </div>
-                        <h4 className={`font-medium text-xs mb-0.5 ${
-                          isSelected ? 'text-white' : isDarkMode ? 'text-white' : 'text-slate-800'
+                        <h4 className={`font-semibold text-xs mb-0.5 ${
+                          isSelected ? 'text-gray-100' : isDarkMode ? 'text-white' : 'text-gray-900'
                         }`}>
                           {category.name}
                         </h4>
                         <p className={`text-[10px] leading-tight ${
-                          isSelected ? 'text-white/70' : isDarkMode ? 'text-slate-500' : 'text-slate-500'
+                          isSelected ? 'text-gray-200/80' : isDarkMode ? 'text-slate-500' : 'text-gray-600'
                         }`}>
-                          {category.description.split(' ').slice(0, 3).join(' ')}...
+                          {category.description.split(' ').slice(0, 2).join(' ')}
                         </p>
                     </button>
                     );
@@ -1684,13 +1687,15 @@ const LegalCosultation = () => {
             </div>
           </div>
 
-          {/* Compact Loading State */}
+          {/* Premium Loading State */}
           {loading && (
-            <div className={`rounded-xl p-8 text-center ${
-              isDarkMode ? 'bg-slate-800/50' : 'bg-white/50'
-            }`} style={{ boxShadow: currentTheme.shadow.sm }}>
+            <div className={`rounded-2xl p-12 text-center border ${
+              isDarkMode 
+                ? 'bg-gradient-to-br from-slate-800 to-slate-700/50 border-slate-700/50' 
+                : 'bg-gradient-to-br from-white to-gray-50 border-gray-300/50'
+            }`} style={{ boxShadow: currentTheme.shadow.md }}>
               <div className="flex flex-col items-center">
-                <div className="relative mb-4">
+                <div className="relative mb-6">
               <Lottie
                 loop
                 animationData={lawyerSearchAnimation}
@@ -1699,56 +1704,57 @@ const LegalCosultation = () => {
                   />
                 </div>
                 
-                <h3 className={`text-lg font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+                <h3 className={`text-lg font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   Finding Legal Experts
                 </h3>
-                <p className={`mb-3 text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                  Searching for qualified lawyers...
+                <p className={`mb-4 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`}>
+                  Searching for qualified professionals...
                 </p>
                 
-                <div className="flex items-center gap-1">
-                  <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isDarkMode ? 'bg-emerald-500' : 'bg-emerald-600'}`}></div>
-                  <div className={`w-1.5 h-1.5 rounded-full animate-pulse delay-100 ${isDarkMode ? 'bg-emerald-500' : 'bg-emerald-600'}`}></div>
-                  <div className={`w-1.5 h-1.5 rounded-full animate-pulse delay-200 ${isDarkMode ? 'bg-emerald-500' : 'bg-emerald-600'}`}></div>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full animate-pulse ${isDarkMode ? 'bg-slate-500' : 'bg-gray-600'}`}></div>
+                  <div className={`w-2 h-2 rounded-full animate-pulse delay-100 ${isDarkMode ? 'bg-slate-500' : 'bg-gray-600'}`}></div>
+                  <div className={`w-2 h-2 rounded-full animate-pulse delay-200 ${isDarkMode ? 'bg-slate-500' : 'bg-gray-600'}`}></div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Enhanced Error State */}
+          {/* Premium Error State */}
           {error && !loading && (
-            <div className={`rounded-2xl p-12 mb-8 text-center ${
+            <div className={`rounded-2xl p-12 mb-8 text-center border ${
               isDarkMode 
-                ? 'bg-gradient-to-br from-red-900/20 to-slate-800 border border-red-800/50' 
-                : 'bg-gradient-to-br from-red-50 to-white border border-red-200'
+                ? 'bg-gradient-to-br from-slate-800 to-slate-700/50 border-slate-700/50' 
+                : 'bg-gradient-to-br from-white to-gray-50 border-gray-300/50'
             }`} style={{ boxShadow: currentTheme.shadow.lg }}>
               <div className="flex flex-col items-center">
                 <div className="relative mb-6">
                   <div className={`w-20 h-20 rounded-full flex items-center justify-center ${
-                    isDarkMode ? 'bg-red-900/30' : 'bg-red-100'
+                    isDarkMode ? 'bg-slate-700/50' : 'bg-gray-200'
                   }`}>
-                    <FaExclamationTriangle className={`text-3xl ${isDarkMode ? 'text-red-400' : 'text-red-600'}`} />
-                  </div>
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-                    <FaTimes className="text-white text-xs" />
+                    <FaExclamationTriangle className={`text-3xl ${isDarkMode ? 'text-slate-400' : 'text-gray-600'}`} />
                   </div>
                 </div>
                 
-                <h3 className={`text-2xl font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
-                  {error.includes('login') ? '🔐 Authentication Required' : '⚠️ Service Temporarily Unavailable'}
+                <h3 className={`text-2xl font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {error.includes('login') ? 'Authentication Required' : 'Service Temporarily Unavailable'}
                 </h3>
                 
-                <p className={`mb-8 max-w-lg text-lg leading-relaxed ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                <p className={`mb-8 max-w-lg text-base leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-gray-700'}`}>
                   {error.includes('login') 
                     ? 'Please log in to access our comprehensive database of qualified lawyers and book consultations.'
                     : 'We\'re experiencing temporary difficulties loading lawyer profiles. Our team is working to resolve this quickly.'
                   }
                 </p>
                 
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <button 
                     onClick={() => fetchLawyers(1, true)}
-                    className="group px-8 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold rounded-xl hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+                    className={`group px-6 py-2.5 font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 border ${
+                      isDarkMode
+                        ? 'bg-slate-700 hover:bg-slate-600 text-slate-100 border-slate-600'
+                        : 'bg-gray-800 hover:bg-gray-900 text-white border-gray-700'
+                    }`}
                   >
                     <FaSync className="text-sm group-hover:rotate-180 transition-transform duration-200" />
                     Try Again
@@ -1759,21 +1765,25 @@ const LegalCosultation = () => {
                       onClick={() => {
                         window.location.href = '/auth';
                       }}
-                      className="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+                      className={`px-6 py-2.5 font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 border ${
+                        isDarkMode
+                          ? 'bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white border-slate-600'
+                          : 'bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white border-gray-700'
+                      }`}
                     >
                       <FaUserCheck className="text-sm" />
-                      Login to Continue
+                      Login
                     </button>
                   )}
                 </div>
 
-                <div className={`mt-8 p-4 rounded-xl ${
-                  isDarkMode ? 'bg-slate-800/50' : 'bg-emerald-50/50'
+                <div className={`mt-8 p-4 rounded-lg border ${
+                  isDarkMode ? 'bg-slate-800/30 border-slate-700/50' : 'bg-gray-100 border-gray-300/50'
                 }`}>
                   <div className="flex items-center justify-center gap-2 text-sm">
-                    <FaInfoCircle className={isDarkMode ? 'text-emerald-400' : 'text-emerald-600'} />
-                    <span className={isDarkMode ? 'text-slate-400' : 'text-slate-600'}>
-                      Need immediate assistance? Contact our support team
+                    <FaInfoCircle className={isDarkMode ? 'text-slate-400' : 'text-gray-600'} />
+                    <span className={isDarkMode ? 'text-slate-400' : 'text-gray-700'}>
+                      Need assistance? Contact our support team
                     </span>
                   </div>
                 </div>
@@ -1781,35 +1791,32 @@ const LegalCosultation = () => {
             </div>
           )}
 
-          {/* Enhanced Empty State */}
+          {/* Premium Empty State */}
           {!loading && !error && lawyers.length === 0 && (
-            <div className={`rounded-2xl p-12 mb-8 text-center ${
+            <div className={`rounded-2xl p-12 mb-8 text-center border ${
               isDarkMode 
-                ? 'bg-gradient-to-br from-slate-800 to-slate-700' 
-                : 'bg-gradient-to-br from-blue-50 to-indigo-50'
+                ? 'bg-gradient-to-br from-slate-800 to-slate-700/50 border-slate-700/50' 
+                : 'bg-gradient-to-br from-white to-gray-50 border-gray-300/50'
             }`} style={{ boxShadow: currentTheme.shadow.lg }}>
               <div className="flex flex-col items-center justify-center">
                 <div className="relative mb-8">
                   <div className={`w-24 h-24 rounded-full flex items-center justify-center ${
-                    isDarkMode ? 'bg-slate-700' : 'bg-white'
+                    isDarkMode ? 'bg-slate-700/50' : 'bg-gray-200'
                   }`} style={{ boxShadow: currentTheme.shadow.md }}>
-                    <FaUserTie className={`text-4xl ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`} />
-                  </div>
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
-                    <FaSearch className="text-white text-xs" />
+                    <FaUserTie className={`text-4xl ${isDarkMode ? 'text-slate-500' : 'text-gray-600'}`} />
                   </div>
                 </div>
                 
-                <h3 className={`text-2xl font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
-                  🔍 No Lawyers Found
+                <h3 className={`text-2xl font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  No Lawyers Found
                 </h3>
-                <p className={`mb-8 max-w-lg text-lg leading-relaxed ${
-                  isDarkMode ? 'text-slate-300' : 'text-slate-600'
+                <p className={`mb-8 max-w-lg text-base leading-relaxed ${
+                  isDarkMode ? 'text-slate-400' : 'text-gray-700'
                 }`}>
                   We couldn't find any lawyers matching your current search criteria. Try expanding your search or exploring different specializations.
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+                <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
                   <button 
                     onClick={() => {
                       setSelectedCategory('All');
@@ -1817,18 +1824,22 @@ const LegalCosultation = () => {
                       setCurrentPage(1);
                       fetchLawyers(1, true);
                     }}
-                    className="px-8 py-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white font-semibold rounded-xl hover:from-emerald-700 hover:to-green-700 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+                    className={`px-6 py-2.5 font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 border ${
+                      isDarkMode
+                        ? 'bg-slate-700 hover:bg-slate-600 text-slate-100 border-slate-600'
+                        : 'bg-gray-800 hover:bg-gray-900 text-white border-gray-700'
+                    }`}
                   >
                     <FaSync className="text-sm" />
-                    Clear All Filters
+                    Clear Filters
                   </button>
                   
                   <button 
                     onClick={() => setShowFilters(true)}
-                    className={`px-8 py-3 font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 ${
-                      isDarkMode 
-                        ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 border border-slate-600' 
-                        : 'bg-white text-slate-700 hover:bg-slate-50 border-2 border-slate-200 hover:border-slate-300'
+                    className={`px-6 py-2.5 font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 border ${
+                      isDarkMode
+                        ? 'bg-slate-700/50 hover:bg-slate-600 text-slate-200 border-slate-600/50 hover:border-slate-600'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-300'
                     }`}
                   >
                     <FaFilter className="text-sm" />
@@ -1836,41 +1847,43 @@ const LegalCosultation = () => {
                   </button>
                 </div>
 
-                <div className={`p-6 rounded-xl ${
-                  isDarkMode ? 'bg-slate-800/50' : 'bg-white/80'
+                <div className={`p-6 rounded-lg border ${
+                  isDarkMode 
+                    ? 'bg-slate-800/30 border-slate-700/50' 
+                    : 'bg-gray-100 border-gray-300/50'
                 }`}>
-                  <h4 className={`font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
-                    💡 Search Tips
+                  <h4 className={`font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Search Tips
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                      <span className={isDarkMode ? 'text-slate-300' : 'text-slate-600'}>
+                      <div className={`w-2 h-2 rounded-full ${isDarkMode ? 'bg-slate-500' : 'bg-gray-600'}`}></div>
+                      <span className={isDarkMode ? 'text-slate-400' : 'text-gray-700'}>
                         Try broader search terms
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                      <span className={isDarkMode ? 'text-slate-300' : 'text-slate-600'}>
+                      <div className={`w-2 h-2 rounded-full ${isDarkMode ? 'bg-slate-500' : 'bg-gray-600'}`}></div>
+                      <span className={isDarkMode ? 'text-slate-400' : 'text-gray-700'}>
                         Check different legal areas
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className={isDarkMode ? 'text-slate-300' : 'text-slate-600'}>
+                      <div className={`w-2 h-2 rounded-full ${isDarkMode ? 'bg-slate-500' : 'bg-gray-600'}`}></div>
+                      <span className={isDarkMode ? 'text-slate-400' : 'text-gray-700'}>
                         Expand location search
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                      <span className={isDarkMode ? 'text-slate-300' : 'text-slate-600'}>
+                      <div className={`w-2 h-2 rounded-full ${isDarkMode ? 'bg-slate-500' : 'bg-gray-600'}`}></div>
+                      <span className={isDarkMode ? 'text-slate-400' : 'text-gray-700'}>
                         Contact support for help
                       </span>
                     </div>
                   </div>
                 </div>
                 
-                <div className="flex flex-wrap gap-3 justify-center">
+                <div className="flex flex-wrap gap-3 justify-center mt-6">
                   <button 
                     onClick={() => {
                       setSelectedCategory('All');
@@ -1878,68 +1891,74 @@ const LegalCosultation = () => {
                       setCurrentPage(1);
                       fetchLawyers(1, true);
                     }}
-                    className={`px-4 py-2 rounded-lg transition-colors flex items-center ${
+                    className={`px-4 py-2 rounded-lg transition-colors flex items-center border ${
                       isDarkMode 
-                        ? 'bg-slate-700 hover:bg-slate-600 text-white' 
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
+                        ? 'bg-slate-700/50 hover:bg-slate-700 text-slate-200 border-slate-600' 
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-300'
                     }`}
                   >
                     <FaTimes className="mr-2" />
-                    Reset Filters
+                    Reset
                   </button>
                   
                   {!isAuthenticated && (
                     <button 
                       onClick={() => {
-                        // Redirect to login page
                         window.location.href = '/auth';
                       }}
-                      className="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors flex items-center"
+                      className={`px-4 py-2 rounded-lg transition-colors flex items-center border ${
+                        isDarkMode
+                          ? 'bg-slate-600 hover:bg-slate-700 text-white border-slate-500'
+                          : 'bg-gray-800 hover:bg-gray-900 text-white border-gray-700'
+                      }`}
                     >
                       <FaUserCheck className="mr-2" />
-                      Login for More Options
+                      Login
                     </button>
                   )}
                 </div>
                 
                 {selectedCategory !== 'All' && (
-                  <div className="mt-4 text-sm">
-                    <p>Currently filtering by: <span className="font-semibold">{selectedCategory}</span></p>
+                  <div className={`mt-4 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-700'}`}>
+                    <p>Filtering by: <span className="font-semibold">{selectedCategory}</span></p>
                   </div>
                 )}
                 
                 {searchQuery && (
-                  <div className="mt-2 text-sm">
-                    <p>Search term: <span className="font-semibold">"{searchQuery}"</span></p>
+                  <div className={`mt-2 text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-700'}`}>
+                    <p>Search: <span className="font-semibold">"{searchQuery}"</span></p>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* Professional Lawyers Grid - Compact & Clean */}
+          {/* Professional Lawyers Cards - Premium Silver Style */}
           {!loading && !error && lawyers.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-6">
               {lawyers.map((lawyer) => (
                 <div
                   key={lawyer.id}
-                  className={`group relative rounded-xl overflow-hidden transition-all duration-200 hover:scale-[1.01] ${
+                  className={`rounded-2xl transition-all duration-300 hover:shadow-2xl hover:scale-100 overflow-hidden ${
                     isDarkMode 
-                      ? 'bg-gradient-to-br from-slate-800/80 to-slate-700/80 hover:from-slate-700/80 hover:to-slate-600/80 border border-slate-600/30' 
-                      : 'bg-gradient-to-br from-white to-slate-50/50 hover:from-slate-50 hover:to-slate-100/50 border border-slate-200/50'
+                      ? 'bg-gradient-to-br from-[#2C2C2C] to-[#262626] border border-[#3A3A3A]/50' 
+                      : 'bg-gradient-to-br from-white to-gray-50 border border-gray-200/60'
                   }`}
-                  style={{ boxShadow: currentTheme.shadow.sm }}
+                  style={{ boxShadow: currentTheme.shadow.lg }}
                 >
-                  {/* Header Section */}
-                  <div className="p-4 border-b border-slate-200/10">
-                    <div className="flex items-start justify-between">
-                      {/* Profile & Info */}
-                      <div className="flex items-center space-x-3">
+                  {/* Premium Top Accent Bar */}
+                  <div className="h-1 bg-gradient-to-r from-slate-400 via-gray-300 to-slate-400"></div>
+
+                  <div className="p-5">
+                    {/* Header - Profile Picture & Info */}
+                    <div className="flex gap-4 mb-4 items-start">
+                      {/* Profile Picture - Circular */}
+                      <div className="flex-shrink-0">
                         {lawyer.profile_picture_url && lawyer.profile_picture_url.trim() !== '' ? (
                           <img
                             src={lawyer.profile_picture_url}
                             alt={lawyer.full_name}
-                            className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-lg"
+                            className="w-16 h-16 rounded-full object-cover shadow-md border-3 border-slate-200 dark:border-slate-600"
                             onError={(e) => {
                               e.target.style.display = 'none';
                               e.target.nextSibling.style.display = 'flex';
@@ -1948,7 +1967,7 @@ const LegalCosultation = () => {
                         ) : null}
                         
                         <div 
-                          className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg ${
+                          className={`w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md border-3 border-slate-200 dark:border-slate-600 ${
                             lawyer.profile_picture_url && lawyer.profile_picture_url.trim() !== '' ? 'hidden' : 'flex'
                           }`}
                           style={{
@@ -1957,112 +1976,90 @@ const LegalCosultation = () => {
                         >
                           {getInitials(lawyer.full_name)}
                         </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <h3 className={`font-semibold text-sm truncate ${
-                            isDarkMode ? 'text-white' : 'text-slate-900'
-                          }`}>
-                            {lawyer.full_name}
-                          </h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-gradient-to-r from-emerald-500 to-green-600 text-white">
-                              {lawyer.specialization}
-                            </span>
-                      {lawyer.is_verified && (
-                              <div className="flex items-center">
-                                <MdVerified className="text-emerald-500 text-sm" />
-                        </div>
-                      )}
+                      </div>
+
+                      {/* Name & Specialization */}
+                      <div className="flex-1 min-w-0">
+                        <h2 className={`text-base font-bold truncate ${
+                          isDarkMode ? 'text-white' : 'text-gray-900'
+                        }`}>
+                          {lawyer.full_name}
+                        </h2>
+                        <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} truncate font-medium`}>
+                          {lawyer.specialization}
+                        </p>
+                        {lawyer.is_verified && (
+                          <div className="flex items-center gap-1 mt-1.5 text-xs">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                            <span className={isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}>Verified</span>
                           </div>
-                      </div>
-                    </div>
-
-                      {/* Fee Badge */}
-                      <div className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                        isDarkMode ? 'bg-amber-600/20 text-amber-300' : 'bg-amber-50 text-amber-700'
-                      }`}>
-                        ₹{lawyer.consultation_fee}/hr
-                      </div>
-                    </div>
-                    </div>
-
-                  {/* Stats Section */}
-                  <div className="px-4 py-3">
-                    <div className="grid grid-cols-3 gap-3 text-center">
-                      <div>
-                        <div className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                          {lawyer.years_of_experience}
-                        </div>
-                        <div className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                          Years
-                        </div>
-                      </div>
-                      <div>
-                        <div className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                          {lawyer.appointments_count || 0}
-                        </div>
-                        <div className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                          Cases
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-center">
-                        {renderStars(lawyer.reviews_count > 0 ? 4.5 : 0).map((star, index) => (
-                          <span key={index} className="text-xs">{star}</span>
-                        ))}
-                      </div>
-                        <div className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                          ({lawyer.reviews_count || 0})
-                    </div>
-                  </div>
-                      </div>
-                    </div>
-                    
-                  {/* Contact Info */}
-                  <div className="px-4 py-2 space-y-1">
-                      <div className={`flex items-center text-xs ${
-                      isDarkMode ? 'text-slate-300' : 'text-slate-600'
-                      }`}>
-                      <HiOutlineLocationMarker className={`w-3 h-3 mr-1.5 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                      <span className="truncate flex-1">{lawyer.location || lawyer.bar_association}</span>
-                        
-                        {locationEnabled && lawyer.distance && (
-                        <span className="ml-1 px-1.5 py-0.5 bg-green-100 text-green-700 text-[10px] rounded">
-                            {lawyer.distance < 1 
-                              ? `${(lawyer.distance * 1000).toFixed(0)}m` 
-                              : `${lawyer.distance.toFixed(1)}km`}
-                          </span>
                         )}
                       </div>
-                      
-                      <div className={`flex items-center text-xs ${
-                      isDarkMode ? 'text-slate-300' : 'text-slate-600'
-                      }`}>
-                      <FaPhoneAlt className={`w-3 h-3 mr-1.5 ${isDarkMode ? 'text-amber-400' : 'text-amber-600'}`} />
-                        <span className="truncate">{lawyer.phone_number}</span>
+                    </div>
+
+                    {/* Bio/Description */}
+                    <p className={`text-xs leading-relaxed mb-4 line-clamp-2 ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      {lawyer.bio || `Experienced ${lawyer.specialization} lawyer with ${lawyer.years_of_experience} years of practice.`}
+                    </p>
+
+                    {/* Stats Section - Professional Silver Style */}
+                    <div className="grid grid-cols-3 gap-2 mb-4 py-3 px-2.5 rounded-lg" style={{
+                      backgroundColor: isDarkMode ? 'rgba(55, 55, 55, 0.5)' : 'rgba(248, 250, 252, 0.8)'
+                    }}>
+                      {/* Experience */}
+                      <div className="text-center">
+                        <div className={`text-xs font-semibold mb-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Years</div>
+                        <div className={`text-base font-bold ${
+                          isDarkMode ? 'text-gray-200' : 'text-gray-800'
+                        }`}>
+                          {lawyer.years_of_experience}
+                        </div>
+                      </div>
+
+                      {/* Cases */}
+                      <div className="text-center">
+                        <div className={`text-xs font-semibold mb-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Cases</div>
+                        <div className={`text-base font-bold ${
+                          isDarkMode ? 'text-gray-200' : 'text-gray-800'
+                        }`}>
+                          {lawyer.appointments_count || 0}
+                        </div>
+                      </div>
+
+                      {/* Rating */}
+                      <div className="text-center">
+                        <div className={`text-xs font-semibold mb-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Rating</div>
+                        <div className={`text-base font-bold ${
+                          isDarkMode ? 'text-gray-200' : 'text-gray-800'
+                        }`}>
+                          4.5
+                        </div>
                       </div>
                     </div>
-                    
-                  {/* Action Buttons */}
-                  <div className="px-4 py-3 pt-2 border-t border-slate-200/10">
-                    <div className="flex gap-2">
+
+                    {/* Action Buttons - Gray & Silver Styling */}
+                    <div className="flex gap-2.5">
                       <button
                         onClick={() => viewLawyerDetails(lawyer)}
-                        className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium border transition-all duration-200 flex items-center justify-center gap-1 ${
+                        className={`flex-1 py-2 px-3 rounded-lg font-semibold text-xs transition-all duration-200 border ${
                           isDarkMode 
-                            ? 'border-amber-500/50 text-amber-400 hover:bg-amber-500/10' 
-                            : 'border-amber-600/50 text-amber-600 hover:bg-amber-50'
+                            ? 'bg-gray-800 hover:bg-gray-700 text-gray-100 border-gray-700 hover:border-gray-600' 
+                            : 'bg-gray-900 hover:bg-gray-800 text-white border-gray-800 hover:border-gray-700'
                         }`}
                       >
-                        <HiOutlineShieldCheck className="text-sm" />
-                        Details
+                        View Profile
                       </button>
                       <button
                         onClick={() => startBooking(lawyer)}
-                        className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white text-xs font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                        className={`flex-1 py-2 px-3 rounded-lg font-semibold text-xs transition-all duration-200 border ${
+                          isDarkMode
+                            ? 'bg-gradient-to-r from-gray-700 to-slate-600 hover:from-gray-600 hover:to-slate-500 text-gray-100 border-slate-600 hover:border-slate-500'
+                            : 'bg-gradient-to-r from-gray-400 to-slate-300 hover:from-gray-500 hover:to-slate-400 text-gray-900 border-gray-300 hover:border-gray-400'
+                        }`}
                       >
-                        <FaCalendarAlt className="text-xs" />
-                        Book Now
+                        Message
                       </button>
                     </div>
                   </div>
@@ -3006,8 +3003,8 @@ const LegalCosultation = () => {
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
       isDarkMode 
-        ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
-        : 'bg-gradient-to-br from-slate-50 via-white to-blue-50'
+        ? 'bg-[#0A0A0A]' 
+        : 'bg-white'
     }`}>
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-0" ref={contentRef}>
         {/* Optimized Content Container */}
@@ -3016,13 +3013,13 @@ const LegalCosultation = () => {
         </div>
         </div>
         
-      {/* Subtle Background Elements */}
+      {/* Subtle Background Elements - Professional Hero Style */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className={`absolute -top-32 -right-32 w-64 h-64 rounded-full opacity-10 ${
-          isDarkMode ? 'bg-emerald-500' : 'bg-emerald-200'
+        <div className={`absolute -top-32 -right-32 w-64 h-64 rounded-full opacity-[0.08] ${
+          isDarkMode ? 'bg-blue-400' : 'bg-blue-100'
         } blur-3xl`}></div>
-        <div className={`absolute -bottom-32 -left-32 w-80 h-80 rounded-full opacity-10 ${
-          isDarkMode ? 'bg-purple-500' : 'bg-purple-200'
+        <div className={`absolute -bottom-32 -left-32 w-80 h-80 rounded-full opacity-[0.06] ${
+          isDarkMode ? 'bg-blue-500' : 'bg-blue-50'
         } blur-3xl`}></div>
       </div>
     </div>

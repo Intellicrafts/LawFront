@@ -956,7 +956,7 @@ export const Signup = ({ onSignupSuccess }) => {
   const isDarkMode = mode === 'dark';
 
   return (
-    <div className={`min-h-screen mt-6 flex flex-col relative overflow-hidden ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <div className={`min-h-screen mt-6 flex flex-col relative overflow-hidden ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
       {/* Toast notification positioned on the right */}
       {toast && (
         <Toast 
@@ -1287,10 +1287,6 @@ export const Signup = ({ onSignupSuccess }) => {
             </>
           )}
         </div>
-      </div>
-      
-      <div className={`py-3 text-center text-xs ${isDarkMode ? 'text-gray-500 bg-gray-900 border-t border-gray-800' : 'text-gray-500 bg-gray-50 border-t border-gray-100'}`}>
-        © 2025 MeraBakil. All rights reserved.
       </div>
     </div>
   );

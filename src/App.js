@@ -20,7 +20,6 @@ import About from './components/About';
 import Testimonials from './components/Testimonials';
 import Founders from './components/Founders';
 import Contact from './components/Contact';
-import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import { Login as AuthComponent } from './components/AuthComponent';
 import { Signup as SignupComponent } from './components/SignupComponent';
@@ -60,7 +59,6 @@ const AppLayout = ({ children }) => {
       {!isLawyerAdmin && <Navbar />}
       <ScrollToTop />
       {children}
-      {!isLawyerAdmin && !isHomePage && !isProfilePage && <Footer />}
       {!isLawyerAdmin && <FloatingThemeToggle />}
     </>
   );
