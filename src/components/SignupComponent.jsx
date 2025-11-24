@@ -103,7 +103,7 @@ const LegalStrip = () => {
 // Premium Logo component with black/silver gradient and Scale icon
 const Logo = () => {
   return (
-    <div className="flex justify-center mb-4 animate-fadeIn">
+    <div className="flex justify-center mb-4">
       <div 
         className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-300 overflow-hidden border border-gray-700/50"
         style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)" }}
@@ -190,7 +190,7 @@ const CustomCheckbox = ({ id, checked, onChange, label, disabled = false, isDark
           {checked && (
             <Check 
               size={14} 
-              className={`${isDarkMode ? 'text-gray-900' : 'text-white'} animate-in zoom-in duration-200`} 
+              className={`${isDarkMode ? 'text-gray-900' : 'text-white'}`} 
               strokeWidth={3}
             />
           )}
@@ -577,7 +577,6 @@ export const Signup = ({ onSignupSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [fadeIn, setFadeIn] = useState(false);
   const [step, setStep] = useState(1);
   const [toast, setToast] = useState(null);
   
@@ -586,11 +585,6 @@ export const Signup = ({ onSignupSuccess }) => {
   const [copCertificate, setCopCertificate] = useState(null);
   const [enrollmentCertificate, setEnrollmentCertificate] = useState(null);
   const [addressProof, setAddressProof] = useState(null);
-
-  useEffect(() => {
-    // Trigger fade-in animation after component mounts
-    setFadeIn(true);
-  }, []);
   
   // Reset lawyer-specific fields when account type changes
   useEffect(() => {
@@ -987,13 +981,13 @@ export const Signup = ({ onSignupSuccess }) => {
       
       <div className="flex-1 flex items-center justify-center p-4 z-10">
         <div 
-          className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-xl p-6 w-full max-w-md transition-all duration-700 transform ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+          className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-xl p-6 w-full max-w-md`}
           style={{ boxShadow: isDarkMode ? '0 10px 25px -5px rgba(0, 0, 0, 0.3)' : '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
         >
           <div className="text-center mb-5">
             <Logo />
             <h2 className={`text-xl font-bold mb-1.5 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Create Account</h2>
-            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Join MeraBakil today</p>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Join Mera Vakil today</p>
           </div>
           
           {/* Step indicator */}
@@ -1112,7 +1106,7 @@ export const Signup = ({ onSignupSuccess }) => {
                       {agreeTerms && (
                         <Check 
                           size={14} 
-                          className={`${isDarkMode ? 'text-gray-900' : 'text-white'} animate-in zoom-in duration-200`} 
+                          className={`${isDarkMode ? 'text-gray-900' : 'text-white'}`} 
                           strokeWidth={3}
                         />
                       )}

@@ -1,75 +1,226 @@
-/* Enhanced Virtual Bakil Styles - Header Friendly & Smooth Zoom */
+/* Professional Virtual Bakil - Premium SaaS Styling */
 
-/* Smooth Map Animations - All Devices */
+/* Root Variables */
+:root {
+  --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  --premium-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --blur-sm: blur(10px);
+  --blur-md: blur(15px);
+  --blur-lg: blur(20px);
+  
+  /* Professional color schemes */
+  --light-bg: #f8fafc;
+  --light-bg-secondary: #f1f5f9;
+  --light-text: #1e293b;
+  --light-text-secondary: #64748b;
+  --light-border: #e2e8f0;
+  
+  --dark-bg: #0f172a;
+  --dark-bg-secondary: #1e293b;
+  --dark-text: #f8fafc;
+  --dark-text-secondary: #cbd5e1;
+  --dark-border: #334155;
+  
+  /* Hero section inspired gradients */
+  --gradient-hero-light: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-hero-dark: linear-gradient(135deg, #1e3a8a 0%, #5b21b6 100%);
+}
+
+/* Smooth Map Container */
 .leaflet-container {
   background: transparent !important;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
-}
-
-/* Smooth Zoom Transitions */
-.leaflet-zoom-anim .leaflet-zoom-animated {
-  transition: transform 0.25s cubic-bezier(0.4, 0.0, 0.2, 1) !important;
-}
-
-.leaflet-fade-anim .leaflet-tile {
-  transition: opacity 0.2s linear !important;
-}
-
-/* Enhanced Smooth Zoom for Mobile & Desktop */
-.leaflet-container {
   -webkit-tap-highlight-color: transparent !important;
   -webkit-touch-callout: none !important;
   -webkit-user-select: none !important;
-  -moz-user-select: none !important;
-  -ms-user-select: none !important;
   user-select: none !important;
 }
 
-/* Professional Marker Animations */
-.lawyer-marker {
+/* Professional Marker Styling - FIXED NO JUMPING */
+.professional-lawyer-marker,
+.professional-legal-body-marker {
+  /* Prevent any repositioning on hover */
+  will-change: auto;
+  pointer-events: auto;
+  transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.lawyer-marker-container,
+.legal-body-marker-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.marker-icon-wrapper {
+  position: relative;
+  will-change: contents;
+}
+
+.marker-circle {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 8px 24px rgba(0, 0, 0, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.lawyer-marker:hover {
-  transform: scale(1.1);
-  z-index: 1000;
+.marker-circle:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2), 0 12px 32px rgba(0, 0, 0, 0.15);
+  filter: brightness(1.1);
+  /* Only brightness changes, NO TRANSFORM */
 }
 
-.legal-body-marker {
+.marker-square {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 8px 24px rgba(0, 0, 0, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.legal-body-marker:hover {
-  transform: scale(1.1) translateY(-2px);
-  z-index: 1000;
+.marker-square:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2), 0 12px 32px rgba(0, 0, 0, 0.15);
+  filter: brightness(1.1);
+  /* Only brightness changes, NO TRANSFORM */
+}
+
+.online-badge {
+  animation: pulse-online 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-online {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+  }
+}
+
+@keyframes pulse-location {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.3;
+  }
 }
 
 .user-location-marker {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: grab;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.user-location-marker:active {
-  cursor: grabbing;
-  transform: scale(1.1);
+/* Leaflet Popup Styling - Enhanced Professional */
+.leaflet-popup-content-wrapper {
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: var(--blur-lg) !important;
+  -webkit-backdrop-filter: var(--blur-lg) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 30px 50px -10px rgba(0, 0, 0, 0.2), 0 15px 25px -10px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+  color: var(--light-text) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
 }
 
-/* Mobile Touch Enhancements */
-@media (max-width: 768px) {
-  .lawyer-marker,
-  .legal-body-marker {
-    transition: transform 0.2s ease-out;
-  }
-  
-  .user-location-marker {
-    cursor: pointer;
-  }
+.leaflet-popup-content {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1.6 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 14px !important;
+  width: auto !important;
 }
 
-/* Smooth Mobile Zoom Controls */
+.leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Dark mode popups - Enhanced */
+.leaflet-container.dark .leaflet-popup-content-wrapper {
+  background: rgba(15, 23, 42, 0.98) !important;
+  border: 1px solid rgba(139, 92, 246, 0.3) !important;
+  color: var(--dark-text) !important;
+  box-shadow: 0 30px 50px -10px rgba(0, 0, 0, 0.5), 0 15px 25px -10px rgba(0, 0, 0, 0.3) !important;
+}
+
+.leaflet-container.dark .leaflet-popup-tip {
+  background: rgba(15, 23, 42, 0.98) !important;
+  border: 1px solid rgba(139, 92, 246, 0.3) !important;
+}
+
+/* Light mode popups - Enhanced */
+.leaflet-container.light .leaflet-popup-content-wrapper {
+  background: rgba(248, 250, 252, 0.98) !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+}
+
+.leaflet-container.light .leaflet-popup-tip {
+  background: rgba(248, 250, 252, 0.98) !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Popup Close Button Styling */
+.leaflet-popup-close-button {
+  color: #667eea !important;
+  opacity: 0.7 !important;
+  transition: all 0.2s ease !important;
+}
+
+.leaflet-popup-close-button:hover {
+  opacity: 1 !important;
+}
+
+/* Lawyer and Legal Body Popup Styling */
+.lawyer-popup .leaflet-popup-content-wrapper,
+.legal-body-popup .leaflet-popup-content-wrapper {
+  min-width: 280px !important;
+}
+
+.lawyer-popup .leaflet-popup-content,
+.legal-body-popup .leaflet-popup-content {
+  display: block !important;
+}
+
+/* Professional Map Controls */
+.leaflet-control-zoom {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+  border: none !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: var(--blur-md) !important;
+}
+
+.leaflet-control-zoom a {
+  background: transparent !important;
+  border: none !important;
+  color: #374151 !important;
+  font-weight: 600 !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  width: 48px !important;
+  height: 48px !important;
+  line-height: 48px !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+  transform: scale(1.05) !important;
+  color: #1f2937 !important;
+}
+
+.leaflet-control-zoom a:active {
+  background: rgba(0, 0, 0, 0.1) !important;
+  transform: scale(0.95) !important;
+}
+
+/* Custom Zoom Controls */
 .custom-zoom-controls {
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: var(--blur-md);
+  backdrop-filter: var(--blur-md);
   -webkit-user-select: none;
   user-select: none;
   touch-action: manipulation;
@@ -79,158 +230,75 @@
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   user-select: none;
-}
-
-/* Desktop Mouse Wheel Smooth Zoom */
-@media (hover: hover) and (pointer: fine) {
-  .leaflet-container {
-    scroll-behavior: smooth;
-  }
-}
-
-/* Mobile Pinch Zoom Enhancement */
-@media (max-width: 1024px) {
-  .leaflet-container {
-    -ms-touch-action: pan-x pan-y;
-    touch-action: pan-x pan-y;
-  }
-  
-  /* Larger touch targets on mobile */
-  .custom-zoom-controls button {
-    padding: 1rem !important;
-    min-height: 48px;
-    min-width: 48px;
-  }
-  
-  /* Adjust spacing for mobile */
-  .custom-zoom-controls {
-    margin-bottom: 1rem;
-  }
-}
-
-/* Ultra-smooth animations for high-end devices */
-@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .leaflet-zoom-anim .leaflet-zoom-animated {
-    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
-  }
-  
-  .leaflet-fade-anim .leaflet-tile {
-    transition: opacity 0.35s ease-out !important;
-  }
-}
-
-/* Smooth wheel zoom for desktop */
-@media (min-width: 1025px) {
-  .leaflet-container {
-    cursor: grab;
-  }
-  
-  .leaflet-container:active {
-    cursor: grabbing;
-  }
-}
-
-/* Accessibility improvements */
-@media (prefers-reduced-motion: reduce) {
-  .leaflet-zoom-anim .leaflet-zoom-animated,
-  .leaflet-fade-anim .leaflet-tile,
-  .lawyer-marker,
-  .legal-body-marker,
-  .user-location-marker {
-    transition: none !important;
-    animation: none !important;
-  }
-}
-
-/* Professional Map Enhancements */
-.leaflet-popup-content-wrapper {
-  background: rgba(255, 255, 255, 0.98) !important;
-  backdrop-filter: blur(20px) !important;
-  border-radius: 16px !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
-}
-
-.leaflet-popup-content {
-  margin: 0 !important;
-  line-height: 1.5 !important;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
-}
-
-.leaflet-popup-tip {
-  background: rgba(255, 255, 255, 0.98) !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
-}
-
-/* Dark mode popup styles */
-@media (prefers-color-scheme: dark) {
-  .leaflet-popup-content-wrapper {
-    background: rgba(17, 24, 39, 0.98) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    color: #f9fafb !important;
-  }
-  
-  .leaflet-popup-tip {
-    background: rgba(17, 24, 39, 0.98) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  }
-}
-
-/* Enhanced marker clustering and grouping */
-.lawyer-marker-cluster {
-  background: rgba(34, 197, 94, 0.9) !important;
-  border: 3px solid rgba(34, 197, 94, 0.3) !important;
-  color: white !important;
-  font-weight: 600 !important;
-  border-radius: 50% !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* Professional loading states */
-.map-loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-.map-loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #e5e7eb;
-  border-top: 4px solid #3b82f6;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Smooth transitions for all interactive elements */
-.custom-zoom-controls,
-.compact-stats-bar,
-.floating-side-controls {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Enhanced glassmorphism effects */
+/* Smooth Zoom Animations */
+.leaflet-zoom-anim .leaflet-zoom-animated {
+  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) !important;
+}
+
+.leaflet-fade-anim .leaflet-tile {
+  transition: opacity 0.2s linear !important;
+}
+
+/* Card Animations & Effects */
+@keyframes blob {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(20px, -50px) scale(1.1);
+  }
+  50% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  75% {
+    transform: translate(50px, 50px) scale(1.05);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animate-blob:nth-child(2) {
+  animation-delay: 2s;
+}
+
+.animate-blob:nth-child(3) {
+  animation-delay: 4s;
+}
+
+/* Professional Shadows */
+.shadow-professional {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.shadow-professional-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.shadow-professional-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Glassmorphism Effects */
 .glass-effect {
   background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: var(--blur-lg);
+  -webkit-backdrop-filter: var(--blur-lg);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* Professional gradient borders */
+.glass-effect-dark {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: var(--blur-lg);
+  -webkit-backdrop-filter: var(--blur-lg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient Borders */
 .gradient-border {
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.5), rgba(139, 92, 246, 0.5));
   padding: 1px;
@@ -242,89 +310,25 @@
   border-radius: 15px;
 }
 
-/* Smooth hover effects for markers */
-.leaflet-marker-icon {
-  transition: all 0.2s ease-out !important;
+/* Professional Gradient Backgrounds */
+.gradient-legal {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.leaflet-marker-icon:hover {
-  transform: scale(1.1) translateY(-2px) !important;
-  filter: brightness(1.1) !important;
+.gradient-court {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
-/* Professional shadow effects */
-.professional-shadow {
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
+.gradient-success {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
 }
 
-.professional-shadow-lg {
-  box-shadow: 
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
+.gradient-warning {
+  background: linear-gradient(135deg, #fdbb2d 0%, #22c1c3 100%);
 }
 
-/* Professional Status Indicators */
-.status-online {
-  animation: pulse-green 2s infinite;
-}
-
-.status-busy {
-  animation: pulse-red 1.5s infinite;
-}
-
-@keyframes pulse-green {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 0.7;
-  }
-}
-
-@keyframes pulse-red {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.8;
-  }
-}
-
-/* Professional Blur Effects */
-.professional-blur {
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-/* Enhanced Modal Styling */
-.modal-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
-}
-
-.modal-scroll::-webkit-scrollbar {
-  width: 6px;
-}
-
-.modal-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.modal-scroll::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.5);
-  border-radius: 3px;
-}
-
-.modal-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(156, 163, 175, 0.7);
+.gradient-premium {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
 }
 
 /* Professional Button Styling */
@@ -332,6 +336,7 @@
   position: relative;
   overflow: hidden;
   transform: translateZ(0);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-professional::before {
@@ -386,278 +391,6 @@
   }
 }
 
-/* Enhanced Popup Styling */
-.leaflet-popup-content-wrapper {
-  border-radius: 16px !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-  border: none !important;
-  overflow: hidden !important;
-}
-
-.leaflet-popup-content {
-  margin: 0 !important;
-  border-radius: 16px !important;
-}
-
-.leaflet-popup-tip {
-  background: white !important;
-  box-shadow: none !important;
-  border: none !important;
-}
-
-.lawyer-popup .leaflet-popup-content-wrapper {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-}
-
-.legal-body-popup .leaflet-popup-content-wrapper {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
-}
-
-/* Dark mode popup styling */
-.dark .leaflet-popup-content-wrapper {
-  background: #1f2937 !important;
-  color: white !important;
-  border: 1px solid #374151 !important;
-}
-
-.dark .leaflet-popup-tip {
-  background: #1f2937 !important;
-}
-
-/* Professional Map Controls */
-.leaflet-control-zoom {
-  border-radius: 12px !important;
-  overflow: hidden !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
-  border: none !important;
-}
-
-.leaflet-control-zoom a {
-  background: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(10px) !important;
-  border: none !important;
-  color: #374151 !important;
-  font-weight: 600 !important;
-  transition: all 0.3s !important;
-}
-
-.leaflet-control-zoom a:hover {
-  background: rgba(255, 255, 255, 1) !important;
-  transform: scale(1.05) !important;
-}
-
-/* Professional Animations */
-@keyframes slideInFromTop {
-  from {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideInFromBottom {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideInFromLeft {
-  from {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideInFromRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes bounceIn {
-  0%, 20%, 40%, 60%, 80%, 100% {
-    animation-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
-  }
-  0% {
-    opacity: 0;
-    transform: scale3d(.3, .3, .3);
-  }
-  20% {
-    transform: scale3d(1.1, 1.1, 1.1);
-  }
-  40% {
-    transform: scale3d(.9, .9, .9);
-  }
-  60% {
-    opacity: 1;
-    transform: scale3d(1.03, 1.03, 1.03);
-  }
-  80% {
-    transform: scale3d(.97, .97, .97);
-  }
-  100% {
-    opacity: 1;
-    transform: scale3d(1, 1, 1);
-  }
-}
-
-.animate-slide-in-top {
-  animation: slideInFromTop 0.5s ease-out;
-}
-
-.animate-slide-in-bottom {
-  animation: slideInFromBottom 0.5s ease-out;
-}
-
-.animate-slide-in-left {
-  animation: slideInFromLeft 0.5s ease-out;
-}
-
-.animate-slide-in-right {
-  animation: slideInFromRight 0.5s ease-out;
-}
-
-.animate-bounce-in {
-  animation: bounceIn 0.8s ease-out;
-}
-
-/* Professional Gradient Backgrounds */
-.gradient-legal {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.gradient-court {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-}
-
-.gradient-success {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-.gradient-warning {
-  background: linear-gradient(135deg, #fdbb2d 0%, #22c1c3 100%);
-}
-
-.gradient-premium {
-  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-}
-
-/* Enhanced Glassmorphism Effects */
-.glass-effect {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.glass-effect-dark {
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Professional Typography */
-.text-legal {
-  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-}
-
-/* Professional Shadows */
-.shadow-professional {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.shadow-professional-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.shadow-professional-xl {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .lawyer-marker,
-  .legal-body-marker {
-    transform: scale(0.9);
-  }
-  
-  .user-location-marker {
-    transform: scale(0.95);
-  }
-  
-  .modal-scroll {
-    max-height: 60vh;
-  }
-}
-
-@media (max-width: 640px) {
-  .lawyer-marker,
-  .legal-body-marker {
-    transform: scale(0.8);
-  }
-  
-  .user-location-marker {
-    transform: scale(0.85);
-  }
-}
-
-/* Professional Focus States */
-.focus-professional:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-  border-color: rgb(99, 102, 241);
-}
-
-.focus-professional:focus-visible {
-  outline: 2px solid rgba(99, 102, 241, 0.5);
-  outline-offset: 2px;
-}
-
-/* Enhanced Accessibility */
-@media (prefers-reduced-motion: reduce) {
-  .lawyer-marker,
-  .legal-body-marker,
-  .user-location-marker,
-  .btn-professional,
-  .hover-lift {
-    animation: none !important;
-    transition: none !important;
-  }
-  
-  .status-online,
-  .status-busy {
-    animation: none !important;
-  }
-}
-
-/* Print Styles */
-@media print {
-  .leaflet-control-zoom,
-  .enhanced-map-overlay {
-    display: none !important;
-  }
-}
-
-/* Professional Loading States */
 .loading-shimmer {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
@@ -676,4 +409,745 @@
 .dark .loading-shimmer {
   background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
   background-size: 200% 100%;
+}
+
+/* Professional Status Indicators */
+.status-online {
+  animation: pulse-green 2s infinite;
+}
+
+.status-busy {
+  animation: pulse-red 1.5s infinite;
+}
+
+@keyframes pulse-green {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+}
+
+@keyframes pulse-red {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+/* Enhanced Modal Styling */
+.modal-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.modal-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 3px;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.7);
+}
+
+/* Professional Focus States */
+.focus-professional:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: rgb(99, 102, 241);
+}
+
+.focus-professional:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.5);
+  outline-offset: 2px;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .leaflet-container {
+    -ms-touch-action: pan-x pan-y;
+    touch-action: pan-x pan-y;
+  }
+  
+  .custom-zoom-controls button {
+    padding: 0.75rem !important;
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+@media (max-width: 768px) {
+  .leaflet-control-zoom a {
+    width: 44px !important;
+    height: 44px !important;
+    line-height: 44px !important;
+    font-size: 1.2em !important;
+  }
+  
+  .zoom-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    font-size: 1.1em;
+  }
+  
+  .zoom-btn:hover {
+    transform: scale(1.08);
+  }
+  
+  .zoom-btn[title="Locate Me"]:hover {
+    animation: float-up-mobile 2s ease-in-out infinite;
+  }
+
+  @keyframes float-up-mobile {
+    0%, 100% { transform: scale(1.08) translateY(0); }
+    50% { transform: scale(1.08) translateY(-2px); }
+  }
+  
+  .modal-scroll {
+    max-height: 60vh;
+  }
+  
+  /* Mobile Right Sidebar */
+  .fixed.right-4.top-16 {
+    right: 8px !important;
+    top: 20px !important;
+    gap: 8px !important;
+  }
+  
+  .fixed.right-4.top-16 button {
+    padding: 10px 12px !important;
+    font-size: 11px !important;
+    gap: 6px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .leaflet-control-zoom a {
+    width: 40px !important;
+    height: 40px !important;
+    line-height: 40px !important;
+  }
+  
+  .zoom-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    font-size: 1em;
+  }
+  
+  .fixed.right-4.top-16 button {
+    padding: 8px 10px !important;
+    font-size: 10px !important;
+    gap: 4px !important;
+  }
+  
+  .fixed.right-4.top-16 button span {
+    font-size: 16px !important;
+  }
+}
+
+/* Accessibility Improvements */
+@media (prefers-reduced-motion: reduce) {
+  .leaflet-zoom-anim .leaflet-zoom-animated,
+  .leaflet-fade-anim .leaflet-tile,
+  .professional-lawyer-marker,
+  .professional-legal-body-marker,
+  .btn-professional,
+  .hover-lift,
+  .animate-blob {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  .status-online,
+  .status-busy {
+    animation: none !important;
+  }
+}
+
+/* Right Sidebar Professional Styling */
+.right-sidebar-button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.right-sidebar-button:hover {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Print Styles */
+@media print {
+  .leaflet-control-zoom,
+  .custom-zoom-controls {
+    display: none !important;
+  }
+}
+
+/* Professional Typography */
+.text-legal {
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* Professional "You are here" Popup */
+.you-are-here-popup .leaflet-popup-content-wrapper {
+  min-width: 200px !important;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(37, 99, 235, 0.95)) !important;
+  border: 2px solid rgba(147, 197, 253, 0.5) !important;
+  box-shadow: 0 20px 60px rgba(59, 130, 246, 0.3) !important;
+}
+
+.you-are-here-popup .leaflet-popup-tip {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(37, 99, 235, 0.95)) !important;
+  border: 2px solid rgba(147, 197, 253, 0.5) !important;
+}
+
+/* Smooth Transitions */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Header Sticky Blur */
+.sticky {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Professional Cards */
+.professional-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.professional-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 48px 0 rgba(31, 38, 135, 0.15);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+/* Active States */
+.active-state {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+  border: 2px solid rgb(59, 130, 246);
+}
+
+/* Success States */
+.success-state {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1));
+  border: 2px solid rgb(16, 185, 129);
+}
+
+/* Error States */
+.error-state {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1));
+  border: 2px solid rgb(239, 68, 68);
+}
+
+
+
+/* ============================================
+   Enhanced Map Styling - Light & Dark Mode
+   ============================================ */
+
+.leaflet-container {
+  background: transparent !important;
+}
+
+.leaflet-container.light {
+  background: #f9fafb !important;
+}
+
+.leaflet-container.dark {
+  background: #0f172a !important;
+}
+
+.leaflet-tile {
+  transition: filter 0.3s ease;
+}
+
+.dark .leaflet-tile {
+  filter: brightness(0.95) contrast(1.1);
+}
+
+.light .leaflet-tile {
+  filter: brightness(1) contrast(1);
+}
+
+/* ============================================
+   Content Area Enhancements
+   ============================================ */
+
+.content-area {
+  flex: 1;
+  overflow: auto;
+  padding-right: 0;
+}
+
+.content-header {
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 2rem;
+}
+
+/* ============================================
+   Custom Zoom Controls - Left Side
+   ============================================ */
+
+.custom-zoom-left {
+  position: fixed !important;
+  left: 24px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: auto !important;
+  height: auto !important;
+  background: transparent !important;
+  border: none !important;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 400;
+}
+
+.custom-zoom-left.dark .zoom-btn {
+  background: rgba(31, 41, 55, 0.8);
+  border: 1px solid rgba(107, 114, 128, 0.3);
+  color: rgba(209, 213, 219, 0.8);
+}
+
+.custom-zoom-left.light .zoom-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(209, 213, 219, 0.5);
+  color: rgba(75, 85, 99, 0.8);
+}
+
+.zoom-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  font-size: 1.1em;
+  font-weight: 600;
+}
+
+.zoom-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.custom-zoom-left.dark .zoom-btn:hover {
+  background: rgba(55, 65, 81, 0.95);
+  color: #3b82f6;
+}
+
+.custom-zoom-left.light .zoom-btn:hover {
+  background: white;
+  color: #3b82f6;
+}
+
+.zoom-btn:active {
+  transform: scale(0.92);
+}
+
+/* Cute Locate Me Button */
+.zoom-btn[title="Locate Me"] {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.zoom-btn[title="Locate Me"]:hover {
+  animation: float-up 2s ease-in-out infinite;
+}
+
+@keyframes float-up {
+  0%, 100% { transform: scale(1.12) translateY(0); }
+  50% { transform: scale(1.12) translateY(-4px); }
+}
+
+
+/* ============================================
+   Professional Circular Sidebar Buttons
+   ============================================ */
+
+.custom-zoom-left .zoom-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.1em;
+  font-weight: 600;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.custom-zoom-left .zoom-btn:active {
+  transform: scale(0.9);
+}
+
+/* Professional Popup Styling with Blur */
+.leaflet-popup-content-wrapper {
+  border-radius: 16px !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.lawyer-popup .leaflet-popup-content-wrapper,
+.legal-body-popup .leaflet-popup-content-wrapper {
+  border-radius: 20px !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  overflow: hidden;
+}
+
+/* Legal body marker - no background boxes */
+.professional-legal-body-marker {
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+  transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.professional-legal-body-marker:hover {
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.3));
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .fixed.right-6.top-20,
+  .fixed.left-6.top-20 {
+    right: 16px;
+    left: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .custom-zoom-left .zoom-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1em;
+  }
+  
+  .fixed.right-6.top-20,
+  .fixed.left-6.top-20 {
+    right: 12px;
+    left: 12px;
+    top: 100px;
+  }
+}
+
+@media (max-width: 640px) {
+  .custom-zoom-left .zoom-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 0.9em;
+  }
+  
+  .fixed.right-6.top-20,
+  .fixed.left-6.top-20 {
+    right: 8px;
+    left: 8px;
+    top: 100px;
+    gap: 8px;
+  }
+}
+
+/* ============================================
+   Card Grid Improvements
+   ============================================ */
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+@media (max-width: 1200px) {
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   Animation Improvements
+   ============================================ */
+
+@keyframes animation-delay-2000 {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+/* ============================================
+   Professional Card Enhancements
+   ============================================ */
+
+.professional-card-light {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.professional-card-dark {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.professional-card-light:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.99), rgba(248, 250, 252, 0.98));
+  transform: translateY(-8px);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.08);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.professional-card-dark:hover {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
+  transform: translateY(-8px);
+  box-shadow: 0 25px 50px rgba(139, 92, 246, 0.2), 0 8px 16px rgba(0, 0, 0, 0.4);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+/* ============================================
+   Circular Professional Section
+   ============================================ */
+
+.professional-section-circular {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.professional-section-circular-light {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 10px 40px rgba(102, 126, 234, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.professional-section-circular-dark {
+  background: linear-gradient(135deg, #1e3a8a 0%, #5b21b6 100%);
+  box-shadow: 0 10px 40px rgba(30, 58, 138, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.professional-section-circular::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  border-radius: 50%;
+  animation: shimmer-circle 3s infinite;
+}
+
+@keyframes shimmer-circle {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.professional-section-circular > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* ============================================
+   Court & Layers Tab Enhancements
+   ============================================ */
+
+.courts-tab-container-light {
+  background: var(--light-bg);
+  color: var(--light-text);
+}
+
+.courts-tab-container-dark {
+  background: linear-gradient(135deg, var(--dark-bg) 0%, #1a2744 100%);
+  color: var(--dark-text);
+}
+
+.courts-section-header {
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.court-card-compact-light {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--light-border);
+  padding: 0.875rem;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.court-card-compact-dark {
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  padding: 0.875rem;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.court-card-compact-light:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #667eea;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+}
+
+.court-card-compact-dark:hover {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
+}
+
+/* Zoomed out view */
+.courts-grid-compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+  .courts-grid-compact {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.875rem;
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .courts-grid-compact {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+}
+
+/* ============================================
+   Map Tile & Layer Enhancements
+   ============================================ */
+
+.leaflet-tile {
+  filter: none;
+  transition: filter 0.3s ease;
+}
+
+.leaflet-container.dark .leaflet-tile {
+  filter: brightness(0.9) contrast(1.15) saturate(0.85);
+}
+
+.leaflet-container.light .leaflet-tile {
+  filter: brightness(1) contrast(1) saturate(1);
+}
+
+/* ============================================
+   Map Attribution & Controls - Dark/Light
+   ============================================ */
+
+.leaflet-control {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.leaflet-container.dark .leaflet-control {
+  background: rgba(31, 41, 55, 0.8) !important;
+  border: 1px solid rgba(107, 114, 128, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+.leaflet-container.light .leaflet-control {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(209, 213, 219, 0.5) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.leaflet-control-attribution {
+  background: transparent !important;
+  font-size: 11px !important;
+}
+
+.leaflet-container.dark .leaflet-control-attribution {
+  color: #9ca3af !important;
+}
+
+.leaflet-container.light .leaflet-control-attribution {
+  color: #6b7280 !important;
+}
+
+/* ============================================
+   Dark Mode Enhancements
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  .leaflet-container {
+    background: var(--dark-bg) !important;
+  }
+  
+  .leaflet-tile {
+    filter: brightness(0.9) contrast(1.15) saturate(0.85);
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  .leaflet-container {
+    background: var(--light-bg) !important;
+  }
+  
+  .leaflet-tile {
+    filter: brightness(1) contrast(1) saturate(1);
+  }
 }

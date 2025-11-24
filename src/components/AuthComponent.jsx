@@ -125,7 +125,7 @@ const LegalStrip = () => {
 // Premium Logo component with black/silver gradient and Scale icon
 const Logo = () => {
   return (
-    <div className="flex justify-center mb-4 animate-fadeIn">
+    <div className="flex justify-center mb-4">
       <div 
         className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-300 overflow-hidden border border-gray-700/50"
         style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)" }}
@@ -213,7 +213,7 @@ const CustomCheckbox = ({ id, name, checked, onChange, label, disabled = false, 
           {checked && (
             <Check 
               size={14} 
-              className={`${isDarkMode ? 'text-gray-900' : 'text-white'} animate-in zoom-in duration-200`} 
+              className={`${isDarkMode ? 'text-gray-900' : 'text-white'}`} 
               strokeWidth={3}
             />
           )}
@@ -393,15 +393,11 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     rememberMe: false,
     loading: false,
     showPassword: false,
-    fadeIn: false,
     errors: {}
   });
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    // Trigger fade-in animation after component mounts
-    setFormState(prev => ({ ...prev, fadeIn: true }));
-
     // Check if user is already authenticated
     if (tokenManager.isAuthenticated()) {
        window.location.href = '/';
@@ -735,9 +731,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
       
       <div className="flex-1 flex items-center justify-center p-4 z-10">
         <div 
-          className={`${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-xl shadow-xl p-6 w-full max-w-md transition-all duration-700 transform ${
-            formState.fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-          }`}
+          className={`${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-xl shadow-xl p-6 w-full max-w-md`}
           style={{ boxShadow: isDarkMode ? '0 10px 25px -5px rgba(0, 0, 0, 0.3)' : '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
         >
           <div className="text-center mb-5">
