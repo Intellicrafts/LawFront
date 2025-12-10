@@ -1,0 +1,35 @@
+<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradWelcome" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="300" height="200" fill="#f0f9ff"/>
+  
+  <!-- Scales of Justice Icon -->
+  <g transform="translate(150, 60)">
+    <!-- Scale beam -->
+    <rect x="-60" y="-8" width="120" height="8" rx="4" fill="url(#gradWelcome)" opacity="0.3"/>
+    <circle cx="-50" cy="15" r="22" fill="url(#gradWelcome)" opacity="0.2" stroke="url(#gradWelcome)" stroke-width="2"/>
+    <circle cx="50" cy="15" r="22" fill="url(#gradWelcome)" opacity="0.2" stroke="url(#gradWelcome)" stroke-width="2"/>
+    
+    <!-- Check marks on scales -->
+    <path d="M -60 20 L -55 28 L -48 18" stroke="url(#gradWelcome)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 40 20 L 45 28 L 52 18" stroke="url(#gradWelcome)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Scale base -->
+    <rect x="-8" y="45" width="16" height="40" rx="2" fill="url(#gradWelcome)" opacity="0.15"/>
+    <polygon points="0,45 -35,55 35,55" fill="url(#gradWelcome)" opacity="0.1"/>
+  </g>
+  
+  <!-- Shield badge -->
+  <g transform="translate(240, 140)">
+    <path d="M 0 -15 L 15 -8 L 15 5 Q 0 20 0 20 Q -15 20 -15 5 L -15 -8 Z" fill="url(#gradWelcome)" opacity="0.3" stroke="url(#gradWelcome)" stroke-width="2"/>
+    <path d="M -5 2 L 0 8 L 8 0" stroke="url(#gradWelcome)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="150" y="170" font-size="16" font-weight="bold" text-anchor="middle" fill="url(#gradWelcome)">Legal Excellence</text>
+  <text x="150" y="190" font-size="12" text-anchor="middle" fill="#0c4a6e" opacity="0.7">Your Trusted Companion</text>
+</svg>

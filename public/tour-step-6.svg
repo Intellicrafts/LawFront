@@ -1,0 +1,41 @@
+<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradSuccess" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="300" height="200" fill="#f0f9ff"/>
+  
+  <!-- Success circle with checkmark -->
+  <g transform="translate(150, 80)">
+    <circle cx="0" cy="0" r="45" fill="url(#gradSuccess)" opacity="0.1" stroke="url(#gradSuccess)" stroke-width="2.5"/>
+    <circle cx="0" cy="0" r="35" fill="url(#gradSuccess)" opacity="0.15" stroke="url(#gradSuccess)" stroke-width="2"/>
+    
+    <!-- Large checkmark -->
+    <path d="M -15 5 L -5 18 L 20 -10" stroke="url(#gradSuccess)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  
+  <!-- Celebration sparkles -->
+  <g transform="translate(80, 40)" fill="url(#gradSuccess)" opacity="0.5">
+    <path d="M 0 -8 L 2 -2 L 8 0 L 2 2 L 0 8 L -2 2 L -8 0 L -2 -2 Z"/>
+  </g>
+  
+  <g transform="translate(220, 50)" fill="url(#gradSuccess)" opacity="0.4">
+    <path d="M 0 -6 L 1.5 -1.5 L 6 0 L 1.5 1.5 L 0 6 L -1.5 1.5 L -6 0 L -1.5 -1.5 Z"/>
+  </g>
+  
+  <g transform="translate(70, 130)" fill="url(#gradSuccess)" opacity="0.35">
+    <path d="M 0 -5 L 1.2 -1.2 L 5 0 L 1.2 1.2 L 0 5 L -1.2 1.2 L -5 0 L -1.2 -1.2 Z"/>
+  </g>
+  
+  <!-- Rocket/upward arrow -->
+  <g transform="translate(240, 120)">
+    <path d="M 0 -15 L 8 8 L 0 3 L -8 8 Z" fill="url(#gradSuccess)" opacity="0.3" stroke="url(#gradSuccess)" stroke-width="1.5" stroke-linejoin="round"/>
+    <line x1="0" y1="8" x2="0" y2="15" stroke="url(#gradSuccess)" stroke-width="2" opacity="0.3" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="150" y="175" font-size="16" font-weight="bold" text-anchor="middle" fill="url(#gradSuccess)">You're All Set!</text>
+  <text x="150" y="195" font-size="12" text-anchor="middle" fill="#0c4a6e" opacity="0.7">Ready to Explore</text>
+</svg>

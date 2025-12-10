@@ -1,0 +1,38 @@
+<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradLibrary" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="300" height="200" fill="#f0f9ff"/>
+  
+  <!-- Folder/Library -->
+  <g transform="translate(150, 80)">
+    <!-- Main folder -->
+    <path d="M -60 -30 L -30 -30 L -20 -15 L 60 -15 L 60 50 L -60 50 Z" fill="url(#gradLibrary)" opacity="0.15" stroke="url(#gradLibrary)" stroke-width="2"/>
+    
+    <!-- Documents inside -->
+    <rect x="-50" y="-8" width="30" height="40" rx="2" fill="url(#gradLibrary)" opacity="0.3" stroke="url(#gradLibrary)" stroke-width="1.5"/>
+    <line x1="-45" y1="5" x2="-25" y2="5" stroke="url(#gradLibrary)" stroke-width="1" opacity="0.6"/>
+    <line x1="-45" y1="15" x2="-25" y2="15" stroke="url(#gradLibrary)" stroke-width="1" opacity="0.6"/>
+    <line x1="-45" y1="25" x2="-28" y2="25" stroke="url(#gradLibrary)" stroke-width="1" opacity="0.6"/>
+    
+    <rect x="-12" y="-8" width="30" height="40" rx="2" fill="url(#gradLibrary)" opacity="0.2" stroke="url(#gradLibrary)" stroke-width="1.5"/>
+    <line x1="-7" y1="5" x2="13" y2="5" stroke="url(#gradLibrary)" stroke-width="1" opacity="0.5"/>
+    <line x1="-7" y1="15" x2="13" y2="15" stroke="url(#gradLibrary)" stroke-width="1" opacity="0.5"/>
+    
+    <rect x="26" y="-8" width="30" height="40" rx="2" fill="url(#gradLibrary)" opacity="0.15" stroke="url(#gradLibrary)" stroke-width="1.5"/>
+  </g>
+  
+  <!-- Lock icon (security) -->
+  <g transform="translate(240, 50)">
+    <rect x="-10" y="-5" width="20" height="18" rx="2" fill="none" stroke="url(#gradLibrary)" stroke-width="1.5" opacity="0.4"/>
+    <path d="M -6 -5 Q -6 -12 0 -12 Q 6 -12 6 -5" fill="none" stroke="url(#gradLibrary)" stroke-width="1.5" opacity="0.4"/>
+    <circle cx="0" cy="4" r="2" fill="url(#gradLibrary)" opacity="0.4"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="150" y="175" font-size="16" font-weight="bold" text-anchor="middle" fill="url(#gradLibrary)">Secure Library</text>
+  <text x="150" y="195" font-size="12" text-anchor="middle" fill="#0c4a6e" opacity="0.7">Encrypted Storage</text>
+</svg>

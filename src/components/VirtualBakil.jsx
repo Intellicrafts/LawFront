@@ -1608,14 +1608,14 @@ const PrivateChatModal = ({ lawyer, isOpen, onClose, isDark }) => {
           initial={{ scale: 0.9, y: 100 }}
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.9, y: 100 }}
-          className={`w-full md:w-96 h-[90vh] md:h-[600px] rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col backdrop-blur-sm ${
+          className={`w-full md:w-96 h-[90vh] md:h-[600px] rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col backdrop-blur-xl ${
             isDark 
-              ? 'bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50'
-              : 'bg-gradient-to-br from-white to-gray-50 border border-gray-200/50'
+              ? 'bg-gradient-to-br from-gray-800/95 to-gray-900/95 border border-gray-700/60'
+              : 'bg-gradient-to-br from-white/95 to-gray-50/95 border border-gray-200/60'
           }`}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className={`flex items-center justify-between p-4 border-b backdrop-blur-sm ${isDark ? 'border-gray-700/50 bg-gray-800/50' : 'border-gray-200/50 bg-white/50'}`}>
+          <div className={`flex items-center justify-between p-4 border-b backdrop-blur-md ${isDark ? 'border-gray-700/40 bg-gradient-to-b from-gray-800/60 to-gray-900/30' : 'border-gray-200/40 bg-gradient-to-b from-white/60 to-gray-50/30'}`}>
             <div className="flex items-center gap-3">
               <img src={lawyer.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(lawyer.name)}&background=667eea&color=fff&size=40&bold=true`} alt={lawyer.name} className="w-10 h-10 rounded-full" />
               <div>
@@ -1641,9 +1641,11 @@ const PrivateChatModal = ({ lawyer, isOpen, onClose, isDark }) => {
             )}
             <div ref={messagesEndRef} />
           </div>
-          <div className={`p-4 border-t flex gap-2 backdrop-blur-sm ${isDark ? 'border-gray-700/50 bg-gray-800/50' : 'border-gray-200/50 bg-white/50'}`}>
-            <input type="text" value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} placeholder="Type message..." className={`flex-1 px-4 py-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 backdrop-blur-sm ${isDark ? 'bg-gray-700/50 text-white placeholder-gray-400 border border-gray-600/50' : 'bg-white/50 text-gray-900 placeholder-gray-500 border border-gray-300/50'}`} />
-            <button onClick={handleSendMessage} className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg"><Send className="w-5 h-5" /></button>
+          <div className={`p-4 border-t ${isDark ? 'border-gray-700/30 bg-gradient-to-b from-gray-800/30 to-gray-900/50' : 'border-gray-200/30 bg-gradient-to-b from-white/30 to-gray-50/50'}`}>
+            <div className={`glass-input-container ${isDark ? 'glass-input-container-dark' : 'glass-input-container-light'}`}>
+              <input type="text" value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} placeholder="Type message..." className={`glass-input glass-input-message ${isDark ? 'glass-input-dark' : 'glass-input-light'}`} />
+              <button onClick={handleSendMessage} className={`glass-button ${isDark ? 'glass-button-dark' : 'glass-button-light'}`}><Send className="w-5 h-5" /></button>
+            </div>
           </div>
         </motion.div>
       </motion.div>
@@ -1735,16 +1737,16 @@ const SchedulingModal = ({ lawyer, isOpen, onClose, isDark, locationGranted }) =
             )}
           </div>
           <div>
-            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Date</label>
-            <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} min={minDate.toISOString().split('T')[0]} className={`w-full px-4 py-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${isDark ? 'bg-gray-700/50 text-white border border-gray-600/50 focus:bg-gray-700' : 'bg-gray-100/50 text-gray-900 border border-gray-200 focus:bg-gray-100'}`} />
+            <label className={`block text-sm font-bold mb-3 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>📅 Select Date</label>
+            <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} min={minDate.toISOString().split('T')[0]} className={`w-full glass-input ${isDark ? 'glass-input-dark' : 'glass-input-light'}`} />
           </div>
           <div>
-            <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Time</label>
-            <input type="time" value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)} className={`w-full px-4 py-2 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${isDark ? 'bg-gray-700/50 text-white border border-gray-600/50 focus:bg-gray-700' : 'bg-gray-100/50 text-gray-900 border border-gray-200 focus:bg-gray-100'}`} />
+            <label className={`block text-sm font-bold mb-3 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>🕐 Select Time</label>
+            <input type="time" value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)} className={`w-full glass-input ${isDark ? 'glass-input-dark' : 'glass-input-light'}`} />
           </div>
-          <div className="flex gap-2 pt-2">
-            <button onClick={onClose} className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${isDark ? 'bg-gray-700/50 text-white border border-gray-600/50 hover:bg-gray-700' : 'bg-gray-200/50 text-gray-900 border border-gray-300 hover:bg-gray-200'}`}>Cancel</button>
-            <button onClick={handleSchedule} disabled={isSubmitting} className={`flex-1 py-2 px-4 rounded-lg font-medium text-white flex items-center justify-center gap-2 transition-all bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 ${isSubmitting ? 'opacity-60 cursor-not-allowed' : ''}`}>
+          <div className="flex gap-2 pt-4">
+            <button onClick={onClose} className={`flex-1 glass-button ${isDark ? 'glass-button-dark' : 'glass-button-light'} opacity-70 hover:opacity-100`}>Cancel</button>
+            <button onClick={handleSchedule} disabled={isSubmitting} className={`flex-1 glass-button ${isDark ? 'glass-button-dark' : 'glass-button-light'} ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}>
               {isSubmitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Scheduling...</> : <><Calendar className="w-4 h-4" /> Schedule</>}
             </button>
           </div>
