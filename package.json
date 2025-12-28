@@ -28,8 +28,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "HOST=127.0.0.1 PORT=3000 react-scripts start",
-    "start:alt": "HOST=127.0.0.1 PORT=3001 react-scripts start",
+    "start": "cross-env HOST=127.0.0.1 PORT=3000 react-scripts start",
+    "start:alt": "cross-env HOST=127.0.0.1 PORT=3001 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -54,6 +54,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",
+    "cross-env": "^10.1.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17"
   }
