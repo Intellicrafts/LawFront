@@ -19,6 +19,7 @@ import {
   Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '../context/ThemeContext';
 
 // Sample Data
 const DEFAULT_USER = {
@@ -55,20 +56,10 @@ const Sidebar = ({
   sidebarOpen,
   setSidebarOpen
 }) => {
-  const [isDark, setIsDark] = useState(true);
+  const { isDark } = useTheme(); // Use theme from context
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [internalActiveItem, setInternalActiveItem] = useState('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Get theme from localStorage or context
-  useEffect(() => {
-    try {
-      const theme = localStorage.getItem('theme');
-      setIsDark(theme === 'dark' || theme === null);
-    } catch (error) {
-      console.log('Theme detection:', error);
-    }
-  }, []);
 
   const currentActive = onNavigate ? activeItem : internalActiveItem;
 
@@ -135,7 +126,7 @@ const Sidebar = ({
         {/* Mobile Close Button */}
         <button
           onClick={handleToggleMobile}
-          className={`lg:hidden flex items-center justify-center p-1.5 rounded-lg ${isDark ? 'bg-[#1A1A1A] border-[#2A2A2A] text-gray-400 hover:bg-[#252525] hover:text-white' : 'bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200 hover:text-gray-900'} border transition-all shadow-sm flex-shrink-0`}
+          className={`lg:hidden flex items-center justify-center p-1.5 rounded-lg ${isDark ? 'bg-[#1A1A1A] border-[#2A2A2A] text-gray-300 hover:bg-[#252525] hover:text-white' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900'} border transition-all shadow-sm flex-shrink-0`}
         >
           <X size={16} />
         </button>
@@ -151,8 +142,8 @@ const Sidebar = ({
               key={item.id}
               onClick={() => handleNavigate(item.id)}
               className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-all duration-150 group ${isActive
-                  ? isDark ? 'text-white bg-[#1A1A1A]' : 'text-gray-900 bg-blue-50 border border-blue-100'
-                  : isDark ? 'hover:text-gray-200 hover:bg-[#1A1A1A]/50' : 'hover:text-gray-900 hover:bg-gray-50'
+                ? isDark ? 'text-white bg-[#1A1A1A]' : 'text-gray-900 bg-blue-50 border border-blue-100'
+                : isDark ? 'hover:text-gray-200 hover:bg-[#1A1A1A]/50' : 'hover:text-gray-900 hover:bg-gray-50'
                 }`}
             >
               <div className="flex items-center gap-2.5">
@@ -161,8 +152,8 @@ const Sidebar = ({
               </div>
               {item.count ? (
                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isActive
-                    ? 'bg-blue-500 text-white'
-                    : isDark ? 'bg-[#262626] text-gray-500' : 'bg-gray-200 text-gray-600'
+                  ? 'bg-blue-500 text-white'
+                  : isDark ? 'bg-[#262626] text-gray-500' : 'bg-gray-200 text-gray-600'
                   }`}>
                   {item.count}
                 </span>
@@ -299,25 +290,28 @@ const Sidebar = ({
         )}
       </AnimatePresence>
 
-      {/* Desktop Sidebar - Fully open or fully closed */}
-      <AnimatePresence>
-        {!isCollapsed && (
-          <>
-            <motion.aside
-              initial={false}
-              animate={{ x: 0 }}
-              exit={{ x: -256 }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className={`hidden lg:block h-screen fixed top-0 left-0 z-[100] w-64 ${className}`}
-            >
-              <SidebarContent />
-            </motion.aside>
+      {/* Desktop Sidebar - Animated Width to prevent Layout Shift */}
+      <motion.aside
+        initial={false}
+        animate={{
+          width: isCollapsed ? 0 : 256,
+          opacity: 1 // Keep opacity 1 so it doesn't flash
+        }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        className={`hidden lg:block h-screen fixed top-0 left-0 z-[100] bg-inherit border-r overflow-hidden ${isDark ? 'border-[#1F1F1F]' : 'border-gray-200'} ${className}`}
+      >
+        <div className="w-64 h-full">
+          <SidebarContent />
+        </div>
+      </motion.aside>
 
-            {/* Spacer for content when sidebar is visible */}
-            <div className="hidden lg:block w-64 flex-shrink-0" />
-          </>
-        )}
-      </AnimatePresence>
+      {/* Spacer that also animates width */}
+      <motion.div
+        initial={false}
+        animate={{ width: isCollapsed ? 0 : 256 }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        className="hidden lg:block flex-shrink-0"
+      />
     </>
   );
 };

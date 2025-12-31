@@ -50,13 +50,13 @@ const MessageBubble = ({ message, isDark, isUser, isStreaming = false }) => (
         </div>
       )}
       <div
-        className={`px-3 py-2 rounded-2xl text-sm leading-relaxed ${isUser
+        className={`px-3 py-2 rounded-2xl text-sm leading-relaxed break-words whitespace-pre-wrap overflow-hidden ${isUser
           ? isDark
-            ? 'bg-blue-600 text-white'
-            : 'bg-blue-500 text-white'
-          : isDark
-            ? 'bg-[#1F1F1F] text-gray-100 border border-[#2A2A2A]'
+            ? 'bg-[#1F1F1F] text-gray-50 border border-[#2A2A2A]'
             : 'bg-gray-100 text-gray-900 border border-gray-200'
+          : isDark
+            ? 'bg-transparent text-gray-200'
+            : 'bg-transparent text-gray-800'
           }`}
       >
         {isStreaming && !isUser ? (
@@ -312,6 +312,9 @@ const Hero = () => {
     e?.preventDefault();
     const allFiles = [...uploadedFiles, ...pendingFiles];
     if (query.trim() || allFiles.length > 0) {
+      if (inputRef.current) {
+        inputRef.current.style.height = 'auto';
+      }
       setIsLoading(true);
       setTimeout(() => {
         if (query.trim()) {
@@ -322,6 +325,9 @@ const Hero = () => {
         setUploadedFiles([]);
         setPendingFiles([]);
         setIsLoading(false);
+        if (inputRef.current) {
+          inputRef.current.style.height = 'auto';
+        }
       }, 800);
     }
   };
@@ -602,15 +608,6 @@ const Hero = () => {
                 >
                   Your Intelligent Legal Assistant
                 </motion.p>
-
-                <motion.p
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5, duration: 0.5 }}
-                  className={`text-base ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
-                >
-
-                </motion.p>
               </div>
             </motion.div>
           ) : (
@@ -723,108 +720,105 @@ const Hero = () => {
 
               <motion.div
                 layout
-                transition={{ duration: 0.3, type: 'spring', stiffness: 100 }}
-                className={`rounded-3xl transition-all duration-300 overflow-visible backdrop-blur-md
+                transition={{ duration: 0.2 }}
+                className={`rounded-xl transition-all duration-300 overflow-visible backdrop-blur-md border shadow-sm mx-auto max-w-4xl
                 ${isDark
-                    ? 'bg-[#2C2C2C]/40 border border-[#3A3A3A]/40 hover:bg-[#2C2C2C]/50 hover:border-[#3A3A3A]/50 focus-within:bg-[#2C2C2C]/40 focus-within:border-[#3A3A3A]/40 focus-within:ring-1 focus-within:ring-gray-600/30'
-                    : 'bg-white/40 border border-gray-200/40 hover:bg-white/50 hover:border-gray-200/50 focus-within:bg-white/40 focus-within:border-gray-200/40 focus-within:ring-1 focus-within:ring-gray-300/30'}`}>
+                    ? 'bg-[#1e1e1e]/60 border-[#333] focus-within:bg-[#1e1e1e]/80 focus-within:border-gray-600 focus-within:ring-1 focus-within:ring-gray-700/50'
+                    : 'bg-white/80 border-gray-200 focus-within:bg-white focus-within:border-gray-300 focus-within:ring-1 focus-within:ring-blue-100'}`}>
 
-                <div className="flex items-end gap-2.5 px-4 py-4 sm:px-5 sm:py-4">
+                <div className="flex items-end gap-2 px-3 py-2">
 
-                  <div className="flex items-center gap-1 relative">
+                  <div className="flex items-center gap-1 relative mb-0.5">
                     <motion.button
                       ref={dropdownRef}
                       whileTap={{ scale: 0.9 }}
-                      whileHover={{ scale: 1.05 }}
+                      whileHover={{ scale: 1.1, rotate: 10 }}
                       onClick={() => setShowModalDropdown(!showModalDropdown)}
-                      title="Select AI Assistant"
-                      className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-300 hidden sm:flex z-10 font-semibold
-                          ${selectedModal === 'bakilat'
-                          ? isDark ? 'bg-violet-600/20 text-violet-400 hover:bg-violet-600/30' : 'bg-violet-50 text-violet-600 hover:bg-violet-100'
-                          : selectedModal === 'nyaaya'
-                            ? isDark ? 'bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                            : selectedModal === 'munshi'
-                              ? isDark ? 'bg-amber-600/20 text-amber-400 hover:bg-amber-600/30' : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
-                              : isDark ? 'bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
-                        }`}
+                      className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 shadow-sm border relative
+                        ${isDark
+                          ? 'bg-[#1e1e1e] border-white/10 hover:bg-white/10'
+                          : 'bg-white border-gray-100 hover:bg-gray-50 shadow-gray-200'}
+                        ${selectedModal === 'bakilat' ? 'text-violet-500' :
+                          selectedModal === 'nyaaya' ? 'text-emerald-500' :
+                            selectedModal === 'munshi' ? 'text-amber-500' :
+                              'text-indigo-500'}`}
                     >
-                      <motion.div
-                        key={selectedModal}
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ duration: 0.2 }}
-                      >
+                      <div className="scale-90">
                         {getModalIcon(selectedModal)}
-                      </motion.div>
+                      </div>
+
+                      {/* Cute notification dot/sparkle */}
+                      <span className={`absolute top-0 right-0 w-2 h-2 rounded-full border-2 
+                        ${isDark ? 'border-[#1e1e1e]' : 'border-white'}
+                        ${selectedModal === 'bakilat' ? 'bg-violet-500' :
+                          selectedModal === 'nyaaya' ? 'bg-emerald-500' :
+                            selectedModal === 'munshi' ? 'bg-amber-500' :
+                              'bg-indigo-500'}`}
+                      />
                     </motion.button>
 
                     <AnimatePresence>
                       {showModalDropdown && (
                         <motion.div
-                          initial={{ opacity: 0, scale: 0.92, y: 12 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.92, y: 12 }}
-                          transition={{ duration: 0.25, type: 'spring', stiffness: 400, damping: 30 }}
-                          className={`absolute left-0 bottom-full mb-6 w-56 rounded-xl shadow-2xl z-50 overflow-hidden border backdrop-blur-xl
+                          initial={{ opacity: 0, scale: 0.95, y: 8, filter: 'blur(8px)' }}
+                          animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+                          exit={{ opacity: 0, scale: 0.95, y: 8, filter: 'blur(8px)' }}
+                          transition={{ duration: 0.15, ease: "easeOut" }}
+                          className={`absolute -left-2 bottom-full mb-5 w-52 rounded-xl shadow-2xl z-50 overflow-hidden border backdrop-blur-xl ring-1
                             ${isDark
-                              ? 'bg-[#1A1A1A]/95 border-gray-500/40'
-                              : 'bg-white/95 border-gray-300/40'}`}
+                              ? 'bg-[#111111]/95 border-white/10 ring-white/5'
+                              : 'bg-white/95 border-gray-200/80 ring-gray-900/5'}`}
                         >
-                          {modalOptions.map((option, idx) => (
-                            <motion.button
-                              key={option.id}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: idx * 0.05, duration: 0.3 }}
-                              whileHover={{ x: 3 }}
-                              onClick={() => {
-                                setSelectedModal(option.id);
-                                setShowModalDropdown(false);
-                              }}
-                              className={`w-full px-3 py-1.5 text-left border-b last:border-b-0 transition-all duration-200
-                              ${selectedModal === option.id
-                                  ? option.color === 'violet'
-                                    ? isDark ? 'bg-violet-600/20 border-violet-500/50 text-violet-300' : 'bg-violet-50 border-violet-200 text-violet-900'
-                                    : option.color === 'emerald'
-                                      ? isDark ? 'bg-emerald-600/20 border-emerald-500/50 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                                      : option.color === 'amber'
-                                        ? isDark ? 'bg-amber-600/20 border-amber-500/50 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-900'
-                                        : isDark ? 'bg-indigo-600/20 border-indigo-500/50 text-indigo-300' : 'bg-indigo-50 border-indigo-200 text-indigo-900'
-                                  : isDark
-                                    ? 'border-[#3A3A3A]/30 hover:bg-[#2C2C2C]/60 text-gray-400'
-                                    : 'border-gray-200/30 hover:bg-gray-100/60 text-gray-700'}`}>
-                              <div className="flex items-start gap-1.5">
-                                <div className={`w-3 h-3 flex items-center justify-center flex-shrink-0 mt-0 ${option.color === 'violet' ? 'text-violet-500' :
-                                  option.color === 'emerald' ? 'text-emerald-500' :
-                                    option.color === 'amber' ? 'text-amber-500' :
-                                      'text-indigo-500'
-                                  }`}>
-                                  {getModalIcon(option.id)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className={`font-semibold text-xs ${selectedModal === option.id ? 'font-bold' : ''}`}>
-                                    {option.label}
+                          <div className={`px-2.5 py-1.5 border-b ${isDark ? 'border-white/5' : 'border-gray-100'}`}>
+                            <span className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Select Model</span>
+                          </div>
+                          <div className="p-1 space-y-0.5">
+                            {modalOptions.map((option, idx) => (
+                              <motion.button
+                                key={option.id}
+                                onClick={() => {
+                                  setSelectedModal(option.id);
+                                  setShowModalDropdown(false);
+                                }}
+                                className={`w-full px-2 py-1.5 text-left rounded-lg transition-all duration-200 group relative
+                                ${selectedModal === option.id
+                                    ? isDark
+                                      ? 'bg-white/10 text-white'
+                                      : 'bg-gray-100 text-gray-900'
+                                    : isDark
+                                      ? 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors flex-shrink-0
+                                    ${selectedModal === option.id
+                                      ? option.color === 'violet' ? 'bg-violet-500 text-white shadow-md shadow-violet-500/20' :
+                                        option.color === 'emerald' ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' :
+                                          option.color === 'amber' ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' :
+                                            'bg-indigo-500 text-white shadow-md shadow-indigo-500/20'
+                                      : isDark ? 'bg-white/5 text-gray-500 group-hover:bg-white/10 group-hover:text-gray-300' : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200 group-hover:text-gray-700'
+                                    }`}>
+                                    <div className="scale-75 transform">
+                                      {getModalIcon(option.id)}
+                                    </div>
                                   </div>
-                                  <div className={`text-[10px] mt-0 leading-tight ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                                    {option.description}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-semibold text-[11px] leading-none">{option.label}</span>
+                                      {selectedModal === option.id && (
+                                        <motion.div layoutId="active-check">
+                                          <CheckCircle size={10} className={option.color === 'violet' ? 'text-violet-400' : option.color === 'emerald' ? 'text-emerald-400' : option.color === 'amber' ? 'text-amber-400' : 'text-indigo-400'} />
+                                        </motion.div>
+                                      )}
+                                    </div>
+                                    <p className={`text-[9px] mt-0.5 truncate opacity-70 font-medium`}>
+                                      {option.description}
+                                    </p>
                                   </div>
                                 </div>
-                                {selectedModal === option.id && (
-                                  <motion.div
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-                                  >
-                                    <CheckCircle size={14} className={`flex-shrink-0 mt-0.5 ${option.color === 'violet' ? 'text-violet-500' :
-                                      option.color === 'emerald' ? 'text-emerald-500' :
-                                        option.color === 'amber' ? 'text-amber-500' :
-                                          'text-indigo-500'
-                                      }`} />
-                                  </motion.div>
-                                )}
-                              </div>
-                            </motion.button>
-                          ))}
+                              </motion.button>
+                            ))}
+                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -836,7 +830,7 @@ const Hero = () => {
                     onChange={(e) => {
                       setQuery(e.target.value);
                       e.target.style.height = 'auto';
-                      e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                      e.target.style.height = Math.min(e.target.scrollHeight, 80) + 'px';
                     }}
                     onKeyPress={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
@@ -844,27 +838,27 @@ const Hero = () => {
                         handleSubmit();
                       }
                     }}
-                    placeholder="Discuss your concern..."
-                    style={isDark ? { backgroundColor: '#33323400' } : {}}
-                    className={`flex-1 outline-none border-none text-sm py-2 px-1 resize-none max-h-32 min-h-10 leading-relaxed
+                    placeholder="Type your message..."
+                    style={isDark ? { backgroundColor: 'transparent' } : {}}
+                    className={`flex-1 outline-none border-none text-[13px] py-1.5 px-0 resize-none max-h-20 min-h-[24px] leading-relaxed tracking-normal break-words whitespace-pre-wrap
                       ${isDark
-                        ? 'text-white placeholder-gray-400 caret-gray-400'
-                        : 'bg-transparent text-gray-900 placeholder-gray-400 caret-gray-600'}`}
+                        ? 'text-gray-200 placeholder-gray-500 caret-blue-500'
+                        : 'bg-transparent text-gray-800 placeholder-gray-400 caret-blue-600'}`}
                     rows={1}
                   />
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 pb-0.5">
                     <motion.button
                       whileTap={{ scale: 0.9 }}
-                      whileHover={{ scale: 1.1 }}
+                      whileHover={{ scale: 1.05 }}
                       onClick={() => document.getElementById('file-input').click()}
                       title="Upload file"
-                      className={`w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200
+                      className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all duration-200
                         ${isDark
-                          ? 'hover:bg-gray-700/50 text-gray-400'
-                          : 'hover:bg-gray-200/50 text-gray-600'}`}
+                          ? 'hover:bg-white/10 text-gray-400 hover:text-gray-200'
+                          : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'}`}
                     >
-                      <Upload size={18} strokeWidth={1.5} />
+                      <Upload size={16} strokeWidth={1.5} />
                     </motion.button>
 
                     <input
@@ -878,36 +872,36 @@ const Hero = () => {
 
                     <motion.button
                       whileTap={{ scale: 0.9 }}
-                      whileHover={isVoiceActive || showVoiceModal ? {} : { scale: 1.1 }}
+                      whileHover={isVoiceActive || showVoiceModal ? {} : { scale: 1.05 }}
                       onClick={handleVoiceToggle}
                       title="Voice input"
-                      className={`w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200
+                      className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all duration-200
                         ${isVoiceActive || showVoiceModal
                           ? isDark
-                            ? 'bg-red-600/30 text-red-400 animate-pulse'
-                            : 'bg-red-500/20 text-red-600 animate-pulse'
+                            ? 'bg-red-500/20 text-red-400 animate-pulse'
+                            : 'bg-red-50 text-red-500 animate-pulse'
                           : isDark
-                            ? 'hover:bg-gray-700/50 text-gray-400'
-                            : 'hover:bg-gray-200/50 text-gray-600'}`}
+                            ? 'hover:bg-white/10 text-gray-400 hover:text-gray-200'
+                            : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'}`}
                     >
-                      <Mic size={18} strokeWidth={1.5} />
+                      <Mic size={16} strokeWidth={1.5} />
                     </motion.button>
 
                     <motion.button
                       whileTap={{ scale: 0.9 }}
-                      whileHover={!query.trim() && uploadedFiles.length === 0 && pendingFiles.length === 0 ? {} : { scale: 1.1 }}
+                      whileHover={!query.trim() && uploadedFiles.length === 0 && pendingFiles.length === 0 ? {} : { scale: 1.05 }}
                       onClick={handleSubmit}
                       disabled={!query.trim() && uploadedFiles.length === 0 && pendingFiles.length === 0}
-                      className={`w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200
+                      className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all duration-200 ml-1
                         ${!query.trim() && uploadedFiles.length === 0 && pendingFiles.length === 0
                           ? isDark
                             ? 'text-gray-600 cursor-not-allowed'
                             : 'text-gray-300 cursor-not-allowed'
                           : isDark
-                            ? 'bg-gradient-to-br from-gray-600 to-gray-500 hover:from-gray-500 hover:to-gray-400 text-white shadow-lg hover:shadow-gray-500/40'
-                            : 'bg-gradient-to-br from-gray-500 to-gray-400 hover:from-gray-400 hover:to-gray-300 text-white shadow-md'}`}
+                            ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/20'
+                            : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20'}`}
                     >
-                      <SendHorizontal size={18} strokeWidth={2} />
+                      <SendHorizontal size={14} strokeWidth={2} className={!query.trim() ? "ml-0.5" : ""} />
                     </motion.button>
                   </div>
                 </div>
