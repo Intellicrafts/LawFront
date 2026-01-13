@@ -11,17 +11,17 @@ import OnboardingTour from './OnboardingTour';
 import { useGoogleLogin } from '@react-oauth/google';
 import { FaGoogle } from 'react-icons/fa';
 
-import { 
-  Menu, 
-  X, 
-  Sun, 
-  Moon, 
-  ChevronDown, 
-  Home, 
-  Users, 
-  Clock, 
-  Briefcase, 
-  Star, 
+import {
+  Menu,
+  X,
+  Sun,
+  Moon,
+  ChevronDown,
+  Home,
+  Users,
+  Clock,
+  Briefcase,
+  Star,
   MessageSquare,
   History,
   Award,
@@ -61,33 +61,30 @@ const OneTapPrompt = ({ onGoogleLogin, onDismiss, isDarkMode }) => {
   if (!isVisible) return null;
 
   return (
-    <div 
-      className={`fixed top-20 right-6 z-50 transition-all duration-300 ${
-        isAnimating ? 'opacity-0 translate-y-2 scale-95' : 'opacity-100 translate-y-0 scale-100'
-      }`}
+    <div
+      className={`fixed top-20 right-6 z-50 transition-all duration-300 ${isAnimating ? 'opacity-0 translate-y-2 scale-95' : 'opacity-100 translate-y-0 scale-100'
+        }`}
       style={{ maxWidth: '320px' }}
     >
-      <div 
-        className={`relative overflow-hidden rounded-lg shadow-2xl border ${
-          isDarkMode 
-            ? 'bg-black border-gray-800' 
-            : 'bg-white border-gray-200'
-        }`}
+      <div
+        className={`relative overflow-hidden rounded-lg shadow-2xl border ${isDarkMode
+          ? 'bg-black border-gray-800'
+          : 'bg-white border-gray-200'
+          }`}
       >
         {/* Silver metallic shine effect */}
         <div className="absolute inset-0 bg-gradient-to-br from-gray-300/10 via-transparent to-gray-400/5 pointer-events-none"></div>
         <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-radial from-gray-200/20 to-transparent blur-2xl pointer-events-none"></div>
         <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-gradient-radial from-gray-300/15 to-transparent blur-2xl pointer-events-none"></div>
-        
+
         <div className="relative p-5">
           {/* Close button */}
           <button
             onClick={handleDismiss}
-            className={`absolute top-3 right-3 p-1 rounded-full transition-all duration-200 ${
-              isDarkMode 
-                ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-800' 
-                : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
-            }`}
+            className={`absolute top-3 right-3 p-1 rounded-full transition-all duration-200 ${isDarkMode
+              ? 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'
+              : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
+              }`}
             aria-label="Dismiss"
           >
             <X size={14} />
@@ -98,9 +95,8 @@ const OneTapPrompt = ({ onGoogleLogin, onDismiss, isDarkMode }) => {
             <div className="inline-flex items-center justify-center mb-3">
               <FaGoogle className="text-[#4285F4]" size={18} />
             </div>
-            <p className={`text-xs font-medium ${
-              isDarkMode ? 'text-gray-400' : 'text-gray-600'
-            }`}>
+            <p className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
               Sign in to merabakil.com with google.com
             </p>
           </div>
@@ -116,24 +112,22 @@ const OneTapPrompt = ({ onGoogleLogin, onDismiss, isDarkMode }) => {
             onClick={onGoogleLogin}
             className={`group relative w-full py-2.5 px-4 rounded-md flex items-center justify-center space-x-2.5 
                       text-sm font-medium transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99]
-                      shadow-md hover:shadow-lg overflow-hidden ${
-              isDarkMode 
-                ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400' 
+                      shadow-md hover:shadow-lg overflow-hidden ${isDarkMode
+                ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400'
                 : 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400'
-            }`}
+              }`}
           >
             {/* Silver shine animation overlay */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
                           translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-            
+
             <FaGoogle className="relative z-10" size={16} />
             <span className="relative z-10">Continue with Google</span>
           </button>
 
           {/* Privacy footer - Compact */}
-          <p className={`mt-3 text-[10px] text-center leading-tight ${
-            isDarkMode ? 'text-gray-600' : 'text-gray-500'
-          }`}>
+          <p className={`mt-3 text-[10px] text-center leading-tight ${isDarkMode ? 'text-gray-600' : 'text-gray-500'
+            }`}>
             To continue, Google will share your name, email address, and profile picture with this site.{' '}
             <a href="#" className="text-blue-500 hover:text-blue-400 underline">Learn more</a>
           </p>
@@ -170,7 +164,7 @@ const Navbar = () => {
   useEffect(() => {
     checkAuthStatus();
     checkFirstTimeVisitor();
-    
+
     // Listen for avatar updates
     const handleAvatarUpdate = (event) => {
       if (user && event.detail.userId === (user.id || 'current')) {
@@ -185,10 +179,10 @@ const Navbar = () => {
       checkAuthStatus();
       setShowOneTapPrompt(false); // Hide prompt after auth
     };
-    
+
     window.addEventListener('avatar-updated', handleAvatarUpdate);
     window.addEventListener('auth-status-changed', handleAuthStatusChange);
-    
+
     return () => {
       window.removeEventListener('avatar-updated', handleAvatarUpdate);
       window.removeEventListener('auth-status-changed', handleAuthStatusChange);
@@ -201,7 +195,7 @@ const Navbar = () => {
       // Only check tour for newly authenticated users (avoid multiple triggers)
       const previousUserId = sessionStorage.getItem('currentUserId');
       const currentUserId = user.id.toString();
-      
+
       if (previousUserId !== currentUserId) {
         console.log('New user session detected, checking tour status');
         sessionStorage.setItem('currentUserId', currentUserId);
@@ -219,7 +213,7 @@ const Navbar = () => {
       if (user && event.detail.userId === user.id) {
         console.log('Navbar: Avatar updated, refreshing user data');
         setUser(prev => ({ ...prev, avatar_url: event.detail.avatarUrl }));
-        
+
         // Also update localStorage to persist the change
         const userData = localStorage.getItem('user');
         if (userData) {
@@ -233,31 +227,31 @@ const Navbar = () => {
         }
       }
     };
-    
+
     window.addEventListener('profile-avatar-updated', handleAvatarUpdate);
-    
+
     return () => {
       window.removeEventListener('profile-avatar-updated', handleAvatarUpdate);
     };
   }, [user?.id]);
 
-  
+
   // Function to check if user is authenticated
   const checkAuthStatus = () => {
     const token = localStorage.getItem('auth_token');
     const userData = localStorage.getItem('user');
     console.log('Navbar: Checking auth status - User:', userData, 'token:', token);
-    
+
     if (token && userData) {
       setIsAuthenticated(true);
       try {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
-        
+
         // Check if we should start tour for first-time user
         console.log('🔍 Auth check complete, checking tour for user:', parsedUser.id);
         checkAndStartTourForNewUser(parsedUser);
-        
+
         // Fetch notifications if user is authenticated and has an ID
         if (parsedUser && parsedUser.id) {
           console.log('Fetching notifications for user ID:', parsedUser.id);
@@ -282,7 +276,7 @@ const Navbar = () => {
     const hasSeenPrompt = localStorage.getItem('hasSeenOneTapPrompt');
     const hasDismissedPrompt = sessionStorage.getItem('dismissedOneTapPrompt');
     const isAuth = localStorage.getItem('auth_token');
-    
+
     // Show prompt if:
     // 1. User has never seen it (first visit ever)
     // 2. User hasn't dismissed it in current session
@@ -301,25 +295,25 @@ const Navbar = () => {
   const handleGoogleLoginSuccess = async (accessToken) => {
     try {
       console.log('Google login successful, access token:', accessToken);
-      
+
       // Call your backend API to authenticate with Google token
       const response = await authAPI.googleLogin(accessToken);
-      
+
       if (response.data.token && response.data.user) {
         // Store token and user data
         tokenManager.setToken(response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
-        
+
         // Update state
         setIsAuthenticated(true);
         setUser(response.data.user);
         setShowOneTapPrompt(false);
-        
+
         // Dispatch event to notify other components
         window.dispatchEvent(new CustomEvent('auth-status-changed', {
           detail: { authenticated: true, user: response.data.user }
         }));
-        
+
         console.log('✅ Google login complete:', response.data.user);
       }
     } catch (error) {
@@ -346,20 +340,20 @@ const Navbar = () => {
     sessionStorage.setItem('dismissedOneTapPrompt', 'true');
     console.log('One Tap prompt dismissed for current session');
   };
-  
+
   // Function to fetch user notifications
   const fetchUserNotifications = async (userId) => {
     if (!userId) return;
-    
+
     console.log(`Fetching notifications for user ID: ${userId}`);
     setNotificationsLoading(true);
     setNotificationsError(null);
-    
+
     try {
       // Make the API call with the provided user ID
       const response = await apiServices.getUserNotifications(userId);
       console.log('Notifications response:', response);
-      
+
       // Process the response data
       if (response && Array.isArray(response.data)) {
         // If the API returns data in a nested 'data' property
@@ -382,7 +376,7 @@ const Navbar = () => {
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
-      
+
       // Detailed error logging
       if (error.response) {
         console.error('Error response:', error.response.status, error.response.data);
@@ -394,7 +388,7 @@ const Navbar = () => {
         console.error('Error message:', error.message);
         setNotificationsError('Failed to load notifications');
       }
-      
+
       setNotifications([]);
       setNotificationsCount(0);
     } finally {
@@ -409,10 +403,10 @@ const Navbar = () => {
       const token = localStorage.getItem('auth_token');
       console.log('Logging out with token:', token);
       if (token) {
-          // You can make an API call to logout endpoint here
-          // await axios.post('http://127.0.0.1:8000/api/logout', {}, {
-          //   headers: { Authorization: `Bearer ${token}` }
-          // });
+        // You can make an API call to logout endpoint here
+        // await axios.post('http://127.0.0.1:8000/api/logout', {}, {
+        //   headers: { Authorization: `Bearer ${token}` }
+        // });
       }
     } catch (error) {
       console.error('Logout API error:', error);
@@ -420,17 +414,17 @@ const Navbar = () => {
       // Clear local storage
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
-      
+
       // Dispatch event to notify other components of authentication change
       window.dispatchEvent(new CustomEvent('auth-status-changed', {
         detail: { authenticated: false, user: null }
       }));
-      
+
       // Update state
       setIsAuthenticated(false);
       setUser(null);
       setUserDropdownOpen(false);
-      
+
       // Redirect to home page
       window.location.href = '/';
     }
@@ -441,10 +435,10 @@ const Navbar = () => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
     };
-    
+
     // Initial check on mount
     handleScroll();
-    
+
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -467,55 +461,20 @@ const Navbar = () => {
 
 
   const navItems = [
-    { 
-      name: 'Home', 
+    {
+      name: 'Home',
       path: '/',
-      icon: <Home size={18} className="mr-2" /> 
+      icon: <Home size={18} className="mr-2" />
     },
-    { 
-      name: 'Services', 
-      path: '/services',
-      icon: <Briefcase size={18} className="mr-2" />,
-      dropdown: [
-        // { name: 'Virtual Assistant', path: '/', icon: <HelpCircle size={16} className="mr-2" /> },
-        { name: 'Private Chat', path: '/virtual-bakil', icon: <Users size={16} className="mr-2" /> },
-        { name: 'Legal Consultations', path: '/legal-consoltation', icon: <Scale size={16} className="mr-2" /> },
-        // { name: 'Find Lawyers', path: '/lawyers', icon: <Users size={16} className="mr-2" /> },
-        // { name: 'Legal Task Automation', path: '/task-automation', icon: <Clock size={16} className="mr-2" /> },
-        { name: 'Document Review', path: '/legal-documents-review', icon: <FileText size={16} className="mr-2" /> },
-        // { name: 'Personal Appointments', path: '/personal-room', icon: <Calendar size={16} className="mr-2" /> },
-        { name: 'Information Hub', path: '/information-hub', icon: <HelpCircle size={16} className="mr-2" /> },
-      ]
-    },
-    // { 
-    //   name: 'Find Lawyers', 
-    //   path: '/lawyers',
-    //   icon: <Users size={18} className="mr-2" /> 
-    // },
-    { 
-      name: 'Portfolio', 
+    {
+      name: 'Portfolio',
       path: '/portfolio',
-      icon: <Briefcase size={18} className="mr-2" /> 
+      icon: <Briefcase size={18} className="mr-2" />
     },
-    { 
-      name: 'Testimonials', 
-      path: '/testimonials',
-      icon: <Star size={18} className="mr-2" /> 
-    },
-    { 
-      name: 'About', 
-      path: '/about',
-      icon: <Users size={18} className="mr-2" />,
-      dropdown: [
-        { name: 'Our Story', path: '/our-story', icon: <History size={16} className="mr-2" /> },
-        { name: 'Our Team', path: '/our-team', icon: <Users size={16} className="mr-2" /> },
-        { name: 'Vision & Mission', path: '/about/vision', icon: <Award size={16} className="mr-2" /> },
-      ]
-    },
-    { 
-      name: 'Contact', 
+    {
+      name: 'Contact',
       path: '/contact',
-      icon: <MessageSquare size={18} className="mr-2" /> 
+      icon: <MessageSquare size={18} className="mr-2" />
     },
   ];
 
@@ -531,7 +490,7 @@ const Navbar = () => {
 
   const handleModeToggle = () => {
     const heroSection = document.getElementById('hero-section');
-    
+
     if (!isAppMode) {
       // Switching to App Mode
       if (heroSection) {
@@ -574,16 +533,16 @@ const Navbar = () => {
       // Determine which user ID to use
       const userId = user?.id || 18; // Use user ID if available, otherwise use 18
       console.log(`Setting up notification refresh for user ID: ${userId}`);
-      
+
       // Initial fetch
       fetchUserNotifications(userId);
-      
+
       // Set up interval to refresh notifications every 60 seconds
       const intervalId = setInterval(() => {
         console.log(`Refreshing notifications for user ID: ${userId}`);
         fetchUserNotifications(userId);
       }, 60000); // 60 seconds
-      
+
       // Clean up interval on unmount
       return () => {
         console.log('Cleaning up notification refresh interval');
@@ -605,7 +564,7 @@ const Navbar = () => {
     const lastInitial = lastName ? lastName.charAt(0).toUpperCase() : '';
     return `${firstInitial}${lastInitial}`.trim() || 'U';
   };
-  
+
   // Tour management functions
   // ===============================
   // AUTO-TOUR FUNCTIONALITY:
@@ -614,7 +573,7 @@ const Navbar = () => {
   // - Next login with same cache checks this flag and skips auto-tour
   // - Manual tour restart is always available via navbar button
   // ===============================
-  
+
   const getTourStorageKey = (userId) => {
     return `hasSeenOnboardingTour_${userId || 'guest'}`;
   };
@@ -674,16 +633,16 @@ const Navbar = () => {
     // Check if this user has seen the tour before
     const hasSeenTour = hasUserSeenTour(userData.id);
     const storageKey = getTourStorageKey(userData.id);
-    
+
     console.log(`Tour check for user ${userData.id}:`, {
       hasSeenTour,
       storageKey,
       storageValue: localStorage.getItem(storageKey)
     });
-    
+
     // Check if this is a fresh login (no previous tour data for this user)
     const isFirstTimeUser = !hasSeenTour;
-    
+
     // Start tour automatically for first-time users
     if (isFirstTimeUser) {
       console.log('🎯 Starting tour for first-time user:', userData.id);
@@ -736,7 +695,7 @@ const Navbar = () => {
           console.log('❌ No user logged in to simulate first login');
         }
       };
-      
+
       // Log available commands
       console.log('🛠️ Development tour debugging commands available:');
       console.log('  window.resetTour() - Reset and start tour for current user');
@@ -748,27 +707,27 @@ const Navbar = () => {
   // Handle notification click
   const handleNotificationClick = async (notification) => {
     console.log('Notification clicked:', notification);
-    
+
     if (!notification.read_at) {
       console.log(`Marking notification ${notification.id} as read`);
-      
+
       try {
         // Use the updated endpoint for marking a notification as read
         await apiServices.markNotificationAsRead(notification.id);
-        
+
         // Update local state to mark this notification as read
-        setNotifications(prevNotifications => 
-          prevNotifications.map(n => 
+        setNotifications(prevNotifications =>
+          prevNotifications.map(n =>
             n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n
           )
         );
-        
+
         // Update unread count
         setNotificationsCount(prevCount => Math.max(0, prevCount - 1));
         console.log(`Notification ${notification.id} marked as read`);
       } catch (error) {
         console.error('Error marking notification as read:', error);
-        
+
         // Detailed error logging
         if (error.response) {
           console.error('Error response:', error.response.status, error.response.data);
@@ -779,45 +738,45 @@ const Navbar = () => {
         }
       }
     }
-    
+
     // Handle navigation or action based on notification type
     if (notification.link) {
       console.log(`Navigating to notification link: ${notification.link}`);
       // Close dropdown
       setNotificationsDropdownOpen(false);
-      
+
       // Navigate to the link if it exists
       // If using react-router, you could use history.push here
       // For now, we'll just use window.location
       window.location.href = notification.link;
     }
   };
-  
+
   // Mark all notifications as read
   const markAllAsRead = async () => {
     // Use user ID if available, otherwise use 18
     const userId = user?.id || 18;
-    
+
     if (notifications.length === 0) return;
-    
+
     console.log(`Marking all notifications as read for user ID: ${userId}`);
     setNotificationsLoading(true);
-    
+
     try {
       // Call the updated endpoint
       await apiServices.markAllNotificationsAsRead(userId);
-      
+
       // Update local state
-      setNotifications(prevNotifications => 
+      setNotifications(prevNotifications =>
         prevNotifications.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
       );
-      
+
       // Reset unread count
       setNotificationsCount(0);
       console.log('All notifications marked as read');
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
-      
+
       // Detailed error logging
       if (error.response) {
         console.error('Error response:', error.response.status, error.response.data);
@@ -833,202 +792,45 @@ const Navbar = () => {
 
   return (
     <>
-      <nav 
+      <nav
         className="fixed top-0 w-full z-40 transition-all duration-300 py-2.5 
                    bg-white dark:bg-[#0A0A0A]"
         data-tour="navbar"
       >
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-end gap-4">
+          <div className="flex items-center justify-between gap-4">
 
-            {/* Hidden Original Logo for reference */}
-            <div className="hidden">
+            {/* Logo Section - Left Aligned */}
+            <div className="flex-1 flex justify-start">
               <Link to="/" className="flex items-center group">
-                {/* Professional Vakil Logo - Circular Design */}
-                <div className="relative h-11 w-11 mr-3 transition-all duration-300 group-hover:scale-110">
-                  {/* Outer circular ring with metallic gradient */}
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-gray-900 via-gray-800 to-black 
-                                shadow-xl group-hover:shadow-2xl transition-all duration-300 overflow-hidden
-                                ring-2 ring-gray-700 group-hover:ring-gray-600">
-                    {/* Animated shine effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/30 to-transparent 
-                                  -translate-x-full -translate-y-full group-hover:translate-x-full group-hover:translate-y-full 
-                                  transition-transform duration-1000 ease-out"></div>
-                  </div>
-                  
-                  {/* Inner content - Professional Vakil Icon */}
-                  <div className="relative h-full w-full flex items-center justify-center">
-                    <svg 
-                      viewBox="0 0 48 48" 
-                      fill="none" 
-                      className="w-7 h-7 text-white transition-all duration-300"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <defs>
-                        <linearGradient id="vakilGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#f3f4f6" />
-                          <stop offset="50%" stopColor="#ffffff" />
-                          <stop offset="100%" stopColor="#d1d5db" />
-                        </linearGradient>
-                        <linearGradient id="goldAccent" x1="0%" y1="0%" x2="100%" y2="0%">
-                          <stop offset="0%" stopColor="#fbbf24" />
-                          <stop offset="50%" stopColor="#fcd34d" />
-                          <stop offset="100%" stopColor="#f59e0b" />
-                        </linearGradient>
-                      </defs>
-                      
-                      {/* Lawyer silhouette with briefcase */}
-                      {/* Head */}
-                      <circle cx="24" cy="10" r="4.5" fill="url(#vakilGradient)" className="drop-shadow-md"/>
-                      
-                      {/* Body - Professional Suit */}
-                      <path 
-                        d="M24 15 L19 19 L19 34 L29 34 L29 19 L24 15 Z" 
-                        fill="url(#vakilGradient)" 
-                        className="drop-shadow-md"
-                      />
-                      
-                      {/* Coat lapels - detailed */}
-                      <path 
-                        d="M24 16 L20 20 L20 30 M24 16 L28 20 L28 30" 
-                        stroke="currentColor" 
-                        strokeWidth="1.5" 
-                        strokeLinecap="round"
-                        opacity="0.4"
-                      />
-                      
-                      {/* Tie with prominent gold accent - more visible */}
-                      <path 
-                        d="M24 15 L24 30 L22.5 33 L24 36 L25.5 33 L24 30 Z" 
-                        fill="url(#goldAccent)" 
-                        className="drop-shadow-lg"
-                      />
-                      
-                      {/* Tie knot */}
-                      <circle cx="24" cy="16" r="1.5" fill="#f59e0b" className="drop-shadow-md"/>
-                      
-                      {/* Briefcase */}
-                      <rect 
-                        x="16" 
-                        y="38" 
-                        width="16" 
-                        height="8" 
-                        rx="1.5" 
-                        fill="url(#vakilGradient)"
-                        className="drop-shadow-lg"
-                      />
-                      
-                      {/* Briefcase handle */}
-                      <path 
-                        d="M21 38 L21 36 C21 35 22 34 24 34 C26 34 27 35 27 36 L27 38" 
-                        stroke="currentColor" 
-                        strokeWidth="1.5" 
-                        strokeLinecap="round"
-                        opacity="0.5"
-                      />
-                      
-                      {/* Briefcase lock detail - gold */}
-                      <rect 
-                        x="23" 
-                        y="40" 
-                        width="2" 
-                        height="4" 
-                        rx="0.5" 
-                        fill="url(#goldAccent)"
-                      />
-                    </svg>
-                  </div>
-                  
-                  {/* Professional badge indicator */}
-                  <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600 
-                               rounded-full shadow-lg flex items-center justify-center ring-2 ring-gray-900
-                               group-hover:scale-110 transition-transform duration-300">
-                    <svg viewBox="0 0 24 24" fill="none" className="w-2.5 h-2.5 text-white">
-                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" 
-                            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                </div>
-                
-                {/* Text Logo with Premium Metallic Effect */}
-                <div className="flex flex-col">
-                  <span className="text-xl font-bold tracking-tight relative">
-                    <span className="bg-gradient-to-r from-gray-900 via-gray-700 to-black bg-clip-text text-transparent
-                                   dark:from-gray-100 dark:via-white dark:to-gray-200
-                                   group-hover:from-black group-hover:via-gray-800 group-hover:to-gray-900
-                                   dark:group-hover:from-white dark:group-hover:via-gray-100 dark:group-hover:to-gray-300
-                                   transition-all duration-300 font-extrabold drop-shadow-sm">
-                      Mera Vakil
-                    </span>
-                  </span>
-                  <span className="text-[11px] text-gray-600 dark:text-gray-400 -mt-0.5 font-semibold tracking-wider uppercase
-                               group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors
-                               flex items-center gap-1">
-                    <Scale size={10} className="text-amber-500" />
-                    Legal Hub
-                  </span>
-                </div>
+
+
+
               </Link>
             </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex lg:items-center lg:space-x-4 flex-1 justify-center ml-60">
+            {/* Desktop Navigation - Truly Centered */}
+            <div className="hidden lg:flex lg:items-center lg:space-x-8">
               {navItems.map((item, index) => (
                 <div key={item.name} className="relative group">
-                  {item.dropdown ? (
-                    <div 
-                      className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 cursor-pointer
-                                dark:text-gray-200 dark:hover:text-blue-400 transition-colors duration-200"
-                      onClick={() => toggleDropdown(index)}
-                      onMouseEnter={() => setActiveDropdown(index)}
-                      onMouseLeave={() => setActiveDropdown(null)}
-                    >
-                      <div className="flex items-center">
-                        {item.icon}
-                        <span>{item.name}</span>
-                      </div>
-                      <ChevronDown size={16} className="ml-1" />
-                      
-                      {/* Dropdown Menu */}
-                      <div 
-                        className={`absolute top-full left-0 mt-1 py-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200/80
-                                  dark:bg-[#2C2C2C] dark:border-[#3A3A3A]/80 transform transition-all duration-200 origin-top-left
-                                  ${activeDropdown === index ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
-                      >
-                        {item.dropdown.map(subItem => (
-                          <Link
-                            key={subItem.name}
-                            to={subItem.path}
-                            className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 dark:text-gray-200 
-                                     dark:hover:bg-[#3A3A3A]/50 dark:hover:text-blue-400 transition-colors"
-                            onClick={() => {setActiveDropdown(null); setIsMenuOpen(false);}}
-                          >
-                            {subItem.icon}
-                            {subItem.name}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <Link
-                      to={item.path}
-                      className="relative flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors duration-200
-                              dark:text-gray-200 dark:hover:text-blue-400 group"
-                    >
-                      {item.icon}
-                      {item.name}
-                      <span className="absolute -bottom-0 left-1/2 w-0 h-0.5 bg-blue-500 group-hover:w-1/2 group-hover:transition-all duration-300" 
-                            style={{ background: 'linear-gradient(to right, #22577a, #5cacde)' }}></span>
-                      <span className="absolute -bottom-0 right-1/2 w-0 h-0.5 bg-blue-500 group-hover:w-1/2 group-hover:transition-all duration-300"
-                            style={{ background: 'linear-gradient(to right, #5cacde, #22577a)' }}></span>
-                    </Link>
-                  )}
+                  <Link
+                    to={item.path}
+                    className="relative flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors duration-200
+                            dark:text-gray-200 dark:hover:text-blue-400 group"
+                  >
+                    {item.icon}
+                    {item.name}
+                    <span className="absolute -bottom-0 left-1/2 w-0 h-0.5 bg-blue-500 group-hover:w-1/2 group-hover:transition-all duration-300"
+                      style={{ background: 'linear-gradient(to right, #22577a, #5cacde)' }}></span>
+                    <span className="absolute -bottom-0 right-1/2 w-0 h-0.5 bg-blue-500 group-hover:w-1/2 group-hover:transition-all duration-300"
+                      style={{ background: 'linear-gradient(to right, #5cacde, #22577a)' }}></span>
+                  </Link>
                 </div>
               ))}
             </div>
 
-            {/* Desktop Right Side - Auth & Theme */}
-            <div className="hidden lg:flex lg:items-center lg:space-x-4 min-w-fit">
+            {/* Desktop Right Side - Auth & Theme - Right Aligned */}
+            <div className="hidden lg:flex lg:items-center lg:space-x-4 flex-1 justify-end">
               {/* Elegant divider */}
               <div className="h-8 w-px bg-gray-300 dark:bg-gray-700"></div>
               {/* Theme Toggle Button */}
@@ -1058,22 +860,22 @@ const Navbar = () => {
               </button>
 
               {isAuthenticated ? (
-                  <>
-                    {/* Enhanced Notifications Dropdown */}
-                    <div ref={notificationsDropdownRef}>
-                      <NotificationDropdown 
-                        notifications={notifications}
-                        notificationsCount={notificationsCount}
-                        notificationsLoading={notificationsLoading}
-                        notificationsError={notificationsError}
-                        isOpen={notificationsDropdownOpen}
-                        onToggle={() => setNotificationsDropdownOpen(!notificationsDropdownOpen)}
-                        onMarkAllAsRead={markAllAsRead}
-                        onRefresh={fetchUserNotifications}
-                        onNotificationClick={handleNotificationClick}
-                        userId={user?.id || 18}
-                      />
-                      {/* <button 
+                <>
+                  {/* Enhanced Notifications Dropdown */}
+                  <div ref={notificationsDropdownRef}>
+                    <NotificationDropdown
+                      notifications={notifications}
+                      notificationsCount={notificationsCount}
+                      notificationsLoading={notificationsLoading}
+                      notificationsError={notificationsError}
+                      isOpen={notificationsDropdownOpen}
+                      onToggle={() => setNotificationsDropdownOpen(!notificationsDropdownOpen)}
+                      onMarkAllAsRead={markAllAsRead}
+                      onRefresh={fetchUserNotifications}
+                      onNotificationClick={handleNotificationClick}
+                      userId={user?.id || 18}
+                    />
+                    {/* <button 
                         className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 focus:outline-none relative"
                         onClick={() => setNotificationsDropdownOpen(!notificationsDropdownOpen)}
                       >
@@ -1090,78 +892,78 @@ const Navbar = () => {
                       </button>
                       
                       {/* Notification Panel */}
-                      
-                    </div> 
 
-                    {/* User Dropdown */}
+                  </div>
+
+                  {/* User Dropdown */}
                   <div className="relative" ref={userDropdownRef}>
-  {/* Dropdown Button */}
-  <button
-    onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-    className="flex items-center space-x-2 px-2 py-1 rounded-full hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-all duration-200 focus:outline-none"
-  >
-    <img
-      src={user?.avatar_url || 'https://ui-avatars.com/api/?name=User&background=random'}
-      alt={user?.name || 'User'}
-      className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"
-    />
-    <ChevronDown size={16} className="text-gray-500 dark:text-gray-400" />
-  </button>
+                    {/* Dropdown Button */}
+                    <button
+                      onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                      className="flex items-center space-x-2 px-2 py-1 rounded-full hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-all duration-200 focus:outline-none"
+                    >
+                      <img
+                        src={user?.avatar_url || 'https://ui-avatars.com/api/?name=User&background=random'}
+                        alt={user?.name || 'User'}
+                        className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"
+                      />
+                      <ChevronDown size={16} className="text-gray-500 dark:text-gray-400" />
+                    </button>
 
-  {/* Dropdown Menu */}
-  <div
-    className={`absolute right-0 top-full mt-2 w-64 bg-white dark:bg-[#1A1A1A] rounded-xl shadow-lg border border-gray-100 dark:border-[#3A3A3A] transform transition-all duration-200 origin-top-right z-50
+                    {/* Dropdown Menu */}
+                    <div
+                      className={`absolute right-0 top-full mt-2 w-64 bg-white dark:bg-[#1A1A1A] rounded-xl shadow-lg border border-gray-100 dark:border-[#3A3A3A] transform transition-all duration-200 origin-top-right z-50
       ${userDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
-  >
-    {/* User Info */}
-    <div className="flex items-center space-x-3 px-4 py-3 border-b border-gray-100 dark:border-[#3A3A3A]">
-      <img
-        src={user?.avatar_url || 'https://ui-avatars.com/api/?name=User&background=random'}
-        alt={user?.name || 'User'}
-        className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-[#3A3A3A] shadow-sm flex-shrink-0"
-      />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-          {user?.name || 'User'} {user?.last_name || ''}
-        </p>
-        <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={user?.email || 'No email'}>
-          {user?.email || 'No email'}
-        </p>
-      </div>
-    </div>
+                    >
+                      {/* User Info */}
+                      <div className="flex items-center space-x-3 px-4 py-3 border-b border-gray-100 dark:border-[#3A3A3A]">
+                        <img
+                          src={user?.avatar_url || 'https://ui-avatars.com/api/?name=User&background=random'}
+                          alt={user?.name || 'User'}
+                          className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-[#3A3A3A] shadow-sm flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                            {user?.name || 'User'} {user?.last_name || ''}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={user?.email || 'No email'}>
+                            {user?.email || 'No email'}
+                          </p>
+                        </div>
+                      </div>
 
-    {/* Links */}
-    <Link
-      to="/profile"
-      className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-[#2C2C2C] transition-colors"
-      onClick={() => setUserDropdownOpen(false)}
-    >
-      <User size={16} className="mr-2 text-gray-400" />
-      Profile
-    </Link>
-    <Link
-      to="/settings"
-      className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-[#2C2C2C] transition-colors"
-      onClick={() => setUserDropdownOpen(false)}
-    >
-      <Settings size={16} className="mr-2 text-gray-400" />
-      Settings
-    </Link>
+                      {/* Links */}
+                      <Link
+                        to="/profile"
+                        className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-[#2C2C2C] transition-colors"
+                        onClick={() => setUserDropdownOpen(false)}
+                      >
+                        <User size={16} className="mr-2 text-gray-400" />
+                        Profile
+                      </Link>
+                      <Link
+                        to="/settings"
+                        className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-[#2C2C2C] transition-colors"
+                        onClick={() => setUserDropdownOpen(false)}
+                      >
+                        <Settings size={16} className="mr-2 text-gray-400" />
+                        Settings
+                      </Link>
 
-    {/* Logout */}
-    <div className="border-t border-gray-100 dark:border-[#3A3A3A] mt-1">
-      <button
-        onClick={handleLogout}
-        className="flex items-center w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
-      >
-        <LogOut size={16} className="mr-2" />
-        Logout
-      </button>
-    </div>
-  </div>
-</div>
+                      {/* Logout */}
+                      <div className="border-t border-gray-100 dark:border-[#3A3A3A] mt-1">
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
+                        >
+                          <LogOut size={16} className="mr-2" />
+                          Logout
+                        </button>
+                      </div>
+                    </div>
+                  </div>
 
-                  </>
+                </>
 
               ) : (
                 <>
@@ -1178,19 +980,19 @@ const Navbar = () => {
                     {/* Silver shine animation */}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-400/20 to-transparent 
                                   -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
-                    
+
                     {/* Icon container with metallic effect */}
                     <div className="relative flex items-center justify-center w-5 h-5 rounded-lg 
                                   bg-gradient-to-br from-gray-700 to-gray-800 
                                   shadow-inner transition-all duration-300 group-hover:scale-110">
                       <LogIn size={14} className="text-gray-200" strokeWidth={2.5} />
                     </div>
-                    
+
                     {/* Text with silver glow */}
                     <span className="relative text-sm font-bold tracking-wide text-gray-100 group-hover:text-white transition-colors">
                       Login
                     </span>
-                    
+
                     {/* Subtle highlight edge */}
                     <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-transparent via-transparent to-white/5"></div>
                   </Link>
@@ -1209,20 +1011,20 @@ const Navbar = () => {
                     {/* Silver shine animation */}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-gray-600/30 to-transparent 
                                   -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
-                    
+
                     {/* Icon container with metallic effect */}
                     <div className="relative flex items-center justify-center w-5 h-5 rounded-lg 
                                   bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600
                                   shadow-inner transition-all duration-300 group-hover:scale-110">
                       <UserPlus size={14} className="text-gray-700 dark:text-gray-200" strokeWidth={2.5} />
                     </div>
-                    
+
                     {/* Text with metallic effect */}
                     <span className="relative text-sm font-bold tracking-wide text-gray-900 dark:text-gray-100 
                                    group-hover:text-black dark:group-hover:text-white transition-colors">
                       Register
                     </span>
-                    
+
                     {/* Subtle highlight edge */}
                     <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-transparent via-transparent to-white/20 dark:to-white/5"></div>
                   </Link>
@@ -1241,7 +1043,7 @@ const Navbar = () => {
               >
                 {mode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
               </button>
-              
+
               {/* Mobile Start Tour Button */}
               <button
                 className="p-2 mr-2 rounded-full text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200
@@ -1266,7 +1068,7 @@ const Navbar = () => {
       </nav>
 
       {/* Professional Mobile Sidebar */}
-      <MobileSidebar 
+      <MobileSidebar
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
         isAuthenticated={isAuthenticated}

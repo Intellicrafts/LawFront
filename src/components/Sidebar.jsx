@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Home,
   Search,
@@ -16,7 +17,10 @@ import {
   Layers,
   MessageCircle,
   MoreHorizontal,
-  Clock
+  Clock,
+  Bot,
+  Calendar,
+  Gavel
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
@@ -28,10 +32,10 @@ const DEFAULT_USER = {
 };
 
 const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', icon: Home },
-  { id: 'tasks', label: 'My Tasks', icon: CheckSquare, count: 5 },
-  { id: 'cases', label: 'Active Cases', icon: Briefcase },
-  { id: 'documents', label: 'Documents', icon: FileText },
+  { id: 'chatbot', label: 'AI Chatbot', icon: Bot, color: '#8B5CF6', path: '/' },
+  { id: 'appointments', label: 'Appointments', icon: Calendar, color: '#10B981', path: '/legal-consoltation' },
+  { id: 'documents', label: 'Documents', icon: FileText, color: '#3B82F6', path: '/legal-documents-review' },
+  { id: 'cases', label: 'Active Cases', icon: Briefcase, color: '#F59E0B' },
 ];
 
 // AI Chat History
@@ -54,16 +58,27 @@ const Sidebar = ({
   setIsMobileOpen,
   className = "",
   sidebarOpen,
-  setSidebarOpen
+  setSidebarOpen,
+  items // Accept items prop if provided
 }) => {
   const { isDark } = useTheme(); // Use theme from context
+  const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [internalActiveItem, setInternalActiveItem] = useState('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
 
   const currentActive = onNavigate ? activeItem : internalActiveItem;
+  const navItemsToUse = items || NAV_ITEMS;
 
-  const handleNavigate = useCallback((id) => {
+  const handleNavigate = useCallback((item) => {
+    const { id, path } = item;
+
+    // If it's a specific route redirection as per user request
+    if (path) {
+      navigate(path);
+      return;
+    }
+
     if (onNavigate) {
       onNavigate(id);
     } else {
@@ -76,7 +91,7 @@ const Sidebar = ({
     if (setSidebarOpen && window.innerWidth < 1024) {
       setSidebarOpen(false);
     }
-  }, [onNavigate, setIsMobileOpen, setSidebarOpen]);
+  }, [onNavigate, setIsMobileOpen, setSidebarOpen, navigate]);
 
   const handleToggleDesktop = useCallback(() => {
     setIsCollapsed(prev => !prev);
@@ -108,10 +123,7 @@ const Sidebar = ({
           <div className="w-7 h-7 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
             <Layers className="text-white w-4 h-4" />
           </div>
-          <div className="min-w-0 flex-1">
-            <h1 className={`${isDark ? 'text-white' : 'text-gray-900'} font-bold text-sm tracking-tight truncate`}>Mera Vakil</h1>
-            <p className={`text-[9px] ${isDark ? 'text-gray-500' : 'text-gray-400'} uppercase tracking-wider font-semibold truncate`}>Legal Hub</p>
-          </div>
+
         </div>
 
         {/* Desktop Toggle Button */}
@@ -134,21 +146,35 @@ const Sidebar = ({
 
       {/* Main Navigation - Fixed */}
       <div className="px-2 py-2 space-y-0.5 flex-shrink-0">
-        {NAV_ITEMS.map((item) => {
+        {navItemsToUse.map((item) => {
           const isActive = currentActive === item.id;
           const Icon = item.icon;
           return (
             <button
               key={item.id}
-              onClick={() => handleNavigate(item.id)}
+              onClick={() => handleNavigate(item)}
               className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-all duration-150 group ${isActive
                 ? isDark ? 'text-white bg-[#1A1A1A]' : 'text-gray-900 bg-blue-50 border border-blue-100'
                 : isDark ? 'hover:text-gray-200 hover:bg-[#1A1A1A]/50' : 'hover:text-gray-900 hover:bg-gray-50'
                 }`}
             >
               <div className="flex items-center gap-2.5">
-                <Icon size={15} className={`${isActive ? 'text-blue-500' : isDark ? 'text-gray-500 group-hover:text-gray-400' : 'text-gray-400 group-hover:text-gray-600'} transition-colors flex-shrink-0`} />
-                <span className="truncate">{item.label}</span>
+                <motion.div
+                  whileHover={{ scale: 1.15, rotate: 5 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="p-1.5 rounded-lg flex items-center justify-center transition-all duration-200 shadow-sm"
+                  style={{
+                    backgroundColor: isActive
+                      ? `${item.color}25`
+                      : (isDark ? '#1A1A1A' : '#F3F4F6'),
+                    color: item.color || (isActive ? '#3B82F6' : (isDark ? '#555' : '#999'))
+                  }}
+                >
+                  <Icon size={14} className="flex-shrink-0" />
+                </motion.div>
+                <span className={`transition-all duration-200 truncate ${isActive ? (isDark ? 'text-white font-bold' : 'text-gray-900 font-bold') : (isDark ? 'text-gray-400 group-hover:text-gray-200' : 'text-gray-600 group-hover:text-gray-900')}`}>
+                  {item.label}
+                </span>
               </div>
               {item.count ? (
                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isActive

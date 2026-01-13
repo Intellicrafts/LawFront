@@ -8,31 +8,364 @@ import {
   Menu, X, Bell, Settings, User, LogOut, Sun, Moon,
   Mic, Upload, SendHorizontal, ImageIcon, Globe, Bot,
   ChevronDown, Search as SearchIcon, MessageSquare, Sparkles,
-  Heart, Share2, Copy, Volume2, Download, CheckCircle
+  Heart, Share2, Copy, Volume2, Download, CheckCircle,
+  Loader2, Brain, BookOpen, PenTool, Zap, ThumbsUp, ThumbsDown, VolumeX
 } from 'lucide-react';
+import { chatbotService, CHAT_STATES, AI_MODELS } from '../services/chatbotApiService';
 
-// Streaming Text Component (Google Gemini style)
+// Enhanced Streaming Text Component with faster, smoother typing and auto-scroll
 const StreamingText = ({ text, isDark }) => {
   const [displayedText, setDisplayedText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     if (currentIndex < text.length) {
+      const delay = text.length > 500 ? 5 : 12;
       const timeout = setTimeout(() => {
-        setDisplayedText(prev => prev + text[currentIndex]);
-        setCurrentIndex(prev => prev + 1);
-      }, 20); // Streaming speed
+        const charsToType = text.length > 1000 ? 3 : 1;
+        setDisplayedText(text.substring(0, currentIndex + charsToType));
+        setCurrentIndex(prev => prev + charsToType);
+      }, delay);
       return () => clearTimeout(timeout);
     }
   }, [currentIndex, text]);
 
+  // Point 1: Handle auto-scroll during generation
+  useEffect(() => {
+    if (currentIndex > 0) {
+      const container = document.getElementById('chat-scroll-container');
+      if (container) {
+        // Only auto-scroll if user is already near the bottom (within 250px)
+        const isNearBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 250;
+        if (isNearBottom) {
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior: 'auto' // Use 'auto' for zero-latency tracking during streaming
+          });
+        }
+      }
+    }
+  }, [currentIndex]);
+
   return (
-    <span className={isDark ? 'text-gray-100' : 'text-gray-900'}>
-      {displayedText}
+    <div className={isDark ? 'text-gray-100' : 'text-gray-900'}>
+      <FormattedResponse text={displayedText} isDark={isDark} />
       {currentIndex < text.length && (
-        <span className="inline-block w-0.5 h-4 bg-blue-500 ml-0.5 animate-pulse" />
+        <span className="inline-block w-1.5 h-4 bg-blue-500/80 ml-1 animate-pulse rounded-full align-middle" />
       )}
-    </span>
+    </div>
+  );
+};
+
+/**
+ * Professional Response Formatting Component
+ * Transforms raw text into a premium, human-readable legal presentation.
+ * Supports: Bolding, Numbered Lists, Bullet Points, and Section Headings.
+ */
+const FormattedResponse = ({ text, isDark }) => {
+  if (!text) return null;
+
+  // Split text into logical lines for processing
+  const lines = text.split('\n');
+
+  return (
+    <div className="space-y-2.5 py-0.5">
+      {lines.map((line, idx) => {
+        const trimmedLine = line.trim();
+        if (!trimmedLine) return <div key={idx} className="h-1.5" />;
+
+        // Header detection: # Header or Title:
+        if (trimmedLine.match(/^#+\s/) || trimmedLine.match(/^[A-Z][\w\s]+:$/)) {
+          return (
+            <div key={idx} className="pt-2 group first:pt-0">
+              <h4 className={`font-bold text-[16px] tracking-tight flex items-center gap-2 ${isDark ? 'text-blue-400' : 'text-slate-800'
+                }`}>
+                <span className="w-1.5 h-3.5 rounded-full bg-blue-500 block opacity-50" />
+                {trimmedLine.replace(/^#+\s/, '')}
+              </h4>
+            </div>
+          );
+        }
+
+        const listMatch = trimmedLine.match(/^(\d+\.|[\*\-\•])\s+(.*)/);
+        if (listMatch) {
+          const content = listMatch[2];
+          const isNumber = /\d+\./.test(listMatch[1]);
+
+          return (
+            <div key={idx} className="flex gap-2.5 pl-1 items-start">
+              <div className={`mt-[6px] shrink-0 flex items-center justify-center w-5 h-5 rounded-md text-[10px] font-bold ${isDark ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-slate-100 text-slate-600 border border-slate-200'
+                }`}>
+                {isNumber ? listMatch[1].replace('.', '') : '•'}
+              </div>
+              <p className={`flex-1 m-0 text-[14.5px] leading-relaxed py-0.5 ${isDark ? 'text-gray-200' : 'text-slate-700'}`}>
+                {parseBold(content, isDark)}
+              </p>
+            </div>
+          );
+        }
+
+        return (
+          <p key={idx} className={`leading-relaxed m-0 text-[14.5px] ${isDark ? 'text-gray-300' : 'text-slate-700/90'
+            }`}>
+            {parseBold(trimmedLine, isDark)}
+          </p>
+        );
+      })}
+    </div>
+  );
+};
+
+/**
+ * Helper to parse **bold** and __bold__ text
+ * Point 2: Softer bold colors for better readability
+ */
+const parseBold = (text, isDark) => {
+  const parts = text.split(/(\*\*.*?\*\*|__.*?__)/g);
+  return parts.map((part, i) => {
+    if ((part.startsWith('**') && part.endsWith('**')) || (part.startsWith('__') && part.endsWith('__'))) {
+      const cleanText = part.slice(2, -2);
+      return (
+        <strong key={i} className={`font-semibold ${isDark ? 'text-blue-100' : 'text-slate-900 border-b border-slate-200/60'
+          }`}>
+          {cleanText}
+        </strong>
+      );
+    }
+    return part;
+  });
+};
+
+/**
+ * Professional Message Actions Component
+ * Features: Natural Human Voice synthesis with punctuation pauses, Clipboard Copy, and Feedback.
+ */
+const MessageActions = ({ text, isDark }) => {
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+  const [voices, setVoices] = useState([]);
+  const [voicesLoaded, setVoicesLoaded] = useState(false);
+
+  // Ensure voices are loaded properly
+  useEffect(() => {
+    const loadVoices = () => {
+      const availableVoices = window.speechSynthesis.getVoices();
+      console.log('Available voices:', availableVoices.length);
+      if (availableVoices.length > 0) {
+        setVoices(availableVoices);
+        setVoicesLoaded(true);
+      }
+    };
+
+    // Load voices immediately
+    loadVoices();
+
+    // Set up listener for voice changes (needed for some browsers)
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
+    // Fallback: try loading again after a short delay
+    const timeout = setTimeout(loadVoices, 100);
+
+    return () => {
+      clearTimeout(timeout);
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = null;
+      }
+    };
+  }, []);
+
+  const handleReadAloud = () => {
+    // Stop if already speaking
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    // Ensure speech synthesis is available
+    if (!window.speechSynthesis) {
+      console.error('Speech synthesis not supported');
+      alert('Text-to-speech is not supported in your browser');
+      return;
+    }
+
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+
+    // Clean text: remove markdown but keep punctuation
+    const cleanText = text.replace(/(\*\*|__|#)/g, '').trim();
+
+    if (!cleanText) {
+      console.warn('No text to speak');
+      return;
+    }
+
+    console.log('Starting speech synthesis for text:', cleanText.substring(0, 50) + '...');
+
+    // Create utterance
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+
+    // Set speech parameters for natural flow
+    utterance.rate = 1.15;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    // Select voice (prioritize Indian accent)
+    if (voicesLoaded && voices.length > 0) {
+      const indianVoice = voices.find(v =>
+        (v.lang === 'en-IN' || v.lang === 'hi-IN') ||
+        (v.name.toLowerCase().includes('india') || v.name.toLowerCase().includes('hindi'))
+      );
+
+      const googleEnglishVoice = voices.find(v =>
+        v.name.toLowerCase().includes('google') && v.lang.startsWith('en')
+      );
+
+      const anyEnglishVoice = voices.find(v => v.lang.startsWith('en'));
+
+      if (indianVoice) {
+        utterance.voice = indianVoice;
+        console.log('Using Indian voice:', indianVoice.name);
+      } else if (googleEnglishVoice) {
+        utterance.voice = googleEnglishVoice;
+        console.log('Using Google English voice:', googleEnglishVoice.name);
+      } else if (anyEnglishVoice) {
+        utterance.voice = anyEnglishVoice;
+        console.log('Using English voice:', anyEnglishVoice.name);
+      } else {
+        utterance.voice = voices[0];
+        console.log('Using default voice:', voices[0].name);
+      }
+    }
+
+    // Set up event handlers
+    utterance.onstart = () => {
+      console.log('Speech started');
+      setIsSpeaking(true);
+    };
+
+    utterance.onend = () => {
+      console.log('Speech ended');
+      setIsSpeaking(false);
+    };
+
+    utterance.onerror = (event) => {
+      console.error('Speech error:', event.error, event);
+      if (event.error !== 'interrupted') {
+        setIsSpeaking(false);
+        if (event.error === 'not-allowed') {
+          alert('Please allow audio playback in your browser settings');
+        }
+      }
+    };
+
+    utterance.onpause = () => {
+      console.log('Speech paused');
+    };
+
+    utterance.onresume = () => {
+      console.log('Speech resumed');
+    };
+
+    // Start speaking
+    try {
+      window.speechSynthesis.speak(utterance);
+      console.log('Speech synthesis started');
+    } catch (error) {
+      console.error('Failed to start speech:', error);
+      setIsSpeaking(false);
+      alert('Failed to start text-to-speech. Please try again.');
+    }
+  };
+
+  // Cleanup speech on unmount
+  useEffect(() => {
+    return () => {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const handleCopy = async () => {
+    try {
+      // Clean markdown bold/header but PRESERVE newlines and list structure
+      const cleanText = text
+        .replace(/(\*\*|__|\#)/g, '') // Remove bold/header markers
+        .trim();
+
+      await navigator.clipboard.writeText(cleanText);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text:', err);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`flex items-center gap-1 mt-2.5 ml-1 px-1.5 py-1.5 rounded-xl w-fit border shadow-sm ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'
+        }`}
+    >
+      <motion.button
+        whileTap={{ scale: 0.92 }}
+        onClick={handleReadAloud}
+        className={`p-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 group ${isSpeaking
+          ? 'text-blue-500 bg-blue-500/15 ring-1 ring-blue-500/20'
+          : isDark ? 'text-gray-400 hover:text-blue-400 hover:bg-white/5' : 'text-gray-500 hover:text-blue-600 hover:bg-white'
+          }`}
+        title={isSpeaking ? "Stop" : "Read Aloud"}
+      >
+        {isSpeaking ? <VolumeX size={14} className="animate-pulse" /> : <Volume2 size={14} />}
+        {isSpeaking && <span className="text-[10px] font-bold uppercase tracking-wider">Reading</span>}
+      </motion.button>
+
+      <div className={`w-[1px] h-3 mx-0.5 ${isDark ? 'bg-white/10' : 'bg-gray-300'}`} />
+
+      <motion.button
+        whileTap={{ scale: 0.92 }}
+        onClick={handleCopy}
+        className={`p-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 ${isCopied
+          ? 'text-emerald-500 bg-emerald-500/15 ring-1 ring-emerald-500/20'
+          : isDark ? 'text-gray-400 hover:text-emerald-400 hover:bg-white/5' : 'text-gray-500 hover:text-emerald-600 hover:bg-white'
+          }`}
+        title="Copy"
+      >
+        {isCopied ? <CheckCircle size={14} /> : <Copy size={14} />}
+        {isCopied && <span className="text-[10px] font-bold uppercase tracking-wider">Copied</span>}
+      </motion.button>
+
+      <div className={`w-[1px] h-3 mx-0.5 ${isDark ? 'bg-white/10' : 'bg-gray-300'}`} />
+
+      <div className="flex items-center">
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setFeedback(feedback === 'like' ? null : 'like')}
+          className={`p-1.5 rounded-lg transition-all duration-200 ${feedback === 'like'
+            ? 'text-blue-500 bg-blue-500/15'
+            : isDark ? 'text-gray-500 hover:text-blue-400 hover:bg-white/5' : 'text-gray-500 hover:text-blue-600 hover:bg-white'
+            }`}
+        >
+          <ThumbsUp size={14} fill={feedback === 'like' ? 'currentColor' : 'none'} strokeWidth={feedback === 'like' ? 2 : 1.5} />
+        </motion.button>
+
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setFeedback(feedback === 'dislike' ? null : 'dislike')}
+          className={`p-1.5 rounded-lg transition-all duration-200 ${feedback === 'dislike'
+            ? 'text-red-500 bg-red-500/15'
+            : isDark ? 'text-gray-500 hover:text-red-400 hover:bg-white/5' : 'text-gray-500 hover:text-red-600 hover:bg-white'
+            }`}
+        >
+          <ThumbsDown size={14} fill={feedback === 'dislike' ? 'currentColor' : 'none'} strokeWidth={feedback === 'dislike' ? 2 : 1.5} />
+        </motion.button>
+      </div>
+    </motion.div>
   );
 };
 
@@ -41,28 +374,37 @@ const MessageBubble = ({ message, isDark, isUser, isStreaming = false }) => (
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.2 }}
-    className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-3`}
+    className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-5`}
   >
-    <div className={`flex items-start gap-2 max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+    <div className={`flex items-start gap-3 max-w-[92%] sm:max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
       {!isUser && (
-        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-          <Bot size={14} className="text-white" />
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center flex-shrink-0 mt-1 shadow-lg shadow-blue-500/10 border border-white/10">
+          <Bot size={18} className="text-white" />
         </div>
       )}
-      <div
-        className={`px-3 py-2 rounded-2xl text-sm leading-relaxed break-words whitespace-pre-wrap overflow-hidden ${isUser
-          ? isDark
-            ? 'bg-[#1F1F1F] text-gray-50 border border-[#2A2A2A]'
-            : 'bg-gray-100 text-gray-900 border border-gray-200'
-          : isDark
-            ? 'bg-transparent text-gray-200'
-            : 'bg-transparent text-gray-800'
-          }`}
-      >
-        {isStreaming && !isUser ? (
-          <StreamingText text={message} isDark={isDark} />
-        ) : (
-          <span>{message}</span>
+      <div className="flex flex-col">
+        <div
+          className={`px-4 py-3 rounded-2xl shadow-sm text-[14.5px] leading-relaxed break-words whitespace-pre-wrap ${isUser
+            ? isDark
+              ? 'bg-[#1a1a1a] text-gray-50 border border-[#2a2a2a]'
+              : 'bg-white text-gray-900 border border-gray-100 shadow-sm'
+            : isDark
+              ? 'bg-transparent text-gray-200'
+              : 'bg-transparent text-gray-800'
+            }`}
+        >
+          {isStreaming && !isUser ? (
+            <StreamingText text={message} isDark={isDark} />
+          ) : isUser ? (
+            <span>{message}</span>
+          ) : (
+            <FormattedResponse text={message} isDark={isDark} />
+          )}
+        </div>
+
+        {/* Post-response actions - show for ALL completed assistant messages */}
+        {!isUser && !isStreaming && (
+          <MessageActions text={message} isDark={isDark} />
         )}
       </div>
     </div>
@@ -80,11 +422,92 @@ const getModalIcon = (id) => {
 };
 
 const modalOptions = [
-  { id: 'bakilat', label: 'Bakilat 2.0', description: 'Advanced AI for everyday legal tasks,', color: 'violet' },
-  { id: 'nyaaya', label: 'Nyaaya 3.1', description: 'For comprehensive case analysis ,judgment analysis & judicial decision forecasting', color: 'emerald' },
-  { id: 'munshi', label: 'Munshi 3', description: 'Specialized in contract drafting, document generation & legal templates', color: 'amber' },
-  { id: 'adalat', label: 'Adalat 2.1', description: 'Expert litigation support, case strategy & courtroom guidance', color: 'indigo' }
+  { id: 'legal_counsel', label: 'BAKILAT 1.0', description: 'Advanced AI for everyday legal tasks', color: 'violet' },
+  { id: 'nyaaya', label: 'Nyaaya 3.1', description: 'For comprehensive case analysis', color: 'emerald' },
+  { id: 'munshi', label: 'Munshi 3', description: 'Specialized in contract drafting', color: 'amber' },
+  { id: 'adalat', label: 'Adalat 2.1', description: 'Expert litigation support', color: 'indigo' }
 ];
+
+// Professional Chat State Indicator Component
+const ChatStateIndicator = ({ chatState, stateMessage, isDark }) => {
+  const getStateIcon = () => {
+    switch (chatState) {
+      case CHAT_STATES.CONNECTING:
+        return <Loader2 size={14} className="animate-spin" />;
+      case CHAT_STATES.ANALYZING:
+        return <Brain size={14} className="animate-pulse" />;
+      case CHAT_STATES.RESEARCHING:
+        return <BookOpen size={14} className="animate-pulse" />;
+      case CHAT_STATES.DRAFTING:
+        return <PenTool size={14} className="animate-pulse" />;
+      case CHAT_STATES.STREAMING:
+        return <Zap size={14} className="animate-pulse" />;
+      case CHAT_STATES.COMPLETE:
+        return <CheckCircle size={14} />;
+      case CHAT_STATES.ERROR:
+        return <X size={14} />;
+      default:
+        return null;
+    }
+  };
+
+  const getStateColor = () => {
+    switch (chatState) {
+      case CHAT_STATES.CONNECTING:
+        return isDark ? 'text-blue-400 bg-blue-500/10 border-blue-500/30' : 'text-blue-600 bg-blue-50 border-blue-200';
+      case CHAT_STATES.ANALYZING:
+        return isDark ? 'text-purple-400 bg-purple-500/10 border-purple-500/30' : 'text-purple-600 bg-purple-50 border-purple-200';
+      case CHAT_STATES.RESEARCHING:
+        return isDark ? 'text-amber-400 bg-amber-500/10 border-amber-500/30' : 'text-amber-600 bg-amber-50 border-amber-200';
+      case CHAT_STATES.DRAFTING:
+        return isDark ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' : 'text-emerald-600 bg-emerald-50 border-emerald-200';
+      case CHAT_STATES.STREAMING:
+        return isDark ? 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30' : 'text-cyan-600 bg-cyan-50 border-cyan-200';
+      case CHAT_STATES.COMPLETE:
+        return isDark ? 'text-green-400 bg-green-500/10 border-green-500/30' : 'text-green-600 bg-green-50 border-green-200';
+      case CHAT_STATES.ERROR:
+        return isDark ? 'text-red-400 bg-red-500/10 border-red-500/30' : 'text-red-600 bg-red-50 border-red-200';
+      default:
+        return isDark ? 'text-gray-400 bg-gray-500/10 border-gray-500/30' : 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
+  if (chatState === CHAT_STATES.IDLE) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+      transition={{ duration: 0.2, type: 'spring', stiffness: 200 }}
+      className="flex justify-start mb-3"
+    >
+      <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border backdrop-blur-sm ${getStateColor()}`}>
+        <div className="flex items-center justify-center">
+          {getStateIcon()}
+        </div>
+        <span>{stateMessage}</span>
+        <div className="flex gap-0.5">
+          <motion.div
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{ duration: 1.2, repeat: Infinity, delay: 0 }}
+            className="w-1 h-1 rounded-full bg-current"
+          />
+          <motion.div
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }}
+            className="w-1 h-1 rounded-full bg-current"
+          />
+          <motion.div
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }}
+            className="w-1 h-1 rounded-full bg-current"
+          />
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
 const AIAssistantDropdown = ({ selectedModal, setSelectedModal, showDropdown, setShowDropdown, isDark }) => {
   const dropdownRef = useRef(null);
@@ -223,11 +646,33 @@ const Hero = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
-  const [selectedModal, setSelectedModal] = useState('bakilat');
+  const [selectedModal, setSelectedModal] = useState('legal_counsel');
   const [showModalDropdown, setShowModalDropdown] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [pendingFiles, setPendingFiles] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  // Chatbot API Integration - Session and State Management
+  const [sessionId, setSessionId] = useState(null);
+  const [chatState, setChatState] = useState(CHAT_STATES.IDLE);
+  const [stateMessage, setStateMessage] = useState('');
+
+  // Map UI model selection to API model names
+  const getApiModelName = useCallback((uiModel) => {
+    const modelMap = {
+      'legal_counsel': AI_MODELS.LEGAL_COUNSEL,
+      'nyaaya': AI_MODELS.NYAAYA,
+      'munshi': AI_MODELS.MUNSHI,
+      'adalat': AI_MODELS.ADALAT,
+    };
+    return modelMap[uiModel] || AI_MODELS.LEGAL_COUNSEL;
+  }, []);
+
+  // Handle chat state changes from API service
+  const handleStateChange = useCallback((state, message) => {
+    setChatState(state);
+    setStateMessage(message);
+  }, []);
 
   const inputRef = useRef(null);
   const chatContainerRef = useRef(null);
@@ -276,11 +721,33 @@ const Hero = () => {
     }
   ]);
 
+  // Point 2: Intelligent Auto-Scroll Handler
   useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    const container = chatContainerRef.current;
+    if (!container) return;
+
+    // Check if user is already near the bottom (within 150px)
+    const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 150;
+
+    // Auto scroll if user is at bottom or it's the very first message
+    if (isAtBottom || messages.length <= 1) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth'
+      });
     }
   }, [messages]);
+
+  // Handle streaming text scroll specifically
+  useEffect(() => {
+    if (isLoading && chatContainerRef.current) {
+      const container = chatContainerRef.current;
+      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 200;
+      if (isAtBottom) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+  }, [isLoading]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -308,29 +775,103 @@ const Hero = () => {
     }
   }, [showNotifications]);
 
-  const handleSubmit = (e) => {
+  /**
+   * Main submission handler for the chatbot.
+   * Features: Multi-agent validation, intelligent auto-scroll, and error recovery.
+   */
+  const handleSubmit = async (e) => {
     e?.preventDefault();
+    const userQuery = query.trim();
     const allFiles = [...uploadedFiles, ...pendingFiles];
-    if (query.trim() || allFiles.length > 0) {
-      if (inputRef.current) {
-        inputRef.current.style.height = 'auto';
-      }
+
+    // Prevent submission if no input
+    if (!userQuery && allFiles.length === 0) return;
+
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+    }
+
+    // Capture current state for the message history
+    const userMessage = { role: 'user', content: userQuery || "Uploaded files" };
+    setMessages(prev => [...prev, userMessage]);
+
+    // Cleanup inputs for next interaction
+    setQuery('');
+    setUploadedFiles([]);
+    setPendingFiles([]);
+
+    /**
+     * Point 1: Agent Restriction check.
+     * Only 'BAKILAT 1.0' (legal_counsel) is available for production duties currently.
+     */
+    if (selectedModal !== 'legal_counsel') {
       setIsLoading(true);
+      setChatState(CHAT_STATES.ANALYZING);
+
       setTimeout(() => {
-        if (query.trim()) {
-          setMessages([...messages, { role: 'user', content: query }]);
-          setMessages(prev => [...prev, { role: 'assistant', content: 'I understand your query. How can I assist you further?' }]);
-        }
-        setQuery('');
-        setUploadedFiles([]);
-        setPendingFiles([]);
+        const warningMessage = {
+          role: 'assistant',
+          content: `The **${modalOptions.find(o => o.id === selectedModal)?.label}** agent is currently in **tuning & training mode** for advanced legal datasets.\n\nFor the best experience with everyday legal tasks and research, please use our flagship **BAKILAT 1.0** agent which is fully optimized and available for production.`
+        };
+        setMessages(prev => [...prev, warningMessage]);
         setIsLoading(false);
-        if (inputRef.current) {
-          inputRef.current.style.height = 'auto';
-        }
-      }, 800);
+        setChatState(CHAT_STATES.IDLE);
+      }, 1000);
+      return;
+    }
+
+    // Proceed with API call for Bakilat
+    setIsLoading(true);
+    setChatState(CHAT_STATES.CONNECTING);
+
+    try {
+      const apiModel = getApiModelName(selectedModal);
+
+      // Point: Fresh Session Handling
+      // If this is the very first message in a chat, force create a brand new session
+      let activeSessionId = sessionId;
+      if (messages.length === 0) {
+        const newSession = chatbotService.createNewSession(apiModel);
+        activeSessionId = newSession.id;
+        setSessionId(activeSessionId);
+        console.log('[ChatbotAPI] Starting a fresh chat - forced new session:', activeSessionId);
+      }
+
+      // Point 5: Re-request logic is handled inside the chatbotService with smart retries
+      const result = await chatbotService.sendMessage(
+        userQuery,
+        apiModel,
+        handleStateChange,
+        activeSessionId
+      );
+
+
+
+      if (result.sessionId && result.sessionId !== sessionId) {
+        setSessionId(result.sessionId);
+      }
+
+      if (result.success) {
+        const botResponse = {
+          role: 'assistant',
+          content: result.response
+        };
+        setMessages(prev => [...prev, botResponse]);
+        setChatState(CHAT_STATES.COMPLETE);
+      } else {
+        const errorBubble = {
+          role: 'assistant',
+          content: `__System Alert:__ ${result.response}`
+        };
+        setMessages(prev => [...prev, errorBubble]);
+      }
+    } catch (error) {
+      handleStateChange(CHAT_STATES.ERROR, 'An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
+
 
   const handleVoiceToggle = () => {
     setShowVoiceModal(!showVoiceModal);
@@ -366,6 +907,15 @@ const Hero = () => {
     setMessages([]);
     setQuery('');
     setUploadedFiles([]);
+    setChatState(CHAT_STATES.IDLE);
+    setStateMessage('');
+
+    // Clear current session and create new one
+    if (sessionId) {
+      chatbotService.clearCurrentSession(sessionId);
+    }
+    const newSession = chatbotService.createNewSession(getApiModelName(selectedModal));
+    setSessionId(newSession.id);
   };
 
   const handleToggleStar = (chatId) => {
@@ -612,6 +1162,7 @@ const Hero = () => {
             </motion.div>
           ) : (
             <div
+              id="chat-scroll-container"
               ref={chatContainerRef}
               className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 scroll-smooth"
               style={{
@@ -619,19 +1170,32 @@ const Hero = () => {
                 WebkitOverflowScrolling: 'touch'
               }}
             >
-              <div className="max-w-3xl mx-auto w-full">
+              <div className="max-w-3xl mx-auto w-full pb-32">
                 {messages.map((msg, idx) => (
                   <MessageBubble
                     key={idx}
                     message={msg.content}
                     isDark={isDark}
                     isUser={msg.role === 'user'}
-                    isStreaming={idx === messages.length - 1 && msg.role === 'assistant'}
+                    // Point: Only consider it streaming if global loading is true AND it's the last message
+                    isStreaming={isLoading && idx === messages.length - 1 && msg.role === 'assistant'}
                   />
                 ))}
+
+                {/* Professional Chat State Indicator */}
+                <AnimatePresence>
+                  {isLoading && (
+                    <ChatStateIndicator
+                      chatState={chatState}
+                      stateMessage={stateMessage}
+                      isDark={isDark}
+                    />
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           )}
+
 
           <motion.div
             layout

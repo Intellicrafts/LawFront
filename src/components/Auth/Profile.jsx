@@ -3,11 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Mail, Phone, MapPin, Calendar, Briefcase, Globe, Camera, X,
   Award, Settings, Lock, Bell, Share2, Download,
-  AlertCircle, Loader, FileText, MessageSquare,
-  Building, Pencil, Check, Eye, EyeOff,
+  AlertCircle, Loader, FileText, MessageSquare, MessageCircle,
+  Building, Pencil, Check, CheckCircle, Eye, EyeOff,
   Trash2, RefreshCw, Github, Twitter, Linkedin, Facebook,
   Laptop, Video, Clock, Star, ArrowRight, ChevronRight,
-  Sparkles, Shield, Lock as LockIcon
+  Sparkles, Shield, Lock as LockIcon, Zap
 } from 'lucide-react';
 import { apiServices } from '../../api/apiService';
 import { useSelector } from 'react-redux';
@@ -20,7 +20,7 @@ const UserProfile = () => {
   // Get theme from Redux store
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
-  
+
   // State management
   const [activeTab, setActiveTab] = useState('profile'); // profile, security, notifications, preferences
   const [isEditing, setIsEditing] = useState(false);
@@ -32,17 +32,17 @@ const UserProfile = () => {
   // const [activeSection, setActiveSection] = useState('personal'); // For mobile accordion
   const [skillInput, setSkillInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // Toast notifications
-  const { 
-    toast, 
-    hideToast, 
-    showSuccess, 
-    showError, 
-    showWarning, 
-    showInfo 
+  const {
+    toast,
+    hideToast,
+    showSuccess,
+    showError,
+    showWarning,
+    showInfo
   } = useToast();
-  
+
   // Refs
   const fileInputRef = useRef(null);
   const skillInputRef = useRef(null);
@@ -93,11 +93,11 @@ const UserProfile = () => {
 
   // Show message - updated to use our toast system
   const showMessage = useCallback((type, text, duration = 5000) => {
-    const title = type === 'success' ? 'Success!' : 
-                 type === 'error' ? 'Error!' : 
-                 type === 'warning' ? 'Warning!' : 'Information';
-    
-    switch(type) {
+    const title = type === 'success' ? 'Success!' :
+      type === 'error' ? 'Error!' :
+        type === 'warning' ? 'Warning!' : 'Information';
+
+    switch (type) {
       case 'success':
         showSuccess(title, text, duration);
         break;
@@ -113,7 +113,7 @@ const UserProfile = () => {
         break;
     }
   }, [showSuccess, showError, showWarning, showInfo]);
-  
+
 
 
   // Background fetch without showing loading state
@@ -121,7 +121,7 @@ const UserProfile = () => {
     try {
       const response = await apiServices.getUserProfile();
       const userData = response.data || response;
-      
+
       let skills = [];
       if (userData.skills) {
         if (Array.isArray(userData.skills)) {
@@ -132,14 +132,14 @@ const UserProfile = () => {
           skills = Object.values(userData.skills).filter(Boolean);
         }
       }
-      
+
       const social = {
         twitter: userData.twitter_url || userData.social?.twitter || '',
         linkedin: userData.linkedin_url || userData.social?.linkedin || '',
         github: userData.github_url || userData.social?.github || '',
         facebook: userData.facebook_url || userData.social?.facebook || ''
       };
-      
+
       const transformedData = {
         id: userData.id,
         name: userData.name || userData.first_name || '',
@@ -152,17 +152,17 @@ const UserProfile = () => {
         state: userData.state || '',
         country: userData.country || '',
         zip_code: userData.zip_code || userData.postal_code || '',
-        joinDate: userData.created_at ? new Date(userData.created_at).toLocaleDateString('en-US', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
+        joinDate: userData.created_at ? new Date(userData.created_at).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
         }) : 'Not available',
         bio: userData.bio || userData.about || 'No bio available',
         title: userData.title || userData.job_title || userData.profession || '',
         avatar_url: userData.avatar_url || null,
-        account_type: userData.user_type === 1 ? 'Client' : 
-                     userData.user_type === 2 ? 'Lawyer' : 
-                     userData.user_type_name || userData.account_type || 'User',
+        account_type: userData.user_type === 1 ? 'Client' :
+          userData.user_type === 2 ? 'Lawyer' :
+            userData.user_type_name || userData.account_type || 'User',
         is_verified: userData.is_verified || userData.verified || false,
         email_verified_at: userData.email_verified_at,
         active: userData.active || userData.is_active || true,
@@ -178,7 +178,7 @@ const UserProfile = () => {
         legal_queries: userData.recent_activity?.legal_queries || [],
         reviews: userData.recent_activity?.reviews || []
       };
-      
+
       setUserInfo(transformedData);
       setEditForm(transformedData);
       localStorage.setItem('user_profile_transformed', JSON.stringify(transformedData));
@@ -206,19 +206,19 @@ const UserProfile = () => {
         }
       }
     }
-    
+
     setIsLoading(true);
     try {
       // Get user profile data
       const response = await apiServices.getUserProfile();
       console.log('Profile data fetched successfully:', response);
-      
+
       // Extract the user data from the response
       // API returns data in format: { status: "success", data: {...}, message: "..." }
       const userData = response.data || response;
-      
 
-      
+
+
       // Extract skills from API response if available
       let skills = [];
       if (userData.skills) {
@@ -232,7 +232,7 @@ const UserProfile = () => {
           skills = Object.values(userData.skills).filter(Boolean);
         }
       }
-      
+
       // Extract social links if available
       const social = {
         twitter: userData.twitter_url || userData.social?.twitter || '',
@@ -240,7 +240,7 @@ const UserProfile = () => {
         github: userData.github_url || userData.social?.github || '',
         facebook: userData.facebook_url || userData.social?.facebook || ''
       };
-      
+
       // Transform API data to match our component structure
       const transformedData = {
         id: userData.id,
@@ -254,17 +254,17 @@ const UserProfile = () => {
         state: userData.state || '',
         country: userData.country || '',
         zip_code: userData.zip_code || userData.postal_code || '',
-        joinDate: userData.created_at ? new Date(userData.created_at).toLocaleDateString('en-US', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
+        joinDate: userData.created_at ? new Date(userData.created_at).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
         }) : 'Not available',
         bio: userData.bio || userData.about || 'No bio available',
         title: userData.title || userData.job_title || userData.profession || '',
         avatar_url: userData.avatar_url || null,
-        account_type: userData.user_type === 1 ? 'Client' : 
-                     userData.user_type === 2 ? 'Lawyer' : 
-                     userData.user_type_name || userData.account_type || 'User',
+        account_type: userData.user_type === 1 ? 'Client' :
+          userData.user_type === 2 ? 'Lawyer' :
+            userData.user_type_name || userData.account_type || 'User',
         is_verified: userData.is_verified || userData.verified || false,
         email_verified_at: userData.email_verified_at,
         active: userData.active || userData.is_active || true,
@@ -281,23 +281,23 @@ const UserProfile = () => {
         reviews: userData.recent_activity?.reviews || []
       };
 
-      
+
       setUserInfo(transformedData);
       setEditForm(transformedData);
-      
+
       // Update localStorage with fresh profile data including avatar
       try {
         const existingUserData = localStorage.getItem('user');
         if (existingUserData) {
           const parsedUser = JSON.parse(existingUserData);
-          const updatedUser = { 
-            ...parsedUser, 
+          const updatedUser = {
+            ...parsedUser,
             avatar_url: transformedData.avatar_url,
             name: transformedData.name,
-            last_name: transformedData.last_name 
+            last_name: transformedData.last_name
           };
           localStorage.setItem('user', JSON.stringify(updatedUser));
-          
+
           // Dispatch event to update navbar with fresh data
           window.dispatchEvent(new CustomEvent('profile-avatar-updated', {
             detail: { avatarUrl: transformedData.avatar_url, userId: transformedData.id }
@@ -306,14 +306,14 @@ const UserProfile = () => {
       } catch (error) {
         console.error('Error updating localStorage with profile data:', error);
       }
-      
+
       // showSuccess('Profile Loaded', 'Your profile information has been loaded successfully');
-      
+
       // Store the transformed data in localStorage for offline access
       localStorage.setItem('user_profile_transformed', JSON.stringify(transformedData));
     } catch (error) {
       console.error('Failed to fetch user data:', error);
-      
+
       // Try to get from localStorage first before falling back to demo data
       const cachedProfile = localStorage.getItem('user_profile_transformed');
       if (cachedProfile) {
@@ -341,11 +341,11 @@ const UserProfile = () => {
   // Handle appointment count click - show appointment details
   const handleAppointmentClick = useCallback(async () => {
     console.log('Appointment count clicked, showing appointment details');
-    
+
     try {
       // Get appointment details from user profile data
       const appointments = userInfo?.appointments || [];
-      
+
       if (appointments.length === 0) {
         setAppointmentDetails([]);
       } else {
@@ -353,31 +353,31 @@ const UserProfile = () => {
         const processedAppointments = appointments.map(apt => {
           const appointmentTime = apt.appointment_time; // Use the correct field from API
           const isToday = isAppointmentToday(appointmentTime);
-          
+
           return {
             ...apt,
             isToday,
             canJoin: isToday && apt.status === 'scheduled' // Only allow join if today and scheduled
           };
         });
-        
+
         // Sort appointments by date - today's appointments first, then by date
         const sortedAppointments = processedAppointments.sort((a, b) => {
           const dateA = new Date(a.appointment_time);
           const dateB = new Date(b.appointment_time);
-          
+
           // Today's appointments first
           if (a.isToday && !b.isToday) return -1;
           if (!a.isToday && b.isToday) return 1;
-          
+
           // Then sort by date (earliest first)
           return dateA - dateB;
         });
-        
+
         setAppointmentDetails(sortedAppointments);
         console.log('Processed appointments:', sortedAppointments);
       }
-      
+
       setShowAppointmentModal(true);
     } catch (error) {
       console.error('Error fetching appointment details:', error);
@@ -388,15 +388,15 @@ const UserProfile = () => {
   // Helper function to check if appointment is today
   const isAppointmentToday = (appointmentTime) => {
     if (!appointmentTime) return false;
-    
+
     try {
       const today = new Date();
       const appointment = new Date(appointmentTime);
-      
+
       // Reset time to compare only dates
       today.setHours(0, 0, 0, 0);
       appointment.setHours(0, 0, 0, 0);
-      
+
       return today.getTime() === appointment.getTime();
     } catch (error) {
       console.error('Error parsing appointment time:', error);
@@ -407,7 +407,7 @@ const UserProfile = () => {
   // Handle appointment join with Google Meet redirect
   const handleJoinAppointment = (appointment) => {
     console.log('Joining appointment:', appointment);
-    
+
     // Check if appointment has Google Meet link
     if (appointment.google_meet_link) {
       // Open Google Meet link in new tab
@@ -422,11 +422,11 @@ const UserProfile = () => {
   // Handle queries count click - show queries details
   const handleQueriesClick = useCallback(async () => {
     console.log('Queries count clicked, showing queries details');
-    
+
     try {
       // Get queries details from user profile data
       const queries = userInfo?.legal_queries || [];
-      
+
       if (queries.length === 0) {
         setQueriesDetails([]);
       } else {
@@ -441,11 +441,11 @@ const UserProfile = () => {
             minute: '2-digit'
           })
         }));
-        
+
         setQueriesDetails(processedQueries);
         console.log('Processed queries:', processedQueries);
       }
-      
+
       setShowQueriesModal(true);
     } catch (error) {
       console.error('Error fetching queries details:', error);
@@ -456,11 +456,11 @@ const UserProfile = () => {
   // Handle reviews count click - show reviews details
   const handleReviewsClick = useCallback(async () => {
     console.log('Reviews count clicked, showing reviews details');
-    
+
     try {
       // Get reviews details from user profile data
       const reviews = userInfo?.reviews || [];
-      
+
       if (reviews.length === 0) {
         setReviewsDetails([]);
       } else {
@@ -473,11 +473,11 @@ const UserProfile = () => {
             day: 'numeric'
           })
         }));
-        
+
         setReviewsDetails(processedReviews);
         console.log('Processed reviews:', processedReviews);
       }
-      
+
       setShowReviewsModal(true);
     } catch (error) {
       console.error('Error fetching reviews details:', error);
@@ -492,21 +492,21 @@ const UserProfile = () => {
   // Validate form
   const validateForm = useCallback(() => {
     const newErrors = {};
-    
+
     if (!editForm.name?.trim()) {
       newErrors.name = 'First name is required';
     }
-    
+
     if (!editForm.email?.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editForm.email)) {
       newErrors.email = 'Invalid email address';
     }
-    
+
     if (editForm.phone && !/^[+]?[1-9][\d\s\-()]{7,15}$/.test(editForm.phone)) {
       newErrors.phone = 'Invalid phone number';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [editForm]);
@@ -522,7 +522,7 @@ const UserProfile = () => {
     const maxSize = 2 * 1024 * 1024; // 2MB
     if (file.size > maxSize) {
       showError(
-        'File Too Large', 
+        'File Too Large',
         `Image size must be less than 2MB. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`
       );
       return;
@@ -532,7 +532,7 @@ const UserProfile = () => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       showError(
-        'Invalid File Type', 
+        'Invalid File Type',
         `Please select a valid image file (JPEG, PNG, GIF, WebP). You uploaded: ${file.type}`
       );
       return;
@@ -540,24 +540,24 @@ const UserProfile = () => {
 
     try {
       setIsUploadingAvatar(true);
-      
+
       // Create image preview immediately
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
-      
+
       // Show loading toast
       showInfo('Uploading Avatar', 'Please wait while we upload your profile picture...', 0);
-      
+
       // Upload to server
       const result = await apiServices.uploadAvatar(file);
       const response = result.data || result;
-      
+
       // Get avatar URL from response
       const avatarUrl = response.avatar_url || response.avatar;
-      
+
       if (avatarUrl) {
         // Update localStorage first (for navbar sync)
         const userData = localStorage.getItem('user');
@@ -570,27 +570,27 @@ const UserProfile = () => {
             console.error('Error updating user avatar in localStorage:', error);
           }
         }
-        
+
         // Update both userInfo and editForm with new avatar
         setUserInfo(prev => ({ ...prev, avatar_url: avatarUrl }));
         setEditForm(prev => ({ ...prev, avatar_url: avatarUrl }));
-        
+
         // Dispatch event to update navbar immediately
         window.dispatchEvent(new CustomEvent('profile-avatar-updated', {
           detail: { avatarUrl, userId: userInfo?.id }
         }));
-        
+
         // Also dispatch the legacy event for compatibility
         window.dispatchEvent(new CustomEvent('avatar-updated', {
           detail: { avatarUrl, userId: userInfo?.id }
         }));
-        
+
         // Clear the preview since we have the actual URL now
         setImagePreview(null);
-        
+
         hideToast();
         showSuccess('Avatar Updated', 'Your profile picture has been updated successfully!');
-        
+
         // Reload page after a short delay to show the success message
         setTimeout(() => {
           window.location.reload();
@@ -619,10 +619,10 @@ const UserProfile = () => {
 
     try {
       setIsSaving(true);
-      
+
       // Show a loading toast
       showInfo('Saving Profile', 'Please wait while we update your profile information...', 0);
-      
+
       // Prepare data for API based on your API structure
       const updateData = {
         name: editForm.name,
@@ -652,7 +652,7 @@ const UserProfile = () => {
       // Save to localStorage first for offline capability
       const currentProfile = { ...userInfo, ...updateData };
       localStorage.setItem('user_profile_transformed', JSON.stringify(currentProfile));
-      
+
       // Update user in localStorage
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
@@ -673,10 +673,10 @@ const UserProfile = () => {
 
       // Send to server
       const updatedProfile = await apiServices.updateUserProfile(updateData);
-      
+
       // Hide the loading toast
       hideToast();
-      
+
       // Transform the response back to our component structure
       const transformedData = {
         ...editForm,
@@ -698,17 +698,17 @@ const UserProfile = () => {
       setUserInfo(transformedData);
       setIsEditing(false);
       setImagePreview(null);
-      
+
       // Update localStorage with the server response
       localStorage.setItem('user_profile_transformed', JSON.stringify(transformedData));
-      
+
       // Also update the main user object that navbar uses
       const currentUser = localStorage.getItem('user');
       if (currentUser) {
         try {
           const parsedUser = JSON.parse(currentUser);
-          const updatedUser = { 
-            ...parsedUser, 
+          const updatedUser = {
+            ...parsedUser,
             ...transformedData,
             // Map profile fields to user fields that navbar expects
             avatar_url: transformedData.avatar_url,
@@ -716,7 +716,7 @@ const UserProfile = () => {
             last_name: transformedData.last_name
           };
           localStorage.setItem('user', JSON.stringify(updatedUser));
-          
+
           // Dispatch event to update navbar
           window.dispatchEvent(new CustomEvent('profile-avatar-updated', {
             detail: { avatarUrl: transformedData.avatar_url, userId: transformedData.id }
@@ -725,19 +725,19 @@ const UserProfile = () => {
           console.error('Error updating user object in localStorage:', e);
         }
       }
-      
+
       showSuccess('Profile Updated', 'Your profile has been updated successfully!');
     } catch (error) {
       console.error('Profile update failed:', error);
-      
+
       // Hide the loading toast
       hideToast();
-      
+
       // Even if the server update fails, keep the local changes
       setUserInfo(prev => ({ ...prev, ...editForm }));
       setIsEditing(false);
       setImagePreview(null);
-      
+
       // Check if it's a validation error from the server
       if (error.response?.data?.errors) {
         const serverErrors = error.response.data.errors;
@@ -749,12 +749,12 @@ const UserProfile = () => {
         showError('Permission Denied', 'You don\'t have permission to update this profile.');
       } else if (!navigator.onLine) {
         showWarning(
-          'Offline Mode', 
+          'Offline Mode',
           'Your profile has been saved locally but couldn\'t be updated on the server. Changes will be synced when your connection is restored.'
         );
       } else {
         showError(
-          'Update Failed', 
+          'Update Failed',
           'We couldn\'t update your profile on the server. Please try again later.'
         );
       }
@@ -767,25 +767,25 @@ const UserProfile = () => {
   const handleCancel = useCallback(() => {
     // Check if there are unsaved changes
     const hasChanges = JSON.stringify(editForm) !== JSON.stringify(userInfo);
-    
+
     if (hasChanges && isEditing) {
       // Show confirmation toast
       showWarning(
-        'Unsaved Changes', 
+        'Unsaved Changes',
         'You have unsaved changes. Are you sure you want to cancel?',
         10000
       );
-      
+
       // We could implement a proper confirmation dialog here,
       // but for now we'll just show a warning toast and proceed
     }
-    
+
     setEditForm(userInfo);
     setImagePreview(null);
     setIsEditing(false);
     setErrors({});
     hideToast(); // Hide any active toasts
-    
+
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, [userInfo, isEditing, editForm, hideToast, showWarning]);
 
@@ -807,7 +807,7 @@ const UserProfile = () => {
         showSuccess('Link Copied', 'Profile link copied to clipboard!');
       } else {
         showError(
-          'Sharing Not Supported', 
+          'Sharing Not Supported',
           'Your device or browser doesn\'t support sharing. Try copying the URL manually.'
         );
       }
@@ -827,39 +827,39 @@ const UserProfile = () => {
   const handleExport = useCallback(() => {
     try {
       showInfo('Preparing Export', 'Preparing your profile data for export...', 2000);
-      
+
       const exportData = {
         ...userInfo,
         exportDate: new Date().toISOString(),
         exportVersion: '1.0',
         exportSource: 'MeraBakil Legal Solutions'
       };
-      
+
       // Remove any circular references or large data
       const sanitizedData = {
         ...exportData,
-        avatar: exportData.avatar && exportData.avatar.startsWith('data:') 
-          ? '[Base64 Image Data Removed]' 
+        avatar: exportData.avatar && exportData.avatar.startsWith('data:')
+          ? '[Base64 Image Data Removed]'
           : exportData.avatar
       };
-      
+
       const dataStr = JSON.stringify(sanitizedData, null, 2);
       const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
       const linkElement = document.createElement('a');
       linkElement.setAttribute('href', dataUri);
-      
+
       // Format filename with date for better organization
       const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
       const safeFileName = `${userInfo.name || 'User'}_${userInfo.last_name || ''}_Profile_${date}`.replace(/\s+/g, '_');
-      
+
       linkElement.setAttribute('download', `${safeFileName}.json`);
       linkElement.click();
-      
+
       showSuccess('Export Complete', 'Your profile data has been exported successfully!');
     } catch (error) {
       console.error('Export error:', error);
       showError(
-        'Export Failed', 
+        'Export Failed',
         'We couldn\'t export your profile data. Please try again later.'
       );
     }
@@ -873,7 +873,7 @@ const UserProfile = () => {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   }, [errors]);
-  
+
   // Handle social media input changes
   const handleSocialInputChange = useCallback((platform, value) => {
     setEditForm(prev => ({
@@ -884,28 +884,28 @@ const UserProfile = () => {
       }
     }));
   }, []);
-  
+
   // Add a new skill
   const handleAddSkill = useCallback(() => {
     if (!skillInput.trim()) return;
-    
+
     // Check if skill already exists
     if (editForm.skills?.includes(skillInput.trim())) {
       showMessage('error', 'This skill already exists');
       return;
     }
-    
+
     setEditForm(prev => ({
       ...prev,
       skills: [...(prev.skills || []), skillInput.trim()]
     }));
-    
+
     setSkillInput('');
     if (skillInputRef.current) {
       skillInputRef.current.focus();
     }
   }, [skillInput, editForm.skills, showMessage]);
-  
+
   // Remove a skill
   const handleRemoveSkill = useCallback((skillToRemove) => {
     setEditForm(prev => ({
@@ -913,7 +913,7 @@ const UserProfile = () => {
       skills: prev.skills.filter(skill => skill !== skillToRemove)
     }));
   }, []);
-  
+
   // Handle skill input keypress (add on Enter)
   const handleSkillKeyPress = useCallback((e) => {
     if (e.key === 'Enter') {
@@ -944,13 +944,13 @@ const UserProfile = () => {
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-3">Failed to Load Profile</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">We couldn't load your profile information. This could be due to a network issue or server problem.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button 
+            <button
               onClick={fetchUserData}
               className="px-6 py-3 bg-gradient-to-r from-slate-500 to-slate-600 text-white rounded-lg hover:from-slate-600 hover:to-slate-700 transition-colors shadow-md flex items-center justify-center"
             >
               <RefreshCw className="w-4 h-4 mr-2" /> Retry
             </button>
-            <button 
+            <button
               onClick={() => window.history.back()}
               className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors shadow-md flex items-center justify-center"
             >
@@ -969,10 +969,10 @@ const UserProfile = () => {
       <Toast toast={toast} onClose={hideToast} />
       <div className="max-w-7xl mx-auto px-4 sm:px-3 lg:px-8 pt-24 sm:pt-24 pb-4 sm:pb-4 md:h-[calc(100vh-120px)] md:overflow-y-auto md:pr-2">
         {/* Premium Tab Navigation with Framer Motion */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`mb-4 sm:mb-5 rounded-xl backdrop-blur-xl border ${isDarkMode ? 'bg-[#1A1A1A]/80 border-[#3A3A3A]' : 'bg-white/80 border-slate-200/50'} shadow-sm p-0.5 flex flex-wrap sm:flex-nowrap gap-0.5 sm:gap-0`}
+          className={`mb-4 rounded-xl border backdrop-blur-md transition-all duration-300 ${isDarkMode ? 'bg-[#1A1A1A]/60 border-[#2A2A2A]' : 'bg-white/70 border-gray-200'} p-1 flex gap-1`}
         >
           {[
             { id: 'profile', label: 'Profile', icon: User },
@@ -985,22 +985,22 @@ const UserProfile = () => {
             return (
               <motion.button
                 key={tab.id}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center px-2 sm:px-4 py-2 font-semibold text-xs sm:text-sm rounded-lg transition-all duration-300 ${
-                  isActive
-                    ? isDarkMode
-                      ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-md'
-                      : 'bg-gradient-to-r from-slate-500 to-slate-600 text-white shadow-md'
-                    : isDarkMode
-                    ? 'text-gray-400 hover:text-white hover:bg-white/5'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
-                }`}
+                className={`relative flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-semibold rounded-lg transition-all duration-300 ${isActive
+                  ? 'text-white shadow-sm'
+                  : isDarkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-white/5' : 'text-gray-500 hover:text-gray-900 hover:bg-black/5'
+                  }`}
               >
-                <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">{tab.label}</span>
-                {isActive && <motion.div layoutId="activeTab" className="absolute inset-0 rounded-lg" />}
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTabGlow"
+                    className="absolute inset-0 bg-gradient-to-r from-blue-600/80 to-purple-600/80 rounded-lg -z-0"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <Icon size={13} className="relative z-10" />
+                <span className="relative z-10 hidden sm:inline">{tab.label}</span>
               </motion.button>
             );
           })}
@@ -1008,1533 +1008,861 @@ const UserProfile = () => {
 
         {/* Profile Tab Content */}
         <AnimatePresence mode="wait">
-        {activeTab === 'profile' && (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5"
-          >
-            {/* Left Column - Premium Profile Card */}
-            <div className="lg:col-span-1">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4 }}
-                className={`rounded-xl sm:rounded-2xl shadow-lg overflow-hidden backdrop-blur-xl border ${isDarkMode ? 'bg-gradient-to-br from-[#1A1A1A] to-[#2C2C2C] border-[#3A3A3A]' : 'bg-gradient-to-br from-white to-slate-50 border-slate-200/50'}`}
-              >
-                {/* Enhanced Premium Profile Header */}
-                <div className="h-28 sm:h-32 bg-gradient-to-r from-slate-300/40 via-slate-400/40 to-slate-500/40 relative overflow-hidden">
-                  {/* Smooth Light Background Pattern */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-slate-200/20 to-slate-300/20 dark:from-slate-900/30 dark:to-slate-800/30">
-                    <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/10 to-transparent dark:via-white/5"></div>
+          {activeTab === 'profile' && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5"
+            >
+              {/* Left Column - Premium Profile Card */}
+              <div className="lg:col-span-1 space-y-4">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className={`rounded-2xl overflow-hidden backdrop-blur-md border shadow-2xl transition-all duration-300 ${isDarkMode ? 'bg-[#1A1A1A]/40 border-[#2A2A2A]' : 'bg-white/40 border-gray-200'}`}
+                >
+                  {/* Header Decoration */}
+                  <div className="h-20 bg-gradient-to-br from-blue-600/30 via-purple-600/30 to-pink-600/30 relative">
+                    <div className="absolute inset-0 backdrop-blur-[2px]" />
                   </div>
-                  
-                  {/* Account Type Badge */}
-                  {userInfo.account_type === 'Lawyer' && (
-                    <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-gradient-to-r from-slate-500 to-slate-600 text-white px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs font-semibold flex items-center shadow-md backdrop-blur-sm hover:shadow-lg transition-all duration-300">
-                      <Briefcase className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1 sm:mr-1.5" /> 
-                      <span className="hidden sm:inline">Professional</span>
-                      <span className="sm:hidden">Pro</span>
-                    </div>
-                  )}
-                  
-                  {/* Edit/Save Controls */}
-                  {!isEditing ? (
-                    <button 
-                      onClick={() => setIsEditing(true)}
-                      className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-gradient-to-r from-slate-400/70 to-slate-500/70 backdrop-blur-sm text-white p-2 sm:p-2.5 rounded-lg hover:from-slate-500/80 hover:to-slate-600/80 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center"
-                      title="Edit Profile"
-                    >
-                      <Pencil className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                  ) : (
-                    <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex gap-1 sm:gap-2">
-                      <button 
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-2 sm:p-2.5 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 disabled:opacity-50 shadow-md hover:shadow-lg flex items-center justify-center"
-                        title="Save Changes"
-                      >
-                        {isSaving ? <Loader className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" /> : <Check className="w-4 h-4 sm:w-5 sm:h-5" />}
-                      </button>
-                      <button 
-                        onClick={handleCancel}
-                        disabled={isSaving}
-                        className="bg-gradient-to-r from-slate-400/70 to-slate-500/70 text-white p-2 sm:p-2.5 rounded-lg hover:from-slate-500/80 hover:to-slate-600/80 transition-all duration-300 disabled:opacity-50 shadow-md hover:shadow-lg flex items-center justify-center"
-                        title="Cancel Editing"
-                      >
-                        <X className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Enhanced Premium Avatar Section */}
-                <div className="relative -mt-12 sm:-mt-14 px-4 sm:px-6 pb-3 sm:pb-4">
-                  <div className="relative inline-block">
-                    {/* Premium Avatar Container - Silver/Gray Gradient */}
-                    <div className="relative p-0.5 sm:p-1 bg-gradient-to-br from-slate-300 via-slate-400 to-slate-500 rounded-full shadow-lg">
-                      <div className={`rounded-full p-0.5 sm:p-1 ${isDarkMode ? 'bg-[#1A1A1A]' : 'bg-white'}`}>
-                        <div 
-                          className="relative overflow-hidden rounded-full group cursor-pointer"
+
+                  {/* Avatar Section */}
+                  <div className="relative px-4 pb-6">
+                    <div className="flex flex-col items-center -mt-10">
+                      <div className="relative group">
+                        <div className="p-1 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 shadow-xl">
+                          <div className={`rounded-full p-0.5 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
+                            <img
+                              src={imagePreview || userInfo?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo?.name || 'User')}&background=3182ce&color=ffffff&size=128`}
+                              alt="Avatar"
+                              className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Single Edit Icon - Cute Small Icon on Profile Pic */}
+                        {!isEditing ? (
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => setIsEditing(true)}
+                            className="absolute bottom-0 right-0 p-1.5 rounded-full bg-blue-600 text-white shadow-lg border-2 border-[#1A1A1A] hover:bg-blue-500 transition-colors z-20 group/edit"
+                            title="Edit Profile"
+                          >
+                            <Pencil size={12} className="group-hover/edit:rotate-12 transition-transform" />
+                          </motion.button>
+                        ) : (
+                          <div className="absolute -right-2 -bottom-2 flex flex-col gap-1.5 z-20">
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={handleSave}
+                              disabled={isSaving}
+                              className="p-1.5 rounded-full bg-green-600 text-white shadow-lg border-2 border-[#1A1A1A] hover:bg-green-500 transition-colors"
+                              title="Save Changes"
+                            >
+                              {isSaving ? <Loader size={12} className="animate-spin" /> : <Check size={12} />}
+                            </motion.button>
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={handleCancel}
+                              className="p-1.5 rounded-full bg-gray-600 text-white shadow-lg border-2 border-[#1A1A1A] hover:bg-gray-500 transition-colors"
+                              title="Cancel"
+                            >
+                              <X size={12} />
+                            </motion.button>
+                          </div>
+                        )}
+
+                        {/* Avatar Overlay for Uploading */}
+                        <div
+                          className={`absolute inset-0 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer ${isUploadingAvatar ? 'opacity-100' : ''}`}
                           onClick={() => !isUploadingAvatar && fileInputRef.current?.click()}
                         >
-                          <img
-                            src={imagePreview || userInfo?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo?.name || 'User')}&background=6366f1&color=ffffff&size=96`}
-                            alt={`${userInfo?.name} ${userInfo?.last_name}`}
-                            className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-3 sm:border-4 border-white dark:border-[#1A1A1A] shadow-md transition-all duration-500 hover:shadow-lg hover:scale-105"
-                            style={{
-                              filter: 'brightness(1.05) contrast(1.1)',
-                              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06)'
-                            }}
-                          />
-                          {/* Hover overlay to indicate it's clickable */}
-                          <div className={`absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 rounded-full flex items-center justify-center ${isUploadingAvatar ? 'bg-opacity-30' : ''}`}>
-                            <div className={`${isUploadingAvatar ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity duration-300`}>
-                              {isUploadingAvatar ? (
-                                <div className="flex flex-col items-center">
-                                  <Loader className="w-5 h-5 sm:w-6 sm:h-6 text-white animate-spin drop-shadow-lg" />
-                                  <span className="text-white text-2xs sm:text-xs mt-0.5 drop-shadow-lg">Uploading</span>
-                                </div>
-                              ) : (
-                                <div className="flex flex-col items-center">
-                                  <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-white drop-shadow-lg" />
-                                  <span className="text-white text-2xs sm:text-xs mt-0.5 drop-shadow-lg">Change</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Hidden file input for avatar upload */}
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                        disabled={isUploadingAvatar}
-                      />
-                      
-                      {/* Professional Update Avatar Button - Secondary option */}
-                      <div className={`absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-gradient-to-r from-slate-400 to-slate-600 text-white p-1.5 sm:p-2 rounded-full shadow-md transition-all duration-300 ${isUploadingAvatar ? 'opacity-50' : 'hover:scale-110'}`}>
-                        {isUploadingAvatar ? (
-                          <Loader className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
-                        ) : (
-                          <Camera className="w-3 h-3 sm:w-4 sm:h-4" />
-                        )}
-                      </div>
-                    </div>
-
-
-                    
-                    {/* Verification Badge for Premium Users */}
-                    {userInfo.is_verified && (
-                      <div className="absolute -top-1 right-0 sm:-top-2 sm:right-1 bg-gradient-to-r from-slate-400 to-slate-600 text-white p-1 sm:p-1.5 rounded-full shadow-md">
-                        <Award className="w-3 h-3 sm:w-4 sm:h-4" />
-                      </div>
-                    )}
-                    
-                    {/* Upload Loading Overlay */}
-                    {isUploadingAvatar && (
-                      <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
-                        <div className="text-center text-white">
-                          <Loader className="w-8 h-8 animate-spin mx-auto mb-2" />
-                          <p className="text-xs">Uploading...</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Profile Info */}
-                <div className="px-4 sm:px-6 py-3 sm:py-4">
-                  {isEditing ? (
-                    <div className="space-y-3 mb-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          First Name <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.name || ''}
-                          onChange={(e) => handleInputChange('name', e.target.value)}
-                          className={`w-full px-3 py-2 border ${errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
-                        />
-                        {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Last Name
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.last_name || ''}
-                          onChange={(e) => handleInputChange('last_name', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Job Title
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.title || ''}
-                          onChange={(e) => handleInputChange('title', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{userInfo.name} {userInfo.last_name}</h2>
-                      <p className="text-blue-600 dark:text-blue-400">{userInfo.title || 'No title specified'}</p>
-                    </>
-                  )}
-                  
-                  <div className="mt-4">
-                    {isEditing ? (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Bio
-                        </label>
-                        <textarea
-                          value={editForm.bio || ''}
-                          onChange={(e) => handleInputChange('bio', e.target.value)}
-                          rows="4"
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        ></textarea>
-                      </div>
-                    ) : (
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">{userInfo.bio}</p>
-                    )}
-                  </div>
-                  
-                  {/* Stats */}
-                  <div className="mt-3 sm:mt-4 grid grid-cols-3 gap-2 sm:gap-3 border-t border-gray-200 dark:border-gray-700 pt-3 sm:pt-4">
-                    <div 
-                      className="text-center cursor-pointer hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50 dark:hover:from-blue-900/20 dark:hover:to-cyan-900/20 rounded-lg p-2 sm:p-3 transition-all duration-300 hover:shadow-md hover:scale-105 group"
-                      onClick={handleAppointmentClick}
-                    >
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 mx-auto mb-1.5 sm:mb-2 bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
-                        <Calendar size={16} className="text-white" />
-                      </div>
-                      <p className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-cyan-700 group-hover:to-teal-700 transition-all duration-300">
-                        {(userInfo?.stats?.appointments || 0).toLocaleString()}
-                      </p>
-                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-300">Appointments</p>
-                    </div>
-                    <div 
-                      className="text-center cursor-pointer hover:bg-gradient-to-br hover:from-purple-50 hover:to-pink-50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 rounded-lg p-2 sm:p-3 transition-all duration-300 hover:shadow-md hover:scale-105 group"
-                      onClick={handleQueriesClick}
-                    >
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 mx-auto mb-1.5 sm:mb-2 bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
-                        <MessageSquare size={16} className="text-white" />
-                      </div>
-                      <p className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 bg-clip-text text-transparent group-hover:from-purple-700 group-hover:via-pink-700 group-hover:to-rose-700 transition-all duration-300">
-                        {(userInfo?.stats?.queries || 0).toLocaleString()}
-                      </p>
-                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-300">Queries</p>
-                    </div>
-                    <div 
-                      className="text-center cursor-pointer hover:bg-gradient-to-br hover:from-amber-50 hover:to-orange-50 dark:hover:from-amber-900/20 dark:hover:to-orange-900/20 rounded-lg p-2 sm:p-3 transition-all duration-300 hover:shadow-md hover:scale-105 group"
-                      onClick={handleReviewsClick}
-                    >
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 mx-auto mb-1.5 sm:mb-2 bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 rounded-lg flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
-                        <Star size={16} className="text-white" />
-                      </div>
-                      <p className="text-lg sm:text-xl font-bold bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 bg-clip-text text-transparent group-hover:from-amber-700 group-hover:via-orange-700 group-hover:to-red-700 transition-all duration-300">
-                        {(userInfo?.stats?.reviews || 0).toLocaleString()}
-                      </p>
-                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-300">Reviews</p>
-                    </div>
-                  </div>
-                  
-                  {/* Social Links */}
-                  <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
-                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Social Profiles</h3>
-                    
-                    {isEditing ? (
-                      <div className="space-y-3">
-                        <div className="flex items-center">
-                          <Linkedin className="w-5 h-5 text-blue-600 mr-2" />
-                          <input
-                            type="url"
-                            placeholder="LinkedIn URL"
-                            value={editForm.social?.linkedin || ''}
-                            onChange={(e) => handleSocialInputChange('linkedin', e.target.value)}
-                            className="flex-1 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        <div className="flex items-center">
-                          <Twitter className="w-5 h-5 text-blue-400 mr-2" />
-                          <input
-                            type="url"
-                            placeholder="Twitter URL"
-                            value={editForm.social?.twitter || ''}
-                            onChange={(e) => handleSocialInputChange('twitter', e.target.value)}
-                            className="flex-1 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        <div className="flex items-center">
-                          <Github className="w-5 h-5 text-gray-800 dark:text-white mr-2" />
-                          <input
-                            type="url"
-                            placeholder="GitHub URL"
-                            value={editForm.social?.github || ''}
-                            onChange={(e) => handleSocialInputChange('github', e.target.value)}
-                            className="flex-1 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        <div className="flex items-center">
-                          <Facebook className="w-5 h-5 text-blue-800 mr-2" />
-                          <input
-                            type="url"
-                            placeholder="Facebook URL"
-                            value={editForm.social?.facebook || ''}
-                            onChange={(e) => handleSocialInputChange('facebook', e.target.value)}
-                            className="flex-1 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex justify-center space-x-4">
-                        {userInfo.social?.linkedin && (
-                          <a href={userInfo.social.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400">
-                            <Linkedin className="w-5 h-5" />
-                          </a>
-                        )}
-                        {userInfo.social?.twitter && (
-                          <a href={userInfo.social.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-400 dark:text-gray-400 dark:hover:text-blue-400">
-                            <Twitter className="w-5 h-5" />
-                          </a>
-                        )}
-                        {userInfo.social?.github && (
-                          <a href={userInfo.social.github} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white">
-                            <Github className="w-5 h-5" />
-                          </a>
-                        )}
-                        {userInfo.social?.facebook && (
-                          <a href={userInfo.social.facebook} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-800 dark:text-gray-400 dark:hover:text-blue-400">
-                            <Facebook className="w-5 h-5" />
-                          </a>
-                        )}
-                        {!userInfo.social?.linkedin && !userInfo.social?.twitter && !userInfo.social?.github && !userInfo.social?.facebook && !isEditing && (
-                          <span className="text-sm text-gray-500 dark:text-gray-400">No social profiles added</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Action Buttons */}
-                  {!isEditing && (
-                    <div className="mt-6 flex gap-2">
-                      <button 
-                        onClick={handleShare} 
-                        className="p-2 sm:p-2.5 rounded-lg shadow-sm font-medium transition-all duration-200 bg-gradient-to-r from-slate-500 to-slate-600 text-white hover:from-slate-600 hover:to-slate-700 flex items-center justify-center"
-                        title="Share Profile"
-                      >
-                        <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </button>
-                      <button 
-                        onClick={handleExport} 
-                        className="p-2 sm:p-2.5 rounded-lg shadow-sm font-medium transition-all duration-200 bg-gradient-to-r from-slate-500 to-slate-600 text-white hover:from-slate-600 hover:to-slate-700 flex items-center justify-center"
-                        title="Export Profile"
-                      >
-                        <Download className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Professional Trust Badge */}
-                <div className="mt-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden">
-                  <div className="p-6">
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <div className="w-12 h-12 bg-gradient-to-br from-slate-500 to-slate-600 rounded-full flex items-center justify-center shadow-lg">
-                          <Award className="w-6 h-6 text-white" />
-                        </div>
-                      </div>
-                      <div className="ml-4 flex-1">
-                        <div className="flex items-center mb-2">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                            Verified Legal Professional
-                          </h3>
-                          <div className="ml-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        </div>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                          Trusted member of the MeraBakil legal community since {userInfo.joinDate}
-                        </p>
-                        <div className="mt-3 flex items-center">
-                          <div className="flex -space-x-1">
-                            <div className="w-4 h-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full border border-white dark:border-gray-800"></div>
-                            <div className="w-4 h-4 bg-gradient-to-r from-green-400 to-blue-500 rounded-full border border-white dark:border-gray-800"></div>
-                            <div className="w-4 h-4 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full border border-white dark:border-gray-800"></div>
-                          </div>
-                          <span className="ml-2 text-xs font-medium text-gray-700 dark:text-gray-300">
-                            Excellence & Trust
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="h-1 bg-gradient-to-r from-slate-500 via-slate-600 to-slate-700"></div>
-                </div>
-              </motion.div>
-            </div>
-            
-            {/* Right Column - Details */}
-            <div className="lg:col-span-2 space-y-4">
-              {/* Contact Information */}
-              <div className={`rounded-lg sm:rounded-xl shadow-sm border overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-[#1A1A1A] border-[#3A3A3A]' : 'bg-white border-blue-200/50'}`}>
-                <div className={`px-4 py-3 border-b flex justify-between items-center transition-colors duration-300 ${isDarkMode ? 'bg-[#2C2C2C] border-[#3A3A3A]' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200/50'}`}>
-                  <div className="flex items-center">
-                    <div className="w-7 h-7 bg-gradient-to-br from-slate-500 to-slate-600 rounded-lg flex items-center justify-center mr-2.5 shadow-md">
-                      <Mail className="w-3.5 h-3.5 text-white" />
-                    </div>
-                    <h2 className={`text-sm sm:text-base font-semibold transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Contact</h2>
-                  </div>
-                  {!isEditing && (
-                    <button 
-                      onClick={() => setIsEditing(true)}
-                      className={`p-1.5 sm:p-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center justify-center shadow-sm ${isDarkMode ? 'bg-slate-600 hover:bg-slate-700 text-white' : 'bg-slate-500 hover:bg-slate-600 text-white'}`}
-                      title="Edit Contact"
-                    >
-                      <Pencil className="w-3 h-3 sm:w-4 sm:h-4" />
-                    </button>
-                  )}
-                </div>
-                
-                <div className="p-3 sm:p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                    {/* Email */}
-                    <div>
-                      {isEditing ? (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Email <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="email"
-                            value={editForm.email || ''}
-                            onChange={(e) => handleInputChange('email', e.target.value)}
-                            className={`w-full px-3 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
-                          />
-                          {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
-                        </div>
-                      ) : (
-                        <div className="flex">
-                          <Mail className="w-5 h-5 text-gray-400 mr-3" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</p>
-                            <p className="text-gray-900 dark:text-white">{userInfo.email}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Phone */}
-                    <div>
-                      {isEditing ? (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Phone
-                          </label>
-                          <input
-                            type="tel"
-                            value={editForm.phone || ''}
-                            onChange={(e) => handleInputChange('phone', e.target.value)}
-                            className={`w-full px-3 py-2 border ${errors.phone ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
-                          />
-                          {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone}</p>}
-                        </div>
-                      ) : (
-                        <div className="flex">
-                          <Phone className="w-5 h-5 text-gray-400 mr-3" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</p>
-                            <p className="text-gray-900 dark:text-white">{userInfo.phone || 'Not specified'}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Location */}
-                    <div>
-                      {isEditing ? (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Address
-                          </label>
-                          <input
-                            type="text"
-                            value={editForm.location || ''}
-                            onChange={(e) => handleInputChange('location', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white mb-2"
-                            placeholder="Street address"
-                          />
-                          <div className="grid grid-cols-2 gap-2 mb-2">
-                            <input
-                              type="text"
-                              value={editForm.city || ''}
-                              onChange={(e) => handleInputChange('city', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                              placeholder="City"
-                            />
-                            <input
-                              type="text"
-                              value={editForm.state || ''}
-                              onChange={(e) => handleInputChange('state', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                              placeholder="State/Province"
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <input
-                              type="text"
-                              value={editForm.country || ''}
-                              onChange={(e) => handleInputChange('country', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                              placeholder="Country"
-                            />
-                            <input
-                              type="text"
-                              value={editForm.zip_code || ''}
-                              onChange={(e) => handleInputChange('zip_code', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                              placeholder="Zip/Postal Code"
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex">
-                          <MapPin className="w-5 h-5 text-gray-400 mr-3" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Address</p>
-                            <p className="text-gray-900 dark:text-white">
-                              {userInfo.location ? (
-                                <>
-                                  {userInfo.location}
-                                  {(userInfo.city || userInfo.state || userInfo.country) && (
-                                    <span className="block mt-1 text-sm">
-                                      {[
-                                        userInfo.city,
-                                        userInfo.state,
-                                        userInfo.country,
-                                        userInfo.zip_code
-                                      ].filter(Boolean).join(', ')}
-                                    </span>
-                                  )}
-                                </>
-                              ) : (
-                                'Not specified'
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Address */}
-                    <div>
-                      {isEditing ? (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Address
-                          </label>
-                          <input
-                            type="text"
-                            value={editForm.address || ''}
-                            onChange={(e) => handleInputChange('address', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                            placeholder="Enter your address"
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex">
-                          <MapPin className="w-5 h-5 text-gray-400 mr-3" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Address</p>
-                            <p className="text-gray-900 dark:text-white">{userInfo.address || 'Not specified'}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* City & State */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* City */}
-                      <div>
-                        {isEditing ? (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                              City
-                            </label>
-                            <input
-                              type="text"
-                              value={editForm.city || ''}
-                              onChange={(e) => handleInputChange('city', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                              placeholder="Enter your city"
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex">
-                            <Building className="w-5 h-5 text-gray-400 mr-3" />
-                            <div>
-                              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">City</p>
-                              <p className="text-gray-900 dark:text-white">{userInfo.city || 'Not specified'}</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* State */}
-                      <div>
-                        {isEditing ? (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                              State/Province
-                            </label>
-                            <input
-                              type="text"
-                              value={editForm.state || ''}
-                              onChange={(e) => handleInputChange('state', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                              placeholder="Enter your state/province"
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex">
-                            <MapPin className="w-5 h-5 text-gray-400 mr-3" />
-                            <div>
-                              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">State/Province</p>
-                              <p className="text-gray-900 dark:text-white">{userInfo.state || 'Not specified'}</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Country & ZIP Code */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Country */}
-                      <div>
-                        {isEditing ? (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                              Country
-                            </label>
-                            <input
-                              type="text"
-                              value={editForm.country || ''}
-                              onChange={(e) => handleInputChange('country', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                              placeholder="Enter your country"
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex">
-                            <Globe className="w-5 h-5 text-gray-400 mr-3" />
-                            <div>
-                              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Country</p>
-                              <p className="text-gray-900 dark:text-white">{userInfo.country || 'Not specified'}</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* ZIP Code */}
-                      <div>
-                        {isEditing ? (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                              ZIP/Postal Code
-                            </label>
-                            <input
-                              type="text"
-                              value={editForm.zip_code || ''}
-                              onChange={(e) => handleInputChange('zip_code', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                              placeholder="Enter ZIP/Postal code"
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex">
-                            <Mail className="w-5 h-5 text-gray-400 mr-3" />
-                            <div>
-                              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">ZIP/Postal Code</p>
-                              <p className="text-gray-900 dark:text-white">{userInfo.zip_code || 'Not specified'}</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Skills */}
-              <div className={`rounded-lg sm:rounded-xl shadow-sm border overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-[#1A1A1A] border-[#3A3A3A]' : 'bg-white border-blue-200/50'}`}>
-                <div className={`px-4 py-3 border-b transition-colors duration-300 ${isDarkMode ? 'bg-[#2C2C2C] border-[#3A3A3A]' : 'bg-gradient-to-r from-purple-50 to-pink-50 border-blue-200/50'}`}>
-                  <h2 className={`text-sm sm:text-base font-semibold transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Skills</h2>
-                </div>
-                
-                <div className="p-3 sm:p-4">
-                  {isEditing ? (
-                    <div>
-                      <div className="flex mb-4">
-                        <input
-                          type="text"
-                          ref={skillInputRef}
-                          value={skillInput}
-                          onChange={(e) => setSkillInput(e.target.value)}
-                          onKeyPress={handleSkillKeyPress}
-                          placeholder="Add a skill..."
-                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-l-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        />
-                        <button
-                          onClick={handleAddSkill}
-                          className="px-4 py-2 bg-gradient-to-r from-slate-500 to-slate-600 text-white rounded-r-md hover:from-slate-600 hover:to-slate-700 focus:outline-none"
-                        >
-                          Add
-                        </button>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-2">
-                        {editForm.skills?.length > 0 ? (
-                          editForm.skills.map((skill, index) => (
-                            <div 
-                              key={index} 
-                              className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm flex items-center"
-                            >
-                              {skill}
-                              <button 
-                                onClick={() => handleRemoveSkill(skill)}
-                                className="ml-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 focus:outline-none"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-gray-500 dark:text-gray-400 text-sm">No skills added yet</p>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {userInfo.skills?.length > 0 ? (
-                        userInfo.skills.map((skill, index) => (
-                          <span 
-                            key={index} 
-                            className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm"
-                          >
-                            {skill}
-                          </span>
-                        ))
-                      ) : (
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">No skills added yet</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Achievements */}
-              <div className={`rounded-lg sm:rounded-xl shadow-sm border overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-[#1A1A1A] border-[#3A3A3A]' : 'bg-white border-blue-200/50'}`}>
-                <div className={`px-4 py-3 border-b transition-colors duration-300 ${isDarkMode ? 'bg-[#2C2C2C] border-[#3A3A3A]' : 'bg-gradient-to-r from-orange-50 to-amber-50 border-blue-200/50'}`}>
-                  <h2 className={`text-sm sm:text-base font-semibold transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Achievements</h2>
-                </div>
-                
-                <div className="p-3 sm:p-4">
-                  {userInfo.achievements?.length > 0 ? (
-                    <ul className="space-y-2 sm:space-y-2.5">
-                      {userInfo.achievements.map((achievement, index) => (
-                        <li key={index} className="flex items-start">
-                          <Award className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 mr-2 sm:mr-3 mt-0.5 flex-shrink-0" />
-                          <span className="text-sm text-gray-900 dark:text-white">{achievement}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">No achievements added yet</p>
-                  )}
-                </div>
-              </div>
-              
-              {/* Recent Activity */}
-              <div className={`rounded-lg sm:rounded-xl shadow-sm border overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-[#1A1A1A] border-[#3A3A3A]' : 'bg-white border-blue-200/50'}`}>
-                <div className={`px-4 py-3 border-b transition-colors duration-300 ${isDarkMode ? 'bg-[#2C2C2C] border-[#3A3A3A]' : 'bg-gradient-to-r from-green-50 to-emerald-50 border-blue-200/50'}`}>
-                  <h2 className={`text-sm sm:text-base font-semibold transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Activity</h2>
-                </div>
-                
-                <div className={`divide-y transition-colors duration-300 ${isDarkMode ? 'divide-[#3A3A3A]' : 'divide-gray-200'}`}>
-                  {userInfo.recentActivity?.length > 0 ? (
-                    userInfo.recentActivity.map((activity) => (
-                      <div key={activity.id} className="p-3 sm:p-4 flex items-start">
-                        <div className="bg-blue-100 dark:bg-blue-900 p-1.5 sm:p-2 rounded-full mr-2.5 sm:mr-3 flex-shrink-0">
-                          {activity.type === 'case' ? (
-                            <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
-                          ) : activity.type === 'document' ? (
-                            <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
-                          ) : (
-                            <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-900 dark:text-white line-clamp-2">{activity.description}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{activity.date}</p>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="p-3 sm:p-4">
-                      <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">No recent activity</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-        </AnimatePresence>
-        
-        {/* Security Tab Content */}
-        <AnimatePresence mode="wait">
-        {activeTab === 'security' && (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            className={`rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl border ${isDarkMode ? 'bg-gradient-to-br from-[#1A1A1A] to-[#2C2C2C] border-[#3A3A3A]' : 'bg-gradient-to-br from-white to-slate-50 border-slate-200/50'}`}
-          >
-            <div className={`px-6 py-6 border-b ${isDarkMode ? 'border-[#3A3A3A] bg-gradient-to-r from-[#1A1A1A] to-[#2C2C2C]' : 'border-slate-200/50 bg-gradient-to-r from-white to-slate-50'}`}>
-              <div className="flex items-center space-x-4">
-                <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-slate-600/20' : 'bg-slate-100'}`}>
-                  <LockIcon className={`w-6 h-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`} />
-                </div>
-                <div>
-                  <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Security Settings</h2>
-                  <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Protect your account with advanced security options</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-6">
-              <p className="text-gray-500 dark:text-gray-400 mb-6">Manage your account security settings and connected devices</p>
-              
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-md font-medium text-gray-900 dark:text-white mb-3">Change Password</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Current Password
-                      </label>
-                      <div className="relative">
-                        <input
-                          type={showPassword ? "text" : "password"}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          placeholder="Enter current password"
-                        />
-                        <button 
-                          type="button"
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        New Password
-                      </label>
-                      <input
-                        type="password"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        placeholder="Enter new password"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Confirm New Password
-                      </label>
-                      <input
-                        type="password"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        placeholder="Confirm new password"
-                      />
-                    </div>
-                    
-                    <button className="mt-2 px-4 py-2 bg-gradient-to-r from-slate-500 to-slate-600 text-white rounded-md hover:from-slate-600 hover:to-slate-700 focus:outline-none">
-                      Update Password
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <h3 className="text-md font-medium text-gray-900 dark:text-white mb-3">Two-Factor Authentication</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                    Add an extra layer of security to your account by enabling two-factor authentication
-                  </p>
-                  <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none">
-                    Enable 2FA
-                  </button>
-                </div>
-                
-                <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <h3 className="text-md font-medium text-gray-900 dark:text-white mb-3">Connected Devices</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Devices that have logged into your account
-                  </p>
-                  
-                  <div className="mt-3 space-y-3">
-                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <div className="flex items-center">
-                        <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-full mr-3">
-                          <Laptop className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white">MacBook Pro</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Last active: Today</p>
-                        </div>
-                      </div>
-                      <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Current</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-        </AnimatePresence>
-        
-        {/* Notifications Tab Content */}
-        <AnimatePresence mode="wait">
-        {activeTab === 'notifications' && (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            className={`rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl border ${isDarkMode ? 'bg-gradient-to-br from-[#1A1A1A] to-[#2C2C2C] border-[#3A3A3A]' : 'bg-gradient-to-br from-white to-slate-50 border-slate-200/50'}`}
-          >
-            <div className={`px-6 py-6 border-b ${isDarkMode ? 'border-[#3A3A3A] bg-gradient-to-r from-[#1A1A1A] to-[#2C2C2C]' : 'border-slate-200/50 bg-gradient-to-r from-white to-slate-50'}`}>
-              <div className="flex items-center space-x-4">
-                <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-purple-600/20' : 'bg-purple-100'}`}>
-                  <Bell className={`w-6 h-6 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
-                </div>
-                <div>
-                  <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Notification Preferences</h2>
-                  <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Customize how you receive important updates</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-6">
-              <p className="text-gray-500 dark:text-gray-400 mb-6">Manage how and when you receive notifications</p>
-              
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-md font-medium text-gray-900 dark:text-white mb-3">Email Notifications</h3>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-gray-900 dark:text-white">Account updates</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Receive emails about your account activity</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" defaultChecked />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 dark:peer-focus:ring-slate-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-slate-600"></div>
-                      </label>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-gray-900 dark:text-white">New messages</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Receive emails when you get new messages</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" defaultChecked />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 dark:peer-focus:ring-slate-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-slate-600"></div>
-                      </label>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-gray-900 dark:text-white">Marketing emails</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Receive promotional emails and updates</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 dark:peer-focus:ring-slate-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-slate-600"></div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <h3 className="text-md font-medium text-gray-900 dark:text-white mb-3">Push Notifications</h3>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-gray-900 dark:text-white">New messages</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Receive push notifications for new messages</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" defaultChecked />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 dark:peer-focus:ring-slate-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-slate-600"></div>
-                      </label>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-gray-900 dark:text-white">Account activity</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Receive push notifications for account activity</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 dark:peer-focus:ring-slate-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-slate-600"></div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-        </AnimatePresence>
-        
-        {/* Preferences Tab Content */}
-        <AnimatePresence mode="wait">
-        {activeTab === 'preferences' && (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            className={`rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl border ${isDarkMode ? 'bg-gradient-to-br from-[#1A1A1A] to-[#2C2C2C] border-[#3A3A3A]' : 'bg-gradient-to-br from-white to-slate-50 border-slate-200/50'}`}
-          >
-            <div className={`px-6 py-6 border-b ${isDarkMode ? 'border-[#3A3A3A] bg-gradient-to-r from-[#1A1A1A] to-[#2C2C2C]' : 'border-slate-200/50 bg-gradient-to-r from-white to-slate-50'}`}>
-              <div className="flex items-center space-x-4">
-                <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-emerald-600/20' : 'bg-emerald-100'}`}>
-                  <Settings className={`w-6 h-6 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                </div>
-                <div>
-                  <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Account Preferences</h2>
-                  <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Personalize your experience and settings</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-6">
-              <p className="text-gray-500 dark:text-gray-400 mb-6">Customize your account settings and preferences</p>
-              
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-md font-medium text-gray-900 dark:text-white mb-3">Language</h3>
-                  <select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                    <option value="en">English</option>
-                    <option value="es">Español</option>
-                    <option value="fr">Français</option>
-                    <option value="de">Deutsch</option>
-                    <option value="hi">हिन्दी</option>
-                  </select>
-                </div>
-                
-                <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <h3 className="text-md font-medium text-gray-900 dark:text-white mb-3">Time Zone</h3>
-                  <select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                    <option value="UTC">UTC (Coordinated Universal Time)</option>
-                    <option value="IST">IST (Indian Standard Time)</option>
-                    <option value="EST">EST (Eastern Standard Time)</option>
-                    <option value="PST">PST (Pacific Standard Time)</option>
-                    <option value="GMT">GMT (Greenwich Mean Time)</option>
-                  </select>
-                </div>
-                
-                <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <h3 className="text-md font-medium text-gray-900 dark:text-white mb-3">Privacy</h3>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-gray-900 dark:text-white">Profile visibility</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Make your profile visible to others</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" defaultChecked />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 dark:peer-focus:ring-slate-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-slate-600"></div>
-                      </label>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-gray-900 dark:text-white">Show online status</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Let others see when you're online</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" defaultChecked />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-slate-300 dark:peer-focus:ring-slate-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-slate-600"></div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <h3 className="text-md font-medium text-gray-900 dark:text-white mb-3">Account Actions</h3>
-                  
-                  <div className="space-y-3">
-                    <button className="w-full px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 focus:outline-none flex items-center justify-center">
-                      <RefreshCw className="w-4 h-4 mr-2" /> Request Data Export
-                    </button>
-                    
-                    <button className="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none flex items-center justify-center">
-                      <Trash2 className="w-4 h-4 mr-2" /> Delete Account
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-        </AnimatePresence>
-      </div>
-
-      {/* Premium Appointment Details Modal */}
-      {showAppointmentModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 w-full max-w-4xl max-h-[85vh] overflow-hidden transition-all duration-300 animate-fadeIn">
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900/20 dark:to-slate-800/20">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2.5 bg-blue-100 dark:bg-blue-900/50 rounded-xl">
-                    <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      My Appointments
-                    </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {appointmentDetails.length} {appointmentDetails.length === 1 ? 'appointment' : 'appointments'} found
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowAppointmentModal(false)}
-                  className="p-2 hover:bg-gray-200/50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(85vh-80px)]">
-              {appointmentDetails.length === 0 ? (
-                // No appointments state
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 mx-auto bg-blue-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-                    <Calendar className="w-8 h-8 text-blue-500 dark:text-blue-400" />
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    No Appointments Scheduled
-                  </h3>
-                  <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">
-                    You don't have any appointments scheduled yet. Book a consultation with our legal experts.
-                  </p>
-                  <button
-                    onClick={() => setShowAppointmentModal(false)}
-                    className="px-4 py-2 bg-gradient-to-r from-slate-500 to-slate-600 text-white rounded-lg hover:from-slate-600 hover:to-slate-700 transition-colors font-medium"
-                  >
-                    Close
-                  </button>
-                </div>
-              ) : (
-                // Appointment details list
-                <div className="space-y-4">
-                  {appointmentDetails.map((appointment, index) => (
-                    <div
-                      key={appointment.id || index}
-                      className={`rounded-xl border transition-all duration-200 hover:shadow-md ${
-                        appointment.canJoin
-                          ? 'border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800'
-                          : appointment.isToday && !appointment.canJoin
-                          ? 'border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-800'
-                          : 'border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
-                      }`}
-                    >
-                      {/* Status Indicator */}
-                      {appointment.canJoin && (
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-green-500 rounded-t-xl"></div>
-                      )}
-                      
-                      <div className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            {/* Appointment Header */}
-                            <div className="flex items-start space-x-3 mb-3">
-                              <div className={`p-2 rounded-lg ${
-                                appointment.canJoin 
-                                  ? 'bg-green-100 dark:bg-green-900/50' 
-                                  : 'bg-blue-100 dark:bg-blue-900/50'
-                              }`}>
-                                <Briefcase className={`w-4 h-4 ${
-                                  appointment.canJoin 
-                                    ? 'text-green-600 dark:text-green-400' 
-                                    : 'text-blue-600 dark:text-blue-400'
-                                }`} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="text-base font-semibold text-gray-900 dark:text-white truncate">
-                                  Legal Consultation
-                                </h4>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <span className={`px-2 py-1 rounded-md text-xs font-medium capitalize ${
-                                    appointment.status === 'scheduled'
-                                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300'
-                                      : appointment.status === 'confirmed'
-                                      ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
-                                      : appointment.status === 'cancelled'
-                                      ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
-                                      : 'bg-gray-100 text-gray-800 dark:bg-gray-700/50 dark:text-gray-300'
-                                  }`}>
-                                    {appointment.status || 'scheduled'}
-                                  </span>
-                                  
-                                  {appointment.canJoin && (
-                                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
-                                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse"></div>
-                                      Available Now
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Appointment Details */}
-                            <div className="grid grid-cols-2 gap-3 mb-3">
-                              <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                                <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400 mx-auto mb-1" />
-                                <p className="text-xs text-gray-600 dark:text-gray-400">Date</p>
-                                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                  {appointment.appointment_time 
-                                    ? new Date(appointment.appointment_time).toLocaleDateString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric'
-                                      })
-                                    : 'TBD'
-                                  }
-                                </p>
-                              </div>
-
-                              <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                                <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400 mx-auto mb-1" />
-                                <p className="text-xs text-gray-600 dark:text-gray-400">Time</p>
-                                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                  {appointment.appointment_time 
-                                    ? new Date(appointment.appointment_time).toLocaleTimeString('en-US', {
-                                        hour: 'numeric',
-                                        minute: '2-digit',
-                                        hour12: true
-                                      })
-                                    : 'TBD'
-                                  }
-                                </p>
-                              </div>
-
-                              {/* Lawyer */}
-                              {appointment.lawyer?.full_name && (
-                                <div className="flex items-center space-x-3 p-3 bg-gray-50/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-200/30 dark:border-gray-700/30">
-                                  <User className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
-                                  <div className="min-w-0">
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Lawyer</p>
-                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                      {appointment.lawyer.full_name}
-                                    </p>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Duration */}
-                              <div className="flex items-center space-x-3 p-3 bg-gray-50/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-200/30 dark:border-gray-700/30">
-                                <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
-                                <div className="min-w-0">
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Duration</p>
-                                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                    {appointment.duration_minutes || 50} minutes
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Enhanced Glass Join Button */}
-                          <div className="sm:ml-6 w-full sm:w-auto">
-                            {appointment.canJoin ? (
-                              <button
-                                onClick={() => handleJoinAppointment(appointment)}
-                                className="group w-full sm:w-auto px-6 sm:px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl font-medium flex items-center justify-center space-x-2 hover:scale-105 transform"
-                              >
-                                <Video className="w-4 sm:w-5 h-4 sm:h-5 group-hover:scale-110 transition-transform" />
-                                <span>Join Google Meet</span>
-                                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                              </button>
+                          <div className="bg-black/40 backdrop-blur-[2px] w-full h-full rounded-full flex items-center justify-center overflow-hidden">
+                            {isUploadingAvatar ? (
+                              <Loader size={18} className="text-white animate-spin" />
                             ) : (
-                              <button
-                                disabled
-                                className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-gradient-to-r from-gray-200/80 to-gray-300/80 dark:from-gray-700/50 dark:to-gray-800/50 text-gray-500 dark:text-gray-400 rounded-xl cursor-not-allowed flex items-center justify-center space-x-2 font-medium backdrop-blur-sm border border-gray-300/30 dark:border-gray-600/30"
-                                title={appointment.isToday ? 'Appointment not yet active' : 'Appointment scheduled for future date'}
-                              >
-                                <Clock className="w-4 sm:w-5 h-4 sm:h-5" />
-                                <span className="hidden sm:inline">{appointment.isToday ? 'Not Active' : 'Upcoming'}</span>
-                                <span className="sm:hidden">{appointment.isToday ? 'Not Active' : 'Soon'}</span>
-                              </button>
+                              <div className="flex flex-col items-center">
+                                <Camera size={18} className="text-white" />
+                                <span className="text-[8px] text-white font-bold uppercase mt-1">Upload</span>
+                              </div>
                             )}
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
 
-                  {/* Footer */}
-                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Green appointments are available to join
-                        </p>
+                      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+
+                      <div className="mt-3 text-center">
+                        <h2 className={`text-lg font-bold truncate max-w-[200px] ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{userInfo.name} {userInfo.last_name}</h2>
+                        <div className="flex items-center justify-center gap-1 mt-0.5">
+                          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${isDarkMode ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
+                            {userInfo.account_type || 'User'}
+                          </span>
+                          {userInfo.is_verified && (
+                            <div className="flex items-center gap-0.5 text-green-500">
+                              <CheckCircle size={10} fill="currentColor" fillOpacity={0.2} />
+                              <span className="text-[9px] font-bold uppercase tracking-wider">Verified</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <button
-                        onClick={() => setShowAppointmentModal(false)}
-                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
-                      >
-                        Close
-                      </button>
+                    </div>
+                  </div>
+
+                  {/* Bio and Stats */}
+                  <div className="px-4 py-2 space-y-4">
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        <label className={`text-[10px] uppercase tracking-wider font-bold ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>About Me</label>
+                        <textarea
+                          value={editForm.bio || ''}
+                          onChange={(e) => handleInputChange('bio', e.target.value)}
+                          rows="3"
+                          className={`w-full p-2 text-xs rounded-lg border focus:ring-1 focus:outline-none transition-all ${isDarkMode ? 'bg-[#1A1A1A]/60 border-[#2A2A2A] text-gray-200 focus:ring-blue-500/50' : 'bg-gray-50 border-gray-200 text-gray-900 focus:ring-blue-500/20'}`}
+                          placeholder="Tell us about yourself..."
+                        />
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <label className={`text-[10px] uppercase tracking-wider font-bold ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>About Me</label>
+                        <p className={`text-xs leading-relaxed ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{userInfo.bio || 'No bio available'}</p>
+                      </div>
+                    )}
+
+                    {/* Compact Stats */}
+                    <div className="grid grid-cols-3 gap-2 py-3 border-y border-[#2A2A2A]/20">
+                      {[
+                        { label: 'Appointments', count: userInfo?.stats?.appointments || 0, icon: Calendar, color: 'text-blue-500', onClick: handleAppointmentClick },
+                        { label: 'Queries', count: userInfo?.stats?.queries || 0, icon: MessageCircle, color: 'text-purple-500', onClick: handleQueriesClick },
+                        { label: 'Reviews', count: userInfo?.stats?.reviews || 0, icon: Star, color: 'text-amber-500', onClick: handleReviewsClick }
+                      ].map((stat, i) => (
+                        <button key={i} onClick={stat.onClick} className={`flex flex-col items-center gap-1 group transition-transform active:scale-95`}>
+                          <div className={`p-1.5 rounded-lg ${isDarkMode ? 'bg-white/5 group-hover:bg-white/10' : 'bg-gray-100 group-hover:bg-gray-200'} transition-colors`}>
+                            <stat.icon size={12} className={stat.color} />
+                          </div>
+                          <span className={`text-[11px] font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{stat.count}</span>
+                          <span className={`text-[8px] uppercase tracking-tighter ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{stat.label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Social Section */}
+                    <div className="space-y-2">
+                      <label className={`text-[10px] uppercase tracking-wider font-bold ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Professional Links</label>
+                      {isEditing ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { id: 'linkedin', icon: Linkedin, placeholder: 'LinkedIn' },
+                            { id: 'twitter', icon: Twitter, placeholder: 'Twitter' },
+                            { id: 'github', icon: Github, placeholder: 'GitHub' },
+                            { id: 'facebook', icon: Facebook, placeholder: 'Facebook' }
+                          ].map((s) => (
+                            <div key={s.id} className="relative">
+                              <s.icon size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500" />
+                              <input
+                                type="text"
+                                placeholder={s.placeholder}
+                                value={editForm.social?.[s.id] || ''}
+                                onChange={(e) => handleSocialInputChange(s.id, e.target.value)}
+                                className={`w-full pl-6 pr-2 py-1.5 text-[10px] rounded-md border focus:outline-none transition-all ${isDarkMode ? 'bg-[#1A1A1A]/60 border-[#2A2A2A] text-gray-300 focus:ring-1 focus:ring-blue-500/50' : 'bg-gray-50 border-gray-200 focus:ring-1 focus:ring-blue-500/20'}`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          {[
+                            { id: 'linkedin', icon: Linkedin },
+                            { id: 'twitter', icon: Twitter },
+                            { id: 'github', icon: Github },
+                            { id: 'facebook', icon: Facebook }
+                          ].map((s) => (
+                            userInfo.social?.[s.id] && (
+                              <a key={s.id} href={userInfo.social[s.id]} target="_blank" rel="noopener noreferrer" className={`p-1.5 rounded-md transition-all ${isDarkMode ? 'bg-[#2A2A2A] hover:bg-blue-600/20 text-gray-400 hover:text-blue-400' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}>
+                                <s.icon size={12} />
+                              </a>
+                            )
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Trust Card */}
+                  <div className={`p-4 rounded-2xl border transition-all duration-300 ${isDarkMode ? 'bg-[#1A1A1A]/40 border-[#2A2A2A]' : 'bg-white/40 border-gray-200'}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg">
+                        <Shield size={14} className="text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className={`text-[11px] font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>Verified Professional</h4>
+                        <p className={`text-[9px] truncate ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Member since {userInfo.joinDate}</p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+
+              {/* Right Column - Premium Details Grid */}
+              <div className="lg:col-span-2 space-y-4">
+                {/* Contact & Personal Details Card */}
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className={`rounded-2xl border backdrop-blur-md overflow-hidden transition-all duration-300 ${isDarkMode ? 'bg-[#1A1A1A]/40 border-[#2A2A2A]' : 'bg-white/40 border-gray-200'}`}
+                >
+                  <div className={`px-4 py-3 border-b flex justify-between items-center ${isDarkMode ? 'bg-[#2A2A2A]/40 border-[#2A2A2A]' : 'bg-gray-50/50 border-gray-200'}`}>
+                    <div className="flex items-center gap-2">
+                      <User size={14} className="text-blue-500" />
+                      <h3 className={`text-[11px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Professional Information</h3>
+                    </div>
+                  </div>
+
+                  <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    {[
+                      { label: 'Full Name', value: `${userInfo.name} ${userInfo.last_name}`, icon: User, key: 'name', secondaryKey: 'last_name' },
+                      { label: 'Professional Title', value: userInfo.title || 'Not specified', icon: Briefcase, key: 'title' },
+                      { label: 'Email Address', value: userInfo.email, icon: Mail, key: 'email', required: true },
+                      { label: 'Phone Number', value: userInfo.phone || 'Not specified', icon: Phone, key: 'phone' },
+                      { label: 'Primary Location', value: userInfo.location || 'Not specified', icon: MapPin, key: 'location' },
+                      { label: 'Full Address', value: userInfo.address || 'Not specified', icon: Building, key: 'address' }
+                    ].map((field) => (
+                      <div key={field.label} className="space-y-1.5 group/field relative">
+                        <div className="flex items-center gap-2">
+                          <field.icon size={11} className={isDarkMode ? 'text-gray-600' : 'text-gray-400'} />
+                          <label className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{field.label}</label>
+                        </div>
+
+                        {isEditing && field.key !== 'email' ? (
+                          <div className="space-y-1">
+                            {field.key === 'name' ? (
+                              <div className="flex gap-1">
+                                <input
+                                  type="text"
+                                  value={editForm.name || ''}
+                                  onChange={(e) => handleInputChange('name', e.target.value)}
+                                  className={`w-1/2 p-1.5 text-xs rounded border focus:outline-none transition-all ${isDarkMode ? 'bg-[#0D0D0D] border-[#2A2A2A] text-white focus:border-blue-500/50' : 'bg-white border-gray-200 text-gray-900 focus:border-blue-500/20'}`}
+                                  placeholder="First"
+                                />
+                                <input
+                                  type="text"
+                                  value={editForm.last_name || ''}
+                                  onChange={(e) => handleInputChange('last_name', e.target.value)}
+                                  className={`w-1/2 p-1.5 text-xs rounded border focus:outline-none transition-all ${isDarkMode ? 'bg-[#0D0D0D] border-[#2A2A2A] text-white focus:border-blue-500/50' : 'bg-white border-gray-200 text-gray-900 focus:border-blue-500/20'}`}
+                                  placeholder="Last"
+                                />
+                              </div>
+                            ) : (
+                              <input
+                                type="text"
+                                value={editForm[field.key] || ''}
+                                onChange={(e) => handleInputChange(field.key, e.target.value)}
+                                className={`w-full p-1.5 text-xs rounded border focus:outline-none transition-all ${isDarkMode ? 'bg-[#0D0D0D] border-[#2A2A2A] text-white focus:border-blue-500/50' : 'bg-white border-gray-200 text-gray-900 focus:border-blue-500/20'}`}
+                              />
+                            )}
+                          </div>
+                        ) : (
+                          <p className={`text-xs font-medium pl-5 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{field.value}</p>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Location Details for Edit Mode */}
+                    {isEditing && (
+                      <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {['city', 'state', 'country', 'zip_code'].map((sub) => (
+                          <div key={sub} className="space-y-1">
+                            <label className={`text-[8px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>{sub.replace('_', ' ')}</label>
+                            <input
+                              type="text"
+                              value={editForm[sub] || ''}
+                              onChange={(e) => handleInputChange(sub, e.target.value)}
+                              className={`w-full p-1.5 text-xs rounded border focus:outline-none transition-all ${isDarkMode ? 'bg-[#0D0D0D] border-[#2A2A2A] text-white focus:border-blue-500/50' : 'bg-white border-gray-200 text-gray-900 focus:border-blue-500/20'}`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Skills/Expertise */}
+                  <div className={`rounded-xl border backdrop-blur-md transition-all duration-300 ${isDarkMode ? 'bg-[#1A1A1A]/40 border-[#2A2A2A]' : 'bg-white/40 border-gray-200'}`}>
+                    <div className="px-4 py-2 border-b flex items-center gap-2 border-[#2A2A2A]/20">
+                      <Zap size={11} className="text-amber-500" />
+                      <h3 className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Expertise</h3>
+                    </div>
+                    <div className="p-3">
+                      {isEditing ? (
+                        <div className="space-y-3">
+                          <div className="flex gap-1">
+                            <input
+                              type="text"
+                              ref={skillInputRef}
+                              value={skillInput}
+                              onChange={(e) => setSkillInput(e.target.value)}
+                              onKeyPress={handleSkillKeyPress}
+                              placeholder="Add skill..."
+                              className={`flex-1 p-1.5 text-[10px] rounded border focus:outline-none ${isDarkMode ? 'bg-[#0D0D0D] border-[#2A2A2A] text-white' : 'bg-white border-gray-200'}`}
+                            />
+                            <button onClick={handleAddSkill} className="px-2 bg-blue-600 text-white rounded text-[10px] font-bold">Add</button>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {editForm.skills?.map((s, i) => (
+                              <span key={i} className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium ${isDarkMode ? 'bg-white/5 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>
+                                {s}
+                                <X size={10} className="cursor-pointer hover:text-red-500" onClick={() => handleRemoveSkill(s)} />
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {userInfo.skills?.length > 0 ? userInfo.skills.map((s, i) => (
+                            <span key={i} className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-tight ${isDarkMode ? 'bg-[#2A2A2A] text-blue-400 border border-blue-500/10' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
+                              {s}
+                            </span>
+                          )) : <p className="text-[10px] text-gray-500 italic">No expertise areas listed</p>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Achievements Card */}
+                  <div className={`rounded-xl border backdrop-blur-md transition-all duration-300 ${isDarkMode ? 'bg-[#1A1A1A]/40 border-[#2A2A2A]' : 'bg-white/40 border-gray-200'}`}>
+                    <div className="px-4 py-2 border-b flex items-center gap-2 border-[#2A2A2A]/20">
+                      <Award size={11} className="text-purple-500" />
+                      <h3 className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Recognitions</h3>
+                    </div>
+                    <div className="p-3">
+                      <ul className="space-y-2">
+                        {userInfo.achievements?.length > 0 ? userInfo.achievements.map((a, i) => (
+                          <li key={i} className="flex gap-2 items-start">
+                            <div className="mt-1 w-1 h-1 rounded-full bg-purple-500 flex-shrink-0" />
+                            <span className={`text-[10px] leading-tight ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{a}</span>
+                          </li>
+                        )) : <p className="text-[10px] text-gray-500 italic">No recognitions found</p>}
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Activity Card */}
+                  <div className={`md:col-span-2 rounded-xl border backdrop-blur-md transition-all duration-300 ${isDarkMode ? 'bg-[#1A1A1A]/40 border-[#2A2A2A]' : 'bg-white/40 border-gray-200'}`}>
+                    <div className="px-4 py-2 border-b flex items-center justify-between border-[#2A2A2A]/20">
+                      <div className="flex items-center gap-2">
+                        <Clock size={11} className="text-green-500" />
+                        <h3 className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Performance Track</h3>
+                      </div>
+                      <button className={`text-[8px] font-bold uppercase ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'}`}>View Timeline</button>
+                    </div>
+                    <div className="p-3">
+                      <div className="flex flex-col gap-2">
+                        {userInfo.recentActivity?.length > 0 ? userInfo.recentActivity.slice(0, 3).map((act, i) => (
+                          <div key={i} className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-white/5' : 'hover:bg-gray-50'}`}>
+                            <div className={`p-1.5 rounded bg-blue-600/10 text-blue-500`}>
+                              {act.type === 'case' ? <Briefcase size={12} /> : act.type === 'document' ? <FileText size={12} /> : <MessageSquare size={12} />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-[11px] font-semibold truncate ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{act.description}</p>
+                              <span className={`text-[9px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{act.date}</span>
+                            </div>
+                            <ChevronRight size={10} className="text-gray-500" />
+                          </div>
+                        )) : <p className="text-[10px] py-4 text-center text-gray-500 italic">Initiate your first activity to track performance</p>}
+                      </div>
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Premium Queries Details Modal */}
-      {showQueriesModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 w-full max-w-4xl max-h-[85vh] overflow-hidden transition-all duration-300 animate-fadeIn">
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2.5 bg-purple-100 dark:bg-purple-900/50 rounded-xl">
-                    <MessageSquare className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+        {/* Security Tab Content */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'security' && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className={`rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl border ${isDarkMode ? 'bg-gradient-to-br from-[#1A1A1A] to-[#2C2C2C] border-[#3A3A3A]' : 'bg-gradient-to-br from-white to-slate-50 border-slate-200/50'}`}
+            >
+              <div className={`px-6 py-6 border-b ${isDarkMode ? 'border-[#3A3A3A] bg-gradient-to-r from-[#1A1A1A] to-[#2C2C2C]' : 'border-slate-200/50 bg-gradient-to-r from-white to-slate-50'}`}>
+                <div className="flex items-center space-x-4">
+                  <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-slate-600/20' : 'bg-slate-100'}`}>
+                    <LockIcon className={`w-6 h-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`} />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      My Legal Queries
-                    </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {queriesDetails.length} {queriesDetails.length === 1 ? 'query' : 'queries'} found
-                    </p>
+                    <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Security Settings</h2>
+                    <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Protect your account with advanced security options</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <div className="space-y-4">
+                  <div className={`rounded-xl border backdrop-blur-md overflow-hidden ${isDarkMode ? 'bg-[#1A1A1A]/40 border-[#2A2A2A]' : 'bg-white/40 border-gray-200'}`}>
+                    <div className="px-4 py-2 border-b border-[#2A2A2A]/20 flex items-center gap-2">
+                      <Lock size={12} className="text-blue-500" />
+                      <h3 className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Authentication</h3>
+                    </div>
+                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <div className="space-y-1">
+                          <label className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Current Password</label>
+                          <div className="relative">
+                            <input
+                              type={showPassword ? "text" : "password"}
+                              className={`w-full p-1.5 text-xs rounded border focus:outline-none transition-all ${isDarkMode ? 'bg-[#0D0D0D] border-[#2A2A2A] text-white focus:border-blue-500/50' : 'bg-white border-gray-200 text-gray-900 focus:border-blue-500/20'}`}
+                              placeholder="••••••••"
+                            />
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-500">
+                              {showPassword ? <EyeOff size={10} /> : <Eye size={10} />}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <label className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>New Password</label>
+                            <input type="password" className={`w-full p-1.5 text-xs rounded border focus:outline-none transition-all ${isDarkMode ? 'bg-[#0D0D0D] border-[#2A2A2A] text-white' : 'bg-white border-gray-200'}`} />
+                          </div>
+                          <div className="space-y-1">
+                            <label className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Confirm</label>
+                            <input type="password" className={`w-full p-1.5 text-xs rounded border focus:outline-none transition-all ${isDarkMode ? 'bg-[#0D0D0D] border-[#2A2A2A] text-white' : 'bg-white border-gray-200'}`} />
+                          </div>
+                        </div>
+                        <button className="w-full py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded text-[10px] font-bold uppercase tracking-wider transition-colors">Update Password</button>
+                      </div>
+
+                      <div className="space-y-4 border-l border-[#2A2A2A]/20 pl-4">
+                        <div className="space-y-1">
+                          <h4 className={`text-[10px] font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Two-Factor Security</h4>
+                          <p className={`text-[9px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Secure your account with 2FA via email or SMS.</p>
+                          <button className="mt-2 px-3 py-1 bg-green-600/10 text-green-500 border border-green-500/20 rounded text-[9px] font-bold uppercase hover:bg-green-600/20 transition-all">Enable 2FA</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={`rounded-xl border backdrop-blur-md overflow-hidden ${isDarkMode ? 'bg-[#1A1A1A]/40 border-[#2A2A2A]' : 'bg-white/40 border-gray-200'}`}>
+                    <div className="px-4 py-2 border-b border-[#2A2A2A]/20 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Laptop size={12} className="text-purple-500" />
+                        <h3 className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Active Sessions</h3>
+                      </div>
+                      <button className="text-[8px] font-bold uppercase text-red-500 hover:text-red-400 transition-colors">Logout All Devices</button>
+                    </div>
+                    <div className="p-3">
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-[#2A2A2A]/20">
+                        <div className="flex items-center gap-3">
+                          <div className="p-1.5 rounded bg-blue-600/10 text-blue-500"><Laptop size={12} /></div>
+                          <div>
+                            <p className={`text-[11px] font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>MacBook Pro (Current)</p>
+                            <p className={`text-[9px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>San Francisco, USA • Active now</p>
+                          </div>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-500 text-[8px] font-bold uppercase">Active</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Notifications Tab Content */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'notifications' && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className={`rounded-2xl border backdrop-blur-md overflow-hidden ${isDarkMode ? 'bg-[#1A1A1A]/40 border-[#2A2A2A]' : 'bg-white border-gray-200 shadow-sm'}`}
+            >
+              <div className="px-4 py-3 border-b border-[#2A2A2A]/20 flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-purple-600/10 text-purple-500"><Bell size={14} /></div>
+                <div>
+                  <h2 className={`text-xs font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Notification Center</h2>
+                  <p className={`text-[9px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Manage your alerts across all channels</p>
+                </div>
+              </div>
+              <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[
+                  {
+                    title: 'Email Alerts', fields: [
+                      { label: 'Security Updates', desc: 'Critical account and security alerts' },
+                      { label: 'Messages', desc: 'New messages from legal advisors' },
+                      { label: 'Newsletters', desc: 'Weekly legal insights and updates' }
+                    ]
+                  },
+                  {
+                    title: 'Push Notifications', fields: [
+                      { label: 'Real-time Chat', desc: 'Instant alerts for live sessions' },
+                      { label: 'Case Milestones', desc: 'Updates on your ongoing cases' }
+                    ]
+                  }
+                ].map((group, i) => (
+                  <div key={i} className="space-y-4">
+                    <h3 className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-700'}`}>{group.title}</h3>
+                    <div className="space-y-3">
+                      {group.fields.map((f, j) => (
+                        <div key={j} className="flex items-center justify-between group">
+                          <div className="max-w-[80%]">
+                            <p className={`text-[11px] font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{f.label}</p>
+                            <p className={`text-[9px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{f.desc}</p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" className="sr-only peer" defaultChecked={j < 2} />
+                            <div className="w-8 h-4 bg-gray-600/30 rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:after:translate-x-4"></div>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Preferences Tab Content */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'preferences' && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className={`rounded-2xl border backdrop-blur-md overflow-hidden ${isDarkMode ? 'bg-[#1A1A1A]/40 border-[#2A2A2A]' : 'bg-white border-gray-200 shadow-sm'}`}
+            >
+              <div className="px-4 py-3 border-b border-[#2A2A2A]/20 flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-emerald-600/10 text-emerald-500"><Settings size={14} /></div>
+                <div>
+                  <h2 className={`text-xs font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>System Preferences</h2>
+                  <p className={`text-[9px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Tailor your dashboard experience</p>
+                </div>
+              </div>
+              <div className="p-4 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>Display Language</label>
+                    <select className={`w-full p-1.5 text-xs rounded border focus:outline-none ${isDarkMode ? 'bg-[#0D0D0D] border-[#2A2A2A] text-white' : 'bg-white/50 border-gray-200 text-gray-900'}`}>
+                      <option>English (US)</option>
+                      <option>Hindi (India)</option>
+                      <option>French (France)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>Timezone</label>
+                    <select className={`w-full p-1.5 text-xs rounded border focus:outline-none ${isDarkMode ? 'bg-[#0D0D0D] border-[#2A2A2A] text-white' : 'bg-white/50 border-gray-200 text-gray-900'}`}>
+                      <option>UTC (Coordinated Universal Time)</option>
+                      <option>IST (Indian Standard Time)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-[#2A2A2A]/20 space-y-4">
+                  <h3 className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-700'}`}>Privacy Controls</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                    {[
+                      { label: 'Profile Visibility', desc: 'Allow others to view your professional profile' },
+                      { label: 'Activity Status', desc: 'Display when you are active on the platform' },
+                      { label: 'Read Receipts', desc: 'Show when you have read messages' },
+                      { label: 'Public Indexing', desc: 'Allow search engines to index your profile' }
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div>
+                          <p className={`text-[11px] font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{item.label}</p>
+                          <p className={`text-[9px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{item.desc}</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" className="sr-only peer" defaultChecked={i < 2} />
+                          <div className="w-8 h-4 bg-gray-600/30 rounded-full peer peer-checked:bg-emerald-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:after:translate-x-4"></div>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-red-500/20 flex gap-2">
+                  <button className="flex-1 py-1.5 bg-red-600/10 hover:bg-red-600/20 text-red-500 border border-red-500/20 rounded text-[9px] font-bold uppercase tracking-tighter transition-all flex items-center justify-center gap-1.5">
+                    <Trash2 size={10} /> Delete My Account
+                  </button>
+                  <button className="flex-1 py-1.5 bg-gray-600/10 hover:bg-gray-600/20 text-gray-400 border border-gray-600/20 rounded text-[9px] font-bold uppercase tracking-tighter transition-all flex items-center justify-center gap-1.5">
+                    <RefreshCw size={10} /> Export All Data
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Premium Detail Modals */}
+      <AnimatePresence>
+        {/* Premium Appointment Details Modal */}
+        {showAppointmentModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
+            onClick={(e) => e.target === e.currentTarget && setShowAppointmentModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className={`w-full max-w-lg rounded-3xl border shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden ${isDarkMode ? 'bg-[#1A1A1A] border-white/10' : 'bg-white border-slate-200'}`}
+            >
+              <div className={`px-6 py-4 border-b flex items-center justify-between ${isDarkMode ? 'border-white/5 bg-white/[0.02]' : 'border-slate-100 bg-slate-50'}`}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <Calendar size={18} className="text-white" />
+                  </div>
+                  <div>
+                    <h2 className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>My Appointments</h2>
+                    <p className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-slate-400'}`}>{appointmentDetails.length} Scheduled</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAppointmentModal(false)}
+                  className={`p-2 rounded-xl transition-all ${isDarkMode ? 'text-gray-400 hover:bg-white/5 hover:text-white' : 'text-slate-400 hover:bg-slate-100'}`}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                {appointmentDetails.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Calendar size={40} className="mx-auto text-gray-600 mb-4 opacity-20" />
+                    <p className={`text-[11px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-slate-400'}`}>No appointments found</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {appointmentDetails.map((appt, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className={`p-4 rounded-2xl border transition-all ${isDarkMode ? 'bg-white/[0.02] border-white/5 hover:border-blue-500/30' : 'bg-slate-50 border-slate-100 hover:border-blue-500/20'}`}
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-md">
+                              <img src={appt.lawyer?.avatar || "https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"} alt="" className="w-full h-full object-cover" />
+                            </div>
+                            <div>
+                              <p className={`text-xs font-bold ${isDarkMode ? 'text-gray-200' : 'text-slate-800'}`}>Legal Consultation</p>
+                              <p className="text-[10px] text-blue-500 font-bold uppercase tracking-tight">{appt.lawyer?.full_name || 'Expert Advisor'}</p>
+                            </div>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider ${appt.status === 'confirmed' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'}`}>
+                            {appt.status || 'Scheduled'}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                          <div className={`p-2 rounded-xl border ${isDarkMode ? 'bg-black/20 border-white/5' : 'bg-white border-slate-200'}`}>
+                            <p className={`text-[8px] font-bold uppercase tracking-widest mb-1 ${isDarkMode ? 'text-gray-600' : 'text-slate-400'}`}>DATE</p>
+                            <div className={`flex items-center gap-1.5 text-[10px] font-bold ${isDarkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                              <Calendar size={12} className="text-blue-500" />
+                              {appt.appointment_time ? new Date(appt.appointment_time).toLocaleDateString() : 'TBD'}
+                            </div>
+                          </div>
+                          <div className={`p-2 rounded-xl border ${isDarkMode ? 'bg-black/20 border-white/5' : 'bg-white border-slate-200'}`}>
+                            <p className={`text-[8px] font-bold uppercase tracking-widest mb-1 ${isDarkMode ? 'text-gray-600' : 'text-slate-400'}`}>TIME</p>
+                            <div className={`flex items-center gap-1.5 text-[10px] font-bold ${isDarkMode ? 'text-gray-300' : 'text-slate-700'}`}>
+                              <Clock size={12} className="text-blue-500" />
+                              {appt.appointment_time ? new Date(appt.appointment_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'TBD'}
+                            </div>
+                          </div>
+                        </div>
+
+                        {appt.canJoin && (
+                          <button
+                            onClick={() => handleJoinAppointment(appt)}
+                            className="w-full py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20"
+                          >
+                            <Video size={14} /> Join Video Conference
+                          </button>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className={`px-6 py-3 border-t text-center ${isDarkMode ? 'border-white/5 bg-white/[0.01]' : 'border-slate-100 bg-slate-50'}`}>
+                <p className={`text-[9px] font-bold uppercase tracking-tighter ${isDarkMode ? 'text-gray-600' : 'text-slate-400'}`}>Calls can be joined 5 minutes before scheduled time</p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Premium Queries Details Modal */}
+        {showQueriesModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
+            onClick={(e) => e.target === e.currentTarget && setShowQueriesModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className={`w-full max-w-lg rounded-3xl border shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden ${isDarkMode ? 'bg-[#1A1A1A] border-white/10' : 'bg-white border-slate-200'}`}
+            >
+              <div className={`px-6 py-4 border-b flex items-center justify-between ${isDarkMode ? 'border-white/5 bg-white/[0.02]' : 'border-slate-100 bg-slate-50'}`}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <MessageSquare size={18} className="text-white" />
+                  </div>
+                  <div>
+                    <h2 className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Legal Queries</h2>
+                    <p className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-slate-400'}`}>{queriesDetails.length} Active</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowQueriesModal(false)}
-                  className="p-2 hover:bg-gray-200/50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
+                  className={`p-2 rounded-xl transition-all ${isDarkMode ? 'text-gray-400 hover:bg-white/5 hover:text-white' : 'text-slate-400 hover:bg-slate-100'}`}
                 >
-                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <X size={18} />
                 </button>
               </div>
-            </div>
 
-            {/* Modal Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(85vh-80px)]">
-              {queriesDetails.length === 0 ? (
-                // No queries state
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 mx-auto bg-purple-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-                    <MessageSquare className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+              <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                {queriesDetails.length === 0 ? (
+                  <div className="text-center py-12">
+                    <MessageSquare size={40} className="mx-auto text-gray-600 mb-4 opacity-20" />
+                    <p className={`text-[11px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-slate-400'}`}>No active queries</p>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    No Legal Queries Found
-                  </h3>
-                  <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">
-                    You haven't submitted any legal queries yet. Start a conversation with our AI legal assistant.
-                  </p>
-                  <button
-                    onClick={() => setShowQueriesModal(false)}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
-                  >
-                    Close
-                  </button>
-                </div>
-              ) : (
-                // Queries list
-                <div className="space-y-4">
-                  {queriesDetails.map((query, index) => (
-                    <div
-                      key={query.id || index}
-                      className="rounded-xl border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 hover:shadow-md transition-all duration-200 hover:border-purple-300 dark:hover:border-purple-600"
-                    >
-                      <div className="p-4">
-                        <div className="flex items-start space-x-3 mb-3">
-                          <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/50">
-                            <MessageSquare className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-base font-semibold text-gray-900 dark:text-white truncate mb-1">
-                              {query.title || 'Legal Query'}
-                            </h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {query.formattedDate}
-                            </p>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <span className="px-2 py-1 rounded-md text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300">
-                                {query.status || 'processed'}
-                              </span>
+                ) : (
+                  <div className="space-y-4">
+                    {queriesDetails.map((query, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.05 }}
+                        className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-white/[0.02] border-white/5' : 'bg-slate-50 border-slate-100'}`}
+                      >
+                        <div className="flex justify-between items-center mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 bg-purple-500/10 text-purple-500 rounded-lg flex items-center justify-center">
+                              <MessageSquare size={14} />
                             </div>
+                            <p className={`text-xs font-bold ${isDarkMode ? 'text-gray-200' : 'text-slate-800'}`}>{query.title || 'Inquiry'}</p>
                           </div>
+                          <span className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-600' : 'text-slate-400'}`}>{query.formattedDate}</span>
                         </div>
-                        
-                        <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200/30 dark:border-gray-700/30 backdrop-blur-sm">
-                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                            {query.question || query.content || 'No query content available'}
-                          </p>
+                        <div className={`p-4 rounded-xl border leading-relaxed text-[10px] ${isDarkMode ? 'bg-black/40 border-white/5 text-gray-400' : 'bg-white border-slate-200 text-slate-600'}`}>
+                          {query.question || query.content}
                         </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+                        <div className="mt-3 flex items-center justify-between">
+                          <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-500 text-[9px] font-bold uppercase border border-emerald-500/20">{query.status || 'Active'}</span>
+                          <button className="text-[10px] font-bold text-blue-500 uppercase tracking-widest hover:underline">View Thread</button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
 
-      {/* Premium Reviews Details Modal */}
-      {showReviewsModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 w-full max-w-4xl max-h-[85vh] overflow-hidden transition-all duration-300 animate-fadeIn">
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2.5 bg-amber-100 dark:bg-amber-900/50 rounded-xl">
-                    <Star className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+        {/* Premium Reviews Details Modal */}
+        {showReviewsModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
+            onClick={(e) => e.target === e.currentTarget && setShowReviewsModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className={`w-full max-w-lg rounded-3xl border shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden ${isDarkMode ? 'bg-[#1A1A1A] border-white/10' : 'bg-white border-slate-200'}`}
+            >
+              <div className={`px-6 py-4 border-b flex items-center justify-between ${isDarkMode ? 'border-white/5 bg-white/[0.02]' : 'border-slate-100 bg-slate-50'}`}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <Star size={18} className="text-white fill-current" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      My Reviews & Feedback
-                    </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {reviewsDetails.length} {reviewsDetails.length === 1 ? 'review' : 'reviews'} found
-                    </p>
+                    <h2 className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>Experience Reviews</h2>
+                    <p className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-slate-400'}`}>{reviewsDetails.length} Total</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowReviewsModal(false)}
-                  className="p-2 hover:bg-gray-200/50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
+                  className={`p-2 rounded-xl transition-all ${isDarkMode ? 'text-gray-400 hover:bg-white/5 hover:text-white' : 'text-slate-400 hover:bg-slate-100'}`}
                 >
-                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <X size={18} />
                 </button>
               </div>
-            </div>
 
-            {/* Modal Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(85vh-80px)]">
-              {reviewsDetails.length === 0 ? (
-                // No reviews state
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 mx-auto bg-amber-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-                    <Star className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+              <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                {reviewsDetails.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Star size={40} className="mx-auto text-gray-600 mb-4 opacity-20" />
+                    <p className={`text-[11px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-slate-400'}`}>No reviews yet</p>
                   </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-2">
-                    No Reviews Found
-                  </h3>
-                  <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto px-4">
-                    You haven't received any reviews yet. Complete some legal consultations to start receiving feedback.
-                  </p>
-                  <button
-                    onClick={() => setShowReviewsModal(false)}
-                    className="px-6 py-3 bg-amber-600 dark:bg-amber-600 text-white rounded-xl hover:bg-amber-700 dark:hover:bg-amber-700 transition-all duration-200 shadow-lg font-medium"
-                  >
-                    Close
-                  </button>
-                </div>
-              ) : (
-                // Enhanced Glass reviews details
-                <div className="space-y-4 sm:space-y-6">
-                  {reviewsDetails.map((review, index) => (
-                    <div
-                      key={review.id || index}
-                      className="relative overflow-hidden rounded-2xl border border-gray-200/50 bg-gradient-to-br from-white/90 to-gray-50/90 dark:from-gray-800/50 dark:to-gray-900/50 transition-all duration-300 hover:shadow-xl backdrop-blur-sm hover:scale-[1.02] hover:border-amber-300/50 dark:hover:border-amber-600/50"
-                    >
-                      <div className="p-4 sm:p-6">
-                        <div className="flex items-start space-x-3 sm:space-x-4 mb-4">
-                          <div className="p-2.5 sm:p-3 rounded-xl backdrop-blur-sm border bg-amber-100/80 dark:bg-amber-900/50 border-amber-200/30 dark:border-amber-800/30">
-                            <Star className="w-4 sm:w-5 h-4 sm:h-5 text-amber-600 dark:text-amber-400" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <h4 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
-                                {review.title || 'Review'}
-                              </h4>
-                              <div className="flex items-center">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star
-                                    key={i}
-                                    className={`w-4 h-4 ${
-                                      i < (review.rating || 5)
-                                        ? 'text-amber-400 fill-current'
-                                        : 'text-gray-300 dark:text-gray-600'
-                                    }`}
-                                  />
-                                ))}
-                              </div>
+                ) : (
+                  <div className="space-y-4">
+                    {reviewsDetails.map((review, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-white/[0.02] border-white/5' : 'bg-slate-50 border-slate-100'}`}
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <div className="flex gap-0.5 mb-1.5">
+                              {[...Array(5)].map((_, idx) => (
+                                <Star key={idx} size={10} className={`${idx < (review.rating || 5) ? 'text-amber-500 fill-amber-500' : 'text-gray-600'}`} />
+                              ))}
                             </div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                              {review.formattedDate}
-                            </p>
-                            <div className="flex items-center space-x-2">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100/80 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 border border-amber-200/30 dark:border-amber-800/30 backdrop-blur-sm">
-                                {review.type || 'feedback'}
-                              </span>
-                            </div>
+                            <h4 className={`text-xs font-bold ${isDarkMode ? 'text-gray-200' : 'text-slate-800'}`}>{review.title || 'Excellent Consultation'}</h4>
                           </div>
+                          <span className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-600' : 'text-slate-400'}`}>{review.formattedDate}</span>
                         </div>
-                        
-                        <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200/30 dark:border-gray-700/30 backdrop-blur-sm">
-                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                            {review.comment || review.content || 'No review content available'}
-                          </p>
+                        <div className={`p-4 rounded-xl italic leading-relaxed text-[10px] border ${isDarkMode ? 'bg-black/40 border-white/5 text-gray-400' : 'bg-white border-slate-200 text-slate-600'}`}>
+                          "{review.comment || review.content}"
                         </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+                        <div className="mt-3 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center">
+                              <User size={12} className="text-blue-500" />
+                            </div>
+                            <span className={`text-[9px] font-bold ${isDarkMode ? 'text-gray-500' : 'text-slate-700'}`}>Consulted with {review.attorney || 'Senior Partner'}</span>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-500 text-[9px] font-bold uppercase border border-amber-500/20">{review.type || 'Review'}</span>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

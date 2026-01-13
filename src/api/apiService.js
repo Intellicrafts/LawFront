@@ -47,7 +47,7 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
       // Optionally redirect to login
-    //   window.location.href = '/auth';
+      //   window.location.href = '/auth';
     }
 
     // Handle network errors
@@ -58,6 +58,108 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+/**
+ * Chatbot API Service
+ * Handles AI-powered chatbot interactions
+ */
+// Helper: create a new session for a given app and user
+export async function createSession(appName, userId) {
+  try {
+    const base = process.env.REACT_APP_CHATBOT_API_URL || 'https://9v9r3mivw8.ap-south-1.awsapprunner.com/run';
+    const host = base.replace(/\/run$/, ''); // strip trailing /run
+    const url = `${host}/apps/${appName}/users/${userId}/sessions`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    if (!resp.ok) {
+      throw new Error(`Session creation failed (${resp.status})`);
+    }
+    const data = await resp.json();
+    return data.sessionId || data.id;
+  } catch (e) {
+    console.warn('Session creation error:', e);
+    return null;
+  }
+}
+
+
+/**
+ * Chatbot API Service Object
+ * Get response from the AI chatbot
+ */
+export const chatbotAPI = {
+  /**
+   * Get response from the AI chatbot
+   * @param {string} query - The user's message
+   * @param {string} model - The selected AI model/agent
+   * @returns {Promise<Object>} - The API response data
+   */
+  getChatResponse: async (query, model = 'legal_counsel', sessionIdInput = 'session_123', userId = 'user_123') => {
+    try {
+      const apiUrl = process.env.REACT_APP_CHATBOT_API_URL || 'https://9v9r3mivw8.ap-south-1.awsapprunner.com/run';
+
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const runUrl = isLocalhost ? '/run' : apiUrl;
+      const baseUrl = isLocalhost ? '' : 'https://9v9r3mivw8.ap-south-1.awsapprunner.com';
+
+      // 1. Create/Ensure Session first
+      // The new AWS backend expects a specific session creation call
+      try {
+        await fetch(`${baseUrl}/apps/${model}/users/${userId}/sessions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+      } catch (e) {
+        console.warn('Session creation failed or already exists:', e);
+      }
+
+      const payload = {
+        "app_name": model,
+        "user_id": userId,
+        "sessionId": sessionIdInput, // New API uses camelCase sessionId
+        "new_message": {
+          "role": "user",
+          "parts": [{
+            "text": query
+          }]
+        },
+        "streaming": false
+      };
+
+      console.log('Chatbot API Request Info:', { url: runUrl, payload });
+
+      const response = await fetch(runUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API Error (${response.status}): ${errorText || response.statusText}`);
+      }
+
+      // Check content type to decide how to parse
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return await response.json();
+      } else {
+        // Fallback for text/SSE responses if they aren't JSON
+        return await response.text();
+      }
+    } catch (error) {
+      console.error('Chatbot API Fetch Error:', error);
+      throw error;
+    }
+  }
+};
 
 /**
  * Lawyer API Service/
@@ -78,7 +180,7 @@ export const lawyerAPI = {
       throw error;
     }
   },
-  
+
   /**
    * Book an appointment with a lawyer
    * @param {string} lawyerId - Lawyer ID
@@ -92,7 +194,7 @@ export const lawyerAPI = {
         ...appointmentData,
         lawyer_id: lawyerId // Ensure lawyer_id is in the payload
       };
-      
+
       console.log('Booking appointment with data:', appointmentPayload);
       const response = await apiClient.post('/appointments', appointmentPayload);
       console.log('Booking response:', response.data);
@@ -343,10 +445,10 @@ export const authAPI = {
   saveAdditionalDetails: async (payload) => {
     try {
       console.log('Saving additional details with payload:', payload);
-      
+
       // Check if payload is FormData (for file uploads)
       const isFormData = payload instanceof FormData;
-      
+
       const config = {
         headers: {
           'Accept': 'application/json',
@@ -910,7 +1012,7 @@ export const apiServices = {
       throw error;
     }
   },
-  
+
   getTask: async (taskId) => {
     try {
       const response = await apiClient.get(`/tasks/${taskId}`);
@@ -921,7 +1023,7 @@ export const apiServices = {
       throw error;
     }
   },
-  
+
   createTask: async (taskData) => {
     try {
       const response = await apiClient.post('/tasks', taskData);
@@ -932,7 +1034,7 @@ export const apiServices = {
       throw error;
     }
   },
-  
+
   updateTask: async (taskId, taskData) => {
     try {
       const response = await apiClient.put(`/tasks/${taskId}`, taskData);
@@ -943,7 +1045,7 @@ export const apiServices = {
       throw error;
     }
   },
-  
+
   updateTaskStatus: async (taskId, status) => {
     try {
       const response = await apiClient.patch(`/tasks/${taskId}/status`, { status });
@@ -954,7 +1056,7 @@ export const apiServices = {
       throw error;
     }
   },
-  
+
   deleteTask: async (taskId) => {
     try {
       const response = await apiClient.delete(`/tasks/${taskId}`);
@@ -965,7 +1067,7 @@ export const apiServices = {
       throw error;
     }
   },
-  
+
   getTaskCategories: async () => {
     try {
       const response = await apiClient.get('/task-categories');
@@ -976,7 +1078,7 @@ export const apiServices = {
       throw error;
     }
   },
-  
+
   getTaskStatistics: async () => {
     try {
       const response = await apiClient.get('/tasks/statistics');
@@ -987,7 +1089,7 @@ export const apiServices = {
       throw error;
     }
   },
-  
+
   // Notifications API
   getUserNotifications: async (userId) => {
     try {
@@ -1000,7 +1102,7 @@ export const apiServices = {
       throw error;
     }
   },
-  
+
   createNotification: async (notificationData) => {
     try {
       const response = await apiClient.post('/notifications/', notificationData);
@@ -1011,7 +1113,7 @@ export const apiServices = {
       throw error;
     }
   },
-  
+
   markNotificationAsRead: async (notificationId) => {
     try {
       const response = await apiClient.post(`/notifications/${notificationId}/read`);
@@ -1022,7 +1124,7 @@ export const apiServices = {
       throw error;
     }
   },
-  
+
   markAllNotificationsAsRead: async (userId) => {
     try {
       const response = await apiClient.post(`/notifications/mark-all-read`, { user_id: userId });
@@ -1074,7 +1176,7 @@ export const apiServices = {
       if (sessionId) {
         formData.append('session_id', sessionId);
       }
-      
+
       const response = await apiClient.post('/voice/transcribe', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -1147,7 +1249,7 @@ export const apiServices = {
   // Client Management APIs  in lawyer admin panel
   // These endpoints manage clients, their activities, cases, appointments, documents, and statistics.
   // They also include status updates and other client-related functionalities.
- 
+
   // ======================================================================================================================================
 
   getClients: async (params = {}) => {
@@ -1286,12 +1388,12 @@ export const apiServices = {
     console.warn('Using deprecated apiServices.login. Please use authAPI.login instead.');
     try {
       const response = await apiClient.post('/login', credentials);
-      
+
       if (response.data.token) {
         localStorage.setItem('auth_token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
       }
-      
+
       return response.data;
     } catch (error) {
       throw error;
@@ -1306,7 +1408,7 @@ export const apiServices = {
       // Clear local storage
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
-      
+
       return response.data;
     } catch (error) {
       throw error;
@@ -1420,16 +1522,16 @@ export const apiServices = {
       throw error;
     }
   },
-  
+
   // User Profile APIs
   getUserProfile: async () => {
     try {
       const response = await apiClient.get('/user/profile');
       console.log('User profile response:', response.data);
-      
+
       // Extract the actual user data from the response
       const userData = response.data.data || response.data;
-      
+
       // Store user profile data in localStorage for offline access
       if (userData) {
         // ...no cleanedavatar logic needed...
@@ -1439,33 +1541,33 @@ export const apiServices = {
       return userData;
     } catch (error) {
       console.error('Get user profile error:', error.response || error);
-      
+
       // Try to get profile from localStorage if API fails
       const cachedProfile = localStorage.getItem('user_profile');
       if (cachedProfile) {
         try {
           const profile = JSON.parse(cachedProfile);
-          
+
           // Try to get avatar from various localStorage keys
-          const avatar = localStorage.getItem('user_avatar') || 
-                         localStorage.getItem('user_avatar_offline');
-          
+          const avatar = localStorage.getItem('user_avatar') ||
+            localStorage.getItem('user_avatar_offline');
+
           if (avatar) {
             profile.avatar = avatar;
             console.log('Using cached avatar from localStorage');
           }
-          
+
           return profile;
         } catch (parseError) {
           console.error('Error parsing cached profile:', parseError);
           throw error;
         }
       }
-      
+
       throw error;
     }
   },
-  
+
   updateUserProfile: async (userData) => {
     try {
       // Create a copy of userData without the avatar if it's a data URL
@@ -1478,14 +1580,14 @@ export const apiServices = {
 
       const response = await apiClient.put('/user/profile', dataToSend);
       console.log('Update profile response:', response.data);
-      
+
       // Extract the actual user data from the response
       const updatedUserData = response.data.data || response.data;
-      
+
       // Update localStorage
       if (updatedUserData) {
         localStorage.setItem('user_profile', JSON.stringify(updatedUserData));
-        
+
         // Update user in localStorage if it exists
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
@@ -1504,23 +1606,23 @@ export const apiServices = {
           }
         }
       }
-      
+
       return updatedUserData;
     } catch (error) {
       console.error('Update profile error:', error.response || error);
       throw error;
     }
   },
-  
+
   uploadAvatar: async (file) => {
     try {
       const formData = new FormData();
       formData.append('avatar', file);
-      
+
       // Try the endpoints from the Laravel routes in sequence
       let response;
       let userData;
-      
+
       try {
         // First attempt: Try the /avatar endpoint
         response = await apiClient.post('/avatar', formData, {
@@ -1532,7 +1634,7 @@ export const apiServices = {
         userData = response.data.data || response.data;
       } catch (error1) {
         console.log('First avatar upload method failed, trying alternative:', error1);
-        
+
         try {
           // Second attempt: Try the /update-avatar endpoint
           response = await apiClient.post('/update-avatar', formData, {
@@ -1544,17 +1646,17 @@ export const apiServices = {
           userData = response.data.data || response.data;
         } catch (error2) {
           console.log('Second avatar upload method failed, trying final method:', error2);
-          
+
           try {
             // Third attempt: Try with user ID
             // First get the user ID
             const userResponse = await apiClient.get('/user/profile');
             const userId = userResponse.data.id || userResponse.data.data?.id;
-            
+
             if (!userId) {
               throw new Error('Could not determine user ID for avatar upload');
             }
-            
+
             // Then use the user-specific avatar endpoint
             response = await apiClient.post(`/${userId}/avatar`, formData, {
               headers: {
@@ -1565,7 +1667,7 @@ export const apiServices = {
             userData = response.data.data || response.data;
           } catch (error3) {
             console.log('Third avatar upload method failed, trying without /api prefix:', error3);
-            
+
             try {
               // Fourth attempt: Try the endpoints without /api prefix
               response = await apiClient.post('/avatar', formData, {
@@ -1577,7 +1679,7 @@ export const apiServices = {
               userData = response.data.data || response.data;
             } catch (error4) {
               console.log('Fourth avatar upload method failed, trying update-avatar without prefix:', error4);
-              
+
               try {
                 response = await apiClient.post('/update-avatar', formData, {
                   headers: {
@@ -1594,7 +1696,7 @@ export const apiServices = {
           }
         }
       }
-      
+
       // Store avatar in localStorage
       if (userData) {
         try {
@@ -1603,19 +1705,19 @@ export const apiServices = {
           if (userData.avatar_url || userData.avatar) {
             // Determine which avatar field to use (prefer avatar_url if available)
             const avatarSource = userData.avatar_url || userData.avatar;
-            
+
             // If it's a URL (not a data URL), store it directly
             if (typeof avatarSource === 'string' && !avatarSource.startsWith('data:')) {
               // Fix the avatar URL if it's a storage path
               let fixedAvatarUrl = avatarSource;
-              
+
               // Handle escaped backslashes in URLs (like "https:\/\/chambersapi.logicera.in\/storage\/avatars\/...")
               if (fixedAvatarUrl.includes('\\/')) {
                 // Replace escaped backslashes with forward slashes
                 fixedAvatarUrl = fixedAvatarUrl.replace(/\\\//g, '/');
                 console.log('Fixed escaped backslashes in avatar URL:', fixedAvatarUrl);
               }
-              
+
               // First, check for duplicate /api prefixes and fix them
               if (fixedAvatarUrl.includes('/api')) {
                 // Fix duplicate /api prefixes
@@ -1624,10 +1726,10 @@ export const apiServices = {
                 }
                 console.log('Fixed duplicate /api prefixes:', fixedAvatarUrl);
               }
-              
+
               // Check if it's just a filename (no slashes)
-              if (!fixedAvatarUrl.includes('/') && (fixedAvatarUrl.includes('.jpg') || fixedAvatarUrl.includes('.jpeg') || 
-                  fixedAvatarUrl.includes('.png') || fixedAvatarUrl.includes('.gif') || fixedAvatarUrl.includes('.webp'))) {
+              if (!fixedAvatarUrl.includes('/') && (fixedAvatarUrl.includes('.jpg') || fixedAvatarUrl.includes('.jpeg') ||
+                fixedAvatarUrl.includes('.png') || fixedAvatarUrl.includes('.gif') || fixedAvatarUrl.includes('.webp'))) {
                 // It's just a filename, construct the full path
                 fixedAvatarUrl = `/storage/avatars/${fixedAvatarUrl}`;
                 console.log('Converted filename to full path:', fixedAvatarUrl);
@@ -1640,27 +1742,27 @@ export const apiServices = {
                   console.log('Fixed storage path by adding /api prefix:', fixedAvatarUrl);
                 }
               }
-              
+
               // Ensure the URL is absolute
               if (!fixedAvatarUrl.startsWith('http')) {
                 const baseUrl = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
-                
+
                 // Make sure we don't add the baseUrl if it's already in the URL
                 if (!fixedAvatarUrl.includes(baseUrl)) {
-                  fixedAvatarUrl = fixedAvatarUrl.startsWith('/') 
-                    ? `${baseUrl}${fixedAvatarUrl}` 
+                  fixedAvatarUrl = fixedAvatarUrl.startsWith('/')
+                    ? `${baseUrl}${fixedAvatarUrl}`
                     : `${baseUrl}/${fixedAvatarUrl}`;
                   console.log('Converted to absolute URL:', fixedAvatarUrl);
                 }
               }
-              
+
               console.log('Storing fixed avatar URL in localStorage:', fixedAvatarUrl);
               localStorage.setItem('user_avatar', fixedAvatarUrl);
-              
+
               // Update both avatar fields in userData for consistency
               userData.avatar = fixedAvatarUrl;
               userData.avatar_url = fixedAvatarUrl;
-              
+
               // Also update the avatar in the user object if it exists
               const storedUser = localStorage.getItem('user');
               if (storedUser) {
@@ -1674,15 +1776,15 @@ export const apiServices = {
               }
             }
           }
-          
+
           // Also convert the file to base64 for localStorage as a backup
           const reader = new FileReader();
-          reader.onloadend = function() {
+          reader.onloadend = function () {
             // Only store as data URL if we don't have a URL from the server
             if (!userData.avatar || userData.avatar.startsWith('data:')) {
               console.log('Storing avatar as data URL in localStorage');
               localStorage.setItem('user_avatar', reader.result);
-              
+
               // Also update the avatar in the user object if it exists
               const storedUser = localStorage.getItem('user');
               if (storedUser) {
@@ -1701,14 +1803,14 @@ export const apiServices = {
           console.error('Error storing avatar in localStorage:', e);
         }
       }
-      
+
       return userData;
     } catch (error) {
       console.error('Upload avatar error:', error.response || error);
       throw error;
     }
   },
-  
+
   // Lawyer API endpoints
   getLawyers: async (params = {}) => {
     try {
@@ -1721,7 +1823,7 @@ export const apiServices = {
       throw error;
     }
   },
-  
+
   getLawyerById: async (lawyerId) => {
     try {
       console.log(`Fetching lawyer with ID: ${lawyerId}`);
@@ -1733,7 +1835,7 @@ export const apiServices = {
       throw error;
     }
   },
-  
+
   getLawyerAppointments: async (lawyerId) => {
     try {
       console.log(`Fetching appointments for lawyer ID: ${lawyerId}`);
@@ -1745,7 +1847,7 @@ export const apiServices = {
       throw error;
     }
   },
-  
+
   getLawyerReviews: async (lawyerId) => {
     try {
       console.log(`Fetching reviews for lawyer ID: ${lawyerId}`);
@@ -1757,7 +1859,7 @@ export const apiServices = {
       throw error;
     }
   },
-  
+
   submitLawyerReview: async (lawyerId, reviewData) => {
     try {
       console.log(`Submitting review for lawyer ID: ${lawyerId}`, reviewData);
@@ -1785,7 +1887,7 @@ export const lawyerAPI2 = {
       throw error;
     }
   },
-  
+
   // Get a specific lawyer by ID
   getLawyerById: async (id) => {
     try {
@@ -1796,7 +1898,7 @@ export const lawyerAPI2 = {
       throw error;
     }
   },
-  
+
   // Book an appointment with a lawyer
   bookAppointment: async (lawyerId, appointmentData) => {
     console.log('Booking appointment for lawyer ID:', lawyerId);
@@ -1808,7 +1910,7 @@ export const lawyerAPI2 = {
       throw error;
     }
   },
-  
+
   // Get lawyer reviews
   getLawyerReviews: async (lawyerId) => {
     try {
@@ -1819,7 +1921,7 @@ export const lawyerAPI2 = {
       throw error;
     }
   },
-  
+
   // Submit a review for a lawyer
   submitReview: async (lawyerId, reviewData) => {
     try {
@@ -1839,7 +1941,7 @@ export const lawyerVerificationAPI = {
     try {
       // Create FormData for file uploads
       const formData = new FormData();
-      
+
       // Add all text fields
       Object.keys(verificationData).forEach(key => {
         if (verificationData[key] && key !== 'identityDocument' && key !== 'profileImage') {
@@ -1850,7 +1952,7 @@ export const lawyerVerificationAPI = {
           }
         }
       });
-      
+
       // Add file uploads
       if (verificationData.identityDocument) {
         formData.append('identityDocument', verificationData.identityDocument);
@@ -1858,14 +1960,14 @@ export const lawyerVerificationAPI = {
       if (verificationData.profileImage) {
         formData.append('profileImage', verificationData.profileImage);
       }
-      
+
       console.log('Submitting lawyer verification application...');
       const response = await apiClient.post('/lawyers/verification/apply', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      
+
       console.log('Lawyer verification application response:', response.data);
       return response.data;
     } catch (error) {
@@ -1873,7 +1975,7 @@ export const lawyerVerificationAPI = {
       throw error;
     }
   },
-  
+
   // Get verification status
   getVerificationStatus: async (applicationId) => {
     try {
@@ -1885,7 +1987,7 @@ export const lawyerVerificationAPI = {
       throw error;
     }
   },
-  
+
   // Get list of verified lawyers (admin function)
   getVerificationApplications: async (params = {}) => {
     try {
@@ -1897,7 +1999,7 @@ export const lawyerVerificationAPI = {
       throw error;
     }
   },
-  
+
   // Approve or reject verification application (admin function)
   updateVerificationStatus: async (applicationId, status, comments = '') => {
     try {
@@ -1912,7 +2014,7 @@ export const lawyerVerificationAPI = {
       throw error;
     }
   },
-  
+
   // Check if Bar Council number is valid/available
   validateBarCouncilNumber: async (barCouncilNumber) => {
     try {
@@ -1926,16 +2028,16 @@ export const lawyerVerificationAPI = {
       throw error;
     }
   },
-  
+
   // Upload additional documents
   uploadVerificationDocument: async (applicationId, documentType, file) => {
     try {
       const formData = new FormData();
       formData.append('document', file);
       formData.append('document_type', documentType);
-      
+
       const response = await apiClient.post(
-        `/lawyers/verification/applications/${applicationId}/documents`, 
+        `/lawyers/verification/applications/${applicationId}/documents`,
         formData,
         {
           headers: {
@@ -1950,7 +2052,7 @@ export const lawyerVerificationAPI = {
       throw error;
     }
   },
-  
+
   // Get user's own verification application
   getMyVerificationApplication: async () => {
     try {

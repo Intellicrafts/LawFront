@@ -48,7 +48,8 @@ import {
   Shield,
   Layers,
   Bookmark,
-  Flame
+  Flame,
+  Bot
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 
@@ -99,8 +100,8 @@ const NavbarComponent = ({
 }) => (
   <nav
     className={`${darkMode
-        ? 'bg-gray-900/80 border-gray-800/80 backdrop-blur-lg'
-        : 'bg-white/90 border-gray-200/80 backdrop-blur-lg'
+      ? 'bg-gray-900/80 border-gray-800/80 backdrop-blur-lg'
+      : 'bg-white/90 border-gray-200/80 backdrop-blur-lg'
       } shadow-lg border-b px-4 py-3 transition-all duration-300 sticky top-0 z-30`}
   >
     <div className="flex items-center justify-between">
@@ -108,8 +109,8 @@ const NavbarComponent = ({
         <button
           onClick={onMenuClick}
           className={`lg:hidden p-2 rounded-xl ${darkMode
-              ? 'text-gray-300 hover:text-white hover:bg-gray-800/70'
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70'
+            ? 'text-gray-300 hover:text-white hover:bg-gray-800/70'
+            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70'
             } transition-all duration-200 focus:outline-none focus:ring-2 ${darkMode ? 'focus:ring-blue-600/50' : 'focus:ring-blue-500/50'
             }`}
         >
@@ -129,8 +130,8 @@ const NavbarComponent = ({
 
       <div className="flex items-center space-x-3">
         <div className={`hidden md:flex items-center space-x-2 ${darkMode
-            ? 'bg-gray-800/70 border border-gray-700/50'
-            : 'bg-gray-100/70 border border-gray-200/50'
+          ? 'bg-gray-800/70 border border-gray-700/50'
+          : 'bg-gray-100/70 border border-gray-200/50'
           } rounded-xl px-4 py-2 transition-all duration-200 focus-within:ring-2 ${darkMode ? 'focus-within:ring-blue-600/50' : 'focus-within:ring-blue-500/50'
           }`}>
           <Search size={16} className={darkMode ? 'text-gray-400' : 'text-gray-500'} />
@@ -146,8 +147,8 @@ const NavbarComponent = ({
           <button
             onClick={toggleDarkMode}
             className={`p-2 rounded-xl ${darkMode
-                ? 'text-gray-300 hover:text-yellow-300 hover:bg-gray-800/70'
-                : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100/70'
+              ? 'text-gray-300 hover:text-yellow-300 hover:bg-gray-800/70'
+              : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100/70'
               } transition-all duration-200 focus:outline-none focus:ring-2 ${darkMode ? 'focus:ring-blue-600/50' : 'focus:ring-blue-500/50'
               } relative overflow-hidden group`}
           >
@@ -182,8 +183,8 @@ const NavbarComponent = ({
 
         <div className="relative group">
           <div className={`flex items-center space-x-3 cursor-pointer ${darkMode
-              ? 'hover:bg-gray-800/70 border border-gray-800'
-              : 'hover:bg-gray-50/70 border border-gray-200'
+            ? 'hover:bg-gray-800/70 border border-gray-800'
+            : 'hover:bg-gray-50/70 border border-gray-200'
             } rounded-xl p-2 transition-all duration-200`}>
             <div className="w-9 h-9 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md relative group overflow-hidden">
               <Avatar
@@ -216,8 +217,8 @@ const NavbarComponent = ({
 
           {/* Dropdown menu */}
           <div className={`absolute right-0 mt-2 w-48 rounded-xl shadow-lg overflow-hidden transition-all duration-200 opacity-0 invisible transform scale-95 origin-top-right group-hover:opacity-100 group-hover:visible group-hover:scale-100 ${darkMode
-              ? 'bg-gray-800 border border-gray-700'
-              : 'bg-white border border-gray-200'
+            ? 'bg-gray-800 border border-gray-700'
+            : 'bg-white border border-gray-200'
             }`}>
             <div className={`p-3 ${darkMode ? 'border-b border-gray-700' : 'border-b border-gray-200'}`}>
               <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -230,15 +231,15 @@ const NavbarComponent = ({
 
             <div className="p-2">
               <a href="/profile" className={`flex items-center px-3 py-2 text-sm rounded-lg ${darkMode
-                  ? 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                ? 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                 }`}>
                 <User size={16} className="mr-2" />
                 Profile
               </a>
               <a href="#" className={`flex items-center px-3 py-2 text-sm rounded-lg ${darkMode
-                  ? 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                ? 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                 }`}>
                 <Settings size={16} className="mr-2" />
                 Settings
@@ -246,8 +247,8 @@ const NavbarComponent = ({
               <button
                 onClick={handleLogout}
                 className={`w-full flex items-center px-3 py-2 text-sm rounded-lg ${darkMode
-                    ? 'text-red-400 hover:bg-red-900/20 hover:text-red-300'
-                    : 'text-red-600 hover:bg-red-50 hover:text-red-700'
+                  ? 'text-red-400 hover:bg-red-900/20 hover:text-red-300'
+                  : 'text-red-600 hover:bg-red-50 hover:text-red-700'
                   }`}
               >
                 <LogOut size={16} className="mr-2" />
@@ -266,8 +267,8 @@ const NavbarComponent = ({
 // Enhanced Stats Card Component with premium styling
 const StatsCard = ({ stat, darkMode }) => (
   <div className={`group relative overflow-hidden rounded-2xl ${darkMode
-      ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60'
-      : 'bg-white/90 border-gray-200/50 hover:bg-white'
+    ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60'
+    : 'bg-white/90 border-gray-200/50 hover:bg-white'
     } border shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1`}
   >
     {/* Animated gradient background on hover */}
@@ -283,12 +284,12 @@ const StatsCard = ({ stat, darkMode }) => (
           <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
         </div>
         <div className={`flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-medium ${stat.change.startsWith('+')
-            ? darkMode
-              ? 'bg-green-900/30 text-green-400 border border-green-800/30'
-              : 'bg-green-50 text-green-600 border border-green-100'
-            : darkMode
-              ? 'bg-red-900/30 text-red-400 border border-red-800/30'
-              : 'bg-red-50 text-red-600 border border-red-100'
+          ? darkMode
+            ? 'bg-green-900/30 text-green-400 border border-green-800/30'
+            : 'bg-green-50 text-green-600 border border-green-100'
+          : darkMode
+            ? 'bg-red-900/30 text-red-400 border border-red-800/30'
+            : 'bg-red-50 text-red-600 border border-red-100'
           } transition-all duration-300 group-hover:scale-105`}>
           {stat.change.startsWith('+') ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
           <span>{stat.change}</span>
@@ -344,19 +345,19 @@ const LawyerDashboard = ({ darkMode, userData }) => {
     <div className="p-6 space-y-8 max-w-7xl mx-auto">
       {/* Welcome Section with premium styling */}
       <div className={`relative overflow-hidden rounded-2xl ${darkMode
-          ? 'bg-gradient-to-r from-gray-800 via-gray-800/95 to-gray-800 border border-gray-700/50'
-          : 'bg-gradient-to-r from-white via-white/95 to-white border border-gray-200/50'
+        ? 'bg-gradient-to-r from-gray-800 via-gray-800/95 to-gray-800 border border-gray-700/50'
+        : 'bg-gradient-to-r from-white via-white/95 to-white border border-gray-200/50'
         } p-6 shadow-lg`}
       >
         <div className="absolute inset-0 overflow-hidden">
           <div className={`absolute top-0 right-0 w-64 h-64 rounded-full ${darkMode
-              ? 'bg-blue-600/5'
-              : 'bg-blue-100/50'
+            ? 'bg-blue-600/5'
+            : 'bg-blue-100/50'
             } blur-3xl transform translate-x-1/3 -translate-y-1/2`}
           ></div>
           <div className={`absolute bottom-0 left-0 w-64 h-64 rounded-full ${darkMode
-              ? 'bg-purple-600/5'
-              : 'bg-purple-100/50'
+            ? 'bg-purple-600/5'
+            : 'bg-purple-100/50'
             } blur-3xl transform -translate-x-1/3 translate-y-1/2`}
           ></div>
         </div>
@@ -380,8 +381,8 @@ const LawyerDashboard = ({ darkMode, userData }) => {
 
           <div className="flex flex-wrap gap-4">
             <div className={`flex-1 min-w-[140px] p-3 rounded-xl ${darkMode
-                ? 'bg-gray-800/70 border border-gray-700/50'
-                : 'bg-white/70 border border-gray-200/50'
+              ? 'bg-gray-800/70 border border-gray-700/50'
+              : 'bg-white/70 border border-gray-200/50'
               } backdrop-blur-sm`}
             >
               <div className="flex items-center mb-1">
@@ -399,8 +400,8 @@ const LawyerDashboard = ({ darkMode, userData }) => {
             </div>
 
             <div className={`flex-1 min-w-[140px] p-3 rounded-xl ${darkMode
-                ? 'bg-gray-800/70 border border-gray-700/50'
-                : 'bg-white/70 border border-gray-200/50'
+              ? 'bg-gray-800/70 border border-gray-700/50'
+              : 'bg-white/70 border border-gray-200/50'
               } backdrop-blur-sm`}
             >
               <div className="flex items-center mb-1">
@@ -422,14 +423,14 @@ const LawyerDashboard = ({ darkMode, userData }) => {
 
       {/* Lawyer Profile Card */}
       <div className={`relative overflow-hidden rounded-2xl ${darkMode
-          ? 'bg-gradient-to-r from-gray-800 via-gray-800/95 to-gray-800 border border-gray-700/50'
-          : 'bg-gradient-to-r from-white via-white/95 to-white border border-gray-200/50'
+        ? 'bg-gradient-to-r from-gray-800 via-gray-800/95 to-gray-800 border border-gray-700/50'
+        : 'bg-gradient-to-r from-white via-white/95 to-white border border-gray-200/50'
         } p-6 shadow-lg`}
       >
         <div className="absolute inset-0 overflow-hidden">
           <div className={`absolute top-0 right-0 w-64 h-64 rounded-full ${darkMode
-              ? 'bg-purple-600/5'
-              : 'bg-purple-100/50'
+            ? 'bg-purple-600/5'
+            : 'bg-purple-100/50'
             } blur-3xl transform translate-x-1/3 -translate-y-1/2`}
           ></div>
         </div>
@@ -438,8 +439,8 @@ const LawyerDashboard = ({ darkMode, userData }) => {
           <div className="flex flex-col md:flex-row gap-6">
             <div className="md:w-1/3">
               <div className={`p-5 rounded-xl ${darkMode
-                  ? 'bg-gray-800/70 border border-gray-700/50'
-                  : 'bg-white/70 border border-gray-200/50'
+                ? 'bg-gray-800/70 border border-gray-700/50'
+                : 'bg-white/70 border border-gray-200/50'
                 } backdrop-blur-sm`}
               >
                 <div className="flex flex-col items-center">
@@ -491,8 +492,8 @@ const LawyerDashboard = ({ darkMode, userData }) => {
 
             <div className="md:w-2/3">
               <div className={`p-5 rounded-xl h-full ${darkMode
-                  ? 'bg-gray-800/70 border border-gray-700/50'
-                  : 'bg-white/70 border border-gray-200/50'
+                ? 'bg-gray-800/70 border border-gray-700/50'
+                : 'bg-white/70 border border-gray-200/50'
                 } backdrop-blur-sm`}
               >
                 <h3 className={`text-lg font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -563,8 +564,8 @@ const LawyerDashboard = ({ darkMode, userData }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Appointments & Revenue Trend */}
         <div className={`${darkMode
-            ? 'bg-gray-800/40 border-gray-700/50'
-            : 'bg-white/90 border-gray-200/50'
+          ? 'bg-gray-800/40 border-gray-700/50'
+          : 'bg-white/90 border-gray-200/50'
           } rounded-2xl shadow-lg border p-5 transition-all duration-300 hover:shadow-xl`}
         >
           <div className="flex items-center justify-between mb-5">
@@ -586,8 +587,8 @@ const LawyerDashboard = ({ darkMode, userData }) => {
                 <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Revenue</span>
               </div>
               <button className={`p-1.5 rounded-lg ${darkMode
-                  ? 'bg-blue-900/20 text-blue-400 hover:bg-blue-900/30'
-                  : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                ? 'bg-blue-900/20 text-blue-400 hover:bg-blue-900/30'
+                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
                 } transition-colors ml-2`}
               >
                 <TrendingUp size={16} />
@@ -668,8 +669,8 @@ const LawyerDashboard = ({ darkMode, userData }) => {
 
         {/* Case Types Distribution */}
         <div className={`${darkMode
-            ? 'bg-gray-800/40 border-gray-700/50'
-            : 'bg-white/90 border-gray-200/50'
+          ? 'bg-gray-800/40 border-gray-700/50'
+          : 'bg-white/90 border-gray-200/50'
           } rounded-2xl shadow-lg border p-5 transition-all duration-300 hover:shadow-xl`}
         >
           <div className="flex items-center justify-between mb-5">
@@ -682,8 +683,8 @@ const LawyerDashboard = ({ darkMode, userData }) => {
               </p>
             </div>
             <button className={`p-1.5 rounded-lg ${darkMode
-                ? 'bg-purple-900/20 text-purple-400 hover:bg-purple-900/30'
-                : 'bg-purple-50 text-purple-600 hover:bg-purple-100'
+              ? 'bg-purple-900/20 text-purple-400 hover:bg-purple-900/30'
+              : 'bg-purple-50 text-purple-600 hover:bg-purple-100'
               } transition-colors`}
             >
               <PieChart size={16} />
@@ -736,8 +737,8 @@ const LawyerDashboard = ({ darkMode, userData }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Today's Appointments */}
         <div className={`${darkMode
-            ? 'bg-gray-800/40 border-gray-700/50'
-            : 'bg-white/90 border-gray-200/50'
+          ? 'bg-gray-800/40 border-gray-700/50'
+          : 'bg-white/90 border-gray-200/50'
           } rounded-2xl shadow-lg border p-5 transition-all duration-300 hover:shadow-xl`}
         >
           <div className="flex items-center justify-between mb-5">
@@ -750,8 +751,8 @@ const LawyerDashboard = ({ darkMode, userData }) => {
               </p>
             </div>
             <button className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl ${darkMode
-                ? 'bg-gradient-to-r from-blue-600/90 to-purple-600/90 hover:from-blue-600 hover:to-purple-600'
-                : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
+              ? 'bg-gradient-to-r from-blue-600/90 to-purple-600/90 hover:from-blue-600 hover:to-purple-600'
+              : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
               } text-white text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200`}
             >
               <Plus size={14} />
@@ -763,8 +764,8 @@ const LawyerDashboard = ({ darkMode, userData }) => {
               <div
                 key={appointment.id}
                 className={`group flex items-center justify-between p-3 ${darkMode
-                    ? 'bg-gray-700/30 hover:bg-gray-700/50 border border-gray-700/50'
-                    : 'bg-gray-50/70 hover:bg-gray-100/70 border border-gray-200/50'
+                  ? 'bg-gray-700/30 hover:bg-gray-700/50 border border-gray-700/50'
+                  : 'bg-gray-50/70 hover:bg-gray-100/70 border border-gray-200/50'
                   } rounded-xl transition-all duration-200 cursor-pointer hover:shadow-sm`}
               >
                 <div className="flex items-center space-x-3">
@@ -780,12 +781,12 @@ const LawyerDashboard = ({ darkMode, userData }) => {
                 <div className="text-right">
                   <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{appointment.time}</p>
                   <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${appointment.status === 'confirmed'
-                      ? darkMode
-                        ? 'bg-green-900/30 text-green-400 border border-green-800/30'
-                        : 'bg-green-50 text-green-600 border border-green-100'
-                      : darkMode
-                        ? 'bg-yellow-900/30 text-yellow-400 border border-yellow-800/30'
-                        : 'bg-yellow-50 text-yellow-600 border border-yellow-100'
+                    ? darkMode
+                      ? 'bg-green-900/30 text-green-400 border border-green-800/30'
+                      : 'bg-green-50 text-green-600 border border-green-100'
+                    : darkMode
+                      ? 'bg-yellow-900/30 text-yellow-400 border border-yellow-800/30'
+                      : 'bg-yellow-50 text-yellow-600 border border-yellow-100'
                     }`}>
                     {appointment.status}
                   </span>
@@ -795,8 +796,8 @@ const LawyerDashboard = ({ darkMode, userData }) => {
           </div>
           <div className="mt-4 text-center">
             <button className={`text-xs font-medium ${darkMode
-                ? 'text-blue-400 hover:text-blue-300'
-                : 'text-blue-600 hover:text-blue-700'
+              ? 'text-blue-400 hover:text-blue-300'
+              : 'text-blue-600 hover:text-blue-700'
               } transition-colors`}
             >
               View All Appointments
@@ -806,8 +807,8 @@ const LawyerDashboard = ({ darkMode, userData }) => {
 
         {/* Recent Clients */}
         <div className={`${darkMode
-            ? 'bg-gray-800/40 border-gray-700/50'
-            : 'bg-white/90 border-gray-200/50'
+          ? 'bg-gray-800/40 border-gray-700/50'
+          : 'bg-white/90 border-gray-200/50'
           } rounded-2xl shadow-lg border p-5 transition-all duration-300 hover:shadow-xl`}
         >
           <div className="flex items-center justify-between mb-5">
@@ -820,8 +821,8 @@ const LawyerDashboard = ({ darkMode, userData }) => {
               </p>
             </div>
             <button className={`flex items-center space-x-1 ${darkMode
-                ? 'text-blue-400 hover:text-blue-300'
-                : 'text-blue-600 hover:text-blue-700'
+              ? 'text-blue-400 hover:text-blue-300'
+              : 'text-blue-600 hover:text-blue-700'
               } transition-colors text-sm font-medium`}
             >
               <span>View All</span>
@@ -833,8 +834,8 @@ const LawyerDashboard = ({ darkMode, userData }) => {
               <div
                 key={client.id}
                 className={`group flex items-center justify-between p-3 ${darkMode
-                    ? 'bg-gray-700/30 hover:bg-gray-700/50 border border-gray-700/50'
-                    : 'bg-gray-50/70 hover:bg-gray-100/70 border border-gray-200/50'
+                  ? 'bg-gray-700/30 hover:bg-gray-700/50 border border-gray-700/50'
+                  : 'bg-gray-50/70 hover:bg-gray-100/70 border border-gray-200/50'
                   } rounded-xl transition-all duration-200 cursor-pointer hover:shadow-sm`}
               >
                 <div className="flex items-center space-x-3">
@@ -859,22 +860,22 @@ const LawyerDashboard = ({ darkMode, userData }) => {
                 </div>
                 <div className="flex space-x-1">
                   <button className={`p-1.5 rounded-lg ${darkMode
-                      ? 'text-gray-400 hover:text-blue-400 hover:bg-blue-900/20 border border-gray-700/50'
-                      : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50/70 border border-gray-200/50'
+                    ? 'text-gray-400 hover:text-blue-400 hover:bg-blue-900/20 border border-gray-700/50'
+                    : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50/70 border border-gray-200/50'
                     } transition-all duration-200`}
                   >
                     <Phone size={14} />
                   </button>
                   <button className={`p-1.5 rounded-lg ${darkMode
-                      ? 'text-gray-400 hover:text-blue-400 hover:bg-blue-900/20 border border-gray-700/50'
-                      : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50/70 border border-gray-200/50'
+                    ? 'text-gray-400 hover:text-blue-400 hover:bg-blue-900/20 border border-gray-700/50'
+                    : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50/70 border border-gray-200/50'
                     } transition-all duration-200`}
                   >
                     <Mail size={14} />
                   </button>
                   <button className={`p-1.5 rounded-lg ${darkMode
-                      ? 'text-gray-400 hover:text-purple-400 hover:bg-purple-900/20 border border-gray-700/50'
-                      : 'text-gray-400 hover:text-purple-600 hover:bg-purple-50/70 border border-gray-200/50'
+                    ? 'text-gray-400 hover:text-purple-400 hover:bg-purple-900/20 border border-gray-700/50'
+                    : 'text-gray-400 hover:text-purple-600 hover:bg-purple-50/70 border border-gray-200/50'
                     } transition-all duration-200`}
                   >
                     <MoreHorizontal size={14} />
@@ -885,8 +886,8 @@ const LawyerDashboard = ({ darkMode, userData }) => {
           </div>
           <div className="mt-4 text-center">
             <button className={`text-xs font-medium ${darkMode
-                ? 'text-blue-400 hover:text-blue-300'
-                : 'text-blue-600 hover:text-blue-700'
+              ? 'text-blue-400 hover:text-blue-300'
+              : 'text-blue-600 hover:text-blue-700'
               } transition-colors`}
             >
               View All Clients
@@ -902,20 +903,20 @@ const LawyerDashboard = ({ darkMode, userData }) => {
 const PlaceholderComponent = ({ title, darkMode }) => (
   <div className="p-6 max-w-7xl mx-auto">
     <div className={`${darkMode
-        ? 'bg-gradient-to-r from-gray-800 via-gray-800/95 to-gray-800 border border-gray-700/50'
-        : 'bg-gradient-to-r from-white via-white/95 to-white border border-gray-200/50'
+      ? 'bg-gradient-to-r from-gray-800 via-gray-800/95 to-gray-800 border border-gray-700/50'
+      : 'bg-gradient-to-r from-white via-white/95 to-white border border-gray-200/50'
       } rounded-2xl shadow-lg p-8 text-center relative overflow-hidden`}
     >
       {/* Decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className={`absolute top-0 right-0 w-64 h-64 rounded-full ${darkMode
-            ? 'bg-blue-600/5'
-            : 'bg-blue-100/50'
+          ? 'bg-blue-600/5'
+          : 'bg-blue-100/50'
           } blur-3xl transform translate-x-1/3 -translate-y-1/2`}
         ></div>
         <div className={`absolute bottom-0 left-0 w-64 h-64 rounded-full ${darkMode
-            ? 'bg-purple-600/5'
-            : 'bg-purple-100/50'
+          ? 'bg-purple-600/5'
+          : 'bg-purple-100/50'
           } blur-3xl transform -translate-x-1/3 translate-y-1/2`}
         ></div>
       </div>
@@ -929,8 +930,8 @@ const PlaceholderComponent = ({ title, darkMode }) => (
           This section is currently in development and will be available soon. We're working hard to bring you the best experience.
         </p>
         <button className={`inline-flex items-center px-4 py-2 rounded-xl ${darkMode
-            ? 'bg-gradient-to-r from-blue-600/90 to-purple-600/90 hover:from-blue-600 hover:to-purple-600'
-            : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
+          ? 'bg-gradient-to-r from-blue-600/90 to-purple-600/90 hover:from-blue-600 hover:to-purple-600'
+          : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
           } text-white text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200`}
         >
           <Zap size={16} className="mr-2" />
@@ -944,7 +945,7 @@ const PlaceholderComponent = ({ title, darkMode }) => (
 // Main Layout Component with its own navbar
 const LawyerAdmin = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState('dashboard');
+  const [activeItem, setActiveItem] = useState('chatbot');
   const [darkMode, setDarkMode] = useState(() => {
     // Check if user has a preference stored
     const savedPreference = localStorage.getItem('darkMode');
@@ -1299,7 +1300,7 @@ const LawyerAdmin = () => {
 
     // Render the appropriate component based on the active menu item
     switch (activeItem) {
-      case 'dashboard':
+      case 'chatbot':
         return <LawyerDashboard darkMode={darkMode} userData={userData} />;
       case 'appointments':
         return <LawyerAppointments darkMode={darkMode} userData={userData} />;
@@ -1336,14 +1337,14 @@ const LawyerAdmin = () => {
         onNavigate={handlePageChange}
         user={userData}
         items={[
-          { id: 'dashboard', label: 'Dashboard', icon: Home },
-          { id: 'appointments', label: 'Appointments', icon: Calendar, count: 5 },
-          { id: 'clients', label: 'Clients', icon: Users },
-          { id: 'cases', label: 'Cases', icon: FileText, count: 12 },
-          { id: 'documents', label: 'Documents', icon: FolderOpen },
-          { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-          { id: 'notifications', label: 'Notifications', icon: Bell, count: 3 },
-          { id: 'settings', label: 'Settings', icon: Settings },
+          { id: 'chatbot', label: 'AI Chatbot', icon: Bot, path: '/', color: '#8B5CF6' },
+          { id: 'appointments', label: 'Appointments', icon: Calendar, count: 5, path: '/legal-consoltation', color: '#10B981' },
+          { id: 'documents', label: 'Documents', icon: FileText, path: '/legal-documents-review', color: '#3B82F6' },
+          { id: 'cases', label: 'Active Cases', icon: Briefcase, count: 12, color: '#F59E0B' },
+          { id: 'clients', label: 'Clients', icon: Users, color: '#EC4899' },
+          { id: 'analytics', label: 'Analytics', icon: BarChart3, color: '#6366F1' },
+          { id: 'notifications', label: 'Notifications', icon: Bell, count: 3, color: '#EF4444' },
+          { id: 'settings', label: 'Settings', icon: Settings, color: '#6B7280' },
         ]}
       />
 
@@ -1372,8 +1373,8 @@ const LawyerAdmin = () => {
         {/* Page Content with transition effect */}
         <main
           className={`flex-1 overflow-y-auto ${darkMode
-              ? 'bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800'
-              : 'bg-gradient-to-br from-gray-50 via-gray-50 to-gray-100'
+            ? 'bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800'
+            : 'bg-gradient-to-br from-gray-50 via-gray-50 to-gray-100'
             } transition-all duration-300 ${pageTransition ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
             }`}
         >

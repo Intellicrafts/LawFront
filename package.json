@@ -2,6 +2,7 @@
   "name": "bakil_react",
   "version": "0.1.0",
   "private": true,
+  "proxy": "https://9v9r3mivw8.ap-south-1.awsapprunner.com",
   "dependencies": {
     "@react-leaflet/core": "^3.0.0",
     "@react-oauth/google": "^0.12.2",
@@ -28,8 +29,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "cross-env HOST=127.0.0.1 PORT=3000 react-scripts start",
-    "start:alt": "cross-env HOST=127.0.0.1 PORT=3001 react-scripts start",
+    "start": "cross-env PORT=3000 DANGEROUSLY_DISABLE_HOST_CHECK=true react-scripts start",
+    "start:alt": "cross-env PORT=3001 DANGEROUSLY_DISABLE_HOST_CHECK=true react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
