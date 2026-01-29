@@ -10,10 +10,10 @@ import './App.css';
 import './index.css';
 import './styles/darkMode.css';
 
-
 // Components
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
+import Sidebar from './components/Sidebar';
 import PracticeAreas from './components/PracticeAreas';
 import Contact from './components/Contact';
 import ScrollToTop from './components/ScrollToTop';
@@ -32,25 +32,43 @@ import LawyerAdmin from './components/Lawyer/LawyerAdmin';
 import ProfileTypeSelection from './components/ProfileTypeSelection';
 import LawyerAdditionalDetails from './components/LawyerAdditionalDetails';
 import UserOnboarding from './components/UserOnboarding';
+import LandingPage from './components/LandingPage';
+import Pricing from './components/Pricing';
 
 // Home Route component
 const HomeRoute = () => {
-  return <Hero />;
+  return <LandingPage />;
 };
 
 // Layout wrapper to conditionally render Navbar and Footer
 const AppLayout = ({ children }) => {
   const location = useLocation();
   const isLawyerAdmin = location.pathname.startsWith('/lawyer-admin');
-  const isHomePage = location.pathname === '/';
-  const isProfilePage = location.pathname === '/profile';
+  const isLandingPage = location.pathname === '/' || location.pathname === '/pricing' || location.pathname === '/contact';
+  const isChatbotPage = location.pathname === '/chatbot';
+  const { chatHistory } = useSelector((state) => state.chat);
+
+  // Manage chatbot-mode class on body for fixed height stability on mobile
+  useEffect(() => {
+    if (isChatbotPage) {
+      document.body.classList.add('chatbot-mode');
+    } else {
+      document.body.classList.remove('chatbot-mode');
+    }
+    return () => document.body.classList.remove('chatbot-mode');
+  }, [isChatbotPage]);
 
   return (
     <>
-      {!isLawyerAdmin && <Navbar />}
+      {!isLawyerAdmin && <Navbar isLandingPage={isLandingPage} />}
       <ScrollToTop />
-      {children}
-      {!isLawyerAdmin && <FloatingThemeToggle />}
+      <div className="flex flex-1 min-h-0">
+        {!isLawyerAdmin && !isLandingPage && <Sidebar chatHistory={chatHistory} />}
+        <main className="flex-1 min-w-0 min-h-0 relative">
+          {children}
+        </main>
+      </div>
+      {!isLawyerAdmin && !isLandingPage && <FloatingThemeToggle />}
     </>
   );
 };
@@ -85,29 +103,11 @@ const App = () => {
     }
   }, [mode]);
 
-  // Initialize chat widget
-  // useEffect(() => {
-  //   // Initialize Tawk.to chat widget
-  //   var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
-  //   (function () {
-  //     var s1 = document.createElement("script"),
-  //       s0 = document.getElementsByTagName("script")[0];
-  //     s1.async = true;
-  //     s1.src = 'https://embed.tawk.to/6824eb76f9b7b6191418efbe/1ir83ficf';
-  //     s1.charset = 'UTF-8';
-  //     s1.setAttribute('crossorigin', '*');
-  //     s0.parentNode.insertBefore(s1, s0);
-  //   })();
-  // }, []);
-
   return (
     <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
       <Router>
         <ToastProvider>
-          <div className={`app-container min-h-screen transition-colors duration-300 ${mode === 'dark'
-            ? 'dark bg-gray-900 text-gray-100'
-            : 'bg-white text-gray-900'
-            }`}>
+          <div className="app-container">
             <Routes>
               {/* LawyerAdmin with its own layout (no main Navbar/Footer) */}
               <Route path="/lawyer-admin/*" element={<LawyerAdmin />} />
@@ -119,6 +119,9 @@ const App = () => {
                     {/* Home Route */}
                     <Route path="/" element={<HomeRoute />} />
 
+                    {/* AI Chatbot Route */}
+                    <Route path="/chatbot" element={<Hero />} />
+
                     {/* Public Routes */}
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/legal-consoltation" element={<LegalCosultation />} />
@@ -127,6 +130,7 @@ const App = () => {
                     <Route path="/voice-modal" element={<VoiceModal />} />
                     <Route path="/portfolio" element={<LegalAIPortfolio />} />
                     <Route path="/personal-room" element={<PersonalRoom />} />
+                    <Route path="/pricing" element={<Pricing />} />
 
                     {/* Authentication Routes */}
                     <Route path="/auth" element={isAuthenticated ? <Navigate to="/" replace /> : <AuthComponent />} />

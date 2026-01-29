@@ -13,10 +13,14 @@
 
 import { configureStore } from '@reduxjs/toolkit';
 import themeReducer from './themeSlice';
+import sidebarReducer from './sidebarSlice';
+import chatReducer from './chatSlice';
 
 export const store = configureStore({
   reducer: {
     theme: themeReducer,
+    sidebar: sidebarReducer,
+    chat: chatReducer,
   },
 });
 

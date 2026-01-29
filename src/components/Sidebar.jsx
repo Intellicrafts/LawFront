@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { toggleSidebar, setSidebarOpen } from '../redux/sidebarSlice';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Home,
   Search,
@@ -14,7 +16,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Briefcase,
-  Layers,
   MessageCircle,
   MoreHorizontal,
   Clock,
@@ -50,20 +51,67 @@ const SAMPLE_CHATS = [
   { id: 8, title: 'Employment Law', preview: 'Reviewed termination procedures...', time: '5d' },
 ];
 
+
+// Professional Animated Sidebar Toggle Icon (Shared logic)
+const SidebarToggleIcon = ({ isOpen, mode }) => {
+  const isDark = mode === 'dark';
+  return (
+    <div className="relative w-6 h-6 flex items-center justify-center">
+      <motion.svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        animate={isOpen ? "open" : "closed"}
+      >
+        <motion.path
+          stroke={isDark ? "#94A3B8" : "#475569"}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          variants={{
+            closed: { d: "M4 6L20 6", opacity: 1 },
+            open: { d: "M6 6L18 18", stroke: "#3B82F6" }
+          }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        />
+        <motion.path
+          stroke={isDark ? "#94A3B8" : "#475569"}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          variants={{
+            closed: { d: "M4 12L16 12", opacity: 1, x: 0 },
+            open: { d: "M4 12L4 12", opacity: 0, x: -10 }
+          }}
+          transition={{ duration: 0.2 }}
+        />
+        <motion.path
+          stroke={isDark ? "#94A3B8" : "#475569"}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          variants={{
+            closed: { d: "M4 18L20 18", opacity: 1 },
+            open: { d: "M6 18L18 6", stroke: "#3B82F6" }
+          }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        />
+      </motion.svg>
+    </div>
+  );
+};
+
 const Sidebar = ({
   user = DEFAULT_USER,
   activeItem = 'dashboard',
   onNavigate,
-  isMobileOpen = false,
-  setIsMobileOpen,
   className = "",
-  sidebarOpen,
-  setSidebarOpen,
-  items // Accept items prop if provided
+  items, // Accept items prop if provided
+  ...chatProps // Accept chat history props
 }) => {
-  const { isDark } = useTheme(); // Use theme from context
+  const { isDark, mode } = useTheme();
+  const { isOpen } = useSelector((state) => state.sidebar);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [internalActiveItem, setInternalActiveItem] = useState('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -72,75 +120,54 @@ const Sidebar = ({
 
   const handleNavigate = useCallback((item) => {
     const { id, path } = item;
-
-    // If it's a specific route redirection as per user request
     if (path) {
       navigate(path);
+      dispatch(setSidebarOpen(false));
       return;
     }
-
     if (onNavigate) {
       onNavigate(id);
     } else {
       setInternalActiveItem(id);
     }
-    // Close mobile sidebar on navigation
-    if (setIsMobileOpen && window.innerWidth < 1024) {
-      setIsMobileOpen(false);
-    }
-    if (setSidebarOpen && window.innerWidth < 1024) {
-      setSidebarOpen(false);
-    }
-  }, [onNavigate, setIsMobileOpen, setSidebarOpen, navigate]);
+    // Auto-close sidebar on navigation for a seamless experience
+    dispatch(setSidebarOpen(false));
+  }, [onNavigate, navigate, dispatch]);
 
   const handleToggleDesktop = useCallback(() => {
-    setIsCollapsed(prev => !prev);
-  }, []);
+    dispatch(toggleSidebar());
+  }, [dispatch]);
 
   const handleToggleMobile = useCallback(() => {
-    if (setIsMobileOpen) {
-      setIsMobileOpen(prev => !prev);
-    }
-    if (setSidebarOpen) {
-      setSidebarOpen(prev => !prev);
-    }
-  }, [setIsMobileOpen, setSidebarOpen]);
+    dispatch(toggleSidebar());
+  }, [dispatch]);
 
-  const filteredChats = SAMPLE_CHATS.filter(chat =>
-    chat.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    chat.preview.toLowerCase().includes(searchQuery.toLowerCase())
+  const chatHistory = (chatProps.chatHistory && chatProps.chatHistory.length > 0) ? chatProps.chatHistory : SAMPLE_CHATS;
+
+  const filteredChats = chatHistory.filter(chat =>
+    (chat.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (chat.preview || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Determine if sidebar should be open
-  const isOpen = isMobileOpen || sidebarOpen;
-
-  const SidebarContent = () => (
+  const sidebarContentJSX = (
     <div className={`flex flex-col h-full ${isDark ? 'bg-[#0D0D0D] text-gray-400 border-[#1F1F1F]' : 'bg-white text-gray-600 border-gray-200'} font-sans border-r transition-colors duration-200`}>
 
       {/* Header */}
-      <div className={`px-3 py-3 flex items-center justify-between ${isDark ? 'border-[#1F1F1F]/50' : 'border-gray-200/50'} border-b flex-shrink-0`}>
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <div className="w-7 h-7 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
-            <Layers className="text-white w-4 h-4" />
-          </div>
+      <div className="px-3 py-3 flex items-center justify-between flex-shrink-0">
+        <Link to="/" className="flex items-center min-w-0 flex-1 group">
+          <span className={`text-xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent group-hover:from-blue-500 group-hover:to-blue-300 transition-all duration-300 truncate px-1`}>
+            Mera Vakil
+          </span>
+        </Link>
 
-        </div>
-
-        {/* Desktop Toggle Button */}
-        <button
-          onClick={handleToggleDesktop}
-          className={`hidden lg:flex items-center justify-center p-1.5 rounded-lg ${isDark ? 'bg-[#1A1A1A] border-[#2A2A2A] text-gray-400 hover:bg-[#252525] hover:text-white' : 'bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200 hover:text-gray-900'} border transition-all shadow-sm flex-shrink-0`}
-          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-        </button>
-
-        {/* Mobile Close Button */}
+        {/* Unified Toggle Button (Matches Navbar) */}
         <button
           onClick={handleToggleMobile}
-          className={`lg:hidden flex items-center justify-center p-1.5 rounded-lg ${isDark ? 'bg-[#1A1A1A] border-[#2A2A2A] text-gray-300 hover:bg-[#252525] hover:text-white' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900'} border transition-all shadow-sm flex-shrink-0`}
+          className={`flex items-center justify-center p-1.5 rounded-lg transition-all duration-200 group
+            ${isDark ? 'hover:bg-[#1A1A1A]' : 'hover:bg-gray-100'}`}
+          title="Close Sidebar"
         >
-          <X size={16} />
+          <SidebarToggleIcon isOpen={true} mode={mode} />
         </button>
       </div>
 
@@ -154,7 +181,7 @@ const Sidebar = ({
               key={item.id}
               onClick={() => handleNavigate(item)}
               className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-all duration-150 group ${isActive
-                ? isDark ? 'text-white bg-[#1A1A1A]' : 'text-gray-900 bg-blue-50 border border-blue-100'
+                ? isDark ? 'text-white bg-[#1A1A1A]' : 'text-gray-900 bg-blue-50'
                 : isDark ? 'hover:text-gray-200 hover:bg-[#1A1A1A]/50' : 'hover:text-gray-900 hover:bg-gray-50'
                 }`}
             >
@@ -189,8 +216,7 @@ const Sidebar = ({
         })}
       </div>
 
-      {/* Divider */}
-      <div className={`h-px ${isDark ? 'bg-[#1F1F1F]' : 'bg-gray-200'} mx-3 my-2 flex-shrink-0`} />
+
 
       {/* Live Search - Fixed */}
       <div className="px-3 py-2 flex-shrink-0">
@@ -220,6 +246,7 @@ const Sidebar = ({
           filteredChats.map((chat) => (
             <button
               key={chat.id}
+              onClick={() => dispatch(setSidebarOpen(false))}
               className={`w-full flex flex-col gap-1 p-2 rounded-lg ${isDark ? 'hover:bg-[#1A1A1A]/70' : 'hover:bg-gray-50'} transition-all group text-left`}
             >
               <div className="flex items-start justify-between gap-2">
@@ -262,35 +289,8 @@ const Sidebar = ({
 
   return (
     <>
-      {/* Mobile Toggle Button - Always Visible When Sidebar Closed */}
-      <AnimatePresence>
-        {!isOpen && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            onClick={handleToggleMobile}
-            className={`lg:hidden fixed top-3 left-3 z-[90] p-1.5 rounded-lg ${isDark ? 'bg-[#1A1A1A] border-[#2A2A2A] text-gray-300 hover:bg-[#252525] hover:text-white' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900'} border shadow-lg transition-all`}
-          >
-            <Menu size={14} strokeWidth={2.5} />
-          </motion.button>
-        )}
-      </AnimatePresence>
 
-      {/* Desktop Toggle Button - When Sidebar Collapsed */}
-      <AnimatePresence>
-        {isCollapsed && (
-          <motion.button
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            onClick={handleToggleDesktop}
-            className={`hidden lg:flex fixed top-3 left-3 z-[90] p-1.5 rounded-lg items-center justify-center ${isDark ? 'bg-[#1A1A1A] border-[#2A2A2A] text-gray-300 hover:bg-[#252525] hover:text-white' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900'} border shadow-lg transition-all`}
-          >
-            <ChevronRight size={14} strokeWidth={2.5} />
-          </motion.button>
-        )}
-      </AnimatePresence>
+      {/* Slide-over components handle visibility based on global state */}
 
       {/* Mobile Slide-over */}
       <AnimatePresence>
@@ -310,7 +310,7 @@ const Sidebar = ({
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
               className="fixed top-0 left-0 bottom-0 z-[120] w-72 lg:hidden shadow-2xl"
             >
-              <SidebarContent />
+              {sidebarContentJSX}
             </motion.aside>
           </>
         )}
@@ -320,21 +320,21 @@ const Sidebar = ({
       <motion.aside
         initial={false}
         animate={{
-          width: isCollapsed ? 0 : 256,
-          opacity: 1 // Keep opacity 1 so it doesn't flash
+          width: isOpen ? 256 : 0,
+          opacity: isOpen ? 1 : 0
         }}
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
         className={`hidden lg:block h-screen fixed top-0 left-0 z-[100] bg-inherit border-r overflow-hidden ${isDark ? 'border-[#1F1F1F]' : 'border-gray-200'} ${className}`}
       >
         <div className="w-64 h-full">
-          <SidebarContent />
+          {sidebarContentJSX}
         </div>
       </motion.aside>
 
       {/* Spacer that also animates width */}
       <motion.div
         initial={false}
-        animate={{ width: isCollapsed ? 0 : 256 }}
+        animate={{ width: isOpen ? 256 : 0 }}
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
         className="hidden lg:block flex-shrink-0"
       />

@@ -13,7 +13,7 @@ const LegalStrip = () => {
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-700/10 to-transparent"></div>
       {/* Blue accent line */}
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
-      
+
       <div className="relative z-10 flex items-center">
         <FaShieldAlt className="mr-2 text-blue-400" />
         <span className="text-gray-300">Secure Authentication | ISO 27001 Certified</span>
@@ -31,7 +31,7 @@ const LegalStrip = () => {
 const Logo = () => {
   return (
     <div className="flex justify-center mb-4">
-      <div 
+      <div
         className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-300 overflow-hidden border border-gray-700/50"
         style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)" }}
       >
@@ -46,7 +46,7 @@ const Logo = () => {
 // Enhanced Toast notification component with different types
 const Toast = ({ message, type = 'success', onClose }) => {
   const [isVisible, setIsVisible] = useState(true);
-  
+
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
 
@@ -57,7 +57,7 @@ const Toast = ({ message, type = 'success', onClose }) => {
     }, type === 'error' ? 7000 : 5000);
     return () => clearTimeout(timer);
   }, [onClose, type]);
-  
+
   const getToastStyles = () => {
     if (isDarkMode) {
       switch (type) {
@@ -90,7 +90,7 @@ const Toast = ({ message, type = 'success', onClose }) => {
         return <FaCheckCircle className="w-6 h-6 text-gray-500" />;
     }
   };
-  
+
   return (
     <div
       className={`fixed top-16 right-6 max-w-sm w-full z-50 transform transition-all duration-500 ease-in-out 
@@ -128,7 +128,7 @@ const Toast = ({ message, type = 'success', onClose }) => {
 const PasswordRequirements = ({ password }) => {
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
-  
+
   const requirements = [
     { text: 'At least 8 characters', met: password.length >= 8 },
     { text: 'At least 1 uppercase letter', met: /[A-Z]/.test(password) },
@@ -143,13 +143,12 @@ const PasswordRequirements = ({ password }) => {
           <div className={`mr-2 ${req.met ? 'text-green-500' : isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
             {req.met ? <FaCheck size={12} /> : '○'}
           </div>
-          <span className={`${
-            req.met 
-              ? 'text-green-500' 
-              : isDarkMode 
-                ? 'text-gray-400' 
+          <span className={`${req.met
+              ? 'text-green-500'
+              : isDarkMode
+                ? 'text-gray-400'
                 : 'text-gray-600'
-          }`}>{req.text}</span>
+            }`}>{req.text}</span>
         </div>
       ))}
     </div>
@@ -160,7 +159,7 @@ const PasswordRequirements = ({ password }) => {
 export const ForgotPassword = ({ onBack }) => {
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
-  
+
   const [email, setEmail] = useState('');
   const [step, setStep] = useState('email');
   const [verificationCode, setVerificationCode] = useState('');
@@ -176,10 +175,10 @@ export const ForgotPassword = ({ onBack }) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     try {
       const response = await apiServices.sendPasswordResetOtp({ email });
-      
+
       if (response.success) {
         setToast({
           message: 'Verification code sent to your email',
@@ -209,13 +208,13 @@ export const ForgotPassword = ({ onBack }) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     try {
       const response = await apiServices.verifyOtp({
         email,
         otp: verificationCode
       });
-      
+
       if (response.success) {
         setToast({
           message: 'Code verified successfully',
@@ -243,7 +242,7 @@ export const ForgotPassword = ({ onBack }) => {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    
+
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match');
       setToast({
@@ -252,10 +251,10 @@ export const ForgotPassword = ({ onBack }) => {
       });
       return;
     }
-    
+
     setLoading(true);
     setError('');
-    
+
     try {
       const response = await apiServices.resetPassword({
         email,
@@ -263,7 +262,7 @@ export const ForgotPassword = ({ onBack }) => {
         password: newPassword,
         password_confirmation: confirmPassword
       });
-      
+
       if (response.success) {
         setToast({
           message: 'Password reset successfully',
@@ -290,23 +289,23 @@ export const ForgotPassword = ({ onBack }) => {
   };
 
   const passwordsMatch = newPassword === confirmPassword || confirmPassword === '';
-  const isPasswordValid = 
-    newPassword.length >= 8 && 
-    /[A-Z]/.test(newPassword) && 
-    /[0-9]/.test(newPassword) && 
+  const isPasswordValid =
+    newPassword.length >= 8 &&
+    /[A-Z]/.test(newPassword) &&
+    /[0-9]/.test(newPassword) &&
     /[^A-Za-z0-9]/.test(newPassword);
 
   return (
-    <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-white'} relative overflow-hidden`}>
+    <div className={`min-h-screen flex flex-col pt-16 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-white'} relative overflow-hidden`}>
       {/* Toast notification */}
       {toast && (
-        <Toast 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToast(null)} 
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
-      
+
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         {isDarkMode ? (
@@ -323,11 +322,9 @@ export const ForgotPassword = ({ onBack }) => {
           </>
         )}
       </div>
-      
-      <LegalStrip />
-      
-      <div className="flex-1 flex items-center justify-center p-4 z-10">
-        <div 
+
+      <div className="flex-1 flex items-center justify-center p-4 z-10 overflow-y-auto">
+        <div
           className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-xl p-6 w-full max-w-md`}
           style={{ boxShadow: isDarkMode ? '0 10px 25px -5px rgba(0, 0, 0, 0.3)' : '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
         >
@@ -354,11 +351,10 @@ export const ForgotPassword = ({ onBack }) => {
                   Email Address <span className="text-red-500">*</span>
                 </label>
                 <div className="relative group">
-                  <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${
-                    isDarkMode 
-                      ? 'text-gray-500 group-focus-within:text-gray-300' 
+                  <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${isDarkMode
+                      ? 'text-gray-500 group-focus-within:text-gray-300'
                       : 'text-gray-400 group-focus-within:text-gray-600'
-                  } transition-colors duration-200`}>
+                    } transition-colors duration-200`}>
                     <FaEnvelope className="h-4 w-4" />
                   </div>
                   <input
@@ -367,11 +363,10 @@ export const ForgotPassword = ({ onBack }) => {
                     name="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={`block w-full pl-9 pr-10 py-2.5 text-sm rounded-lg shadow-sm transition-all duration-300 ${
-                      isDarkMode 
-                        ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500' 
+                    className={`block w-full pl-9 pr-10 py-2.5 text-sm rounded-lg shadow-sm transition-all duration-300 ${isDarkMode
+                        ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
                         : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
-                    }`}
+                      }`}
                     placeholder="you@example.com"
                     required
                   />
@@ -384,9 +379,9 @@ export const ForgotPassword = ({ onBack }) => {
                   type="submit"
                   disabled={loading || !email}
                   className={`group w-full py-2.5 px-4 rounded-lg flex items-center justify-center text-white text-sm font-semibold shadow-md transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg relative overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none border ${loading || !email ? '' : ''}`}
-                  style={{ 
-                    background: (loading || !email) 
-                      ? "linear-gradient(135deg, #4a5568 0%, #2d3748 100%)" 
+                  style={{
+                    background: (loading || !email)
+                      ? "linear-gradient(135deg, #4a5568 0%, #2d3748 100%)"
                       : "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 25%, #1a1a1a 50%, #2563eb 75%, #1e40af 100%)",
                     borderColor: !email ? "#4a5568" : "rgba(59, 130, 246, 0.3)"
                   }}
@@ -422,7 +417,7 @@ export const ForgotPassword = ({ onBack }) => {
                   We sent a verification code to <strong>{email}</strong>
                 </p>
               </div>
-              
+
               <div className="space-y-1.5">
                 <label htmlFor="code" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Verification Code</label>
                 <div className="flex gap-2 justify-center">
@@ -431,11 +426,10 @@ export const ForgotPassword = ({ onBack }) => {
                       key={i}
                       type="text"
                       maxLength="1"
-                      className={`w-10 h-10 text-center text-lg font-bold rounded-md shadow-sm focus:outline-none focus:ring-2 ${
-                        isDarkMode 
-                          ? 'border border-gray-600 bg-gray-700 text-white focus:ring-gray-500/30 focus:border-gray-500' 
+                      className={`w-10 h-10 text-center text-lg font-bold rounded-md shadow-sm focus:outline-none focus:ring-2 ${isDarkMode
+                          ? 'border border-gray-600 bg-gray-700 text-white focus:ring-gray-500/30 focus:border-gray-500'
                           : 'border border-gray-300 bg-white text-gray-900 focus:ring-gray-400/30 focus:border-gray-400'
-                      }`}
+                        }`}
                       value={verificationCode[i] || ''}
                       onChange={(e) => {
                         const value = e.target.value;
@@ -443,7 +437,7 @@ export const ForgotPassword = ({ onBack }) => {
                           const newCode = verificationCode.split('');
                           newCode[i] = value;
                           setVerificationCode(newCode.join(''));
-                          
+
                           if (value && i < 5) {
                             const nextInput = e.target.parentElement.children[i + 1];
                             nextInput.focus();
@@ -470,7 +464,7 @@ export const ForgotPassword = ({ onBack }) => {
                 <button
                   type="button"
                   onClick={() => {
-                    const e = { preventDefault: () => {} };
+                    const e = { preventDefault: () => { } };
                     handleEmailSubmit(e);
                   }}
                   disabled={loading}
@@ -485,9 +479,9 @@ export const ForgotPassword = ({ onBack }) => {
                   type="submit"
                   disabled={loading || verificationCode.length !== 6}
                   className={`group w-full py-2.5 px-4 rounded-lg flex items-center justify-center text-white text-sm font-semibold shadow-md transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg relative overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none border`}
-                  style={{ 
-                    background: (loading || verificationCode.length !== 6) 
-                      ? "linear-gradient(135deg, #4a5568 0%, #2d3748 100%)" 
+                  style={{
+                    background: (loading || verificationCode.length !== 6)
+                      ? "linear-gradient(135deg, #4a5568 0%, #2d3748 100%)"
                       : "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 25%, #1a1a1a 50%, #2563eb 75%, #1e40af 100%)",
                     borderColor: verificationCode.length !== 6 ? "#4a5568" : "rgba(59, 130, 246, 0.3)"
                   }}
@@ -511,11 +505,10 @@ export const ForgotPassword = ({ onBack }) => {
                   New Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative group">
-                  <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${
-                    isDarkMode 
-                      ? 'text-gray-500 group-focus-within:text-gray-300' 
+                  <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${isDarkMode
+                      ? 'text-gray-500 group-focus-within:text-gray-300'
                       : 'text-gray-400 group-focus-within:text-gray-600'
-                  } transition-colors duration-200`}>
+                    } transition-colors duration-200`}>
                     <FaLock className="h-4 w-4" />
                   </div>
                   <input
@@ -524,21 +517,19 @@ export const ForgotPassword = ({ onBack }) => {
                     name="new-password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className={`block w-full pl-9 pr-10 py-2.5 text-sm rounded-lg shadow-sm transition-all duration-300 ${
-                      isDarkMode 
-                        ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500' 
+                    className={`block w-full pl-9 pr-10 py-2.5 text-sm rounded-lg shadow-sm transition-all duration-300 ${isDarkMode
+                        ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
                         : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
-                    }`}
+                      }`}
                     placeholder="••••••••"
                     required
                   />
                   <button
                     type="button"
-                    className={`absolute inset-y-0 right-0 pr-3 flex items-center ${
-                      isDarkMode 
-                        ? 'text-gray-400 hover:text-gray-300' 
+                    className={`absolute inset-y-0 right-0 pr-3 flex items-center ${isDarkMode
+                        ? 'text-gray-400 hover:text-gray-300'
                         : 'text-gray-400 hover:text-gray-600'
-                    } transition-colors duration-200`}
+                      } transition-colors duration-200`}
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
@@ -552,11 +543,10 @@ export const ForgotPassword = ({ onBack }) => {
                   Confirm Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative group">
-                  <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${
-                    isDarkMode 
-                      ? 'text-gray-500 group-focus-within:text-gray-300' 
+                  <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${isDarkMode
+                      ? 'text-gray-500 group-focus-within:text-gray-300'
                       : 'text-gray-400 group-focus-within:text-gray-600'
-                  } transition-colors duration-200`}>
+                    } transition-colors duration-200`}>
                     <FaLock className="h-4 w-4" />
                   </div>
                   <input
@@ -565,21 +555,19 @@ export const ForgotPassword = ({ onBack }) => {
                     name="confirm-password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`block w-full pl-9 pr-10 py-2.5 text-sm rounded-lg shadow-sm transition-all duration-300 ${
-                      isDarkMode 
-                        ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500' 
+                    className={`block w-full pl-9 pr-10 py-2.5 text-sm rounded-lg shadow-sm transition-all duration-300 ${isDarkMode
+                        ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
                         : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
-                    }`}
+                      }`}
                     placeholder="••••••••"
                     required
                   />
                   <button
                     type="button"
-                    className={`absolute inset-y-0 right-0 pr-3 flex items-center ${
-                      isDarkMode 
-                        ? 'text-gray-400 hover:text-gray-300' 
+                    className={`absolute inset-y-0 right-0 pr-3 flex items-center ${isDarkMode
+                        ? 'text-gray-400 hover:text-gray-300'
                         : 'text-gray-400 hover:text-gray-600'
-                    } transition-colors duration-200`}
+                      } transition-colors duration-200`}
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
@@ -596,9 +584,9 @@ export const ForgotPassword = ({ onBack }) => {
                   type="submit"
                   disabled={loading || !newPassword || !isPasswordValid || !passwordsMatch}
                   className={`group w-full py-2.5 px-4 rounded-lg flex items-center justify-center text-white text-sm font-semibold shadow-md transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg relative overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none border`}
-                  style={{ 
-                    background: (loading || !newPassword || !isPasswordValid || !passwordsMatch) 
-                      ? "linear-gradient(135deg, #4a5568 0%, #2d3748 100%)" 
+                  style={{
+                    background: (loading || !newPassword || !isPasswordValid || !passwordsMatch)
+                      ? "linear-gradient(135deg, #4a5568 0%, #2d3748 100%)"
                       : "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 25%, #1a1a1a 50%, #2563eb 75%, #1e40af 100%)",
                     borderColor: !newPassword || !isPasswordValid || !passwordsMatch ? "#4a5568" : "rgba(59, 130, 246, 0.3)"
                   }}
@@ -624,11 +612,11 @@ export const ForgotPassword = ({ onBack }) => {
               <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-xs mb-6`}>
                 You can now log in with your new password
               </p>
-              
+
               <button
                 onClick={onBack}
                 className={`group w-full py-2.5 px-4 rounded-lg flex items-center justify-center text-white text-sm font-semibold shadow-md transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg relative overflow-hidden border`}
-                style={{ 
+                style={{
                   background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 25%, #1a1a1a 50%, #2563eb 75%, #1e40af 100%)",
                   borderColor: "rgba(59, 130, 246, 0.3)"
                 }}

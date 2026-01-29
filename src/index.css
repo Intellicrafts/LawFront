@@ -14,8 +14,15 @@
 
 /* Premium animations for reels */
 @keyframes heartPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.2); }
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
 }
 
 .heart-pulse {
@@ -113,10 +120,13 @@ html {
 
 /* Professional animations */
 @keyframes pulse-gradient {
-  0%, 100% {
+
+  0%,
+  100% {
     background-size: 200% 200%;
     background-position: left center;
   }
+
   50% {
     background-size: 200% 200%;
     background-position: right center;
@@ -170,11 +180,11 @@ html {
   .leaflet-container {
     touch-action: pan-x pan-y;
   }
-  
+
   .leaflet-control-zoom {
     margin-bottom: 80px !important;
   }
-  
+
   .leaflet-popup-content-wrapper {
     max-width: 280px !important;
   }
@@ -190,18 +200,24 @@ html {
 }
 
 @keyframes pulse-green {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
   }
+
   50% {
     box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
   }
 }
 
 @keyframes pulse-red {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
   }
+
   50% {
     box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
   }
@@ -223,23 +239,36 @@ html {
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
 }
 
 @layer base {
-  /* Base styles that apply to both light and dark modes */
-  html, body {
-    @apply antialiased transition-colors duration-300;
-    scrollbar-width: none; /* Hide scrollbar in Firefox */
-    -ms-overflow-style: none; /* Hide scrollbar in IE/Edge */
+
+  /* Utility for Chatbot mode to prevent browser UI shifts */
+  .chatbot-mode {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    position: fixed;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
   }
-  
-  /* Hide webkit scrollbars for html and body */
-  html::-webkit-scrollbar,
-  body::-webkit-scrollbar {
-    display: none;
+
+  html,
+  body {
+    @apply antialiased transition-colors duration-300;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  #root,
+  .app-container {
+    min-height: 100%;
   }
 
   /* Dark mode specific styles */
@@ -248,12 +277,19 @@ html {
   }
 
   /* Smooth transitions for theme changes */
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     @apply transition-colors duration-300;
   }
 
   /* Headings */
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-bold dark:text-white;
   }
 
@@ -263,10 +299,10 @@ html {
   }
 
   /* Form elements */
-  input, textarea, select {
-    @apply bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 
-           text-gray-900 dark:text-gray-100 focus:ring-blue-500 dark:focus:ring-blue-400 
-           focus:border-blue-500 dark:focus:border-blue-400;
+  input,
+  textarea,
+  select {
+    @apply bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400;
   }
 
   /* Buttons */
@@ -276,21 +312,24 @@ html {
 
   /* Cards */
   .card {
-    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 
-           shadow-sm hover:shadow-md dark:shadow-gray-900/30 dark:hover:shadow-gray-900/50;
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:shadow-gray-900/30 dark:hover:shadow-gray-900/50;
   }
 }
 
 /* Custom scrollbar styling */
 @layer utilities {
+
   /* Hide scrollbar but keep scroll functionality */
   .scrollbar-hidden {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE 10+ */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE 10+ */
   }
-  
+
   .scrollbar-hidden::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    /* Chrome, Safari, Opera */
   }
 
   /* Hide dark mode scrollbars */
@@ -346,6 +385,7 @@ html {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -361,6 +401,7 @@ html {
     transform: scale(0.99);
     opacity: 0.9;
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -376,7 +417,8 @@ html {
 
 .chat-message {
   contain: layout style;
-  transform: translateZ(0); /* Enable hardware acceleration */
+  transform: translateZ(0);
+  /* Enable hardware acceleration */
   word-wrap: break-word;
   overflow-wrap: break-word;
   hyphens: auto;
@@ -444,7 +486,11 @@ select:focus {
 }
 
 /* Prevent blue highlight on mobile */
-input, textarea, button, select, a {
+input,
+textarea,
+button,
+select,
+a {
   -webkit-tap-highlight-color: transparent !important;
   -webkit-focus-ring-color: transparent !important;
   -webkit-appearance: none !important;

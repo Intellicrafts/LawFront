@@ -6,7 +6,6 @@ import { Link } from 'react-router-dom';
 import { authAPI, tokenManager, apiServices } from '../api/apiService';
 import Avatar from './common/Avatar';
 import NotificationDropdown from './NotificationDropdown';
-import MobileSidebar from './MobileSidebar';
 import OnboardingTour from './OnboardingTour';
 import { useGoogleLogin } from '@react-oauth/google';
 import { FaGoogle } from 'react-icons/fa';
@@ -42,8 +41,69 @@ import {
   PlayCircle,
   CheckCircle,
   Search,
-  MoreVertical
+  MoreVertical,
+  PanelLeftOpen,
+  PanelLeftClose
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toggleSidebar } from '../redux/sidebarSlice';
+
+// Professional Animated Sidebar Toggle Icon (Lottie-style)
+const SidebarToggleIcon = ({ isOpen, mode }) => {
+  const isDark = mode === 'dark';
+  return (
+    <div className="relative w-6 h-6 flex items-center justify-center">
+      <motion.svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        animate={isOpen ? "open" : "closed"}
+      >
+        <motion.path
+          stroke={isDark ? "#94A3B8" : "#475569"}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          variants={{
+            closed: { d: "M4 6L20 6", opacity: 1 },
+            open: { d: "M6 6L18 18", stroke: "#3B82F6" }
+          }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        />
+        <motion.path
+          stroke={isDark ? "#94A3B8" : "#475569"}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          variants={{
+            closed: { d: "M4 12L16 12", opacity: 1, x: 0 },
+            open: { d: "M4 12L4 12", opacity: 0, x: -10 }
+          }}
+          transition={{ duration: 0.2 }}
+        />
+        <motion.path
+          stroke={isDark ? "#94A3B8" : "#475569"}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          variants={{
+            closed: { d: "M4 18L20 18", opacity: 1 },
+            open: { d: "M6 18L18 6", stroke: "#3B82F6" }
+          }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        />
+      </motion.svg>
+      {isOpen && (
+        <motion.div
+          layoutId="icon-glow"
+          className="absolute inset-0 bg-blue-500/10 blur-xl rounded-full"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        />
+      )}
+    </div>
+  );
+};
 
 // Sleek One Tap Sign-in Prompt - Black, White & Silver Theme
 const OneTapPrompt = ({ onGoogleLogin, onDismiss, isDarkMode }) => {
@@ -140,10 +200,8 @@ const OneTapPrompt = ({ onGoogleLogin, onDismiss, isDarkMode }) => {
   );
 };
 
-const Navbar = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  // We keep scrolled state for potential future use but it no longer affects navbar appearance
-  const [scrolled, setScrolled] = useState(true);
+const Navbar = ({ isLandingPage = false }) => {
+  // Authentication and Notification states
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -156,6 +214,7 @@ const Navbar = () => {
   const [showOnboardingTour, setShowOnboardingTour] = useState(false);
   const [showOneTapPrompt, setShowOneTapPrompt] = useState(false);
   const { mode } = useSelector((state) => state.theme);
+  const { isOpen: sidebarOpen } = useSelector((state) => state.sidebar);
   const dispatch = useDispatch();
   const userDropdownRef = useRef(null);
   const notificationsDropdownRef = useRef(null);
@@ -430,18 +489,7 @@ const Navbar = () => {
     }
   };
 
-  // Track scroll position to add effects to navbar
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
 
-    // Initial check on mount
-    handleScroll();
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -459,24 +507,6 @@ const Navbar = () => {
   }, []);
 
 
-
-  const navItems = [
-    {
-      name: 'Home',
-      path: '/',
-      icon: <Home size={18} className="mr-2" />
-    },
-    {
-      name: 'Portfolio',
-      path: '/portfolio',
-      icon: <Briefcase size={18} className="mr-2" />
-    },
-    {
-      name: 'Contact',
-      path: '/contact',
-      icon: <MessageSquare size={18} className="mr-2" />
-    },
-  ];
 
   const toggleDropdown = (index) => {
     if (activeDropdown === index) {
@@ -598,7 +628,6 @@ const Navbar = () => {
     }
     localStorage.removeItem('hasSeenOnboardingTour');
     setShowOnboardingTour(true);
-    setIsMenuOpen(false); // Close mobile menu if open
   };
 
   const handleTourClose = () => {
@@ -793,40 +822,38 @@ const Navbar = () => {
   return (
     <>
       <nav
-        className="fixed top-0 w-full z-40 transition-all duration-300 py-2.5 
-                   bg-white dark:bg-[#0A0A0A]"
+        className={`fixed top-0 w-full z-[100] transition-all duration-300 py-3
+                   ${isLandingPage
+            ? 'bg-white/70 dark:bg-[#0A0A0A]/70 backdrop-blur-xl border-b border-transparent'
+            : 'bg-white dark:bg-[#0A0A0A] border-b border-transparent'
+          }`}
         data-tour="navbar"
       >
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-4">
 
             {/* Logo Section - Left Aligned */}
-            <div className="flex-1 flex justify-start">
+            <div className="flex-1 flex justify-start items-center gap-2">
+              {!isLandingPage && (
+                <button
+                  onClick={() => dispatch(toggleSidebar())}
+                  className={`p-1.5 rounded-lg transition-all duration-200 group flex items-center
+                    ${mode === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+                  title={sidebarOpen ? "Close Sidebar" : "Open Sidebar"}
+                >
+                  <SidebarToggleIcon isOpen={sidebarOpen} mode={mode} />
+                </button>
+              )}
+
               <Link to="/" className="flex items-center group">
-
-
-
+                <span className={`text-xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent group-hover:from-blue-500 group-hover:to-blue-300 transition-all duration-300`}>
+                  Mera Vakil
+                </span>
               </Link>
             </div>
 
-            {/* Desktop Navigation - Truly Centered */}
-            <div className="hidden lg:flex lg:items-center lg:space-x-8">
-              {navItems.map((item, index) => (
-                <div key={item.name} className="relative group">
-                  <Link
-                    to={item.path}
-                    className="relative flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors duration-200
-                            dark:text-gray-200 dark:hover:text-blue-400 group"
-                  >
-                    {item.icon}
-                    {item.name}
-                    <span className="absolute -bottom-0 left-1/2 w-0 h-0.5 bg-blue-500 group-hover:w-1/2 group-hover:transition-all duration-300"
-                      style={{ background: 'linear-gradient(to right, #22577a, #5cacde)' }}></span>
-                    <span className="absolute -bottom-0 right-1/2 w-0 h-0.5 bg-blue-500 group-hover:w-1/2 group-hover:transition-all duration-300"
-                      style={{ background: 'linear-gradient(to right, #5cacde, #22577a)' }}></span>
-                  </Link>
-                </div>
-              ))}
+            {/* Truly Centered Section - Empty or for future use */}
+            <div className="hidden lg:flex lg:items-center">
             </div>
 
             {/* Desktop Right Side - Auth & Theme - Right Aligned */}
@@ -1054,29 +1081,46 @@ const Navbar = () => {
               >
                 <Compass size={20} />
               </button>
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 rounded-full text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200
-                          dark:text-gray-300 dark:hover:text-blue-400 dark:hover:bg-gray-800 focus:outline-none"
-                aria-label="Toggle menu"
-              >
-                {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
+              {/* Profile/Auth Section */}
+              <div className="flex items-center gap-1.5 ml-1">
+                {isAuthenticated ? (
+                  <Link
+                    to="/profile"
+                    className="relative group focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full p-0.5"
+                  >
+                    <Avatar
+                      src={user?.avatar_url}
+                      name={user?.name || user?.first_name}
+                      size={32}
+                      className="border-2 border-transparent group-hover:border-blue-500/50 transition-all duration-300 shadow-md transform group-hover:scale-105"
+                    />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-[#121212] rounded-full shadow-sm"></div>
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to="/auth"
+                      className="p-2 rounded-xl bg-gradient-to-br from-gray-900 to-black text-white hover:shadow-lg hover:shadow-black/40 transition-all duration-300 transform active:scale-95 border border-gray-800"
+                      title="Login"
+                    >
+                      <LogIn size={18} strokeWidth={2.5} />
+                    </Link>
+                    <Link
+                      to="/signup"
+                      className="p-2 rounded-xl bg-gradient-to-br from-white to-gray-100 text-gray-900 hover:shadow-lg hover:shadow-gray-300/40 dark:from-gray-800 dark:to-gray-900 dark:text-gray-100 dark:hover:shadow-black/60 transition-all duration-300 transform active:scale-95 border border-gray-200 dark:border-gray-700"
+                      title="Register"
+                    >
+                      <UserPlus size={18} strokeWidth={2.5} />
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Professional Mobile Sidebar */}
-      <MobileSidebar
-        isOpen={isMenuOpen}
-        onClose={() => setIsMenuOpen(false)}
-        isAuthenticated={isAuthenticated}
-        user={user}
-        onLogout={handleLogout}
-        navItems={navItems}
-        onStartTour={handleStartTour}
-      />
+
 
       {/* Onboarding Tour */}
       <OnboardingTour

@@ -1,15 +1,18 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useTheme } from '../context/ThemeContext';
+import { useSelector, useDispatch } from 'react-redux';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from './Sidebar';
 import VoiceModal from './VoiceModal';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toggleSidebar } from '../redux/sidebarSlice';
 import {
   Menu, X, Bell, Settings, User, LogOut, Sun, Moon,
   Mic, Upload, SendHorizontal, ImageIcon, Globe, Bot,
   ChevronDown, Search as SearchIcon, MessageSquare, Sparkles,
   Heart, Share2, Copy, Volume2, Download, CheckCircle,
-  Loader2, Brain, BookOpen, PenTool, Zap, ThumbsUp, ThumbsDown, VolumeX
+  Loader2, Brain, BookOpen, PenTool, Zap, ThumbsUp, ThumbsDown, VolumeX,
+  PanelLeftClose, PanelLeftOpen, ArrowRight, TrendingUp, Cpu, Target,
+  History, Archive, Star as StarIcon
 } from 'lucide-react';
 import { chatbotService, CHAT_STATES, AI_MODELS } from '../services/chatbotApiService';
 
@@ -632,13 +635,11 @@ const AIAssistantDropdown = ({ selectedModal, setSelectedModal, showDropdown, se
 };
 
 const Hero = () => {
-  const { isDark } = useTheme();
+  const { mode } = useSelector((state) => state.theme);
+  const { isOpen: sidebarOpen } = useSelector((state) => state.sidebar);
+  const dispatch = useDispatch();
+  const isDark = mode === 'dark';
   const { isAuthenticated } = useAuth();
-
-  const [sidebarOpen, setSidebarOpen] = useState(() => {
-    const saved = localStorage.getItem('sidebarOpen');
-    return saved !== null ? JSON.parse(saved) : true;
-  });
 
   const [query, setQuery] = useState('');
   const [messages, setMessages] = useState([]);
@@ -678,6 +679,49 @@ const Hero = () => {
   const chatContainerRef = useRef(null);
   const dropdownRef = useRef(null);
   const notificationRef = useRef(null);
+  const [viewportHeight, setViewportHeight] = useState('100dvh');
+
+  // Intelligent Keyboard & Viewport Handling for Mobile
+  useEffect(() => {
+    if (!window.visualViewport) return;
+
+    const handleResize = () => {
+      const height = window.visualViewport.height;
+      setViewportHeight(`${height}px`);
+
+      // If keyboard opened (height decreased), scroll to bottom if needed
+      if (height < window.innerHeight * 0.8 && chatContainerRef.current) {
+        setTimeout(() => {
+          chatContainerRef.current.scrollTo({
+            top: chatContainerRef.current.scrollHeight,
+            behavior: 'smooth'
+          });
+        }, 100);
+      }
+    };
+
+    window.visualViewport.addEventListener('resize', handleResize);
+    window.visualViewport.addEventListener('scroll', handleResize);
+
+    return () => {
+      window.visualViewport.removeEventListener('resize', handleResize);
+      window.visualViewport.removeEventListener('scroll', handleResize);
+    };
+  }, []);
+
+  // Intelligent Auto-scroll for streaming chats
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      const isAtBottom = chatContainerRef.current.scrollHeight - chatContainerRef.current.scrollTop - chatContainerRef.current.clientHeight < 100;
+
+      if (isAtBottom || isLoading) {
+        chatContainerRef.current.scrollTo({
+          top: chatContainerRef.current.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
+    }
+  }, [messages, isLoading]);
 
   useEffect(() => {
     localStorage.setItem('sidebarOpen', JSON.stringify(sidebarOpen));
@@ -939,251 +983,118 @@ const Hero = () => {
   };
 
   return (
-    <div className={`flex h-screen overflow-hidden transition-colors duration-300
-      ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
+    <div className={`flex w-full overflow-hidden transition-colors duration-300
+      ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}
+      style={{
+        height: viewportHeight,
+        touchAction: 'none',
+        WebkitOverflowScrolling: 'touch'
+      }}
+    >
 
-      <Sidebar
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        chatHistory={chatHistory}
-        handleReset={handleReset}
-        toggleStar={handleToggleStar}
-        archiveChat={handleArchiveChat}
-        deleteChat={handleDeleteChat}
-        updateChatTitle={handleUpdateChatTitle}
-      />
+      {/* Sidebar removed as it is now global in App.js */}
 
-      <div className={`flex-1 flex flex-col transition-all duration-300 overflow-hidden`}>
+      <div className="flex-1 flex flex-col relative overflow-hidden h-full">
 
-        <header className={`transition-colors duration-300 flex-shrink-0
-          ${isDark
-            ? 'bg-[#0A0A0A]'
-            : 'bg-white'}`}>
-          <div className="w-full px-4 sm:px-6 py-2.5 flex items-center justify-end gap-2">
 
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                whileHover={{ backgroundColor: isDark ? '#2C2C2C' : '#F3F4F6' }}
-                className={`p-1.5 rounded-lg transition-all duration-200
-                  ${isDark
-                    ? 'text-gray-400 hover:text-white'
-                    : 'text-gray-600 hover:text-gray-900'}`}
-              >
-                <SearchIcon size={16} strokeWidth={1.5} />
-              </motion.button>
 
-              <div className="relative" ref={notificationRef}>
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  whileHover={{ backgroundColor: isDark ? '#2C2C2C' : '#F3F4F6' }}
-                  onClick={() => setShowNotifications(!showNotifications)}
-                  className={`p-1.5 rounded-lg transition-all duration-200 relative
-                    ${isDark
-                      ? 'text-gray-400 hover:text-white'
-                      : 'text-gray-600 hover:text-gray-900'}`}
-                >
-                  <Bell size={16} strokeWidth={1.5} />
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"
-                  ></motion.span>
-                </motion.button>
-
-                <AnimatePresence>
-                  {showNotifications && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -12, scale: 0.92 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -12, scale: 0.92 }}
-                      transition={{ duration: 0.15, type: 'spring' }}
-                      className={`absolute right-0 mt-3 w-96 rounded-2xl shadow-xl z-50 overflow-hidden border
-                        ${isDark
-                          ? 'bg-[#2C2C2C] border-[#3A3A3A]/80'
-                          : 'bg-white border-gray-200/80'}`}
-                    >
-                      <div className={`px-5 py-4 border-b
-                        ${isDark ? 'border-[#3A3A3A]/60 bg-[#2C2C2C]' : 'border-gray-200/60 bg-white'}`}>
-                        <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                          Notifications
-                        </h3>
-                      </div>
-
-                      <div className="max-h-96 overflow-y-auto">
-                        {[
-                          { id: 1, title: 'New case assigned', time: '5m ago', type: 'case' },
-                          { id: 2, title: 'Document uploaded', time: '1h ago', type: 'document' },
-                          { id: 3, title: 'Hearing scheduled', time: '2h ago', type: 'hearing' }
-                        ].map((notification, idx) => (
-                          <motion.div
-                            key={notification.id}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: idx * 0.05, duration: 0.2 }}
-                            className={`px-5 py-3 border-b last:border-b-0 transition-all cursor-pointer
-                              ${isDark
-                                ? 'border-[#3A3A3A]/40 hover:bg-[#3A3A3A]/50 text-white'
-                                : 'border-gray-200/60 hover:bg-gray-50 text-gray-900'}`}
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className={`w-2.5 h-2.5 rounded-full mt-1 flex-shrink-0 ${notification.type === 'case' ? 'bg-blue-500' :
-                                notification.type === 'document' ? 'bg-green-500' :
-                                  'bg-amber-500'
-                                }`}></div>
-                              <div className="flex-1 min-w-0">
-                                <p className={`text-sm font-medium ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
-                                  {notification.title}
-                                </p>
-                                <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                                  {notification.time}
-                                </p>
-                              </div>
-                            </div>
-                          </motion.div>
-                        ))}
-                      </div>
-
-                      <div className={`px-5 py-3 border-t text-center
-                        ${isDark ? 'border-[#3A3A3A]/60 bg-[#2C2C2C]' : 'border-gray-200/60 bg-white'}`}>
-                        <button className={`text-xs font-semibold transition-colors
-                          ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`}>
-                          View all notifications
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                whileHover={{ backgroundColor: isDark ? '#2C2C2C' : '#F3F4F6' }}
-                className={`p-1.5 rounded-lg transition-all duration-200
-                  ${isDark
-                    ? 'text-gray-400 hover:text-white'
-                    : 'text-gray-600 hover:text-gray-900'}`}
-              >
-                <Settings size={16} strokeWidth={1.5} />
-              </motion.button>
-
-              <div className="relative">
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  whileHover={{ scale: 1.05 }}
-                  onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 shadow-md
-                    ${isDark
-                      ? 'bg-gradient-to-br from-blue-600 to-blue-500 text-white hover:shadow-blue-500/30'
-                      : 'bg-gradient-to-br from-blue-500 to-blue-400 text-white hover:shadow-blue-400/30'}`}
-                >
-                  <User size={14} strokeWidth={1.5} />
-                </motion.button>
-
-                <AnimatePresence>
-                  {showProfileMenu && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -12, scale: 0.9 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -12, scale: 0.9 }}
-                      transition={{ duration: 0.15, type: 'spring' }}
-                      className={`absolute right-0 mt-3 w-52 rounded-2xl shadow-2xl z-50 overflow-hidden
-                        ${isDark ? 'bg-[#1A1A1A] border border-[#3A3A3A]' : 'bg-white border border-gray-200'}`}
-                    >
-                      <motion.button
-                        whileHover={{ x: 4, backgroundColor: isDark ? '#2C2C2C' : '#F3F4F6' }}
-                        className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 transition-all font-medium
-                        ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        <User size={16} strokeWidth={1.5} /> Profile
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ x: 4, backgroundColor: isDark ? '#2C2C2C' : '#F3F4F6' }}
-                        className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 transition-all font-medium
-                        ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        <Settings size={16} strokeWidth={1.5} /> Settings
-                      </motion.button>
-                      <div className={`my-1 ${isDark ? 'border-[#3A3A3A]' : 'border-gray-200'} border-t`}></div>
-                      <motion.button
-                        whileHover={{ x: 4, backgroundColor: isDark ? '#3A1F1F' : '#FEE2E2' }}
-                        className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 transition-all font-medium text-red-500 hover:text-red-600`}>
-                        <LogOut size={16} strokeWidth={1.5} /> Logout
-                      </motion.button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <div className="flex-1 flex flex-col overflow-hidden">
-
-          {messages.length === 0 ? (
+        <AnimatePresence>
+          {showProfileMenu && (
             <motion.div
-              layout
-              className="flex-1 flex items-center justify-center px-4 py-8 overflow-y-auto"
-              initial={{ opacity: 1 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: -12, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -12, scale: 0.9 }}
+              transition={{ duration: 0.15, type: 'spring' }}
+              className={`absolute right-0 mt-3 w-52 rounded-2xl shadow-2xl z-50 overflow-hidden
+                        ${isDark ? 'bg-[#1A1A1A] border border-[#3A3A3A]' : 'bg-white border border-gray-200'}`}
             >
-              <div className="text-center max-w-md">
-                <motion.div
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ duration: 0.6, type: 'spring', stiffness: 100 }}
-                  className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 p-1 shadow-xl"
-                >
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                    className={`w-full h-full rounded-full flex items-center justify-center
-                    ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
-                    <Sparkles size={32} className="text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-purple-400" />
-                  </motion.div>
-                </motion.div>
-
-                <motion.h2
-                  initial={{ opacity: 0, y: 25 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3, duration: 0.5 }}
-                  className={`text-xl sm:text-2xl font-bold mb-2 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent`}
-                >
-                  Welcome to Mera Vakil
-                </motion.h2>
-
-                <motion.p
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4, duration: 0.5 }}
-                  className={`text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
-                >
-                  Your Intelligent Legal Assistant
-                </motion.p>
-              </div>
+              <motion.button
+                whileHover={{ x: 4, backgroundColor: isDark ? '#2C2C2C' : '#F3F4F6' }}
+                className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 transition-all font-medium
+                        ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                <User size={16} strokeWidth={1.5} /> Profile
+              </motion.button>
+              <motion.button
+                whileHover={{ x: 4, backgroundColor: isDark ? '#2C2C2C' : '#F3F4F6' }}
+                className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 transition-all font-medium
+                        ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                <Settings size={16} strokeWidth={1.5} /> Settings
+              </motion.button>
+              <div className={`my-1 ${isDark ? 'border-[#3A3A3A]' : 'border-gray-200'} border-t`}></div>
+              <motion.button
+                whileHover={{ x: 4, backgroundColor: isDark ? '#3A1F1F' : '#FEE2E2' }}
+                className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 transition-all font-medium text-red-500 hover:text-red-600`}>
+                <LogOut size={16} strokeWidth={1.5} /> Logout
+              </motion.button>
             </motion.div>
-          ) : (
-            <div
-              id="chat-scroll-container"
-              ref={chatContainerRef}
-              className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 scroll-smooth"
-              style={{
-                scrollBehavior: 'smooth',
-                WebkitOverflowScrolling: 'touch'
-              }}
-            >
-              <div className="max-w-3xl mx-auto w-full pb-32">
-                {messages.map((msg, idx) => (
-                  <MessageBubble
-                    key={idx}
-                    message={msg.content}
-                    isDark={isDark}
-                    isUser={msg.role === 'user'}
-                    // Point: Only consider it streaming if global loading is true AND it's the last message
-                    isStreaming={isLoading && idx === messages.length - 1 && msg.role === 'assistant'}
-                  />
-                ))}
+          )}
+        </AnimatePresence>
 
-                {/* Professional Chat State Indicator */}
-                <AnimatePresence>
+        <main className="flex-1 relative flex flex-col min-h-0 overflow-hidden">
+          <div
+            id="chat-scroll-container"
+            ref={chatContainerRef}
+            className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 scroll-smooth scrollbar-hide"
+            style={{
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-y'
+            }}
+          >
+            <div className="max-w-3xl mx-auto w-full pb-32">
+              {messages.length === 0 ? (
+                <div className="absolute inset-0 flex items-center justify-center p-4 pointer-events-none mt-20">
+                  <motion.div
+                    layout
+                    className="text-center max-w-md pointer-events-auto"
+                    initial={{ opacity: 1 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <motion.div
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ duration: 0.6, type: 'spring', stiffness: 100 }}
+                      className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 p-1 shadow-xl"
+                    >
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                        className={`w-full h-full rounded-full flex items-center justify-center
+                        ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
+                        <Sparkles size={32} className="text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-purple-400" />
+                      </motion.div>
+                    </motion.div>
+
+                    <motion.h2
+                      initial={{ opacity: 0, y: 25 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3, duration: 0.5 }}
+                      className={`text-xl sm:text-2xl font-bold mb-2 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent`}
+                    >
+                      Welcome to Mera Vakil
+                    </motion.h2>
+
+                    <motion.p
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4, duration: 0.5 }}
+                      className={`text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
+                    >
+                      Your Intelligent Legal Assistant
+                    </motion.p>
+                  </motion.div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {messages.map((msg, idx) => (
+                    <MessageBubble
+                      key={idx}
+                      message={msg.content}
+                      isDark={isDark}
+                      isUser={msg.role === 'user'}
+                      isStreaming={isLoading && idx === messages.length - 1 && msg.role === 'assistant'}
+                    />
+                  ))}
+
                   {isLoading && (
                     <ChatStateIndicator
                       chatState={chatState}
@@ -1191,11 +1102,10 @@ const Hero = () => {
                       isDark={isDark}
                     />
                   )}
-                </AnimatePresence>
-              </div>
+                </div>
+              )}
             </div>
-          )}
-
+          </div>
 
           <motion.div
             layout
@@ -1472,8 +1382,8 @@ const Hero = () => {
               </motion.div>
             </motion.div>
           </motion.div>
-        </div>
-      </div>
+        </main>
+      </div >
 
       <VoiceModal
         isOpen={showVoiceModal}
@@ -1482,7 +1392,7 @@ const Hero = () => {
         setIsVoiceActive={setIsVoiceActive}
         onVoiceResult={handleVoiceResult}
       />
-    </div>
+    </div >
   );
 };
 

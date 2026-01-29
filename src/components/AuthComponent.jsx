@@ -1,15 +1,14 @@
-// AuthComponents.jsx - Production Ready
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { FaFacebook, FaGoogle, FaLinkedin, FaEye, FaEyeSlash, FaShieldAlt, FaCheckCircle, FaExclamationCircle, FaApple, FaMicrosoft } from 'react-icons/fa';
-import { Scale, Check } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Scale, Check, AlertCircle, CheckCircle, Smartphone, Globe, Shield } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { authAPI, tokenManager } from '../api/apiService';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Enhanced Toast notification component with different types
 const Toast = ({ message, type = 'success', onClose }) => {
   const [isVisible, setIsVisible] = useState(true);
-  
+
   // Get theme from Redux
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
@@ -21,7 +20,7 @@ const Toast = ({ message, type = 'success', onClose }) => {
     }, type === 'error' ? 7000 : 5000); // Show error messages longer
     return () => clearTimeout(timer);
   }, [onClose, type]);
-  
+
   const getToastStyles = () => {
     if (isDarkMode) {
       switch (type) {
@@ -55,18 +54,18 @@ const Toast = ({ message, type = 'success', onClose }) => {
   const getIcon = () => {
     switch (type) {
       case 'success':
-        return <FaCheckCircle className="w-6 h-6 text-green-500" />;
+        return <CheckCircle className="w-5 h-5 text-green-500" />;
       case 'error':
-        return <FaExclamationCircle className="w-6 h-6 text-red-500" />;
+        return <AlertCircle className="w-5 h-5 text-red-500" />;
       case 'warning':
-        return <FaExclamationCircle className="w-6 h-6 text-yellow-500" />;
+        return <AlertCircle className="w-5 h-5 text-yellow-500" />;
       case 'info':
-        return <FaCheckCircle className="w-6 h-6 text-blue-500" />;
+        return <CheckCircle className="w-5 h-5 text-blue-500" />;
       default:
-        return <FaCheckCircle className="w-6 h-6 text-gray-500" />;
+        return <CheckCircle className="w-5 h-5 text-gray-500" />;
     }
   };
-  
+
   return (
     <div
       className={`fixed top-16 right-6 max-w-sm w-full z-50 transform transition-all duration-500 ease-in-out 
@@ -108,9 +107,9 @@ const LegalStrip = () => {
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-700/10 to-transparent"></div>
       {/* Blue accent line */}
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
-      
+
       <div className="relative z-10 flex items-center">
-        <FaShieldAlt className="mr-2 text-blue-400" />
+        <Shield className="mr-2 text-blue-400" />
         <span className="text-gray-300">Secure Authentication | ISO 27001 Certified</span>
       </div>
       <div className="relative z-10">
@@ -126,7 +125,7 @@ const LegalStrip = () => {
 const Logo = () => {
   return (
     <div className="flex justify-center mb-4">
-      <div 
+      <div
         className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-300 overflow-hidden border border-gray-700/50"
         style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)" }}
       >
@@ -146,9 +145,9 @@ const Button = ({ children, loading, onClick, type = "button", className = "", d
       onClick={onClick}
       disabled={loading || disabled}
       className={`group w-full py-2.5 px-4 rounded-lg flex items-center justify-center text-white text-sm font-semibold shadow-md transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg relative overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none border ${className}`}
-      style={{ 
-        background: (loading || disabled) 
-          ? "linear-gradient(135deg, #4a5568 0%, #2d3748 100%)" 
+      style={{
+        background: (loading || disabled)
+          ? "linear-gradient(135deg, #4a5568 0%, #2d3748 100%)"
           : "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 25%, #1a1a1a 50%, #2563eb 75%, #1e40af 100%)",
         borderColor: disabled ? "#4a5568" : "rgba(59, 130, 246, 0.3)"
       }}
@@ -157,15 +156,15 @@ const Button = ({ children, loading, onClick, type = "button", className = "", d
       {!loading && !disabled && (
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-400/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
       )}
-      
+
       {/* Blue accent glow */}
       {!loading && !disabled && (
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
       )}
-      
+
       {/* Top highlight for depth */}
       <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-transparent via-transparent to-white/5"></div>
-      
+
       <span className="relative z-10 flex items-center tracking-wide">
         {loading ? (
           <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -197,34 +196,31 @@ const CustomCheckbox = ({ id, name, checked, onChange, label, disabled = false, 
         {/* Custom checkbox visual */}
         <label
           htmlFor={id}
-          className={`flex items-center justify-center w-5 h-5 rounded border-2 transition-all duration-200 cursor-pointer ${
-            disabled ? 'opacity-60 cursor-not-allowed' : 'hover:scale-110'
-          } ${
-            checked
+          className={`flex items-center justify-center w-5 h-5 rounded border-2 transition-all duration-200 cursor-pointer ${disabled ? 'opacity-60 cursor-not-allowed' : 'hover:scale-110'
+            } ${checked
               ? isDarkMode
                 ? 'bg-white border-white'
                 : 'bg-gray-900 border-gray-900'
               : isDarkMode
-              ? 'bg-gray-800 border-gray-600 hover:border-gray-500'
-              : 'bg-white border-gray-300 hover:border-gray-400'
-          }`}
+                ? 'bg-gray-800 border-gray-600 hover:border-gray-500'
+                : 'bg-white border-gray-300 hover:border-gray-400'
+            }`}
         >
           {/* Checkmark icon */}
           {checked && (
-            <Check 
-              size={14} 
-              className={`${isDarkMode ? 'text-gray-900' : 'text-white'}`} 
+            <Check
+              size={14}
+              className={`${isDarkMode ? 'text-gray-900' : 'text-white'}`}
               strokeWidth={3}
             />
           )}
         </label>
       </div>
       {/* Label text */}
-      <label 
-        htmlFor={id} 
-        className={`ml-2.5 block text-xs cursor-pointer select-none ${
-          isDarkMode ? 'text-gray-400' : 'text-gray-600'
-        } ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+      <label
+        htmlFor={id}
+        className={`ml-2.5 block text-xs cursor-pointer select-none ${isDarkMode ? 'text-gray-400' : 'text-gray-600'
+          } ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
       >
         {label}
       </label>
@@ -253,24 +249,23 @@ const SocialButtons = ({ onSocialLogin, loading, onGoogleLogin }) => {
     }
   });
 
-  const socialButtonClass = `w-full py-2.5 px-4 rounded-lg flex items-center justify-center space-x-3 font-medium transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none ${
-    isDarkMode 
-      ? 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 hover:border-gray-500' 
-      : 'bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-200 hover:border-gray-300 shadow-sm'
-  }`;
+  const socialButtonClass = `w-full py-2.5 px-4 rounded-lg flex items-center justify-center space-x-3 font-medium transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none ${isDarkMode
+    ? 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 hover:border-gray-500'
+    : 'bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-200 hover:border-gray-300 shadow-sm'
+    }`;
 
   return (
     <div className="space-y-2.5">
-      <button 
+      <button
         onClick={() => googleLogin()}
         disabled={loading}
         className={socialButtonClass}
         aria-label="Continue with Google"
       >
-        <FaGoogle className="text-red-500" size={18} />
+        <Smartphone className="text-red-500" size={18} />
         <span className="text-sm">Continue with Google</span>
       </button>
-      
+
       {/* <button 
         onClick={() => onSocialLogin('apple')}
         disabled={loading}
@@ -305,15 +300,15 @@ const SocialButtons = ({ onSocialLogin, loading, onGoogleLogin }) => {
 };
 
 // Enhanced Input Field component with validation states
-const InputField = ({ 
-  type, 
-  id, 
-  name, 
-  value, 
-  onChange, 
-  placeholder, 
-  icon, 
-  rightIcon, 
+const InputField = ({
+  type,
+  id,
+  name,
+  value,
+  onChange,
+  placeholder,
+  icon,
+  rightIcon,
   onRightIconClick,
   error = false,
   disabled = false,
@@ -325,9 +320,8 @@ const InputField = ({
 
   return (
     <div className="relative group">
-      <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors duration-200 ${
-        error ? 'text-red-400' : disabled ? 'text-gray-300' : isDarkMode ? 'text-gray-500 group-focus-within:text-gray-300' : 'text-gray-400 group-focus-within:text-gray-600'
-      }`}>
+      <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors duration-200 ${error ? 'text-red-400' : disabled ? 'text-gray-300' : isDarkMode ? 'text-gray-500 group-focus-within:text-gray-300' : 'text-gray-400 group-focus-within:text-gray-600'
+        }`}>
         {icon}
       </div>
       <input
@@ -338,21 +332,20 @@ const InputField = ({
         onChange={onChange}
         disabled={disabled}
         autoComplete={autoComplete}
-        className={`block w-full pl-9 pr-10 py-2.5 text-sm rounded-lg shadow-sm transition-all duration-300 ${
-          isDarkMode 
-            ? `${error 
-                ? 'border-2 border-red-500 focus:border-red-400 focus:ring-2 focus:ring-red-900 bg-gray-700 text-white placeholder-gray-400' 
-                : disabled
-                  ? 'border border-gray-700 bg-gray-800 text-gray-400 cursor-not-allowed placeholder-gray-600'
-                  : 'border border-gray-600 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500 placeholder-gray-400'
-              }`
-            : `${error 
-                ? 'border-2 border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 placeholder-gray-400' 
-                : disabled
-                  ? 'border border-gray-200 bg-gray-50 cursor-not-allowed placeholder-gray-400'
-                  : 'border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400 placeholder-gray-400'
-              }`
-        }`}
+        className={`block w-full pl-9 pr-10 py-2.5 text-sm rounded-lg shadow-sm transition-all duration-300 ${isDarkMode
+          ? `${error
+            ? 'border-2 border-red-500 focus:border-red-400 focus:ring-2 focus:ring-red-900 bg-gray-700 text-white placeholder-gray-400'
+            : disabled
+              ? 'border border-gray-700 bg-gray-800 text-gray-400 cursor-not-allowed placeholder-gray-600'
+              : 'border border-gray-600 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500 placeholder-gray-400'
+          }`
+          : `${error
+            ? 'border-2 border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 placeholder-gray-400'
+            : disabled
+              ? 'border border-gray-200 bg-gray-50 cursor-not-allowed placeholder-gray-400'
+              : 'border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400 placeholder-gray-400'
+          }`
+          }`}
         placeholder={placeholder}
         required
         aria-invalid={error}
@@ -361,13 +354,12 @@ const InputField = ({
       {rightIcon && (
         <button
           type="button"
-          className={`absolute inset-y-0 right-0 pr-3 flex items-center transition-colors duration-200 ${
-            disabled 
-              ? 'text-gray-300 cursor-not-allowed' 
-              : isDarkMode 
-                ? 'text-gray-400 hover:text-gray-300' 
-                : 'text-gray-400 hover:text-gray-600'
-          }`}
+          className={`absolute inset-y-0 right-0 pr-3 flex items-center transition-colors duration-200 ${disabled
+            ? 'text-gray-300 cursor-not-allowed'
+            : isDarkMode
+              ? 'text-gray-400 hover:text-gray-300'
+              : 'text-gray-400 hover:text-gray-600'
+            }`}
           onClick={onRightIconClick}
           disabled={disabled}
           aria-label={type === 'password' ? 'Toggle password visibility' : 'Toggle input'}
@@ -400,7 +392,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
   useEffect(() => {
     // Check if user is already authenticated
     if (tokenManager.isAuthenticated()) {
-       window.location.href = '/';
+      window.location.href = '/';
     }
   }, []);
 
@@ -416,13 +408,13 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     const hasUppercase = /[A-Z]/.test(password);
     const hasNumber = /[0-9]/.test(password);
     const hasSpecialChar = /[^A-Za-z0-9]/.test(password);
-    
+
     return hasMinLength && hasUppercase && hasNumber && hasSpecialChar;
   };
 
   const validateForm = () => {
     const errors = {};
-    
+
     if (!formData.email.trim()) {
       errors.email = 'Email is required';
     } else if (!validateEmail(formData.email)) {
@@ -505,7 +497,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
   // Handle login form submission
   const handleLogin = async (e) => {
     e.preventDefault();
-    
+
     // Validate form before submission
     if (!validateForm()) {
       const firstErrorField = Object.keys(formState.errors)[0];
@@ -514,92 +506,92 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     }
 
     setFormState(prev => ({ ...prev, loading: true }));
-    
+
     try {
       // Step 1: Get CSRF cookie for Laravel Sanctum
       showToast('Initializing secure connection...', 'info');
       await authAPI.getCsrfCookie();
-      
+
       // Step 2: Prepare login credentials
       const loginCredentials = {
-        email: formData.email.trim().toLowerCase(), 
+        email: formData.email.trim().toLowerCase(),
         password: formData.password
-        
+
       };
 
       // Step 3: Send login request
       const response = await authAPI.login(loginCredentials);
-      
+
       console.log('Login successful:', response.data);
-      
+
 
       // Handel User Redirection after successful login
 
-          if (response.data.access_token) {
-      // Store authentication data
-      tokenManager.setToken(response.data.access_token);
-      
-      if (response.data.user) {
-        tokenManager.setUser(response.data.user);
-      }
+      if (response.data.access_token) {
+        // Store authentication data
+        tokenManager.setToken(response.data.access_token);
 
-      // Dispatch event to notify other components of authentication change
-      window.dispatchEvent(new CustomEvent('auth-status-changed', {
-        detail: { authenticated: true, user: response.data.user }
-      }));
-
-      showToast(
-        `Welcome back${response.data.user?.name ? `, ${response.data.user.name}` : ''}! Redirecting...`,
-        'success'
-      );
-
-      // Call parent callback if provided
-      if (onLoginSuccess) {
-        onLoginSuccess(response.data);
-      }
-
-      // Redirect after showing success message
-      setTimeout(() => {
-        const userType = response?.data?.user?.user_type;
-
-        // If a redirect URL is explicitly provided in query string, use that
-        const urlRedirectParam = new URLSearchParams(window.location.search).get('redirect');
-
-        // Determine final redirect destination
-        let redirectUrl = '/';
-        
-        if (urlRedirectParam) {
-          redirectUrl = urlRedirectParam;
-        } else if (userType === null || userType === undefined || userType === 0) {
-          // User has no user_type set (null, undefined, or 0), redirect to profile type selection
-          redirectUrl = '/profile-setup/type-selection';
-        } else if (userType === 1) {
-          // Regular user, redirect to home
-          redirectUrl = '/';
-        } else if (userType === 2 || userType === 'business') {
-          // Lawyer user, redirect to lawyer admin dashboard
-          redirectUrl = '/lawyer-admin';
-        } else {
-          // Default fallback
-          redirectUrl = '/';
+        if (response.data.user) {
+          tokenManager.setUser(response.data.user);
         }
 
-        window.location.href = redirectUrl;
-      }, 1500);
+        // Dispatch event to notify other components of authentication change
+        window.dispatchEvent(new CustomEvent('auth-status-changed', {
+          detail: { authenticated: true, user: response.data.user }
+        }));
 
-} else {
-  showToast('Login completed but authentication token was not received. Please try again.', 'warning');
-}
+        showToast(
+          `Welcome back${response.data.user?.name ? `, ${response.data.user.name}` : ''}! Redirecting...`,
+          'success'
+        );
 
-      
+        // Call parent callback if provided
+        if (onLoginSuccess) {
+          onLoginSuccess(response.data);
+        }
+
+        // Redirect after showing success message
+        setTimeout(() => {
+          const userType = response?.data?.user?.user_type;
+
+          // If a redirect URL is explicitly provided in query string, use that
+          const urlRedirectParam = new URLSearchParams(window.location.search).get('redirect');
+
+          // Determine final redirect destination
+          let redirectUrl = '/';
+
+          if (urlRedirectParam) {
+            redirectUrl = urlRedirectParam;
+          } else if (userType === null || userType === undefined || userType === 0) {
+            // User has no user_type set (null, undefined, or 0), redirect to profile type selection
+            redirectUrl = '/profile-setup/type-selection';
+          } else if (userType === 1) {
+            // Regular user, redirect to home
+            redirectUrl = '/';
+          } else if (userType === 2 || userType === 'business') {
+            // Lawyer user, redirect to lawyer admin dashboard
+            redirectUrl = '/lawyer-admin';
+          } else {
+            // Default fallback
+            redirectUrl = '/';
+          }
+
+          window.location.href = redirectUrl;
+        }, 1500);
+
+      } else {
+        showToast('Login completed but authentication token was not received. Please try again.', 'warning');
+      }
+
+
     } catch (error) {
       console.error('Login error:', error);
       const errorMessage = parseApiError(error);
       showToast(errorMessage, 'error');
-      
+
       // Clear password on error for security
       setFormData(prev => ({ ...prev, password: '' }));
-      
+
     } finally {
       setFormState(prev => ({ ...prev, loading: false }));
     }
@@ -608,12 +600,12 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
   // Handle social login
   const handleSocialLogin = (provider, error = null) => {
     if (formState.loading) return;
-    
+
     if (error) {
       showToast(error.error || 'Social login failed', 'error');
       return;
     }
-    
+
     if (provider !== 'google') {
       showToast(`${provider.charAt(0).toUpperCase() + provider.slice(1)} login coming soon!`, 'info');
     }
@@ -623,21 +615,21 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
   // Handle Google OAuth login
   const handleGoogleLogin = async (googleToken) => {
     if (formState.loading) return;
-    
+
     setFormState(prev => ({ ...prev, loading: true }));
-    
+
     try {
       showToast('Signing in with Google...', 'info');
-      
+
       // Call the Google login API
       const response = await authAPI.googleLogin(googleToken);
-      
+
       console.log('Google login successful:', response.data.data);
-      
+
       if (response.data.data.token) {
         // Store authentication data
         tokenManager.setToken(response.data.data.token);
-        
+
         if (response.data.data.user) {
           tokenManager.setUser(response.data.data.user);
         }
@@ -666,7 +658,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
 
           // Determine final redirect destination
           let redirectUrl = '/';
-          
+
           if (urlRedirectParam) {
             redirectUrl = urlRedirectParam;
           } else if (userType === null || userType === undefined || userType === 0) {
@@ -689,7 +681,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
       } else {
         showToast('Google login completed but authentication token was not received. Please try again.', 'warning');
       }
-      
+
     } catch (error) {
       console.error('Google login error:', error);
       const errorMessage = parseApiError(error);
@@ -710,156 +702,192 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-white'} relative overflow-hidden`}>
-      {/* Toast notification */}
-      {toast && (
-        <Toast 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToast(null)} 
+    <div className={`relative flex flex-col pt-20 pb-10 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-gray-50/30'}`}>
+      <AnimatePresence>
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Premium Animated Background Layer */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.05, 0.1, 0.05]
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+          className={`absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full blur-[120px] ${isDarkMode ? 'bg-blue-600' : 'bg-blue-300'}`}
         />
-      )}
-    
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className={`absolute -top-40 -left-40 w-80 h-80 ${isDarkMode ? 'bg-blue-900' : 'bg-blue-50'} rounded-full opacity-10 animate-pulse`}></div>
-        <div className={`absolute top-40 -right-20 w-60 h-60 ${isDarkMode ? 'bg-blue-800' : 'bg-blue-100'} rounded-full opacity-10 animate-pulse`} style={{ animationDelay: '1s' }}></div>
-        <div className={`absolute bottom-20 left-20 w-40 h-40 ${isDarkMode ? 'bg-blue-900' : 'bg-blue-50'} rounded-full opacity-10 animate-pulse`} style={{ animationDelay: '2s' }}></div>
+        <motion.div
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.03, 0.08, 0.03]
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear", delay: 1 }}
+          className={`absolute top-1/2 -right-40 w-[500px] h-[500px] rounded-full blur-[100px] ${isDarkMode ? 'bg-blue-500' : 'bg-blue-200'}`}
+        />
       </div>
-      
-      <LegalStrip />
-      
-      <div className="flex-1 flex items-center justify-center p-4 z-10">
-        <div 
-          className={`${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} rounded-xl shadow-xl p-6 w-full max-w-md`}
-          style={{ boxShadow: isDarkMode ? '0 10px 25px -5px rgba(0, 0, 0, 0.3)' : '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="flex-1 flex items-start justify-center px-4 sm:px-6 lg:px-8 z-10"
+      >
+        <div
+          className={`w-full max-w-md overflow-hidden transition-all duration-300
+            ${isDarkMode
+              ? 'bg-[#121212] border border-gray-800'
+              : 'bg-white border border-gray-100 shadow-2xl shadow-blue-500/5'} 
+            rounded-2xl p-6 sm:p-8`}
         >
-          <div className="text-center mb-5">
-            <Logo />
-            <h1 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-1.5`}>Welcome Back</h1>
-            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Sign in to continue to MeraBakil</p>
-          </div>
-
-          {/* Social Login Buttons Section */}
-          <div className="mb-5">
-            <SocialButtons 
-              onSocialLogin={handleSocialLogin} 
-              onGoogleLogin={handleGoogleLogin}
-              loading={formState.loading} 
-            />
-          </div>
-
-          {/* OR Divider */}
-          <div className="relative mb-5">
-            <div className="absolute inset-0 flex items-center">
-              <div className={`w-full border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}></div>
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className={`px-3 ${isDarkMode ? 'bg-gray-800 text-gray-500' : 'bg-white text-gray-500'} font-medium`}>OR</span>
-            </div>
-          </div>
-
-          <form onSubmit={handleLogin} className="space-y-4" noValidate>
-            <div className="space-y-1.5">
-              <label htmlFor="email" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                Email Address <span className="text-red-500">*</span>
-              </label>
-              <InputField
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="you@example.com"
-                autoComplete="email"
-                error={!!formState.errors.email}
-                disabled={formState.loading}
-                icon={
-                  <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                  </svg>
-                }
-              />
-              {formState.errors.email && (
-                <p id="email-error" className="text-xs text-red-600 mt-1">{formState.errors.email}</p>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex justify-between items-center">
-                <label htmlFor="password" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Password <span className="text-red-500">*</span>
-                </label>
-                <a 
-                  href="/forgot-password" 
-                  className={`text-xs ${isDarkMode ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'} transition-colors duration-200 focus:outline-none focus:underline`}
-                  tabIndex={formState.loading ? -1 : 0}
-                >
-                  Forgot?
-                </a>
-              </div>
-              <InputField
-                type={formState.showPassword ? "text" : "password"}
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                placeholder="••••••••"
-                autoComplete="current-password"
-                error={!!formState.errors.password}
-                disabled={formState.loading}
-                icon={
-                  <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                  </svg>
-                }
-                rightIcon={formState.showPassword ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
-                onRightIconClick={() => setFormState(prev => ({ ...prev, showPassword: !prev.showPassword }))}
-              />
-              {formState.errors.password && (
-                <p id="password-error" className="text-xs text-red-600 mt-1">{formState.errors.password}</p>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between">
-              <CustomCheckbox
-                id="rememberMe"
-                name="rememberMe"
-                checked={formState.rememberMe}
-                onChange={handleCheckboxChange}
-                label="Remember me"
-                disabled={formState.loading}
-                isDarkMode={isDarkMode}
-              />
-            </div>
-
-            <div className="pt-1">
-              <Button 
-                type="submit" 
-                loading={formState.loading}
-                disabled={formState.loading || !formData.email || !formData.password || !validatePassword(formData.password)}
-              >
-                {formState.loading ? 'Signing in...' : 'Sign in'}
-              </Button>
-            </div>
-          </form>
-
-          <p className={`mt-5 text-center text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            Don't have an account?{' '}
-            <button
-              type="button"
-              onClick={handleSwitchToRegister}
-              disabled={formState.loading}
-              className={`font-medium ${isDarkMode ? 'text-white hover:text-gray-300' : 'text-gray-900 hover:text-gray-700'} transition-all duration-200 underline-offset-2 hover:underline focus:outline-none focus:underline disabled:opacity-60 disabled:cursor-not-allowed`}
+          <div className="text-center mb-8">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
             >
-              Create account
-            </button>
-          </p>
-        </div>
-      </div>
-      
+              <Logo />
+            </motion.div>
+            <h1 className={`text-2xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
+              Welcome Back
+            </h1>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              Sign in to manage your legal workspace
+            </p>
+          </div>
 
+          <div className="space-y-6">
+            {/* Social Login Section */}
+            <div className="grid gap-3">
+              <SocialButtons
+                onSocialLogin={handleSocialLogin}
+                onGoogleLogin={handleGoogleLogin}
+                loading={formState.loading}
+              />
+            </div>
+
+            <div className="relative flex items-center">
+              <div className="flex-grow border-t border-gray-200 dark:border-gray-800"></div>
+              <span className="flex-shrink mx-4 text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                Protected Login
+              </span>
+              <div className="flex-grow border-t border-gray-200 dark:border-gray-800"></div>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-4" noValidate>
+              <div className="space-y-2">
+                <label htmlFor="email" className={`block text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Email Address
+                </label>
+                <InputField
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="name@example.com"
+                  autoComplete="email"
+                  error={!!formState.errors.email}
+                  disabled={formState.loading}
+                  icon={<Mail size={16} />}
+                />
+                {formState.errors.email && (
+                  <motion.p
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="text-[10px] font-bold text-red-500 uppercase tracking-tight"
+                  >
+                    {formState.errors.email}
+                  </motion.p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label htmlFor="password" className={`block text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Access Password
+                  </label>
+                  <a
+                    href="/forgot-password"
+                    className="text-xs font-medium text-blue-500 hover:text-blue-600 transition-colors"
+                  >
+                    Lost Access?
+                  </a>
+                </div>
+                <InputField
+                  type={formState.showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  error={!!formState.errors.password}
+                  disabled={formState.loading}
+                  icon={<Lock size={16} />}
+                  rightIcon={formState.showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  onRightIconClick={() => setFormState(prev => ({ ...prev, showPassword: !prev.showPassword }))}
+                />
+                {formState.errors.password && (
+                  <motion.p
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="text-[10px] font-bold text-red-500 uppercase tracking-tight"
+                  >
+                    {formState.errors.password}
+                  </motion.p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between pb-2">
+                <CustomCheckbox
+                  id="rememberMe"
+                  name="rememberMe"
+                  checked={formState.rememberMe}
+                  onChange={handleCheckboxChange}
+                  label="Stay connected"
+                  disabled={formState.loading}
+                  isDarkMode={isDarkMode}
+                />
+              </div>
+
+              <motion.div
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Button
+                  type="submit"
+                  loading={formState.loading}
+                  disabled={formState.loading || !formData.email || !formData.password || !validatePassword(formData.password)}
+                  className="rounded-xl h-11"
+                >
+                  {formState.loading ? 'Authenticating...' : 'Sign In Now'}
+                </Button>
+              </motion.div>
+            </form>
+
+            <div className="pt-6 border-t border-gray-100 dark:border-gray-800 text-center">
+              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                New to Mera Vakil?{' '}
+                <button
+                  type="button"
+                  onClick={handleSwitchToRegister}
+                  disabled={formState.loading}
+                  className="font-bold text-blue-500 hover:text-blue-600 transition-colors focus:outline-none"
+                >
+                  Create Secure Account
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 };
