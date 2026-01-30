@@ -2,12 +2,12 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSelector } from 'react-redux';
 import '../styles/onboardingTour.css';
-import { 
-  Sparkles, 
-  MessageSquare, 
-  Mic, 
-  History, 
-  Home, 
+import {
+  Sparkles,
+  MessageSquare,
+  Mic,
+  History,
+  Home,
   ArrowRight,
   ArrowLeft,
   X,
@@ -19,11 +19,11 @@ import {
 const OnboardingTour = ({ isOpen, onClose, onComplete }) => {
   const { mode } = useSelector((state) => state.theme);
   const isDark = mode === 'dark';
-  
+
   const [currentStep, setCurrentStep] = useState(-1);
   const [isVisible, setIsVisible] = useState(false);
   const [highlightedElement, setHighlightedElement] = useState(null);
-  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+
   const overlayRef = useRef(null);
   const tooltipRef = useRef(null);
 
@@ -40,15 +40,15 @@ const OnboardingTour = ({ isOpen, onClose, onComplete }) => {
         if (consultBtn && chatInput) {
           const buttonRect = consultBtn.getBoundingClientRect();
           const inputRect = chatInput.getBoundingClientRect();
-          
+
           if (buttonRect.top < 100 || buttonRect.bottom > window.innerHeight - 200) {
             const averageTop = (buttonRect.top + inputRect.top) / 2;
             window.scrollTo({
               top: window.scrollY + averageTop - window.innerHeight / 2,
               behavior: 'smooth'
             });
-            
-            setTimeout(() => {}, 500);
+
+            setTimeout(() => { }, 500);
           }
         }
       }
@@ -126,8 +126,8 @@ const OnboardingTour = ({ isOpen, onClose, onComplete }) => {
       trigger: () => {
         const consultBtn = document.querySelector('[data-tour="start-consultation"]');
         if (consultBtn) {
-          consultBtn.scrollIntoView({ 
-            behavior: 'smooth', 
+          consultBtn.scrollIntoView({
+            behavior: 'smooth',
             block: 'center',
             inline: 'nearest'
           });
@@ -136,137 +136,69 @@ const OnboardingTour = ({ isOpen, onClose, onComplete }) => {
     }
   ];
 
-  const calculateTooltipPosition = useCallback((targetElement, placement) => {
-    if (!targetElement || !tooltipRef.current) return { top: 0, left: 0 };
-
-    const targetRect = targetElement.getBoundingClientRect();
-    const tooltipRect = tooltipRef.current.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    const viewportWidth = window.innerWidth;
-    
-    const PADDING = 16;
-    const MIN_SPACING = 12;
-    const SCROLL_MARGIN = 80;
-    
-    const tooltipHeight = tooltipRect.height || 220;
-    const tooltipWidth = tooltipRect.width || 320;
-    
-    let position = { top: 0, left: 0 };
-
-    if (targetElement.getAttribute('data-tour') === 'start-consultation') {
-      const spaceBelow = viewportHeight - targetRect.bottom;
-      
-      if (spaceBelow >= tooltipHeight + MIN_SPACING + SCROLL_MARGIN) {
-        position = {
-          top: targetRect.bottom + MIN_SPACING,
-          left: Math.max(PADDING, Math.min(
-            targetRect.left + (targetRect.width - tooltipWidth) / 2,
-            viewportWidth - tooltipWidth - PADDING
-          ))
-        };
-      } else {
-        position = {
-          top: Math.max(SCROLL_MARGIN, targetRect.top - tooltipHeight - MIN_SPACING),
-          left: Math.max(PADDING, Math.min(
-            targetRect.left + (targetRect.width - tooltipWidth) / 2,
-            viewportWidth - tooltipWidth - PADDING
-          ))
-        };
-      }
-    }
-    else if (placement === 'right') {
-      position = {
-        top: Math.max(SCROLL_MARGIN, Math.min(
-          targetRect.top + (targetRect.height - tooltipHeight) / 2,
-          viewportHeight - tooltipHeight - PADDING
-        )),
-        left: Math.min(targetRect.right + MIN_SPACING, viewportWidth - tooltipWidth - PADDING)
-      };
-    }
-    else if (placement === 'bottom') {
-      const spaceBelow = viewportHeight - targetRect.bottom;
-      
-      if (spaceBelow >= tooltipHeight + MIN_SPACING) {
-        position = {
-          top: targetRect.bottom + MIN_SPACING,
-          left: Math.max(PADDING, Math.min(
-            targetRect.left + (targetRect.width - tooltipWidth) / 2,
-            viewportWidth - tooltipWidth - PADDING
-          ))
-        };
-      } else {
-        position = {
-          top: Math.max(SCROLL_MARGIN, targetRect.top - tooltipHeight - MIN_SPACING),
-          left: Math.max(PADDING, Math.min(
-            targetRect.left + (targetRect.width - tooltipWidth) / 2,
-            viewportWidth - tooltipWidth - PADDING
-          ))
-        };
-      }
-    }
-    else {
-      position = {
-        top: Math.max(SCROLL_MARGIN, (viewportHeight - tooltipHeight) / 2),
-        left: Math.max(PADDING, (viewportWidth - tooltipWidth) / 2)
-      };
-    }
-
-    return position;
-  }, []);
-
-
+  /* 
+   * Centralized Slide-Based Tour Logic
+   * We no longer calculate dynamic positions. Instead, we show a central modal 
+   * and smoothly scroll the relevant element into view for context.
+   */
 
   const highlightTarget = useCallback((selector) => {
     const element = document.querySelector(selector);
     if (element) {
       setHighlightedElement(element);
-      if (currentStep === -1 || currentStep >= tourSteps.length) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+
+      // Smooth scroll to the element to give context
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      // Add a temporary highlight class to the element for visual cue
+      element.classList.add('tour-focus-ring');
       return element;
     }
     return null;
   }, [currentStep, tourSteps.length]);
 
+  // Effect to manage focus rings and cleanup
+  useEffect(() => {
+    // Remove previous highlights
+    document.querySelectorAll('.tour-focus-ring').forEach(el => {
+      el.classList.remove('tour-focus-ring');
+    });
+
+    // Apply new highlight if active
+    if (isVisible && currentStep >= 0 && currentStep < tourSteps.length) {
+      const step = tourSteps[currentStep];
+      // Small delay to allow scroll and dom update
+      setTimeout(() => {
+        highlightTarget(step.target);
+      }, 100);
+    }
+  }, [currentStep, highlightTarget, tourSteps, isVisible]);
+
+
+
+
   const goToStep = useCallback((stepIndex) => {
     if (stepIndex >= 0 && stepIndex < tourSteps.length) {
       const step = tourSteps[stepIndex];
-      
-      if (step.target === '[data-tour="start-consultation"]') {
-        if (step.trigger) {
-          step.trigger();
-        }
-        
-        setTimeout(() => {
-          setCurrentStep(stepIndex);
-          highlightTarget(step.target);
-        }, 200);
-      } else {
-        setCurrentStep(stepIndex);
-        
-        if (step.trigger) {
-          setTimeout(step.trigger, 100);
-        }
-        
-        setTimeout(() => {
-          highlightTarget(step.target);
-        }, step.trigger ? 300 : 100);
+      setCurrentStep(stepIndex);
+      if (step.trigger) {
+        step.trigger();
       }
     } else {
       setCurrentStep(stepIndex);
       setHighlightedElement(null);
     }
-  }, [tourSteps, highlightTarget]);
+  }, [tourSteps]);
 
   const controlSidebar = useCallback((shouldOpen) => {
-    const sidebarToggle = document.querySelector('button[aria-label*="sidebar"]') || 
-                         document.querySelector('.sidebar-toggle') ||
-                         document.querySelector('[class*="sidebar"]')?.parentElement?.querySelector('button');
-    
+    const sidebarToggle = document.querySelector('button[aria-label*="sidebar"]') ||
+      document.querySelector('.sidebar-toggle') ||
+      document.querySelector('[class*="sidebar"]')?.parentElement?.querySelector('button');
+
     if (sidebarToggle) {
       const isSidebarOpen = document.querySelector('[class*="sidebar"]')?.classList.contains('translate-x-0') ||
-                           document.querySelector('[data-tour="chat-history"]')?.offsetParent !== null;
-      
+        document.querySelector('[data-tour="chat-history"]')?.offsetParent !== null;
+
       if (shouldOpen && !isSidebarOpen) {
         sidebarToggle.click();
       } else if (!shouldOpen && isSidebarOpen) {
@@ -277,13 +209,13 @@ const OnboardingTour = ({ isOpen, onClose, onComplete }) => {
 
   const handleNext = useCallback(() => {
     const nextStep = currentStep + 1;
-    
+
     if (nextStep === 2) {
       setTimeout(() => controlSidebar(true), 100);
     } else {
       setTimeout(() => controlSidebar(false), 100);
     }
-    
+
     if (currentStep < tourSteps.length - 1) {
       goToStep(nextStep);
     } else {
@@ -293,13 +225,13 @@ const OnboardingTour = ({ isOpen, onClose, onComplete }) => {
 
   const handleBack = useCallback(() => {
     const prevStep = currentStep - 1;
-    
+
     if (prevStep === 2) {
       setTimeout(() => controlSidebar(true), 100);
     } else {
       setTimeout(() => controlSidebar(false), 100);
     }
-    
+
     if (currentStep > 0) {
       goToStep(prevStep);
     } else if (currentStep === 0) {
@@ -345,11 +277,8 @@ const OnboardingTour = ({ isOpen, onClose, onComplete }) => {
       document.body.style.position = 'fixed';
       document.body.style.width = '100%';
       document.body.style.height = '100%';
-      
-      if (highlightedElement && currentStep < tourSteps.length) {
-        const newPosition = calculateTooltipPosition(highlightedElement, tourSteps[currentStep].placement);
-        setTooltipPosition(newPosition);
-      }
+
+
     } else if (isVisible && currentStep === -1) {
       document.body.style.overflow = '';
       document.body.style.position = '';
@@ -363,7 +292,7 @@ const OnboardingTour = ({ isOpen, onClose, onComplete }) => {
       document.body.style.width = '';
       document.body.style.height = '';
     };
-  }, [isVisible, currentStep, highlightedElement, tourSteps, calculateTooltipPosition]);
+  }, [isVisible, currentStep, highlightedElement, tourSteps]);
 
   if (!isVisible) return null;
 
@@ -371,99 +300,150 @@ const OnboardingTour = ({ isOpen, onClose, onComplete }) => {
     <AnimatePresence>
       {isVisible && (
         <>
+          {/* Enhanced Dark Overlay with Blur */}
           <motion.div
             ref={overlayRef}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/45 backdrop-blur-sm z-50"
+            transition={{ duration: 0.4 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-[4px] z-[9998]"
             onClick={handleSkip}
           />
 
+          {/* Welcome Screen - Premium Modal */}
           {currentStep === -1 && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="fixed inset-0 flex items-center justify-center z-50 p-4"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              className="fixed inset-0 flex items-center justify-center z-[9999] p-4 pointer-events-none"
             >
-              <div className={`rounded-xl p-8 max-w-md shadow-2xl ${isDark ? 'bg-[#2C2C2C]' : 'bg-white'}`}>
-                <div className="flex justify-between items-start mb-4">
-                  <Sparkles className={`w-10 h-10 ${isDark ? 'text-blue-400' : 'text-blue-500'}`} />
-                  <button onClick={handleSkip} className={`p-1.5 rounded-lg ${isDark ? 'hover:bg-[#3A3A3A]' : 'hover:bg-gray-100'}`}>
-                    <X size={20} />
-                  </button>
-                </div>
-                <h2 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>Welcome to Mera Vakil</h2>
-                <p className={`text-sm leading-relaxed mb-6 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                  Your AI-powered legal companion. Get instant answers, draft documents, and receive expert guidance on Indian law—all in one intelligent platform.
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleSkip}
-                    className={`flex-1 px-4 py-2.5 rounded-lg font-semibold transition-all ${isDark ? 'bg-[#3A3A3A] hover:bg-[#4A4A4A] text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'}`}
-                  >
-                    Skip
-                  </button>
-                  <button
-                    onClick={startTour}
-                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
-                  >
-                    Start Tour
-                    <ArrowRight size={16} />
-                  </button>
+              <div className={`pointer-events-auto rounded-3xl p-8 max-w-lg w-full shadow-2xl relative overflow-hidden group ${isDark
+                ? 'bg-[#1a1a1a]/95 border border-white/10'
+                : 'bg-white/95 border border-black/5'
+                } backdrop-blur-xl ring-1 ring-black/5`}>
+
+                {/* Decorative Background Elements */}
+                <div className="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl group-hover:bg-blue-500/30 transition-all duration-700"></div>
+                <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl group-hover:bg-purple-500/30 transition-all duration-700"></div>
+
+                <div className="relative z-10">
+                  <div className="flex justify-between items-start mb-6">
+                    <div className={`p-3 rounded-2xl ${isDark ? 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 ring-1 ring-white/10' : 'bg-gradient-to-br from-blue-50 to-purple-50 ring-1 ring-black/5'
+                      }`}>
+                      <Crown className={`w-8 h-8 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                    </div>
+                    <button
+                      onClick={handleSkip}
+                      className={`p-2 rounded-full transition-all duration-200 ${isDark
+                        ? 'hover:bg-white/10 text-gray-400 hover:text-white'
+                        : 'hover:bg-black/5 text-gray-400 hover:text-black'
+                        }`}
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+
+                  <h2 className={`text-3xl font-bold mb-3 tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    Welcome to <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">Mera Vakil</span>
+                  </h2>
+
+                  <p className={`text-base leading-relaxed mb-8 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Experience the future of legal assistance. Our AI-powered platform provides instant expert guidance, document drafting, and secure consultations tailored just for you.
+                  </p>
+
+                  <div className="flex gap-4">
+                    <button
+                      onClick={handleSkip}
+                      className={`flex-1 px-6 py-3.5 rounded-xl font-semibold transition-all duration-200 ${isDark
+                        ? 'bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10'
+                        : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'
+                        }`}
+                    >
+                      Skip Intro
+                    </button>
+                    <button
+                      onClick={startTour}
+                      className="flex-1 px-6 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 flex items-center justify-center gap-2 group/btn"
+                    >
+                      Start Tour
+                      <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>
           )}
 
+          {/* Tour Steps - Floating Tooltip */}
           {currentStep >= 0 && currentStep < tourSteps.length && (
             <motion.div
               ref={tooltipRef}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              style={{
-                position: 'fixed',
-                top: `${tooltipPosition.top}px`,
-                left: `${tooltipPosition.left}px`,
-                zIndex: 60
-              }}
-              className={`w-80 rounded-xl p-6 shadow-xl ${isDark ? 'bg-[#2C2C2C] border border-[#3A3A3A]' : 'bg-white border border-gray-200'}`}
+              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 25 }}
+              className={`fixed bottom-10 left-1/2 -translate-x-1/2 z-[9999] w-[360px] rounded-2xl p-6 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] backdrop-blur-xl ring-1 ${isDark
+                ? 'bg-[#1E1E1E]/90 ring-white/10'
+                : 'bg-white/95 ring-black/5'
+                }`}
             >
-              <div className="flex items-start gap-3 mb-3">
-                <div className={`${isDark ? 'text-blue-400' : 'text-blue-500'}`}>
-                  {tourSteps[currentStep].icon}
-                </div>
-                <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {tourSteps[currentStep].title}
-                </h3>
+              {/* Progress Bar */}
+              <div className="absolute top-0 left-0 right-0 h-1 overflow-hidden rounded-t-2xl bg-gray-200 dark:bg-gray-800">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${((currentStep + 1) / tourSteps.length) * 100}%` }}
+                  transition={{ duration: 0.3 }}
+                  className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
+                />
               </div>
-              
-              <div className={`text-sm leading-relaxed mb-6 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+
+              <div className="mt-2 flex items-start gap-4 mb-4">
+                <div className={`p-3 rounded-xl shadow-inner ${isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'
+                  }`}>
+                  {React.cloneElement(tourSteps[currentStep].icon, { size: 24 })}
+                </div>
+                <div>
+                  <h3 className={`text-lg font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    {tourSteps[currentStep].title}
+                  </h3>
+                  <p className={`text-[10px] font-bold tracking-wider uppercase ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                    STEP {currentStep + 1} OF {tourSteps.length}
+                  </p>
+                </div>
+              </div>
+
+              <div className={`text-sm leading-relaxed mb-6 font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                 {tourSteps[currentStep].content}
               </div>
 
-              <div className="flex items-center justify-between gap-3">
-                <div className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {currentStep + 1} of {tourSteps.length}
-                </div>
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  onClick={handleSkip}
+                  className={`text-xs font-semibold px-3 py-2 rounded-lg transition-colors ${isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                    }`}
+                >
+                  Skip
+                </button>
+
                 <div className="flex gap-2">
                   <button
                     onClick={handleBack}
                     disabled={currentStep === 0}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-1 ${
-                      currentStep === 0
-                        ? isDark ? 'bg-[#3A3A3A] text-gray-600 cursor-not-allowed' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : isDark ? 'bg-[#3A3A3A] hover:bg-[#4A4A4A] text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
-                    }`}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 ${currentStep === 0
+                      ? 'opacity-0 cursor-default'
+                      : isDark
+                        ? 'bg-white/5 hover:bg-white/10 text-white'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+                      }`}
                   >
-                    <ArrowLeft size={14} />
                     Back
                   </button>
                   <button
                     onClick={handleNext}
-                    className="px-4 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-1"
+                    className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-sm font-semibold transition-all shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 flex items-center gap-1.5 transform active:scale-95"
                   >
                     Next
                     <ArrowRight size={14} />
@@ -473,24 +453,46 @@ const OnboardingTour = ({ isOpen, onClose, onComplete }) => {
             </motion.div>
           )}
 
+          {/* Completion Screen - Premium Finish */}
           {currentStep >= tourSteps.length && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, scale: 0.9, rotateX: 10 }}
+              animate={{ opacity: 1, scale: 1, rotateX: 0 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="fixed inset-0 flex items-center justify-center z-50 p-4"
+              transition={{ duration: 0.5, type: "spring" }}
+              className="fixed inset-0 flex items-center justify-center z-[9999] p-4"
             >
-              <div className={`rounded-xl p-8 max-w-md shadow-2xl text-center ${isDark ? 'bg-[#2C2C2C]' : 'bg-white'}`}>
-                <CheckCircle className={`w-14 h-14 mx-auto mb-4 ${isDark ? 'text-green-400' : 'text-green-500'}`} />
-                <h2 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>All Set!</h2>
-                <p className={`text-sm leading-relaxed mb-6 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                  You are ready to start exploring Mera Vakil. Begin with your first legal question and experience intelligent guidance instantly.
+              <div className={`rounded-3xl p-10 max-w-md w-full text-center shadow-2xl overflow-hidden relative ${isDark
+                ? 'bg-[#1a1a1a] border border-white/10'
+                : 'bg-white border border-black/5'
+                }`}>
+                {/* Background Confetti Effect */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-tr from-blue-500/30 to-purple-500/30 blur-3xl rounded-full animate-pulse"></div>
+                </div>
+
+                <motion.div
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+                  className="mb-8 inline-flex p-5 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 shadow-xl shadow-green-500/30"
+                >
+                  <CheckCircle className="w-12 h-12 text-white" />
+                </motion.div>
+
+                <h2 className={`text-3xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  You're All Set!
+                </h2>
+
+                <p className={`text-base leading-relaxed mb-8 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Ready to transform your legal journey? Whether you need quick advice or deep research, Mera Vakil is here to assist you 24/7.
                 </p>
+
                 <button
                   onClick={handleComplete}
-                  className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg font-semibold transition-all"
+                  className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-lg font-bold transition-all shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 transform hover:-translate-y-1 active:translate-y-0"
                 >
-                  Get Started
+                  Get Started Now
                 </button>
               </div>
             </motion.div>

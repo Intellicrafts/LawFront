@@ -295,11 +295,41 @@ const Navbar = ({ isLandingPage = false }) => {
   }, [user?.id]);
 
 
+  // Fetch fresh user profile from API to ensure avatar and details are up to date
+  const fetchUserProfile = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+
+      console.log('Navbar: Fetching fresh user profile...');
+      const response = await authAPI.getUserProfile();
+
+      // Handle the specific response structure: { status: "success", data: { ... } }
+      if (response && response.data && response.data.data) {
+        const apiUser = response.data.data;
+        console.log('Navbar: User profile list loaded:', apiUser);
+
+        // Update state with fresh data
+        setUser(prev => ({
+          ...prev, // Keep existing fields just in case
+          ...apiUser,
+          // Ensure we use the full avatar_url provided by API
+          avatar_url: apiUser.avatar_url || apiUser.avatar
+        }));
+
+        // Update localStorage to persist fresh data
+        localStorage.setItem('user', JSON.stringify(apiUser));
+      }
+    } catch (error) {
+      console.error('Navbar: Error fetching user profile:', error);
+    }
+  };
+
   // Function to check if user is authenticated
   const checkAuthStatus = () => {
     const token = localStorage.getItem('auth_token');
     const userData = localStorage.getItem('user');
-    console.log('Navbar: Checking auth status - User:', userData, 'token:', token);
+    // console.log('Navbar: Checking auth status - User:', userData, 'token:', token);
 
     if (token && userData) {
       setIsAuthenticated(true);
@@ -307,13 +337,16 @@ const Navbar = ({ isLandingPage = false }) => {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
 
+        // Fetch fresh profile data in background
+        fetchUserProfile();
+
         // Check if we should start tour for first-time user
-        console.log('🔍 Auth check complete, checking tour for user:', parsedUser.id);
+        // console.log('🔍 Auth check complete, checking tour for user:', parsedUser.id);
         checkAndStartTourForNewUser(parsedUser);
 
         // Fetch notifications if user is authenticated and has an ID
         if (parsedUser && parsedUser.id) {
-          console.log('Fetching notifications for user ID:', parsedUser.id);
+          // console.log('Fetching notifications for user ID:', parsedUser.id);
           fetchUserNotifications(parsedUser.id);
         } else {
           // For testing purposes, if user ID is not available, use the hardcoded ID 18
@@ -927,67 +960,103 @@ const Navbar = ({ isLandingPage = false }) => {
                     {/* Dropdown Button */}
                     <button
                       onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                      className="flex items-center space-x-2 px-2 py-1 rounded-full hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-all duration-200 focus:outline-none"
+                      className={`flex items-center gap-2 p-0.5 rounded-full transition-all duration-300 
+                        ${userDropdownOpen
+                          ? 'bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/20'
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                        } focus:outline-none group`}
                     >
-                      <img
-                        src={user?.avatar_url || 'https://ui-avatars.com/api/?name=User&background=random'}
-                        alt={user?.name || 'User'}
-                        className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-sm"
-                      />
-                      <ChevronDown size={16} className="text-gray-500 dark:text-gray-400" />
+                      <div className="relative rounded-full overflow-hidden">
+                        <Avatar
+                          src={user?.avatar_url}
+                          name={user?.name || user?.first_name}
+                          size={36}
+                          forceRefresh={true}
+                          className={`rounded-full object-cover border-2 transition-all duration-300 ${userDropdownOpen
+                            ? 'border-blue-500 shadow-md scale-105'
+                            : 'border-white dark:border-gray-700 shadow-sm group-hover:border-gray-200 dark:group-hover:border-gray-600'
+                            }`}
+                        />
+                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full shadow-sm z-10"></span>
+                      </div>
                     </button>
 
-                    {/* Dropdown Menu */}
-                    <div
-                      className={`absolute right-0 top-full mt-2 w-64 bg-white dark:bg-[#1A1A1A] rounded-xl shadow-lg border border-gray-100 dark:border-[#3A3A3A] transform transition-all duration-200 origin-top-right z-50
-      ${userDropdownOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
-                    >
-                      {/* User Info */}
-                      <div className="flex items-center space-x-3 px-4 py-3 border-b border-gray-100 dark:border-[#3A3A3A]">
-                        <img
-                          src={user?.avatar_url || 'https://ui-avatars.com/api/?name=User&background=random'}
-                          alt={user?.name || 'User'}
-                          className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-[#3A3A3A] shadow-sm flex-shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                            {user?.name || 'User'} {user?.last_name || ''}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={user?.email || 'No email'}>
-                            {user?.email || 'No email'}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Links */}
-                      <Link
-                        to="/profile"
-                        className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-[#2C2C2C] transition-colors"
-                        onClick={() => setUserDropdownOpen(false)}
-                      >
-                        <User size={16} className="mr-2 text-gray-400" />
-                        Profile
-                      </Link>
-                      <Link
-                        to="/settings"
-                        className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-[#2C2C2C] transition-colors"
-                        onClick={() => setUserDropdownOpen(false)}
-                      >
-                        <Settings size={16} className="mr-2 text-gray-400" />
-                        Settings
-                      </Link>
-
-                      {/* Logout */}
-                      <div className="border-t border-gray-100 dark:border-[#3A3A3A] mt-1">
-                        <button
-                          onClick={handleLogout}
-                          className="flex items-center w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
+                    {/* Premium Dropdown Menu / Modal */}
+                    <AnimatePresence>
+                      {userDropdownOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                          transition={{ duration: 0.15, ease: "easeOut" }}
+                          className={`absolute right-0 top-full mt-2 w-60 rounded-xl shadow-2xl 
+                            bg-white dark:bg-[#1A1A1A] border border-gray-100 dark:border-[#333] 
+                            backdrop-blur-xl z-50 overflow-hidden ring-1 ring-black/5 divide-y divide-gray-100 dark:divide-gray-800`}
                         >
-                          <LogOut size={16} className="mr-2" />
-                          Logout
-                        </button>
-                      </div>
-                    </div>
+                          {/* Profile Header - Compact */}
+                          <div className="px-4 py-3 bg-gray-50/80 dark:bg-gray-900/50">
+                            <div className="flex flex-col">
+                              <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                                {user?.name || 'User'} {user?.last_name || ''}
+                              </h4>
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                                {user?.email}
+                              </p>
+                              <div className="mt-2 text-left">
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 text-[9px] font-bold text-white shadow-sm">
+                                  <Star size={8} className="fill-current" />
+                                  PRO ACCOUNT
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Menu Items - Compact */}
+                          <div className="p-1.5 space-y-0.5">
+                            <Link
+                              to="/profile"
+                              onClick={() => setUserDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2C2C2C] transition-colors group"
+                            >
+                              <div className="p-1.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                                <User size={14} />
+                              </div>
+                              <div className="flex-1">
+                                <span className="block text-xs font-semibold">My Profile</span>
+                              </div>
+                              <ChevronRight size={12} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
+                            </Link>
+
+                            <Link
+                              to="/profile?tab=notifications"
+                              onClick={() => setUserDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2C2C2C] transition-colors group"
+                            >
+                              <div className="p-1.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                                <Settings size={14} />
+                              </div>
+                              <div className="flex-1">
+                                <span className="block text-xs font-semibold">Settings</span>
+                              </div>
+                              <ChevronRight size={12} className="text-gray-400 group-hover:text-purple-500 transition-colors" />
+                            </Link>
+                          </div>
+
+                          {/* Footer Actions */}
+                          <div className="p-1.5 bg-gray-50/50 dark:bg-gray-900/30">
+                            <button
+                              onClick={handleLogout}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors group text-left"
+                            >
+                              <div className="p-1.5 rounded-md bg-red-50 dark:bg-red-900/20 text-red-500 group-hover:bg-red-500 group-hover:text-white transition-colors">
+                                <LogOut size={14} />
+                              </div>
+                              <span className="font-semibold">Log Out</span>
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
 
                 </>

@@ -436,7 +436,10 @@ export const authAPI = {
   logout: () => apiClient.post('/logout'),
 
   // Get authenticated user
-  getUser: () => apiClient.get('/user'),
+  getUser: () => apiClient.get('/api/user'),
+
+  // Get user profile (specific endpoint)
+  getUserProfile: () => apiClient.get('/api/user/profile'),
 
   // Refresh token (if your API supports it)
   refreshToken: () => apiClient.post('/refresh'),

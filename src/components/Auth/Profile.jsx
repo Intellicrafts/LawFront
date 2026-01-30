@@ -13,6 +13,7 @@ import { apiServices } from '../../api/apiService';
 import { useSelector } from 'react-redux';
 import Toast from '../common/Toast';
 import useToast from '../../hooks/useToast';
+import { useLocation } from 'react-router-dom';
 
 
 
@@ -20,9 +21,19 @@ const UserProfile = () => {
   // Get theme from Redux store
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
+  const location = useLocation();
 
   // State management
   const [activeTab, setActiveTab] = useState('profile'); // profile, security, notifications, preferences
+
+  // Handle direct navigation to tabs via URL query params
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
+    if (tabParam && ['profile', 'security', 'notifications', 'preferences'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [location.search]);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
