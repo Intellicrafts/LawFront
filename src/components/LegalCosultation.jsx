@@ -12,6 +12,7 @@ import {
   ChevronLeft, Layout, CheckCircle, Info, HelpCircle, Scale, Heart
 } from 'lucide-react';
 import useToast from '../hooks/useToast';
+import MyAppointments from './MyAppointments';
 
 // Premium Professional Color Palette matching Hero and Sidebar - Production App
 const colors = {
@@ -398,7 +399,29 @@ const LegalCosultation = () => {
   useEffect(() => {
     const authToken = localStorage.getItem('auth_token');
     setIsAuthenticated(!!authToken);
+    setIsAuthenticated(!!authToken);
   }, []);
+
+  // State for appointment count
+  const [appointmentsCount, setAppointmentsCount] = useState(0);
+
+  // Fetch appointment count on mount
+  useEffect(() => {
+    const fetchAppointmentCount = async () => {
+      if (!isAuthenticated) return;
+      try {
+        const response = await apiServices.getUserProfile();
+        const userData = response.data || response;
+        const count = userData.recent_activity?.appointment_summary?.total ||
+          userData.recent_activity?.appointments?.length || 0;
+        setAppointmentsCount(count);
+      } catch (err) {
+        console.error('Error fetching appointment count:', err);
+      }
+    };
+
+    fetchAppointmentCount();
+  }, [isAuthenticated]);
 
   // Fetch lawyers from API - initial load
   useEffect(() => {
@@ -1344,6 +1367,14 @@ const LegalCosultation = () => {
    * Render different views based on the current state
    */
   const renderView = () => {
+    if (view === 'appointments') {
+      return (
+        <div className="pt-20 sm:pt-24 min-h-screen">
+          <MyAppointments onBack={() => setView('lawyers')} />
+        </div>
+      );
+    }
+
     if (view === 'lawyers') {
       return (
         <>
@@ -1425,6 +1456,8 @@ const LegalCosultation = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
+
+
                   <button
                     onClick={() => setShowFilters(!showFilters)}
                     className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-200 border ${showFilters
@@ -1454,6 +1487,27 @@ const LegalCosultation = () => {
                       <MapPin size={10} />
                     )}
                     <span>{locationSearching ? 'Locating...' : locationEnabled ? 'Located' : 'Near Me'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setView('appointments')}
+                    className={`relative flex items-center gap-2 px-3.5 py-1.5 rounded-2xl text-[10px] font-bold uppercase tracking-wider transition-all duration-300 border backdrop-blur-md active:scale-95 ${view === 'appointments'
+                      ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-500 shadow-lg shadow-violet-500/25'
+                      : isDarkMode
+                        ? 'bg-white/5 hover:bg-white/10 text-violet-400 border-white/5'
+                        : 'bg-white hover:bg-gray-50 text-violet-600 border-gray-100 shadow-sm'
+                      }`}
+                  >
+                    <div className={`p-1.5 rounded-xl ${view === 'appointments' ? 'bg-white/20' : isDarkMode ? 'bg-violet-500/10' : 'bg-violet-50'
+                      }`}>
+                      <Calendar size={10} className={view === 'appointments' ? 'text-white' : 'text-violet-500'} />
+                    </div>
+                    <span className="opacity-90">My Appointments</span>
+                    {appointmentsCount > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-gradient-to-tr from-rose-500 to-pink-500 text-white text-[8px] font-black border-2 border-white dark:border-[#1A1A1A] shadow-lg animate-pulse">
+                        {appointmentsCount}
+                      </span>
+                    )}
                   </button>
                 </div>
               </div>

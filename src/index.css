@@ -502,3 +502,41 @@ textarea:focus,
 button:focus {
   border-color: inherit !important;
 }
+
+/* Professional Prose Typography for Legal Responses */
+.prose-professional {
+  font-size: 15.5px;
+  line-height: 1.7;
+  letter-spacing: -0.01em;
+}
+
+.prose-professional p {
+  margin-bottom: 1.25rem;
+}
+
+.prose-professional p:last-child {
+  margin-bottom: 0;
+}
+
+.prose-professional strong {
+  font-weight: 700;
+  color: inherit;
+}
+
+/* Custom Scrollbar for Intelligence Logs */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.2);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.4);
+}

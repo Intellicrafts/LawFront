@@ -66,7 +66,7 @@ apiClient.interceptors.response.use(
 // Helper: create a new session for a given app and user
 export async function createSession(appName, userId) {
   try {
-    const base = process.env.REACT_APP_CHATBOT_API_URL || 'https://9v9r3mivw8.ap-south-1.awsapprunner.com/run';
+    const base = process.env.REACT_APP_CHATBOT_API_URL || 'http://bakilapp-alb-59756411.ap-south-1.elb.amazonaws.com';
     const host = base.replace(/\/run$/, ''); // strip trailing /run
     const url = `${host}/apps/${appName}/users/${userId}/sessions`;
     const resp = await fetch(url, {
@@ -99,19 +99,21 @@ export const chatbotAPI = {
    */
   getChatResponse: async (query, model = 'legal_counsel', sessionIdInput = 'session_123', userId = 'user_123') => {
     try {
-      const apiUrl = process.env.REACT_APP_CHATBOT_API_URL || 'https://9v9r3mivw8.ap-south-1.awsapprunner.com/run';
+      const apiUrl = process.env.REACT_APP_CHATBOT_API_URL || 'http://bakilapp-alb-59756411.ap-south-1.elb.amazonaws.com';
 
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const runUrl = isLocalhost ? '/run' : apiUrl;
-      const baseUrl = isLocalhost ? '' : 'https://9v9r3mivw8.ap-south-1.awsapprunner.com';
+      const baseUrl = isLocalhost ? '' : 'http://bakilapp-alb-59756411.ap-south-1.elb.amazonaws.com';
+      const runUrl = `${baseUrl}/unified_chat`;
 
       // 1. Create/Ensure Session first
-      // The new AWS backend expects a specific session creation call
       try {
         await fetch(`${baseUrl}/apps/${model}/users/${userId}/sessions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({})
+          body: JSON.stringify({
+            session_id: sessionIdInput,
+            state: {}
+          })
         });
       } catch (e) {
         console.warn('Session creation failed or already exists:', e);
@@ -120,14 +122,14 @@ export const chatbotAPI = {
       const payload = {
         "app_name": model,
         "user_id": userId,
-        "sessionId": sessionIdInput, // New API uses camelCase sessionId
+        "session_id": sessionIdInput,
         "new_message": {
           "role": "user",
           "parts": [{
             "text": query
           }]
         },
-        "streaming": false
+        "streaming": true
       };
 
       console.log('Chatbot API Request Info:', { url: runUrl, payload });
@@ -136,7 +138,7 @@ export const chatbotAPI = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'text/event-stream'
         },
         body: JSON.stringify(payload)
       });
@@ -146,16 +148,66 @@ export const chatbotAPI = {
         throw new Error(`API Error (${response.status}): ${errorText || response.statusText}`);
       }
 
-      // Check content type to decide how to parse
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        return await response.json();
-      } else {
-        // Fallback for text/SSE responses if they aren't JSON
-        return await response.text();
-      }
+      // Read as text for simplicity in this legacy wrapper
+      return await response.text();
     } catch (error) {
       console.error('Chatbot API Fetch Error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get all chat sessions for the authenticated user (Laravel API)
+   */
+  getSessions: async () => {
+    try {
+      const response = await apiClient.get('/chat/sessions');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching chat sessions:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get a specific chat session with history (Laravel API)
+   * @param {string} id - Session ID
+   */
+  getSession: async (id) => {
+    try {
+      const response = await apiClient.get(`/chat/sessions/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching chat session ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Create a new chat session (Laravel API)
+   * @param {string} title - Optional title
+   */
+  createSession: async (title) => {
+    try {
+      const response = await apiClient.post('/chat/sessions', { title });
+      return response.data;
+    } catch (error) {
+      console.error('Error creating chat session:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Add an event/message to a session (Laravel API)
+   * @param {string} sessionId
+   * @param {Object} eventData - { sender, message, event_type, metadata }
+   */
+  addEvent: async (sessionId, eventData) => {
+    try {
+      const response = await apiClient.post(`/chat/sessions/${sessionId}/events`, eventData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error adding event to session ${sessionId}:`, error);
       throw error;
     }
   }
@@ -436,10 +488,10 @@ export const authAPI = {
   logout: () => apiClient.post('/logout'),
 
   // Get authenticated user
-  getUser: () => apiClient.get('/api/user'),
+  getUser: () => apiClient.get('/user'),
 
   // Get user profile (specific endpoint)
-  getUserProfile: () => apiClient.get('/api/user/profile'),
+  getUserProfile: () => apiClient.get('/user/profile'),
 
   // Refresh token (if your API supports it)
   refreshToken: () => apiClient.post('/refresh'),

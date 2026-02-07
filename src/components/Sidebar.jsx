@@ -63,9 +63,11 @@ const SidebarToggleIcon = ({ isOpen, mode }) => {
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        initial="closed"
         animate={isOpen ? "open" : "closed"}
       >
         <motion.path
+          d="M4 6L20 6"
           stroke={isDark ? "#94A3B8" : "#475569"}
           strokeWidth="2.5"
           strokeLinecap="round"
@@ -76,6 +78,7 @@ const SidebarToggleIcon = ({ isOpen, mode }) => {
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
         />
         <motion.path
+          d="M4 12L16 12"
           stroke={isDark ? "#94A3B8" : "#475569"}
           strokeWidth="2.5"
           strokeLinecap="round"
@@ -86,6 +89,7 @@ const SidebarToggleIcon = ({ isOpen, mode }) => {
           transition={{ duration: 0.2 }}
         />
         <motion.path
+          d="M4 18L20 18"
           stroke={isDark ? "#94A3B8" : "#475569"}
           strokeWidth="2.5"
           strokeLinecap="round"
@@ -246,7 +250,10 @@ const Sidebar = ({
           filteredChats.map((chat) => (
             <button
               key={chat.id}
-              onClick={() => dispatch(setSidebarOpen(false))}
+              onClick={() => {
+                dispatch(setSidebarOpen(false));
+                navigate(`/chatbot/${chat.id}`);
+              }}
               className={`w-full flex flex-col gap-1 p-2 rounded-lg ${isDark ? 'hover:bg-[#1A1A1A]/70' : 'hover:bg-gray-50'} transition-all group text-left`}
             >
               <div className="flex items-start justify-between gap-2">

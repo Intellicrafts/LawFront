@@ -15,127 +15,314 @@ import {
   History, Archive, Star as StarIcon
 } from 'lucide-react';
 import { chatbotService, CHAT_STATES, AI_MODELS } from '../services/chatbotApiService';
+import { useParams, useNavigate } from 'react-router-dom';
+import { chatbotAPI } from '../api/apiService';
+import { fetchChatSessions } from '../redux/chatSlice';
 
-// Enhanced Streaming Text Component with faster, smoother typing and auto-scroll
+// Custom Lawyer Tia Avatar Component
+const TiaAvatar = ({ isStreaming }) => (
+  <div className="relative group">
+    {/* Animated glow ring during streaming */}
+    {isStreaming && (
+      <motion.div
+        animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
+        transition={{ repeat: Infinity, duration: 3 }}
+        className="absolute -inset-1.5 bg-gradient-to-tr from-blue-500/40 to-indigo-500/40 blur-lg rounded-full"
+      />
+    )}
+    <div className="relative w-11 h-11 rounded-full overflow-hidden shadow-2xl border-2 border-white/20 transition-transform duration-500 group-hover:scale-105">
+      <img
+        src="/lawyer_tia_avatar.png"
+        alt="Lawyer Tia"
+        className="w-full h-full object-cover"
+        onError={(e) => {
+          // Fallback if image fails to load
+          e.target.src = 'https://ui-avatars.com/api/?name=Tia&background=0284c7&color=fff';
+        }}
+      />
+    </div>
+    {/* Subtle status indicator dot */}
+    <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${isStreaming ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500'}`} />
+  </div>
+);
+
+// High-Tech Intelligence Log Box
+const IntelligenceLog = ({ thought, isStreaming, isDark }) => {
+  if (!thought && !isStreaming) return null;
+
+  return (
+    <motion.div
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: 'auto', opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      className={`mb-4 w-full rounded-2xl border overflow-hidden backdrop-blur-xl transition-all duration-500
+        ${isDark ? 'bg-[#0A0A0A]/40 border-white/5' : 'bg-slate-50/50 border-slate-200'}`}
+    >
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-white/5">
+        <div className="flex items-center gap-2">
+          <Cpu size={14} className="text-blue-500" />
+          <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Intelligence Process Log</span>
+        </div>
+        {isStreaming && (
+          <div className="flex gap-1">
+            {[1, 2, 3].map(i => (
+              <motion.div
+                key={i}
+                animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
+                transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.2 }}
+                className="w-1 h-1 rounded-full bg-blue-500"
+              />
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="p-4 text-[12px] font-mono leading-relaxed max-h-[160px] overflow-y-auto custom-scrollbar">
+        <FormattedResponse text={thought || 'Initializing neural channels...'} isDark={isDark} />
+        {isStreaming && (
+          <div className="mt-2 text-blue-500/60 lowercase italic animate-pulse">
+            &gt; processing metadata streams...
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+};
+
+// Professional Typing Animation Component
 const StreamingText = ({ text, isDark }) => {
-  const [displayedText, setDisplayedText] = useState('');
-  const [currentIndex, setCurrentIndex] = useState(0);
-
+  // Handle auto-scroll with high sensitivity during generation
   useEffect(() => {
-    if (currentIndex < text.length) {
-      const delay = text.length > 500 ? 5 : 12;
-      const timeout = setTimeout(() => {
-        const charsToType = text.length > 1000 ? 3 : 1;
-        setDisplayedText(text.substring(0, currentIndex + charsToType));
-        setCurrentIndex(prev => prev + charsToType);
-      }, delay);
-      return () => clearTimeout(timeout);
-    }
-  }, [currentIndex, text]);
-
-  // Point 1: Handle auto-scroll during generation
-  useEffect(() => {
-    if (currentIndex > 0) {
-      const container = document.getElementById('chat-scroll-container');
-      if (container) {
-        // Only auto-scroll if user is already near the bottom (within 250px)
-        const isNearBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 250;
-        if (isNearBottom) {
-          container.scrollTo({
-            top: container.scrollHeight,
-            behavior: 'auto' // Use 'auto' for zero-latency tracking during streaming
-          });
-        }
+    const container = document.getElementById('chat-scroll-container');
+    if (container) {
+      const isNearBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 400;
+      if (isNearBottom) {
+        container.scrollTo({ top: container.scrollHeight, behavior: 'auto' });
       }
     }
-  }, [currentIndex]);
+  }, [text]);
 
   return (
-    <div className={isDark ? 'text-gray-100' : 'text-gray-900'}>
-      <FormattedResponse text={displayedText} isDark={isDark} />
-      {currentIndex < text.length && (
-        <span className="inline-block w-1.5 h-4 bg-blue-500/80 ml-1 animate-pulse rounded-full align-middle" />
-      )}
+    <div className={`relative ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
+      <FormattedResponse text={text} isDark={isDark} isStreaming={true} cursorAtEnd={true} />
     </div>
   );
 };
 
 /**
- * Professional Response Formatting Component
- * Transforms raw text into a premium, human-readable legal presentation.
- * Supports: Bolding, Numbered Lists, Bullet Points, and Section Headings.
+ * Premium Markdown & Professional Legal Formatting Engine
+ * Transforms raw AI tokens into a state-of-the-art legal presentation.
  */
-const FormattedResponse = ({ text, isDark }) => {
+const FormattedResponse = ({ text, isDark, isStreaming = false, cursorAtEnd = false }) => {
   if (!text) return null;
 
-  // Split text into logical lines for processing
-  const lines = text.split('\n');
+  // New Heuristic: Ensure points and numbers start on new lines for better readability
+  const optimizedText = (text || '')
+    .replace(/(\d+\.\s+[A-Z\u0900-\u097F])/g, '\n$1') // New line before numbered points (Eng/Hindi)
+    .replace(/([•\*\-])\s+/g, '\n$1 ')                 // New line before bullet points
+    .replace(/(\n{3,})/g, '\n\n')                      // Collapse excessive newlines
+    .trim();
 
-  return (
-    <div className="space-y-2.5 py-0.5">
-      {lines.map((line, idx) => {
-        const trimmedLine = line.trim();
-        if (!trimmedLine) return <div key={idx} className="h-1.5" />;
+  // Professional Syntax Highlighter (Lightweight)
+  const highlightLegalCode = (code) => {
+    if (!code) return '';
+    const keywords = /\b(SECTION|ARTICLE|CLAUSE|PURSUANT|PROVIDED|WHEREAS|THEREFORE|NOTWITHSTANDING|AGREEMENT|PARTY|CONTRACT|LIABILITY|WARRANTY|INDEMNITY)\b/g;
+    const values = /\b(true|false|null|\d+)\b/g;
+    const strings = /(['"])(?:(?=(\\?))\2.)*?\1/g;
 
-        // Header detection: # Header or Title:
-        if (trimmedLine.match(/^#+\s/) || trimmedLine.match(/^[A-Z][\w\s]+:$/)) {
-          return (
-            <div key={idx} className="pt-2 group first:pt-0">
-              <h4 className={`font-bold text-[16px] tracking-tight flex items-center gap-2 ${isDark ? 'text-blue-400' : 'text-slate-800'
-                }`}>
-                <span className="w-1.5 h-3.5 rounded-full bg-blue-500 block opacity-50" />
-                {trimmedLine.replace(/^#+\s/, '')}
-              </h4>
-            </div>
-          );
-        }
+    return code
+      .replace(strings, m => `<span class="text-emerald-400 font-medium">${m}</span>`)
+      .replace(keywords, m => `<span class="text-blue-400 font-black">${m}</span>`)
+      .replace(values, m => `<span class="text-amber-400 font-medium">${m}</span>`);
+  };
 
-        const listMatch = trimmedLine.match(/^(\d+\.|[\*\-\•])\s+(.*)/);
-        if (listMatch) {
-          const content = listMatch[2];
-          const isNumber = /\d+\./.test(listMatch[1]);
+  // Process sections of the text (Code blocks, tables, etc.)
+  const parseContent = (content) => {
+    const sections = (content || '').split(/(```[\s\S]*?```)/g);
 
-          return (
-            <div key={idx} className="flex gap-2.5 pl-1 items-start">
-              <div className={`mt-[6px] shrink-0 flex items-center justify-center w-5 h-5 rounded-md text-[10px] font-bold ${isDark ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-slate-100 text-slate-600 border border-slate-200'
-                }`}>
-                {isNumber ? listMatch[1].replace('.', '') : '•'}
-              </div>
-              <p className={`flex-1 m-0 text-[14.5px] leading-relaxed py-0.5 ${isDark ? 'text-gray-200' : 'text-slate-700'}`}>
-                {parseBold(content, isDark)}
-              </p>
-            </div>
-          );
-        }
+    return sections.map((section, sIdx) => {
+      if (section.startsWith('```')) {
+        const match = section.match(/```(\w+)?\n([\s\S]*?)\n?```/);
+        const language = match?.[1] || 'Draft';
+        const code = match?.[2] || '';
 
         return (
-          <p key={idx} className={`leading-relaxed m-0 text-[14.5px] ${isDark ? 'text-gray-300' : 'text-slate-700/90'
+          <div key={sIdx} className={`my-6 rounded-2xl border overflow-hidden font-mono text-[13.5px] leading-relaxed shadow-xl ${isDark ? 'bg-[#0A0A0A] border-white/10' : 'bg-slate-900 text-slate-100 border-slate-800'
             }`}>
-            {parseBold(trimmedLine, isDark)}
-          </p>
+            <div className="px-5 py-2.5 border-b border-white/5 flex justify-between items-center bg-white/5 backdrop-blur-md">
+              <div className="flex items-center gap-3">
+                <div className="flex gap-1.5 leading-none">
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F56] shadow-sm" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E] shadow-sm" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#27C93F] shadow-sm" />
+                </div>
+                <span className="opacity-60 uppercase tracking-[0.25em] text-[10px] font-black">{language}</span>
+              </div>
+              <button
+                onClick={() => navigator.clipboard.writeText(code)}
+                className="p-1 hover:text-blue-400 transition-all active:scale-90"
+                title="Copy Code"
+              >
+                <Copy size={14} />
+              </button>
+            </div>
+            <pre className="p-5 overflow-x-auto selection:bg-blue-500/30 custom-scrollbar">
+              <code dangerouslySetInnerHTML={{ __html: highlightLegalCode(code) }} />
+            </pre>
+          </div>
         );
-      })}
-    </div>
-  );
+      }
+
+      const lines = section.split('\n');
+      return (
+        <div key={sIdx} className="space-y-4">
+          {lines.map((line, lIdx) => {
+            const trimmed = line.trim();
+            if (!trimmed) return <div key={lIdx} className="h-1" />;
+
+            // Table Detection
+            if (trimmed.startsWith('|')) {
+              if (trimmed.includes('---')) return null;
+              const cells = trimmed.split('|').map(c => c.trim()).filter(c => c !== '');
+              return (
+                <div key={lIdx} className={`overflow-hidden my-6 rounded-2xl border shadow-lg ${isDark ? 'border-white/10 bg-white/5 backdrop-blur-sm' : 'border-slate-200 bg-white'}`}>
+                  <table className="min-w-full divide-y divide-gray-500/10">
+                    <tbody className="divide-y divide-gray-500/10">
+                      <tr className="transition-colors hover:bg-blue-500/5">
+                        {cells.map((cell, cIdx) => (
+                          <td key={cIdx} className={`px-5 py-4 text-[14px] border-x border-gray-500/5 ${cIdx === 0 ? 'font-black text-blue-500 bg-blue-500/10' : ''}`}>
+                            {parseInline(cell, isDark)}
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              );
+            }
+
+            // Heading Detection
+            const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)/);
+            if (headingMatch) {
+              const level = headingMatch[1].length;
+              const content = headingMatch[2];
+              return (
+                <div key={lIdx} className={`${level === 1 ? 'pt-10 pb-4 border-b border-gray-500/10 mb-6' : 'pt-7 pb-3'} group first:pt-0`}>
+                  <h4 className={`font-black tracking-tight flex items-center gap-4 ${isDark ? 'text-white' : 'text-slate-900 font-extrabold'
+                    } ${level === 1 ? 'text-2xl' : level === 2 ? 'text-xl' : 'text-lg'}`}>
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-blue-500 blur-[10px] opacity-40 rounded-full" />
+                      <span className="relative w-1.5 h-6 rounded-full bg-gradient-to-b from-blue-400 to-indigo-600 block shadow-lg" />
+                    </div>
+                    {parseInline(content, isDark)}
+                  </h4>
+                </div>
+              );
+            }
+
+            // List Detection
+            const listMatch = trimmed.match(/^(\d+\.|[\*\-\•])\s+(.*)/);
+            if (listMatch) {
+              const content = listMatch[2];
+              const isNumber = /\d+\./.test(listMatch[1]);
+              return (
+                <div key={lIdx} className="flex gap-5 pl-2 items-start group py-1">
+                  <div className={`mt-[6px] shrink-0 flex items-center justify-center w-7 h-7 rounded-xl text-[12px] font-black shadow-xl transition-all group-hover:scale-110 group-hover:rotate-6 ${isDark ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-blue-500/10' : 'bg-white text-blue-600 border border-blue-100 shadow-blue-100'
+                    }`}>
+                    {isNumber ? listMatch[1].replace('.', '') : '§'}
+                  </div>
+                  <div className={`flex-1 text-[16px] leading-[1.6] py-0.5 tracking-tight ${isDark ? 'text-gray-200' : 'text-slate-700 font-medium'}`}>
+                    {parseInline(content, isDark)}
+                  </div>
+                </div>
+              );
+            }
+
+            // Paragraph
+            return (
+              <p key={lIdx} className={`leading-relaxed text-[15.5px] tracking-tight ${isDark ? 'text-gray-300' : 'text-slate-700/90 font-medium'
+                }`}>
+                {parseInline(trimmed, isDark)}
+                {isStreaming && cursorAtEnd && lIdx === lines.length - 1 && section === sections[sections.length - 1] && (
+                  <span className="relative inline-block ml-2 top-[3px]">
+                    <span className="absolute inset-0 bg-blue-500/60 blur-[8px] rounded-full animate-pulse" />
+                    <span className="relative block w-2 h-4 bg-blue-600 rounded-sm animate-[pulse_0.8s_infinite] shadow-[0_0_12px_rgba(37,99,235,0.6)]" />
+                  </span>
+                )}
+              </p>
+            );
+          })}
+        </div>
+      );
+    });
+  };
+
+  return <div className="space-y-6 animate-in fade-in duration-1000 slide-in-from-bottom-2">{parseContent(optimizedText)}</div>;
 };
 
 /**
- * Helper to parse **bold** and __bold__ text
- * Point 2: Softer bold colors for better readability
+ * High-Speed Inline Parser
+ * Handles Bold, Italic, Links, and Highlighting
  */
-const parseBold = (text, isDark) => {
-  const parts = text.split(/(\*\*.*?\*\*|__.*?__)/g);
-  return parts.map((part, i) => {
-    if ((part.startsWith('**') && part.endsWith('**')) || (part.startsWith('__') && part.endsWith('__'))) {
-      const cleanText = part.slice(2, -2);
+const parseInline = (text, isDark) => {
+  if (typeof text !== 'string') return text;
+
+  // Process segments for Markdown features
+  // 1. Links: [text](url)
+  // 2. Bold: **text**
+  // 3. Italic: *text* or _text_
+  // 4. Highlight: ==text==
+
+  const segments = text.split(/(\[.*?\]\(.*?\))|(\*\*.*?\*\*)|(\*.*?\*)|(__.*?__)|(==.*?==)/g);
+
+  return segments.map((seg, i) => {
+    if (!seg) return null;
+
+    // Link: [text](url)
+    if (seg.startsWith('[') && seg.includes('](')) {
+      const match = seg.match(/\[(.*?)\]\((.*?)\)/);
+      if (match) {
+        return (
+          <a
+            key={i}
+            href={match[2]}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:text-blue-600 underline decoration-blue-500/30 underline-offset-4 transition-all"
+          >
+            {match[1]}
+          </a>
+        );
+      }
+    }
+
+    // Bold: **text**
+    if (seg.startsWith('**') && seg.endsWith('**')) {
       return (
-        <strong key={i} className={`font-semibold ${isDark ? 'text-blue-100' : 'text-slate-900 border-b border-slate-200/60'
-          }`}>
-          {cleanText}
+        <strong key={i} className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'} drop-shadow-sm`}>
+          {seg.slice(2, -2)}
         </strong>
       );
     }
-    return part;
+
+    // Italic: *text* or _text_
+    if ((seg.startsWith('*') && seg.endsWith('*')) || (seg.startsWith('_') && seg.endsWith('_'))) {
+      return (
+        <em key={i} className="italic opacity-90">
+          {seg.slice(1, -1)}
+        </em>
+      );
+    }
+
+    // Highlight: ==text==
+    if (seg.startsWith('==') && seg.endsWith('==')) {
+      return (
+        <mark key={i} className={`px-1 rounded-sm ${isDark ? 'bg-blue-500/30 text-blue-200' : 'bg-blue-100 text-blue-900'} font-medium`}>
+          {seg.slice(2, -2)}
+        </mark>
+      );
+    }
+
+    return seg;
   });
 };
 
@@ -143,6 +330,9 @@ const parseBold = (text, isDark) => {
  * Professional Message Actions Component
  * Features: Natural Human Voice synthesis with punctuation pauses, Clipboard Copy, and Feedback.
  */
+// Global reference to prevent garbage collection of active speech
+let activeUtterance = null;
+
 const MessageActions = ({ text, isDark }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -198,8 +388,19 @@ const MessageActions = ({ text, isDark }) => {
     // Cancel any ongoing speech
     window.speechSynthesis.cancel();
 
-    // Clean text: remove markdown but keep punctuation
-    const cleanText = text.replace(/(\*\*|__|#)/g, '').trim();
+    // Simplified multi-pass cleaning for speech
+    let cleanText = text;
+    [
+      /Analyzing query\.{1,3}/gi,
+      /Found in Semantic Cache/gi,
+      /Generating response/gi,
+      /^[a-z_]{2,}(?:\.{1,3}|[:\s!]|(?=[A-Z\s!]))/i,
+      /\b[a-z_]{2,}_[a-z_]{2,}\b/gi,
+      /(\*\*|__|#|\*|-|>)/g,
+    ].forEach(pattern => {
+      cleanText = cleanText.replace(pattern, '');
+    });
+    cleanText = cleanText.trim();
 
     if (!cleanText) {
       console.warn('No text to speak');
@@ -209,7 +410,8 @@ const MessageActions = ({ text, isDark }) => {
     console.log('Starting speech synthesis for text:', cleanText.substring(0, 50) + '...');
 
     // Create utterance
-    const utterance = new SpeechSynthesisUtterance(cleanText);
+    activeUtterance = new SpeechSynthesisUtterance(cleanText);
+    const utterance = activeUtterance;
 
     // Set speech parameters for natural flow
     utterance.rate = 1.15;
@@ -253,12 +455,16 @@ const MessageActions = ({ text, isDark }) => {
     utterance.onend = () => {
       console.log('Speech ended');
       setIsSpeaking(false);
+      activeUtterance = null;
     };
 
     utterance.onerror = (event) => {
-      console.error('Speech error:', event.error, event);
-      if (event.error !== 'interrupted') {
+      if (event.error === 'interrupted') {
+        console.log('Speech interrupted as expected');
+      } else {
+        console.error('Speech error:', event.error, event);
         setIsSpeaking(false);
+        activeUtterance = null;
         if (event.error === 'not-allowed') {
           alert('Please allow audio playback in your browser settings');
         }
@@ -312,116 +518,182 @@ const MessageActions = ({ text, isDark }) => {
     <motion.div
       initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`flex items-center gap-1 mt-2.5 ml-1 px-1.5 py-1.5 rounded-xl w-fit border shadow-sm ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'
+      className={`flex items-center gap-0.5 mt-2 ml-0.5 px-1 py-1 rounded-lg w-fit border shadow-sm scale-90 origin-left ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'
         }`}
     >
       <motion.button
         whileTap={{ scale: 0.92 }}
         onClick={handleReadAloud}
-        className={`p-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 group ${isSpeaking
+        className={`p-1 rounded-md transition-all duration-200 flex items-center gap-1 group ${isSpeaking
           ? 'text-blue-500 bg-blue-500/15 ring-1 ring-blue-500/20'
           : isDark ? 'text-gray-400 hover:text-blue-400 hover:bg-white/5' : 'text-gray-500 hover:text-blue-600 hover:bg-white'
           }`}
         title={isSpeaking ? "Stop" : "Read Aloud"}
       >
-        {isSpeaking ? <VolumeX size={14} className="animate-pulse" /> : <Volume2 size={14} />}
-        {isSpeaking && <span className="text-[10px] font-bold uppercase tracking-wider">Reading</span>}
+        {isSpeaking ? <VolumeX size={12} className="animate-pulse" /> : <Volume2 size={12} />}
       </motion.button>
 
-      <div className={`w-[1px] h-3 mx-0.5 ${isDark ? 'bg-white/10' : 'bg-gray-300'}`} />
+      <div className={`w-[1px] h-2.5 mx-0.5 ${isDark ? 'bg-white/10' : 'bg-gray-300'}`} />
 
       <motion.button
         whileTap={{ scale: 0.92 }}
         onClick={handleCopy}
-        className={`p-1.5 rounded-lg transition-all duration-200 flex items-center gap-1.5 ${isCopied
+        className={`p-1 rounded-md transition-all duration-200 flex items-center gap-1 ${isCopied
           ? 'text-emerald-500 bg-emerald-500/15 ring-1 ring-emerald-500/20'
           : isDark ? 'text-gray-400 hover:text-emerald-400 hover:bg-white/5' : 'text-gray-500 hover:text-emerald-600 hover:bg-white'
           }`}
         title="Copy"
       >
-        {isCopied ? <CheckCircle size={14} /> : <Copy size={14} />}
-        {isCopied && <span className="text-[10px] font-bold uppercase tracking-wider">Copied</span>}
+        {isCopied ? <CheckCircle size={12} /> : <Copy size={12} />}
       </motion.button>
 
-      <div className={`w-[1px] h-3 mx-0.5 ${isDark ? 'bg-white/10' : 'bg-gray-300'}`} />
+      <div className={`w-[1px] h-2.5 mx-0.5 ${isDark ? 'bg-white/10' : 'bg-gray-300'}`} />
 
       <div className="flex items-center">
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={() => setFeedback(feedback === 'like' ? null : 'like')}
-          className={`p-1.5 rounded-lg transition-all duration-200 ${feedback === 'like'
+          className={`p-1 rounded-md transition-all duration-200 ${feedback === 'like'
             ? 'text-blue-500 bg-blue-500/15'
             : isDark ? 'text-gray-500 hover:text-blue-400 hover:bg-white/5' : 'text-gray-500 hover:text-blue-600 hover:bg-white'
             }`}
         >
-          <ThumbsUp size={14} fill={feedback === 'like' ? 'currentColor' : 'none'} strokeWidth={feedback === 'like' ? 2 : 1.5} />
+          <ThumbsUp size={12} fill={feedback === 'like' ? 'currentColor' : 'none'} strokeWidth={feedback === 'like' ? 2 : 1.5} />
         </motion.button>
 
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={() => setFeedback(feedback === 'dislike' ? null : 'dislike')}
-          className={`p-1.5 rounded-lg transition-all duration-200 ${feedback === 'dislike'
+          className={`p-1 rounded-md transition-all duration-200 ${feedback === 'dislike'
             ? 'text-red-500 bg-red-500/15'
             : isDark ? 'text-gray-500 hover:text-red-400 hover:bg-white/5' : 'text-gray-500 hover:text-red-600 hover:bg-white'
             }`}
         >
-          <ThumbsDown size={14} fill={feedback === 'dislike' ? 'currentColor' : 'none'} strokeWidth={feedback === 'dislike' ? 2 : 1.5} />
+          <ThumbsDown size={12} fill={feedback === 'dislike' ? 'currentColor' : 'none'} strokeWidth={feedback === 'dislike' ? 2 : 1.5} />
         </motion.button>
       </div>
     </motion.div>
   );
 };
 
-const MessageBubble = ({ message, isDark, isUser, isStreaming = false }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.2 }}
-    className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-5`}
-  >
-    <div className={`flex items-start gap-3 max-w-[92%] sm:max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-      {!isUser && (
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center flex-shrink-0 mt-1 shadow-lg shadow-blue-500/10 border border-white/10">
-          <Bot size={18} className="text-white" />
-        </div>
-      )}
-      <div className="flex flex-col">
-        <div
-          className={`px-4 py-3 rounded-2xl shadow-sm text-[14.5px] leading-relaxed break-words whitespace-pre-wrap ${isUser
-            ? isDark
-              ? 'bg-[#1a1a1a] text-gray-50 border border-[#2a2a2a]'
-              : 'bg-white text-gray-900 border border-gray-100 shadow-sm'
-            : isDark
-              ? 'bg-transparent text-gray-200'
-              : 'bg-transparent text-gray-800'
-            }`}
-        >
-          {isStreaming && !isUser ? (
-            <StreamingText text={message} isDark={isDark} />
-          ) : isUser ? (
-            <span>{message}</span>
-          ) : (
-            <FormattedResponse text={message} isDark={isDark} />
+// ThoughtAccordion removed in favor of IntelligenceLog
+
+const MessageBubble = ({ message, thought, isDark, isUser, isStreaming = false, chatState, modelId = 'legal_counsel' }) => {
+  const [showLog, setShowLog] = useState(isStreaming);
+  const agentName = modalOptions.find(opt => opt.id === modelId)?.label || 'LAWYER TIA';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-6 sm:mb-8 group`}
+    >
+      <div className={`flex items-start gap-2.5 sm:gap-4 max-w-[98%] sm:max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+        {!isUser && <TiaAvatar isStreaming={isStreaming} />}
+
+        <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} flex-1 min-w-0`}>
+          {/* Name and State HUD for AI */}
+          {!isUser && (
+            <div className="flex items-center gap-2 mb-1.5 ml-1">
+              <span className={`text-[11px] font-black tracking-widest opacity-80 uppercase ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                {agentName}
+              </span>
+
+              <div className="flex items-center gap-1.5">
+                {(thought || isStreaming) && (
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setShowLog(!showLog)}
+                    className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase transition-all
+                      ${showLog
+                        ? (isDark ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-50 text-blue-600 border border-blue-200 shadow-sm')
+                        : 'text-gray-500 hover:text-blue-500 hover:bg-blue-500/5'}`}
+                    title={showLog ? "Hide Logic & Events" : "Show Logic & Events"}
+                  >
+                    <Brain size={11} className={showLog ? "animate-pulse" : ""} />
+                    <span>{showLog ? 'Hide Process' : 'Show Process'}</span>
+                  </motion.button>
+                )}
+
+                {isStreaming && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[8.5px] font-black uppercase tracking-tighter
+                    ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}
+                  >
+                    <div className="w-1 h-1 rounded-full bg-emerald-500 animate-ping" />
+                    <span>{chatState || 'Thinking'}</span>
+                  </motion.div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* The Intelligence Log (Shown only when toggled) */}
+          <AnimatePresence>
+            {!isUser && (showLog || isStreaming) && (thought || isStreaming) && (
+              <IntelligenceLog thought={thought} isStreaming={isStreaming} isDark={isDark} />
+            )}
+          </AnimatePresence>
+
+          <div
+            className={`relative transition-all duration-300 ${isUser
+              ? `px-3.5 py-2 rounded-[18px] shadow-sm ${isDark
+                ? 'bg-gradient-to-br from-[#1e1e1e] to-[#141414] border border-white/10 text-white shadow-xl shadow-black/20'
+                : 'bg-white border border-slate-200 text-slate-700 shadow-lg shadow-slate-200/5'
+              } font-medium text-[14px] leading-relaxed max-w-[85%] sm:max-w-sm`
+              : `w-full ${isDark ? 'text-gray-200' : 'text-slate-800'}`
+              }`}
+          >
+            {isStreaming && !isUser ? (
+              message ? (
+                <StreamingText text={message} isDark={isDark} />
+              ) : (
+                <div className="flex gap-1.5 px-3 py-2 bg-white/5 rounded-xl w-fit">
+                  {[1, 2, 3].map(i => (
+                    <motion.div
+                      key={i}
+                      animate={{ scale: [1, 1.4, 1], opacity: [0.3, 1, 0.3] }}
+                      transition={{ repeat: Infinity, duration: 1, delay: i * 0.2 }}
+                      className="w-1.5 h-1.5 rounded-full bg-blue-500"
+                    />
+                  ))}
+                </div>
+              )
+            ) : isUser ? (
+              <span className="leading-relaxed whitespace-pre-wrap">{message}</span>
+            ) : (
+              <div className={`prose-professional ${isDark ? 'text-gray-100' : 'text-slate-900'}`}>
+                <FormattedResponse text={message} isDark={isDark} />
+              </div>
+            )}
+          </div>
+
+          {!isUser && !isStreaming && message && (
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="mt-1"
+            >
+              <MessageActions text={message} isDark={isDark} />
+            </motion.div>
           )}
         </div>
-
-        {/* Post-response actions - show for ALL completed assistant messages */}
-        {!isUser && !isStreaming && (
-          <MessageActions text={message} isDark={isDark} />
-        )}
       </div>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 const getModalIcon = (id) => {
   const icons = {
-    bakilat: <svg width={20} height={20} viewBox="0 0 24 24" fill="none"><g><path d="M12 2C12 2 14 6 16 8L20 10C16 12 12 14 12 14C12 14 8 12 4 10L8 8C10 6 12 2 12 2Z" fill="currentColor" opacity="0.9" /><circle cx="12" cy="16" r="2" fill="currentColor" /><path d="M10 20L12 22L14 20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></g></svg>,
+    legal_counsel: <svg width={20} height={20} viewBox="0 0 24 24" fill="none"><g><path d="M12 2C12 2 14 6 16 8L20 10C16 12 12 14 12 14C12 14 8 12 4 10L8 8C10 6 12 2 12 2Z" fill="currentColor" opacity="0.9" /><circle cx="12" cy="16" r="2" fill="currentColor" /><path d="M10 20L12 22L14 20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></g></svg>,
     nyaaya: <svg width={20} height={20} viewBox="0 0 24 24" fill="none"><g><path d="M12 2L18 8H16V14H8V8H6L12 2Z" fill="currentColor" opacity="0.9" /><rect x="7" y="15" width="10" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" fill="none" /><line x1="10" y1="15" x2="10" y2="20" stroke="currentColor" strokeWidth="1.5" /><line x1="14" y1="15" x2="14" y2="20" stroke="currentColor" strokeWidth="1.5" /></g></svg>,
     munshi: <svg width={20} height={20} viewBox="0 0 24 24" fill="none"><g><path d="M6 3H18C19.1 3 20 3.9 20 5V19C20 20.1 19.1 21 18 21H6C4.9 21 4 20.1 4 19V5C4 3.9 4.9 3 6 3Z" stroke="currentColor" strokeWidth="1.5" fill="none" /><path d="M8 7H16M8 11H16M8 15H13" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></g></svg>,
     adalat: <svg width={20} height={20} viewBox="0 0 24 24" fill="none"><g><path d="M12 2L20 7V12C20 18 12 22 12 22C12 22 4 18 4 12V7L12 2Z" fill="currentColor" opacity="0.8" /><path d="M10 13L11.5 14.5L15 11" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" /></g></svg>
   };
-  return icons[id] || icons.bakilat;
+  return icons[id] || icons.legal_counsel;
 };
 
 const modalOptions = [
@@ -433,79 +705,80 @@ const modalOptions = [
 
 // Professional Chat State Indicator Component
 const ChatStateIndicator = ({ chatState, stateMessage, isDark }) => {
+  const [dynamicMessage, setDynamicMessage] = useState(stateMessage);
+
+  // Logic to make it feel "Alive" by cycling sub-tasks
+  useEffect(() => {
+    let interval;
+    if (chatState === CHAT_STATES.ANALYZING || chatState === CHAT_STATES.RESEARCHING || chatState === CHAT_STATES.CONNECTING) {
+      const subTasks = {
+        [CHAT_STATES.CONNECTING]: ['Securing encrypted channel...', 'Handshaking with legal core...', 'Initializing neural link...'],
+        [CHAT_STATES.ANALYZING]: ['Parsing legal entities...', 'Identifying relevant statutes...', 'Structural analysis of query...'],
+        [CHAT_STATES.RESEARCHING]: ['Searching Case Law database...', 'Consulting ICP & CRPC...', 'Cross-referencing precedents...'],
+      };
+
+      const currentTasks = subTasks[chatState] || [];
+      if (currentTasks.length > 0) {
+        let i = 0;
+        setDynamicMessage(currentTasks[0]);
+        interval = setInterval(() => {
+          i = (i + 1) % currentTasks.length;
+          setDynamicMessage(currentTasks[i]);
+        }, 2500);
+      }
+    } else {
+      setDynamicMessage(stateMessage);
+    }
+    return () => clearInterval(interval);
+  }, [chatState, stateMessage]);
+
   const getStateIcon = () => {
     switch (chatState) {
-      case CHAT_STATES.CONNECTING:
-        return <Loader2 size={14} className="animate-spin" />;
-      case CHAT_STATES.ANALYZING:
-        return <Brain size={14} className="animate-pulse" />;
-      case CHAT_STATES.RESEARCHING:
-        return <BookOpen size={14} className="animate-pulse" />;
-      case CHAT_STATES.DRAFTING:
-        return <PenTool size={14} className="animate-pulse" />;
-      case CHAT_STATES.STREAMING:
-        return <Zap size={14} className="animate-pulse" />;
-      case CHAT_STATES.COMPLETE:
-        return <CheckCircle size={14} />;
-      case CHAT_STATES.ERROR:
-        return <X size={14} />;
-      default:
-        return null;
+      case CHAT_STATES.CONNECTING: return <Loader2 size={14} className="animate-spin text-blue-500" />;
+      case CHAT_STATES.ANALYZING: return <Brain size={14} className="animate-pulse text-purple-500" />;
+      case CHAT_STATES.RESEARCHING: return <BookOpen size={14} className="animate-pulse text-emerald-500" />;
+      case CHAT_STATES.DRAFTING: return <PenTool size={14} className="animate-pulse text-amber-500" />;
+      case CHAT_STATES.STREAMING: return <Zap size={14} className="animate-pulse text-indigo-500" />;
+      case CHAT_STATES.COMPLETE: return <CheckCircle size={14} className="text-green-500" />;
+      case CHAT_STATES.ERROR: return <X size={14} className="text-red-500" />;
+      default: return null;
     }
   };
 
   const getStateColor = () => {
     switch (chatState) {
-      case CHAT_STATES.CONNECTING:
-        return isDark ? 'text-blue-400 bg-blue-500/10 border-blue-500/30' : 'text-blue-600 bg-blue-50 border-blue-200';
-      case CHAT_STATES.ANALYZING:
-        return isDark ? 'text-purple-400 bg-purple-500/10 border-purple-500/30' : 'text-purple-600 bg-purple-50 border-purple-200';
-      case CHAT_STATES.RESEARCHING:
-        return isDark ? 'text-amber-400 bg-amber-500/10 border-amber-500/30' : 'text-amber-600 bg-amber-50 border-amber-200';
-      case CHAT_STATES.DRAFTING:
-        return isDark ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' : 'text-emerald-600 bg-emerald-50 border-emerald-200';
-      case CHAT_STATES.STREAMING:
-        return isDark ? 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30' : 'text-cyan-600 bg-cyan-50 border-cyan-200';
       case CHAT_STATES.COMPLETE:
-        return isDark ? 'text-green-400 bg-green-500/10 border-green-500/30' : 'text-green-600 bg-green-50 border-green-200';
+        return isDark ? 'text-green-400 bg-green-500/5 border-green-500/20' : 'text-green-600 bg-green-50 border-green-200';
       case CHAT_STATES.ERROR:
-        return isDark ? 'text-red-400 bg-red-500/10 border-red-500/30' : 'text-red-600 bg-red-50 border-red-200';
+        return isDark ? 'text-red-400 bg-red-500/5 border-red-500/20' : 'text-red-600 bg-red-50 border-red-200';
       default:
-        return isDark ? 'text-gray-400 bg-gray-500/10 border-gray-500/30' : 'text-gray-600 bg-gray-50 border-gray-200';
+        return isDark ? 'bg-white/5 border-white/10 text-gray-300' : 'bg-slate-50 border-slate-200 text-slate-600';
     }
   };
 
-  if (chatState === CHAT_STATES.IDLE) return null;
+  if (chatState === CHAT_STATES.IDLE || chatState === CHAT_STATES.STREAMING) return null;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+      initial={{ opacity: 0, y: 10, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -10, scale: 0.95 }}
-      transition={{ duration: 0.2, type: 'spring', stiffness: 200 }}
-      className="flex justify-start mb-3"
+      exit={{ opacity: 0, y: -10 }}
+      className="flex justify-start mb-4"
     >
-      <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border backdrop-blur-sm ${getStateColor()}`}>
+      <div className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl text-[11.5px] font-bold tracking-tight border shadow-sm backdrop-blur-md transition-all duration-500 ${getStateColor()}`}>
         <div className="flex items-center justify-center">
           {getStateIcon()}
         </div>
-        <span>{stateMessage}</span>
-        <div className="flex gap-0.5">
-          <motion.div
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 1.2, repeat: Infinity, delay: 0 }}
-            className="w-1 h-1 rounded-full bg-current"
-          />
-          <motion.div
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 1.2, repeat: Infinity, delay: 0.2 }}
-            className="w-1 h-1 rounded-full bg-current"
-          />
-          <motion.div
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 1.2, repeat: Infinity, delay: 0.4 }}
-            className="w-1 h-1 rounded-full bg-current"
-          />
+        <span className="opacity-90">{dynamicMessage}</span>
+        <div className="flex gap-0.5 ml-1">
+          {[0, 1, 2].map(d => (
+            <motion.div
+              key={d}
+              animate={{ opacity: [0.2, 1, 0.2] }}
+              transition={{ duration: 1.5, repeat: Infinity, delay: d * 0.2 }}
+              className="w-1 h-1 rounded-full bg-current"
+            />
+          ))}
         </div>
       </div>
     </motion.div>
@@ -640,6 +913,8 @@ const Hero = () => {
   const dispatch = useDispatch();
   const isDark = mode === 'dark';
   const { isAuthenticated } = useAuth();
+  const { sessionId: routeSessionId } = useParams();
+  const navigate = useNavigate();
 
   const [query, setQuery] = useState('');
   const [messages, setMessages] = useState([]);
@@ -657,6 +932,40 @@ const Hero = () => {
   const [sessionId, setSessionId] = useState(null);
   const [chatState, setChatState] = useState(CHAT_STATES.IDLE);
   const [stateMessage, setStateMessage] = useState('');
+
+  // Load session from URL
+  useEffect(() => {
+    const loadSession = async () => {
+      if (routeSessionId) {
+        setSessionId(routeSessionId);
+        setIsLoading(true);
+        try {
+          const response = await chatbotAPI.getSession(routeSessionId);
+          if (response && response.success) {
+            const formattedMessages = response.data.messages.map(msg => ({
+              id: msg.id.toString(),
+              role: msg.sender === 'bot' ? 'assistant' : msg.sender,
+              content: msg.message,
+              thought: msg.metadata?.thought,
+              modelId: selectedModal // or from metadata if saved
+            }));
+            setMessages(formattedMessages);
+          }
+        } catch (error) {
+          console.error("Error loading session:", error);
+          // Optional: navigate to new chat on error
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        // Reset for new chat
+        setSessionId(null);
+        setMessages([]);
+        setChatState(CHAT_STATES.IDLE);
+      }
+    };
+    loadSession();
+  }, [routeSessionId, selectedModal]); // Reload when ID changes
 
   // Map UI model selection to API model names
   const getApiModelName = useCallback((uiModel) => {
@@ -836,7 +1145,13 @@ const Hero = () => {
     }
 
     // Capture current state for the message history
-    const userMessage = { role: 'user', content: userQuery || "Uploaded files" };
+    const messageId = Date.now().toString();
+    const userMessage = {
+      id: messageId,
+      role: 'user',
+      content: userQuery || "Uploaded files",
+      modelId: selectedModal // Persist the agent who received this message
+    };
     setMessages(prev => [...prev, userMessage]);
 
     // Cleanup inputs for next interaction
@@ -846,7 +1161,6 @@ const Hero = () => {
 
     /**
      * Point 1: Agent Restriction check.
-     * Only 'BAKILAT 1.0' (legal_counsel) is available for production duties currently.
      */
     if (selectedModal !== 'legal_counsel') {
       setIsLoading(true);
@@ -854,6 +1168,7 @@ const Hero = () => {
 
       setTimeout(() => {
         const warningMessage = {
+          id: Date.now().toString(),
           role: 'assistant',
           content: `The **${modalOptions.find(o => o.id === selectedModal)?.label}** agent is currently in **tuning & training mode** for advanced legal datasets.\n\nFor the best experience with everyday legal tasks and research, please use our flagship **BAKILAT 1.0** agent which is fully optimized and available for production.`
         };
@@ -870,44 +1185,112 @@ const Hero = () => {
 
     try {
       const apiModel = getApiModelName(selectedModal);
-
-      // Point: Fresh Session Handling
-      // If this is the very first message in a chat, force create a brand new session
       let activeSessionId = sessionId;
-      if (messages.length === 0) {
-        const newSession = chatbotService.createNewSession(apiModel);
-        activeSessionId = newSession.id;
-        setSessionId(activeSessionId);
-        console.log('[ChatbotAPI] Starting a fresh chat - forced new session:', activeSessionId);
+
+      if (messages.length === 0 && !sessionId) {
+        // Create new session in Backend
+        try {
+          const newSession = await chatbotAPI.createSession(userQuery.substring(0, 50));
+          if (newSession && newSession.success) {
+            activeSessionId = newSession.data.id;
+            setSessionId(activeSessionId);
+            // Update URL without reloading
+            navigate(`/chatbot/${activeSessionId}`, { replace: true });
+            dispatch(fetchChatSessions()); // Refresh sidebar
+          }
+        } catch (e) {
+          console.error("Failed to create backend session", e);
+          // Fallback to local ID?
+          activeSessionId = Date.now().toString();
+          setSessionId(activeSessionId);
+        }
       }
 
-      // Point 5: Re-request logic is handled inside the chatbotService with smart retries
+      // Save User Message to Backend
+      if (activeSessionId) {
+        chatbotAPI.addEvent(activeSessionId, {
+          sender: 'user',
+          message: userQuery,
+          event_type: 'message'
+        }).catch(e => console.error("Failed to save user message", e));
+      }
+
+      // Create a dedicated ID for the bot's message to update it in real-time
+      const botMessageId = 'bot-' + Date.now().toString();
+
+      // Add empty assistant message that will be populated by chunks
+      setMessages(prev => [...prev, {
+        id: botMessageId,
+        role: 'assistant',
+        content: '',
+        isRealTime: true,
+        modelId: selectedModal // Persist original responding agent
+      }]);
+
       const result = await chatbotService.sendMessage(
         userQuery,
         apiModel,
         handleStateChange,
-        activeSessionId
+        activeSessionId,
+        (chunk) => {
+          // Handle structured chunk (text vs thought)
+          setMessages(prev => prev.map(msg => {
+            if (msg.id !== botMessageId) return msg;
+
+            if (chunk.type === 'thought') {
+              return { ...msg, thought: (msg.thought || '') + chunk.content };
+            }
+
+            // --- Aggressive prefix stripping during streaming ---
+            let newContent = msg.content + chunk.content;
+            const techPatterns = /^(Analyzing query\.{0,3}|greeting|cache_hit|routing|thinking)\s*/i;
+
+            // If the message is very short and matches a technical pattern, we treat it as meta
+            if (newContent.length < 50 && techPatterns.test(newContent)) {
+              // We keep it as thought but hide from main content
+              return { ...msg, thought: (msg.thought || '') + chunk.content };
+            }
+
+            return { ...msg, content: newContent };
+          }));
+
+          // Force auto-scroll to bottom as chunks arrive
+          const container = document.getElementById('chat-scroll-container');
+          if (container) {
+            container.scrollTo({ top: container.scrollHeight, behavior: 'auto' });
+          }
+        }
       );
-
-
-
       if (result.sessionId && result.sessionId !== sessionId) {
         setSessionId(result.sessionId);
       }
 
-      if (result.success) {
-        const botResponse = {
-          role: 'assistant',
-          content: result.response
-        };
-        setMessages(prev => [...prev, botResponse]);
-        setChatState(CHAT_STATES.COMPLETE);
+      if (!result.success) {
+        // Replace with error message if failed
+        setMessages(prev => prev.map(msg =>
+          msg.id === botMessageId
+            ? { ...msg, content: `__System Alert:__ ${result.response}`, isRealTime: false }
+            : msg
+        ));
       } else {
-        const errorBubble = {
-          role: 'assistant',
-          content: `__System Alert:__ ${result.response}`
-        };
-        setMessages(prev => [...prev, errorBubble]);
+        // Mark as no longer streaming
+        setMessages(prev => prev.map(msg =>
+          msg.id === botMessageId
+            ? { ...msg, isRealTime: false }
+            : msg
+        ));
+
+        // Save Bot Response to Backend
+        if (activeSessionId) {
+          chatbotAPI.addEvent(activeSessionId, {
+            sender: 'bot',
+            message: result.response,
+            event_type: 'message',
+            metadata: { thought: messages.find(m => m.id === botMessageId)?.thought }
+          }).then(() => {
+            dispatch(fetchChatSessions()); // Refresh sidebar to show updated time/preview?
+          }).catch(e => console.error("Failed to save bot message", e));
+        }
       }
     } catch (error) {
       handleStateChange(CHAT_STATES.ERROR, 'An unexpected error occurred. Please try again.');
@@ -959,7 +1342,8 @@ const Hero = () => {
       chatbotService.clearCurrentSession(sessionId);
     }
     const newSession = chatbotService.createNewSession(getApiModelName(selectedModal));
-    setSessionId(newSession.id);
+    // setSessionId(newSession.id); // Don't set ID here, let url handle it or next message
+    navigate('/chatbot'); // Return to new chat URL
   };
 
   const handleToggleStar = (chatId) => {
@@ -1040,7 +1424,7 @@ const Hero = () => {
               touchAction: 'pan-y'
             }}
           >
-            <div className="max-w-3xl mx-auto w-full pb-32">
+            <div className={`max-w-3xl mx-auto w-full pb-32 pt-20 sm:pt-24`}>
               {messages.length === 0 ? (
                 <div className="absolute inset-0 flex items-center justify-center p-4 pointer-events-none mt-20">
                   <motion.div
@@ -1087,11 +1471,14 @@ const Hero = () => {
                 <div className="space-y-6">
                   {messages.map((msg, idx) => (
                     <MessageBubble
-                      key={idx}
+                      key={msg.id || idx}
                       message={msg.content}
+                      thought={msg.thought}
                       isDark={isDark}
                       isUser={msg.role === 'user'}
-                      isStreaming={isLoading && idx === messages.length - 1 && msg.role === 'assistant'}
+                      isStreaming={msg.isRealTime}
+                      chatState={stateMessage}
+                      modelId={msg.modelId || selectedModal}
                     />
                   ))}
 
@@ -1383,7 +1770,7 @@ const Hero = () => {
             </motion.div>
           </motion.div>
         </main>
-      </div >
+      </div>
 
       <VoiceModal
         isOpen={showVoiceModal}
@@ -1392,7 +1779,7 @@ const Hero = () => {
         setIsVoiceActive={setIsVoiceActive}
         onVoiceResult={handleVoiceResult}
       />
-    </div >
+    </div>
   );
 };
 

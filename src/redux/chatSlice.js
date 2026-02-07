@@ -1,7 +1,25 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { chatbotAPI } from '../api/apiService';
+
+export const fetchChatSessions = createAsyncThunk(
+    'chat/fetchSessions',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await chatbotAPI.getSessions();
+            if (response && response.success) {
+                return response.data;
+            }
+            return [];
+        } catch (error) {
+            return rejectWithValue(error.toString());
+        }
+    }
+);
 
 const initialState = {
-    chatHistory: JSON.parse(localStorage.getItem('chatHistory') || '[]'),
+    chatHistory: [],
+    loading: false,
+    error: null,
 };
 
 export const chatSlice = createSlice({
@@ -10,24 +28,42 @@ export const chatSlice = createSlice({
     reducers: {
         setChatHistory: (state, action) => {
             state.chatHistory = action.payload;
-            localStorage.setItem('chatHistory', JSON.stringify(state.chatHistory));
         },
         addChat: (state, action) => {
             state.chatHistory = [action.payload, ...state.chatHistory];
-            localStorage.setItem('chatHistory', JSON.stringify(state.chatHistory));
         },
         updateChat: (state, action) => {
             const { id, updates } = action.payload;
             const index = state.chatHistory.findIndex(chat => chat.id === id);
             if (index !== -1) {
                 state.chatHistory[index] = { ...state.chatHistory[index], ...updates };
-                localStorage.setItem('chatHistory', JSON.stringify(state.chatHistory));
             }
         },
         deleteChat: (state, action) => {
             state.chatHistory = state.chatHistory.filter(chat => chat.id !== action.payload);
-            localStorage.setItem('chatHistory', JSON.stringify(state.chatHistory));
         },
+    },
+    extraReducers: (builder) => {
+        builder
+            .addCase(fetchChatSessions.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchChatSessions.fulfilled, (state, action) => {
+                state.loading = false;
+                // Map API response to Sidebar format
+                state.chatHistory = action.payload.map(session => ({
+                    id: session.id,
+                    title: session.title || 'New Chat',
+                    preview: session.status === 'active' ? 'Active Conversation' : 'Archived',
+                    time: session.last_message_at || 'Just now',
+                    count: session.events_count || 0
+                }));
+            })
+            .addCase(fetchChatSessions.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            });
     },
 });
 

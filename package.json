@@ -2,7 +2,7 @@
   "name": "bakil_react",
   "version": "0.1.0",
   "private": true,
-  "proxy": "https://9v9r3mivw8.ap-south-1.awsapprunner.com",
+  "proxy": "http://bakilapp-alb-59756411.ap-south-1.elb.amazonaws.com",
   "dependencies": {
     "@react-leaflet/core": "^3.0.0",
     "@react-oauth/google": "^0.12.2",

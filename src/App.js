@@ -35,6 +35,8 @@ import UserOnboarding from './components/UserOnboarding';
 import LandingPage from './components/LandingPage';
 import Pricing from './components/Pricing';
 
+import { fetchChatSessions } from './redux/chatSlice';
+
 // Home Route component
 const HomeRoute = () => {
   return <LandingPage />;
@@ -43,10 +45,18 @@ const HomeRoute = () => {
 // Layout wrapper to conditionally render Navbar and Footer
 const AppLayout = ({ children }) => {
   const location = useLocation();
+  const dispatch = useDispatch(); // Get dispatch
   const isLawyerAdmin = location.pathname.startsWith('/lawyer-admin');
   const isLandingPage = location.pathname === '/' || location.pathname === '/pricing' || location.pathname === '/contact';
   const isChatbotPage = location.pathname === '/chatbot';
   const { chatHistory } = useSelector((state) => state.chat);
+
+  // Fetch chat sessions when layout mounts (or when user logs in theoretically)
+  useEffect(() => {
+    if (!isLawyerAdmin && !isLandingPage) {
+      dispatch(fetchChatSessions());
+    }
+  }, [dispatch, isLawyerAdmin, isLandingPage]);
 
   // Manage chatbot-mode class on body for fixed height stability on mobile
   useEffect(() => {
@@ -121,6 +131,7 @@ const App = () => {
 
                     {/* AI Chatbot Route */}
                     <Route path="/chatbot" element={<Hero />} />
+                    <Route path="/chatbot/:sessionId" element={<Hero />} />
 
                     {/* Public Routes */}
                     <Route path="/contact" element={<Contact />} />
