@@ -13,6 +13,7 @@ const VerifyLawyer = () => {
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
+    const [loadingText, setLoadingText] = useState('Connecting to Bar Council...');
 
     const states = [
         'Uttar Pradesh',
@@ -20,7 +21,26 @@ const VerifyLawyer = () => {
         'Andhra Pradesh',
         'Rajasthan'
     ];
-
+    // Dynamic loading messages
+    React.useEffect(() => {
+        let interval;
+        if (loading) {
+            const messages = [
+                'Connecting to Bar Council...',
+                'Searching official records...',
+                'Verifying credentials...',
+                'This is taking a bit longer...',
+                'Still trying to fetch data...'
+            ];
+            let i = 0;
+            setLoadingText(messages[0]);
+            interval = setInterval(() => {
+                i = (i + 1) % messages.length;
+                setLoadingText(messages[i]);
+            }, 2000);
+        }
+        return () => clearInterval(interval);
+    }, [loading]);
     // Helper functions for masking PII
     const maskName = (name) => {
         if (!name) return '';
@@ -78,7 +98,21 @@ const VerifyLawyer = () => {
             const data = await verificationService.verifyLawyer(enrollmentNumber, state);
             setResult(data);
         } catch (err) {
-            setError(err.message || 'Failed to verify lawyer details. Please check the enrollment number and try again.');
+            console.error("Verification Error:", err);
+            let userMessage = 'Failed to verify lawyer details. Please check the enrollment number and try again.';
+
+            // Sanitize technical errors
+            if (err.message && (
+                err.message.includes('Page.click') ||
+                err.message.includes('Target page') ||
+                err.message.includes('browser has been closed') ||
+                err.message.includes('Timeout')
+            )) {
+                userMessage = 'Verification Failed: The lawyer may not be registered with the State Bar Council, or the council\'s server is temporarily unavailable.';
+            } else {
+                userMessage = err.message || userMessage;
+            }
+            setError(userMessage);
         } finally {
             setLoading(false);
         }
@@ -168,8 +202,8 @@ const VerifyLawyer = () => {
                                 className="mt-6"
                             >
                                 <div className="flex justify-between items-center mb-2 text-sm text-verified-600 font-medium">
-                                    <span>Connecting to Bar Council...</span>
-                                    <span className="animate-pulse">Checking records...</span>
+                                    <span>{loadingText}</span>
+                                    <span className="animate-pulse">Please wait...</span>
                                 </div>
                                 <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                     <motion.div
