@@ -8,75 +8,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import { authAPI, tokenManager } from '../api/apiService';
+import { useToast } from '../context/ToastContext';
 
 // Configure axios defaults
 axios.defaults.withCredentials = true;
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
 
-// Toast notification component positioned at the right side
-const Toast = ({ message, type, onClose }) => {
-  const [isVisible, setIsVisible] = useState(true);
 
-  // Get theme from Redux
-  const { mode } = useSelector((state) => state.theme);
-  const isDarkMode = mode === 'dark';
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(false);
-      setTimeout(onClose, 300); // Allow time for fade out animation
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  const getToastStyles = () => {
-    if (isDarkMode) {
-      return type === 'success'
-        ? 'bg-green-900 text-green-100 border-l-4 border-green-500'
-        : 'bg-red-900 text-red-100 border-l-4 border-red-500';
-    } else {
-      return type === 'success'
-        ? 'bg-green-50 text-green-800 border-l-4 border-green-500'
-        : 'bg-red-50 text-red-800 border-l-4 border-red-500';
-    }
-  };
-
-  return (
-    <div
-      className={`fixed top-16 right-4 flex items-center p-4 rounded-lg shadow-lg transition-all duration-300 z-50 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
-        } ${getToastStyles()}`}
-      role="alert"
-      style={{ maxWidth: '90%', width: '400px' }}
-    >
-      <div className="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 mr-3 rounded-lg">
-        {type === 'success' ? (
-          <CheckCircle className="w-5 h-5 text-green-500" />
-        ) : (
-          <AlertCircle className="w-5 h-5 text-red-500" />
-        )}
-      </div>
-      <div className="ml-3 text-sm font-medium">{message}</div>
-      <button
-        type="button"
-        onClick={() => {
-          setIsVisible(false);
-          setTimeout(onClose, 300);
-        }}
-        className={`ml-auto -mx-1.5 -my-1.5 ${isDarkMode
-          ? 'bg-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-700'
-          : 'bg-white text-gray-400 hover:text-gray-900 hover:bg-gray-100'
-          } rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 inline-flex items-center justify-center h-8 w-8`}
-      >
-        <span className="sr-only">Close</span>
-        <svg className="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
-        </svg>
-      </button>
-    </div>
-  );
-};
 
 // Premium Legal strip component with black/silver/blue accents
 const LegalStrip = () => {
@@ -565,7 +504,7 @@ export const Signup = ({ onSignupSuccess }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
-  const [toast, setToast] = useState(null);
+  const { showSuccess, showError, showInfo, showWarning } = useToast();
 
   // Lawyer-specific fields
   const [enrollmentNo, setEnrollmentNo] = useState('');
@@ -583,16 +522,11 @@ export const Signup = ({ onSignupSuccess }) => {
     }
   }, [accountType]);
 
-  if (tokenManager.isAuthenticated()) {
-    window.location.href = '/';
-  }
-
-  // Show toast notification
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-    // Auto dismiss toast after 5 seconds
-    setTimeout(() => setToast(null), 5000);
-  };
+  useEffect(() => {
+    if (tokenManager.isAuthenticated()) {
+      window.location.href = '/';
+    }
+  }, []);
 
   // Email validation helper
   const isValidEmail = (email) => {
@@ -615,19 +549,19 @@ export const Signup = ({ onSignupSuccess }) => {
 
     // Validation for step 1
     if (!email || password.length < 8 || !agreeTerms) {
-      showToast('Please fill in all required fields and agree to the terms', 'error');
+      showError('Please fill in all required fields and agree to the terms');
       return;
     }
 
     // Email format validation
     if (!isValidEmail(email)) {
-      showToast('Please enter a valid email address', 'error');
+      showError('Please enter a valid email address');
       return;
     }
 
     // Password strength validation - All 4 requirements must be met
     if (getPasswordStrength(password) < 4) {
-      showToast('Password must contain 8+ characters, uppercase, number, and special character', 'error');
+      showError('Password must contain 8+ characters, uppercase, number, and special character');
       return;
     }
 
@@ -646,24 +580,24 @@ export const Signup = ({ onSignupSuccess }) => {
 
     // Final validation for step 2
     if (!firstName.trim() || !lastName.trim() || !passwordsMatch || password !== confirmPassword) {
-      showToast('Please fill in all required fields correctly', 'error');
+      showError('Please fill in all required fields correctly');
       return;
     }
 
     // Additional validation for lawyer account type
     if (accountType === 'business') {
       if (!enrollmentNo.trim()) {
-        showToast('Please enter your Enrollment Number', 'error');
+        showError('Please enter your Enrollment Number');
         return;
       }
 
       if (!enrollmentCertificate) {
-        showToast('Please upload your Certificate of Enrollment', 'error');
+        showError('Please upload your Certificate of Enrollment');
         return;
       }
 
       if (!copCertificate) {
-        showToast('Please upload your Certificate of Practice (CoP)', 'error');
+        showError('Please upload your Certificate of Practice (CoP)');
         return;
       }
     }
@@ -771,19 +705,42 @@ export const Signup = ({ onSignupSuccess }) => {
           tokenManager.setUser(response.data.user);
         }
 
-        showToast('Registration successful! Welcome to MeraBakil!', 'success');
+        // Dispatch event to notify other components of authentication change
+        window.dispatchEvent(new CustomEvent('auth-status-changed', {
+          detail: { authenticated: true, user: response.data.user }
+        }));
+
+        showSuccess('Registration successful! Welcome to MeraBakil!');
 
         // Conditional redirect based on user_type
         setTimeout(() => {
-          const userType = response?.data?.user?.user_type;
+          const user = response?.data?.user;
+          const userType = user?.user_type;
+          const role = user?.role?.toLowerCase();
 
-          if (userType === 1 || userType === 'personal') {
-            // Normal user – stay on current route or go to homepage
-            window.location.href = '/';
+          // If a redirect URL is explicitly provided in query string, use that
+          const urlRedirectParam = new URLSearchParams(window.location.search).get('redirect');
+
+          let redirectUrl = '/';
+
+          if (urlRedirectParam) {
+            redirectUrl = urlRedirectParam;
+          } else if (userType === 2 || userType === 'business' || userType === 'lawyer' || role === 'lawyer') {
+            // Lawyer / Business account - redirect to Lawyer Admin Dashboard
+            redirectUrl = '/lawyer-admin';
+          } else if (userType === 1 || userType === 'personal' || userType === 'user' || role === 'user' || role === 'client') {
+            // Normal user / Client - redirect to homepage
+            redirectUrl = '/';
+          } else if (userType === null || userType === undefined || userType === 0) {
+            // User has no user_type set (null, undefined, or 0), redirect to profile type selection
+            redirectUrl = '/profile-setup/type-selection';
           } else {
-            // Lawyer or other admin-type – redirect to Lawyer Admin Dashboard
-            window.location.href = '/lawyer-admin';
+            // Default fallback
+            redirectUrl = '/';
           }
+
+          console.log(`Signup - Redirecting user (type: ${userType}, role: ${role}) to: ${redirectUrl}`);
+          window.location.href = redirectUrl;
         }, 2000);
 
 
@@ -794,7 +751,7 @@ export const Signup = ({ onSignupSuccess }) => {
           }, 1500);
         }
       } else {
-        showToast('Registration completed but authentication failed. Please try logging in.', 'warning');
+        showWarning('Registration completed but authentication failed. Please try logging in.');
         setTimeout(() => {
           window.location.href = '/auth';
         }, 2000);
@@ -811,31 +768,31 @@ export const Signup = ({ onSignupSuccess }) => {
           // Get the first error message
           const firstErrorField = Object.keys(validationErrors)[0];
           const firstErrorMessage = validationErrors[firstErrorField][0];
-          showToast(firstErrorMessage || 'Please check your input and try again', 'error');
+          showError(firstErrorMessage || 'Please check your input and try again');
           console.log('Validation errors:', validationErrors);
         } else {
-          showToast('Please check your input and try again', 'error');
+          showError('Please check your input and try again');
         }
       } else if (error.response?.status === 409) {
         // Conflict - email already exists
-        showToast('This email is already registered. Please use a different email or try logging in.', 'error');
+        showError('This email is already registered. Please use a different email or try logging in.');
       } else if (error.response?.status === 429) {
         // Too many requests
-        showToast('Too many registration attempts. Please try again later.', 'error');
+        showError('Too many registration attempts. Please try again later.');
       } else if (error.response?.data?.message) {
         // Other API errors with message
-        showToast(error.response.data.message, 'error');
+        showError(error.response.data.message);
         console.log('API error message:', error.response.data);
       } else if (error.message === 'Network error. Please check your connection.') {
         // Network error handled by interceptor
-        showToast('Network error. Please check your internet connection and try again.', 'error');
+        showError('Network error. Please check your internet connection and try again.');
       } else if (error.message && error.message.includes('Assignment to constant variable')) {
         // Handle the specific error we were fixing
-        showToast('There was an issue with the form submission. Please try again.', 'error');
+        showError('There was an issue with the form submission. Please try again.');
         console.error('Assignment to constant variable error:', error);
       } else {
         // Generic error
-        showToast('Registration failed. Please try again later.', 'error');
+        showError('Registration failed. Please try again later.');
         console.error('Unhandled error during registration:', error);
       }
     } finally {
@@ -848,12 +805,12 @@ export const Signup = ({ onSignupSuccess }) => {
     if (loading) return;
 
     if (error) {
-      showToast(error.error || 'Social signup failed', 'error');
+      showError(error.error || 'Social signup failed');
       return;
     }
 
     if (provider !== 'google') {
-      showToast(`${provider.charAt(0).toUpperCase() + provider.slice(1)} signup coming soon!`, 'info');
+      showInfo(`${provider.charAt(0).toUpperCase() + provider.slice(1)} signup coming soon!`);
     }
     // Google signup is handled by onGoogleSignup function
   };
@@ -865,24 +822,29 @@ export const Signup = ({ onSignupSuccess }) => {
     setLoading(true);
 
     try {
-      showToast('Signing up with Google...', 'info');
+      showInfo('Creating your account...');
 
       // Call the Google login API (which can also handle signup)
       const response = await authAPI.googleLogin(googleToken);
 
       console.log('Google signup successful:', response.data);
 
-      if (response.data.access_token) {
+      if (response.data.data && (response.data.data.token || response.data.data.access_token)) {
         // Store authentication data
-        tokenManager.setToken(response.data.access_token);
+        const token = response.data.data.token || response.data.data.access_token;
+        tokenManager.setToken(token);
 
-        if (response.data.user) {
-          tokenManager.setUser(response.data.user);
+        if (response.data.data.user) {
+          tokenManager.setUser(response.data.data.user);
         }
 
-        showToast(
-          `Welcome${response.data.user?.name ? `, ${response.data.user.name}` : ''}! Registration successful!`,
-          'success'
+        // Dispatch event to notify other components of authentication change
+        window.dispatchEvent(new CustomEvent('auth-status-changed', {
+          detail: { authenticated: true, user: response.data.data.user }
+        }));
+
+        showSuccess(
+          `Welcome${response.data.data.user?.name ? `, ${response.data.data.user.name}` : ''}! Registration successful!`
         );
 
         // Call parent callback if provided
@@ -892,19 +854,37 @@ export const Signup = ({ onSignupSuccess }) => {
 
         // Redirect after showing success message
         setTimeout(() => {
-          const userType = response?.data?.user?.user_type;
+          const user = response?.data?.data?.user;
+          const userType = user?.user_type;
+          const role = user?.role?.toLowerCase();
 
-          if (userType === 1 || userType === 'personal') {
-            // Normal user – stay on current route or go to homepage
-            window.location.href = '/';
+          // If a redirect URL is explicitly provided in query string, use that
+          const urlRedirectParam = new URLSearchParams(window.location.search).get('redirect');
+
+          let redirectUrl = '/';
+
+          if (urlRedirectParam) {
+            redirectUrl = urlRedirectParam;
+          } else if (userType === 2 || userType === 'business' || userType === 'lawyer' || role === 'lawyer') {
+            // Lawyer / Business account - redirect to Lawyer Admin Dashboard
+            redirectUrl = '/lawyer-admin';
+          } else if (userType === 1 || userType === 'personal' || userType === 'user' || role === 'user' || role === 'client') {
+            // Normal user / Client - redirect to homepage
+            redirectUrl = '/';
+          } else if (userType === null || userType === undefined || userType === 0) {
+            // User has no user_type set (null, undefined, or 0), redirect to profile type selection
+            redirectUrl = '/profile-setup/type-selection';
           } else {
-            // Lawyer or other admin-type – redirect to Lawyer Admin Dashboard
-            window.location.href = '/lawyer-admin';
+            // Default fallback
+            redirectUrl = '/';
           }
+
+          console.log(`Google Signup - Redirecting user (type: ${userType}, role: ${role}) to: ${redirectUrl}`);
+          window.location.href = redirectUrl;
         }, 1500);
 
       } else {
-        showToast('Google signup completed but authentication token was not received. Please try again.', 'warning');
+        showWarning('Google signup completed but authentication token was not received. Please try again.');
       }
 
     } catch (error) {
@@ -916,16 +896,16 @@ export const Signup = ({ onSignupSuccess }) => {
         if (validationErrors) {
           const firstErrorField = Object.keys(validationErrors)[0];
           const firstErrorMessage = validationErrors[firstErrorField][0];
-          showToast(firstErrorMessage || 'Please check your input and try again', 'error');
+          showError(firstErrorMessage || 'Please check your input and try again');
         } else {
-          showToast('Please check your input and try again', 'error');
+          showError('Please check your input and try again');
         }
       } else if (error.response?.status === 409) {
-        showToast('This Google account is already registered. Please try logging in instead.', 'error');
+        showError('This Google account is already registered. Please try logging in instead.');
       } else if (error.response?.data?.message) {
-        showToast(error.response.data.message, 'error');
+        showError(error.response.data.message);
       } else {
-        showToast('Google signup failed. Please try again later.', 'error');
+        showError('Google signup failed. Please try again later.');
       }
     } finally {
       setLoading(false);
@@ -939,13 +919,7 @@ export const Signup = ({ onSignupSuccess }) => {
   return (
     <div className={`relative flex flex-col pt-20 pb-12 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-gray-50/30'}`}>
       <AnimatePresence mode="wait">
-        {toast && (
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast(null)}
-          />
-        )}
+        {/* Toast rendered globally by ToastProvider, referencing locally not needed */}
       </AnimatePresence>
 
       {/* Premium Animated Background Layer */}

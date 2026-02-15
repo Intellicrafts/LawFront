@@ -4,100 +4,7 @@ import { Mail, Lock, Eye, EyeOff, Scale, Check, AlertCircle, CheckCircle, Smartp
 import { useGoogleLogin } from '@react-oauth/google';
 import { authAPI, tokenManager } from '../api/apiService';
 import { motion, AnimatePresence } from 'framer-motion';
-
-// Enhanced Toast notification component with different types
-const Toast = ({ message, type = 'success', onClose }) => {
-  const [isVisible, setIsVisible] = useState(true);
-
-  // Get theme from Redux
-  const { mode } = useSelector((state) => state.theme);
-  const isDarkMode = mode === 'dark';
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(false);
-      setTimeout(onClose, 300);
-    }, type === 'error' ? 7000 : 5000); // Show error messages longer
-    return () => clearTimeout(timer);
-  }, [onClose, type]);
-
-  const getToastStyles = () => {
-    if (isDarkMode) {
-      switch (type) {
-        case 'success':
-          return 'bg-gradient-to-r from-green-900 to-gray-900 text-green-100 border-l-4 border-green-500';
-        case 'error':
-          return 'bg-gradient-to-r from-red-900 to-gray-900 text-red-100 border-l-4 border-red-500';
-        case 'warning':
-          return 'bg-gradient-to-r from-yellow-900 to-gray-900 text-yellow-100 border-l-4 border-yellow-500';
-        case 'info':
-          return 'bg-gradient-to-r from-blue-900 to-gray-900 text-blue-100 border-l-4 border-blue-500';
-        default:
-          return 'bg-gradient-to-r from-gray-800 to-gray-900 text-gray-100 border-l-4 border-gray-500';
-      }
-    } else {
-      switch (type) {
-        case 'success':
-          return 'bg-gradient-to-r from-green-50 to-white text-green-900 border-l-4 border-green-500';
-        case 'error':
-          return 'bg-gradient-to-r from-red-50 to-white text-red-900 border-l-4 border-red-500';
-        case 'warning':
-          return 'bg-gradient-to-r from-yellow-50 to-white text-yellow-900 border-l-4 border-yellow-500';
-        case 'info':
-          return 'bg-gradient-to-r from-blue-50 to-white text-blue-900 border-l-4 border-blue-500';
-        default:
-          return 'bg-gradient-to-r from-gray-50 to-white text-gray-900 border-l-4 border-gray-500';
-      }
-    }
-  };
-
-  const getIcon = () => {
-    switch (type) {
-      case 'success':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'error':
-        return <AlertCircle className="w-5 h-5 text-red-500" />;
-      case 'warning':
-        return <AlertCircle className="w-5 h-5 text-yellow-500" />;
-      case 'info':
-        return <CheckCircle className="w-5 h-5 text-blue-500" />;
-      default:
-        return <CheckCircle className="w-5 h-5 text-gray-500" />;
-    }
-  };
-
-  return (
-    <div
-      className={`fixed top-16 right-6 max-w-sm w-full z-50 transform transition-all duration-500 ease-in-out 
-        ${isVisible ? 'opacity-100 scale-100 translate-x-0' : 'opacity-0 scale-95 translate-x-5'}
-        ${getToastStyles()}
-        rounded-lg shadow-xl flex items-start p-4 space-x-4`}
-      role="alert"
-      aria-live="assertive"
-    >
-      <div className="flex-shrink-0 mt-0.5">
-        {getIcon()}
-      </div>
-
-      <div className="flex-1 text-sm font-medium leading-relaxed">
-        {message}
-      </div>
-
-      <button
-        onClick={() => {
-          setIsVisible(false);
-          setTimeout(onClose, 300);
-        }}
-        className={`${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-700'} transition duration-200 rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-offset-2 ${isDarkMode ? 'focus:ring-gray-700' : 'focus:ring-gray-300'}`}
-        aria-label="Close notification"
-      >
-        <svg className="w-4 h-4" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-    </div>
-  );
-};
+import { useToast } from '../context/ToastContext';
 
 // Premium Legal strip component with black/silver/blue accents
 const LegalStrip = () => {
@@ -387,7 +294,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     showPassword: false,
     errors: {}
   });
-  const [toast, setToast] = useState(null);
+  const { showSuccess, showError, showInfo, showWarning } = useToast();
 
   useEffect(() => {
     // Check if user is already authenticated
@@ -416,24 +323,23 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     const errors = {};
 
     if (!formData.email.trim()) {
-      errors.email = 'Email is required';
+      errors.email = 'Email address is required to proceed.';
+      showWarning('Email address is required.');
     } else if (!validateEmail(formData.email)) {
-      errors.email = 'Please enter a valid email address';
+      errors.email = 'Please enter a valid professional email address.';
+      showWarning('Invalid email format.');
     }
 
     if (!formData.password) {
-      errors.password = 'Password is required';
-    } else if (!validatePassword(formData.password)) {
-      errors.password = 'Password must contain 8+ characters, uppercase, number, and special character';
+      errors.password = 'Password is required for security.';
+      showWarning('Password is required.');
+    } else if (formData.password.length < 8) {
+      errors.password = 'Password must be at least 8 characters long.';
+      showWarning('Password too short.');
     }
 
     setFormState(prev => ({ ...prev, errors }));
     return Object.keys(errors).length === 0;
-  };
-
-  // Show toast notification
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
   };
 
   // Handle input changes
@@ -500,8 +406,6 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
 
     // Validate form before submission
     if (!validateForm()) {
-      const firstErrorField = Object.keys(formState.errors)[0];
-      showToast(formState.errors[firstErrorField], 'error');
       return;
     }
 
@@ -509,7 +413,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
 
     try {
       // Step 1: Get CSRF cookie for Laravel Sanctum
-      showToast('Initializing secure connection...', 'info');
+      showInfo('Initializing secure connection...');
       await authAPI.getCsrfCookie();
 
       // Step 2: Prepare login credentials
@@ -540,9 +444,8 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
           detail: { authenticated: true, user: response.data.user }
         }));
 
-        showToast(
-          `Welcome back${response.data.user?.name ? `, ${response.data.user.name}` : ''}! Redirecting...`,
-          'success'
+        showSuccess(
+          `Welcome back${response.data.user?.name ? `, ${response.data.user.name}` : ''}! Redirecting...`
         );
 
         // Call parent callback if provided
@@ -552,42 +455,45 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
 
         // Redirect after showing success message
         setTimeout(() => {
-          const userType = response?.data?.user?.user_type;
+          // Determine final redirect destination
+          let redirectUrl = '/';
+
+          const user = response?.data?.user;
+          const userType = user?.user_type;
+          const role = user?.role?.toLowerCase();
 
           // If a redirect URL is explicitly provided in query string, use that
           const urlRedirectParam = new URLSearchParams(window.location.search).get('redirect');
 
-          // Determine final redirect destination
-          let redirectUrl = '/';
-
           if (urlRedirectParam) {
             redirectUrl = urlRedirectParam;
+          } else if (userType === 2 || userType === 'business' || userType === 'lawyer' || role === 'lawyer') {
+            // Lawyer / Business account - redirect to Lawyer Admin Dashboard
+            redirectUrl = '/lawyer-admin';
+          } else if (userType === 1 || userType === 'personal' || userType === 'user' || role === 'user' || role === 'client') {
+            // Normal user / Client - redirect to homepage
+            redirectUrl = '/';
           } else if (userType === null || userType === undefined || userType === 0) {
             // User has no user_type set (null, undefined, or 0), redirect to profile type selection
             redirectUrl = '/profile-setup/type-selection';
-          } else if (userType === 1) {
-            // Regular user, redirect to home
-            redirectUrl = '/';
-          } else if (userType === 2 || userType === 'business') {
-            // Lawyer user, redirect to lawyer admin dashboard
-            redirectUrl = '/lawyer-admin';
           } else {
             // Default fallback
             redirectUrl = '/';
           }
 
+          console.log(`Redirecting user (type: ${userType}, role: ${role}) to: ${redirectUrl}`);
           window.location.href = redirectUrl;
         }, 1500);
 
       } else {
-        showToast('Login completed but authentication token was not received. Please try again.', 'warning');
+        showWarning('Login completed but authentication token was not received. Please try again.');
       }
 
 
     } catch (error) {
       console.error('Login error:', error);
       const errorMessage = parseApiError(error);
-      showToast(errorMessage, 'error');
+      showError(errorMessage);
 
       // Clear password on error for security
       setFormData(prev => ({ ...prev, password: '' }));
@@ -602,12 +508,12 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     if (formState.loading) return;
 
     if (error) {
-      showToast(error.error || 'Social login failed', 'error');
+      showError(error.error || 'Social login failed');
       return;
     }
 
     if (provider !== 'google') {
-      showToast(`${provider.charAt(0).toUpperCase() + provider.slice(1)} login coming soon!`, 'info');
+      showInfo(`${provider.charAt(0).toUpperCase() + provider.slice(1)} login coming soon!`);
     }
     // Google login is handled by onGoogleLogin function
   };
@@ -619,7 +525,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     setFormState(prev => ({ ...prev, loading: true }));
 
     try {
-      showToast('Signing in with Google...', 'info');
+      showInfo('Signing in with Google...');
 
       // Call the Google login API
       const response = await authAPI.googleLogin(googleToken);
@@ -639,9 +545,8 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
           detail: { authenticated: true, user: response.data.data.user }
         }));
 
-        showToast(
-          `Welcome${response.data.data.user?.name ? `, ${response.data.data.user.name}` : ''}! Redirecting...`,
-          'success'
+        showSuccess(
+          `Welcome${response.data.data.user?.name ? `, ${response.data.data.user.name}` : ''}! Redirecting...`
         );
 
         // Call parent callback if provided
@@ -651,41 +556,44 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
 
         // Redirect after showing success message
         setTimeout(() => {
-          const userType = response?.data?.data?.user?.user_type;
+          // Determine final redirect destination
+          let redirectUrl = '/';
+
+          const user = response?.data?.data?.user;
+          const userType = user?.user_type;
+          const role = user?.role?.toLowerCase();
 
           // If a redirect URL is explicitly provided in query string, use that
           const urlRedirectParam = new URLSearchParams(window.location.search).get('redirect');
 
-          // Determine final redirect destination
-          let redirectUrl = '/';
-
           if (urlRedirectParam) {
             redirectUrl = urlRedirectParam;
+          } else if (userType === 2 || userType === 'business' || userType === 'lawyer' || role === 'lawyer') {
+            // Lawyer / Business account - redirect to Lawyer Admin Dashboard
+            redirectUrl = '/lawyer-admin';
+          } else if (userType === 1 || userType === 'personal' || userType === 'user' || role === 'user' || role === 'client') {
+            // Normal user / Client - redirect to homepage
+            redirectUrl = '/';
           } else if (userType === null || userType === undefined || userType === 0) {
             // User has no user_type set (null, undefined, or 0), redirect to profile type selection
             redirectUrl = '/profile-setup/type-selection';
-          } else if (userType === 1) {
-            // Regular user, redirect to home
-            redirectUrl = '/';
-          } else if (userType === 2 || userType === 'business') {
-            // Lawyer user, redirect to lawyer admin dashboard
-            redirectUrl = '/lawyer-admin';
           } else {
             // Default fallback
             redirectUrl = '/';
           }
 
+          console.log(`Google Login - Redirecting user (type: ${userType}, role: ${role}) to: ${redirectUrl}`);
           window.location.href = redirectUrl;
         }, 1500);
 
       } else {
-        showToast('Google login completed but authentication token was not received. Please try again.', 'warning');
+        showWarning('Google login completed but authentication token was not received. Please try again.');
       }
 
     } catch (error) {
       console.error('Google login error:', error);
       const errorMessage = parseApiError(error);
-      showToast(errorMessage, 'error');
+      showError(errorMessage);
     } finally {
       setFormState(prev => ({ ...prev, loading: false }));
     }
@@ -703,15 +611,6 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
 
   return (
     <div className={`relative flex flex-col pt-20 pb-10 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-gray-50/30'}`}>
-      <AnimatePresence>
-        {toast && (
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast(null)}
-          />
-        )}
-      </AnimatePresence>
 
       {/* Premium Animated Background Layer */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">

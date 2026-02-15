@@ -1069,7 +1069,7 @@ const Navbar = ({ isLandingPage = false }) => {
                 <>
                   {/* Premium Login Button - Black with Silver Shine */}
                   <Link
-                    to="/Auth"
+                    to="/auth"
                     className="group relative px-6 py-2.5 rounded-xl text-white font-semibold transition-all duration-300 
                               hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 
                               hover:-translate-y-0.5 flex items-center gap-2.5 overflow-hidden

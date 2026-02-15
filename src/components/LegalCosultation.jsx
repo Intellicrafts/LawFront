@@ -184,6 +184,8 @@ const LegalCosultation = () => {
     caseDetails: '',
   });
   const [bookingStep, setBookingStep] = useState(1);
+  const [customTime, setCustomTime] = useState('');
+  const [useCustomTime, setUseCustomTime] = useState(false);
 
   // Auto-fill form data with user details when component mounts
   useEffect(() => {
@@ -987,7 +989,7 @@ const LegalCosultation = () => {
     e.preventDefault();
 
     if (bookingStep === 1) {
-      if (bookingDate && bookingTime) {
+      if (bookingDate && (bookingTime || (useCustomTime && customTime))) {
         setBookingStep(2);
 
         // If booking with Rodger Prosacco, pre-fill form data from localStorage
@@ -1047,34 +1049,43 @@ const LegalCosultation = () => {
         }
 
         // Format the appointment time as a valid datetime string
-        // Parse the time string (assuming format like "10:00 AM" or "14:00")
+        // Parse the time string
         let hours = 0;
         let minutes = 0;
 
-        if (bookingTime.includes(':')) {
-          // Handle time formats like "10:00 AM" or "14:00"
-          const timeParts = bookingTime.replace(/\s+/g, ' ').trim().split(' ');
-          const [hoursStr, minutesStr] = timeParts[0].split(':');
+        const timeStringToParse = useCustomTime ? customTime : bookingTime;
 
-          hours = parseInt(hoursStr, 10);
-          minutes = parseInt(minutesStr, 10);
+        if (timeStringToParse) {
+          // Handle 24h format (from input type="time") or "10:00 AM" format
+          if (timeStringToParse.toLowerCase().includes('m')) {
+            // 12-hour format with AM/PM
+            const timeParts = timeStringToParse.replace(/\s+/g, ' ').trim().split(' ');
+            const [hoursStr, minutesStr] = timeParts[0].split(':');
 
-          // Handle AM/PM if present
-          if (timeParts.length > 1 && timeParts[1].toUpperCase() === 'PM' && hours < 12) {
-            hours += 12;
-          } else if (timeParts.length > 1 && timeParts[1].toUpperCase() === 'AM' && hours === 12) {
-            hours = 0;
+            hours = parseInt(hoursStr, 10);
+            minutes = parseInt(minutesStr, 10);
+
+            if (timeParts.length > 1 && timeParts[1].toUpperCase() === 'PM' && hours < 12) {
+              hours += 12;
+            } else if (timeParts.length > 1 && timeParts[1].toUpperCase() === 'AM' && hours === 12) {
+              hours = 0;
+            }
+          } else {
+            // 24-hour format (e.g., "14:30" or "09:00")
+            const [hoursStr, minutesStr] = timeStringToParse.split(':');
+            hours = parseInt(hoursStr, 10);
+            minutes = parseInt(minutesStr, 10);
           }
         }
 
-        // Create a date object with the combined date and time
-        const dateObj = new Date(bookingDate);
-        dateObj.setHours(hours, minutes, 0, 0);
+        // Create a date object in Local Time correctly
+        const dateParts = bookingDate.split('-').map(num => parseInt(num, 10));
+        const y = dateParts[0];
+        const m = dateParts[1];
+        const d = dateParts[2];
+        const dateObj = new Date(y, m - 1, d, hours, minutes, 0);
 
-        // Format as ISO string for the API
-        const formattedDateTime = dateObj.toISOString();
-
-        // Format the appointment time as required by the API (YYYY-MM-DD HH:MM:SS)
+        // Send standardized UTC format derived from our correctly constructed Local object
         const formattedDateTimeStr = dateObj.toISOString().replace('T', ' ').substring(0, 19);
 
         // Prepare appointment data according to the sample provided
@@ -1284,11 +1295,18 @@ const LegalCosultation = () => {
   const nextSevenDays = Array.from({ length: 7 }).map((_, i) => {
     const date = new Date();
     date.setDate(date.getDate() + i);
+
+    // Create local YYYY-MM-DD string instead of using toISOString() which can return the wrong date due to UTC
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const fullDateStr = `${year}-${month}-${day}`;
+
     return {
       dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
       dayNumber: date.getDate(),
       month: date.toLocaleDateString('en-US', { month: 'short' }),
-      fullDate: date.toISOString().split('T')[0],
+      fullDate: fullDateStr,
     };
   });
 
@@ -1980,44 +1998,119 @@ const LegalCosultation = () => {
                     <div>
                       <h3 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-3">Select Session Date</h3>
                       <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-                        {nextSevenDays.map((day) => (
-                          <button
-                            key={day.fullDate}
-                            onClick={() => setBookingDate(day.fullDate)}
-                            className={`p-2 rounded-xl border transition-all text-center ${bookingDate === day.fullDate
-                              ? 'bg-blue-600 border-blue-500 text-white'
-                              : isDarkMode ? 'bg-white/5 border-[#2A2A2A] text-gray-400 hover:bg-white/10' : 'bg-white border-gray-200 hover:bg-gray-50'
-                              }`}
-                          >
-                            <p className="text-[8px] uppercase font-bold">{day.dayName.slice(0, 3)}</p>
-                            <p className="text-xs font-bold my-0.5">{day.dayNumber}</p>
-                          </button>
-                        ))}
+                        {nextSevenDays.map((day) => {
+                          const isSelected = bookingDate === day.fullDate;
+                          return (
+                            <button
+                              key={day.fullDate}
+                              onClick={() => setBookingDate(day.fullDate)}
+                              className={`p-2 rounded-xl border transition-all text-center ${isSelected
+                                ? 'bg-blue-600 border-blue-500 text-white'
+                                : isDarkMode ? 'bg-white/5 border-[#2A2A2A] text-gray-400 hover:bg-white/10' : 'bg-white border-gray-200 hover:bg-gray-50'
+                                }`}
+                            >
+                              <p className="text-[8px] uppercase font-bold">{day.dayName.slice(0, 3)}</p>
+                              <p className="text-xs font-bold my-0.5">{day.dayNumber}</p>
+                            </button>
+                          )
+                        })}
                       </div>
                     </div>
 
                     <div>
                       <h3 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-3">Select Time Slot</h3>
-                      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                        {timeSlots.map((time) => (
-                          <button
-                            key={time}
-                            onClick={() => setBookingTime(time)}
-                            className={`py-1.5 rounded-lg border text-[10px] font-bold transition-all ${bookingTime === time
-                              ? 'bg-blue-600 border-blue-500 text-white'
-                              : isDarkMode ? 'bg-white/5 border-[#2A2A2A] text-gray-400 hover:bg-white/10' : 'bg-white border-gray-200 hover:bg-gray-50'
-                              }`}
-                          >
-                            {time}
-                          </button>
-                        ))}
+
+                      {/* Standard Slots */}
+                      <div className={`grid grid-cols-3 sm:grid-cols-5 gap-2 mb-4 ${useCustomTime ? 'opacity-50 pointer-events-none' : ''}`}>
+                        {timeSlots.map((time) => {
+                          // Check if slot has already passed for today
+                          let isPast = false;
+                          const now = new Date();
+                          const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+                          if (bookingDate === todayStr) {
+                            // Parse slot time
+                            let hours = 0;
+                            let minutes = 0;
+                            const timeParts = time.replace(/\s+/g, ' ').trim().split(' ');
+                            const [h, min] = timeParts[0].split(':');
+                            hours = parseInt(h, 10);
+                            minutes = parseInt(min, 10);
+
+                            if (timeParts[1].toUpperCase() === 'PM' && hours < 12) hours += 12;
+                            else if (timeParts[1].toUpperCase() === 'AM' && hours === 12) hours = 0;
+
+                            const slotTime = new Date();
+                            slotTime.setHours(hours, minutes, 0, 0);
+
+                            // If slot is in the past (or within the next 5 mins to be safe)
+                            if (slotTime < now) {
+                              isPast = true;
+                            }
+                          }
+
+                          return (
+                            <button
+                              key={time}
+                              disabled={isPast}
+                              onClick={() => {
+                                setBookingTime(time);
+                                setUseCustomTime(false);
+                              }}
+                              className={`py-1.5 rounded-lg border text-[10px] font-bold transition-all ${bookingTime === time && !useCustomTime
+                                ? 'bg-blue-600 border-blue-500 text-white'
+                                : isDarkMode
+                                  ? `bg-white/5 border-[#2A2A2A] ${isPast ? 'text-gray-700 opacity-30 cursor-not-allowed' : 'text-gray-400 hover:bg-white/10'}`
+                                  : `bg-white border-gray-200 ${isPast ? 'text-gray-300 opacity-50 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'}`
+                                }`}
+                            >
+                              {time}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Custom Time Toggle & Input */}
+                      <div className={`p-3 rounded-xl border transition-all ${useCustomTime
+                        ? (isDarkMode ? 'bg-blue-900/20 border-blue-500/50' : 'bg-blue-50 border-blue-200')
+                        : (isDarkMode ? 'bg-white/5 border-[#2A2A2A]' : 'bg-gray-50 border-gray-200')
+                        }`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                            <input
+                              type="checkbox"
+                              checked={useCustomTime}
+                              onChange={() => setUseCustomTime(!useCustomTime)}
+                              className="accent-blue-600 rounded"
+                            />
+                            Enter Custom Time
+                          </label>
+                          {useCustomTime && (
+                            <span className="text-[9px] text-blue-500 font-bold animate-pulse">Custom Mode Active</span>
+                          )}
+                        </div>
+
+                        <div className={`transition-all duration-300 ${useCustomTime ? 'opacity-100 max-h-20' : 'opacity-40 max-h-0 overflow-hidden'}`}>
+                          <div className="flex gap-2 items-center mt-2">
+                            <input
+                              type="time"
+                              value={customTime}
+                              onChange={(e) => setCustomTime(e.target.value)}
+                              className={`w-full px-3 py-2 text-xs rounded-lg border focus:outline-none focus:border-blue-500 transition-all ${isDarkMode ? 'bg-[#0A0A0A] border-[#2A2A2A] text-white' : 'bg-white border-gray-200 text-gray-900'
+                                }`}
+                            />
+                            <span className={`text-[10px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                              (Select AM/PM in picker)
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
                     <div className="flex justify-end pt-4">
                       <button
                         onClick={() => setBookingStep(2)}
-                        disabled={!bookingDate || !bookingTime}
+                        disabled={!bookingDate || (!bookingTime && !useCustomTime) || (useCustomTime && !customTime)}
                         className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all"
                       >
                         Provide Details

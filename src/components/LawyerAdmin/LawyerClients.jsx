@@ -1,851 +1,212 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Search, 
-  Filter, 
-  Plus, 
-  MoreHorizontal, 
-  Eye, 
-  Edit3, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Calendar, 
-  FileText, 
-  TrendingUp, 
-  Activity, 
-  Star, 
-  Clock, 
-  Shield, 
-  User, 
-  Users, 
-  Briefcase,
-  ChevronDown,
-  ChevronRight,
-  AlertCircle,
-  CheckCircle,
-  XCircle,
-  RefreshCw,
-  Download,
-  Share2,
-  MessageCircle,
-  History,
-  IndianRupee,
-  Award,
-  Target,
-  Zap,
-  SortAsc,
-  SortDesc,
-  Grid3X3,
-  List,
-  UserCheck,
-  UserX,
-  Sparkles,
-  Crown,
-  Heart,
-  ThumbsUp,
-  Compass,
-  Layers,
-  Building2,
-  GraduationCap,
-  Flame,
-  TrendingDown,
-  X,
-  ArrowUpDown
+
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  Users, Search, Plus, Mail, Phone, MapPin, Star, Activity, MoreHorizontal,
+  ChevronRight, ArrowUpRight, ShieldCheck, Crown, Briefcase, Clock,
+  Trash2, Edit3, MessageSquare, Filter, Building2, UserPlus
 } from 'lucide-react';
-import Avatar from '../common/Avatar';
+import { motion, AnimatePresence } from 'framer-motion';
 import { apiServices } from '../../api/apiService';
+import Avatar from '../common/Avatar';
 
-/**
- * LawyerClients Component - Premium Professional Design
- * 
- * Features:
- * - Compact, zoomed-out view for maximum information density
- * - Live search with instant filtering
- * - Advanced sorting with beautiful icons
- * - Professional premium cards
- * - Smooth animations and engaging UI
- * - Clean, structured layout
- * - Mobile-responsive design
- */
+// --- Premium UI Components ---
 
-// Enhanced sample client data - Updated for Indian context
-const sampleClients = [
-  {
-    id: 1,
-    name: "Priya Sharma",
-    email: "priya.sharma@email.com",
-    phone: "+91 98765 43210",
-    avatar: null,
-    status: "active",
-    premium: true,
-    location: "Mumbai, Maharashtra",
-    caseType: "Corporate Law",
-    joinDate: "2024-01-15",
-    totalCases: 8,
-    activeCases: 3,
-    rating: 4.9,
-    lastActivity: "2h ago",
-    totalRevenue: 1875000, // ₹18.75 Lakhs
-    upcomingAppointment: "Tomorrow 2:00 PM",
-    priority: "high",
-    company: "Reliance Industries Ltd.",
-    satisfaction: 98
-  },
-  {
-    id: 2,
-    name: "Arjun Patel",
-    email: "arjun.patel@email.com",
-    phone: "+91 87654 32109",
-    avatar: null,
-    status: "active",
-    premium: false,
-    location: "Bangalore, Karnataka",
-    caseType: "Criminal Defense",
-    joinDate: "2024-02-20",
-    totalCases: 5,
-    activeCases: 2,
-    rating: 4.7,
-    lastActivity: "1d ago",
-    totalRevenue: 1125000, // ₹11.25 Lakhs
-    upcomingAppointment: "Monday 10:00 AM",
-    priority: "medium",
-    company: null,
-    satisfaction: 92
-  },
-  {
-    id: 3,
-    name: "Sneha Gupta",
-    email: "sneha.gupta@email.com",
-    phone: "+91 76543 21098",
-    avatar: null,
-    status: "inactive",
-    premium: true,
-    location: "Delhi, NCR",
-    caseType: "Family Law",
-    joinDate: "2023-11-10",
-    totalCases: 12,
-    activeCases: 0,
-    rating: 4.8,
-    lastActivity: "1w ago",
-    totalRevenue: 2250000, // ₹22.5 Lakhs
-    upcomingAppointment: null,
-    priority: "low",
-    company: null,
-    satisfaction: 95
-  },
-  {
-    id: 4,
-    name: "Rajesh Kumar",
-    email: "rajesh.kumar@email.com",
-    phone: "+91 65432 10987",
-    avatar: null,
-    status: "active",
-    premium: false,
-    location: "Chennai, Tamil Nadu",
-    caseType: "Personal Injury",
-    joinDate: "2024-03-05",
-    totalCases: 3,
-    activeCases: 2,
-    rating: 4.6,
-    lastActivity: "3h ago",
-    totalRevenue: 600000, // ₹6 Lakhs
-    upcomingAppointment: "Friday 3:30 PM",
-    priority: "high",
-    company: null,
-    satisfaction: 88
-  },
-  {
-    id: 5,
-    name: "Kavya Reddy",
-    email: "kavya.reddy@email.com",
-    phone: "+91 54321 09876",
-    avatar: null,
-    status: "active",
-    premium: true,
-    location: "Hyderabad, Telangana",
-    caseType: "IP Law",
-    joinDate: "2024-01-30",
-    totalCases: 6,
-    activeCases: 4,
-    rating: 4.9,
-    lastActivity: "30m ago",
-    totalRevenue: 3375000, // ₹33.75 Lakhs
-    upcomingAppointment: "Today 4:00 PM",
-    priority: "high",
-    company: "Infosys Technologies",
-    satisfaction: 99
-  },
-  {
-    id: 6,
-    name: "Amit Singh",
-    email: "amit.singh@email.com",
-    phone: "+91 43210 98765",
-    avatar: null,
-    status: "pending",
-    premium: false,
-    location: "Pune, Maharashtra",
-    caseType: "Real Estate",
-    joinDate: "2024-12-15",
-    totalCases: 1,
-    activeCases: 1,
-    rating: null,
-    lastActivity: "5h ago",
-    totalRevenue: 150000, // ₹1.5 Lakhs
-    upcomingAppointment: "Next week",
-    priority: "medium",
-    company: "Singh Properties",
-    satisfaction: null
-  }
-];
+const GlassCard = ({ children, className = "", darkMode, hover = true, onClick }) => (
+  <motion.div
+    onClick={onClick}
+    whileHover={hover ? { y: -3, shadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' } : {}}
+    className={`
+      relative overflow-hidden rounded-[24px] border transition-all duration-300
+      ${darkMode
+        ? 'bg-neutral-900/60 border-white/5 backdrop-blur-xl'
+        : 'bg-white/80 border-slate-200/50 backdrop-blur-lg shadow-sm'
+      }
+      ${className}
+    `}
+  >
+    {children}
+  </motion.div>
+);
 
-const LawyerClients = ({ darkMode, userData }) => {
-  const [clients, setClients] = useState(sampleClients);
+const PremiumBadge = ({ text, type = 'primary' }) => {
+  const styles = {
+    primary: 'bg-slate-900/10 text-slate-900 border-slate-900/20 dark:bg-white/10 dark:text-white dark:border-white/20',
+    secondary: 'bg-slate-500/10 text-slate-500 border-slate-500/20',
+    warning: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+    danger: 'bg-red-500/10 text-red-600 border-red-500/20',
+    info: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  };
+  return (
+    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${styles[type]}`}>
+      {text}
+    </span>
+  );
+};
+
+// --- Main Component ---
+
+const LawyerClients = ({ darkMode }) => {
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [sortBy, setSortBy] = useState('name');
-  const [sortOrder, setSortOrder] = useState('asc');
-  const [selectedClient, setSelectedClient] = useState(null);
-  const [showActivityModal, setShowActivityModal] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [viewMode, setViewMode] = useState('grid');
+  const [filterType, setFilterType] = useState('all'); // all, premium, regular
 
-  // Prevent body scroll when modal is open
   useEffect(() => {
-    if (showActivityModal) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+    fetchClients();
+  }, []);
 
-    // Cleanup function to reset overflow when component unmounts
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [showActivityModal]);
-
-  // Live search and filtering
-  const filteredClients = clients.filter(client => {
-    const matchesSearch = searchQuery === '' || 
-      client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.caseType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.phone.includes(searchQuery);
-    
-    const matchesStatus = filterStatus === 'all' || client.status === filterStatus;
-    
-    return matchesSearch && matchesStatus;
-  }).sort((a, b) => {
-    let aValue = a[sortBy];
-    let bValue = b[sortBy];
-    
-    if (sortBy === 'rating' || sortBy === 'totalRevenue' || sortBy === 'totalCases') {
-      aValue = aValue || 0;
-      bValue = bValue || 0;
-    }
-    
-    if (sortOrder === 'asc') {
-      return aValue > bValue ? 1 : -1;
-    } else {
-      return aValue < bValue ? 1 : -1;
-    }
-  });
-
-  // Statistics calculations
-  const stats = {
-    totalClients: clients.length,
-    activeClients: clients.filter(c => c.status === 'active').length,
-    premiumClients: clients.filter(c => c.premium).length,
-    totalRevenue: clients.reduce((sum, c) => sum + c.totalRevenue, 0),
-    avgRating: clients.filter(c => c.rating).reduce((sum, c, _, arr) => sum + c.rating / arr.length, 0),
-    avgSatisfaction: clients.filter(c => c.satisfaction).reduce((sum, c, _, arr) => sum + c.satisfaction / arr.length, 0)
-  };
-
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high': return darkMode ? 'text-red-400' : 'text-red-600';
-      case 'medium': return darkMode ? 'text-yellow-400' : 'text-yellow-600';
-      case 'low': return darkMode ? 'text-green-400' : 'text-green-600';
-      default: return darkMode ? 'text-gray-400' : 'text-gray-600';
+  const fetchClients = async () => {
+    setLoading(true);
+    try {
+      // Integration with real API: apiServices.getClients()
+      // For now, using the established pattern
+      const data = await apiServices.getClients?.() || [];
+      setClients(data);
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+      setClients([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'active': return <UserCheck size={14} className="text-green-500" />;
-      case 'inactive': return <UserX size={14} className="text-gray-500" />;
-      case 'pending': return <Clock size={14} className="text-yellow-500" />;
-      default: return <User size={14} className="text-gray-500" />;
-    }
-  };
-
-  // Premium Statistics Cards
-  const StatCard = ({ icon: Icon, title, value, subtitle, color, trend }) => (
-    <div className={`${
-      darkMode 
-        ? 'bg-gray-800/60 border-gray-700/50 hover:bg-gray-800/80' 
-        : 'bg-white/80 border-gray-200/50 hover:bg-white/95'
-    } rounded-xl p-4 border backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:scale-[1.02] group`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color} group-hover:scale-110 transition-transform duration-300`}>
-            <Icon size={18} className="text-white" />
-          </div>
-          <div>
-            <h3 className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{title}</h3>
-            <p className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{value}</p>
-          </div>
-        </div>
-        {trend && (
-          <div className="flex items-center">
-            {trend > 0 ? <TrendingUp size={14} className="text-green-500" /> : <TrendingDown size={14} className="text-red-500" />}
-            <span className={`text-xs ml-1 ${trend > 0 ? 'text-green-500' : 'text-red-500'}`}>
-              {Math.abs(trend)}%
-            </span>
-          </div>
-        )}
-      </div>
-      {subtitle && (
-        <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{subtitle}</p>
-      )}
-    </div>
-  );
-
-  // Enhanced Client Card Component
-  const ClientCard = ({ client }) => (
-    <div className={`${
-      darkMode 
-        ? 'bg-gray-800/70 border-gray-700/50 hover:bg-gray-800/90' 
-        : 'bg-white/90 border-gray-200/60 hover:bg-white'
-    } rounded-xl p-5 border backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:scale-[1.03] group relative overflow-hidden`}>
-      
-      {/* Premium Badge */}
-      {client.premium && (
-        <div className="absolute top-2 right-2">
-          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full p-1.5">
-            <Crown size={12} className="text-white" />
-          </div>
-        </div>
-      )}
-
-      {/* Priority Indicator */}
-      <div className={`absolute top-2 left-2 w-2 h-2 rounded-full ${
-        client.priority === 'high' ? 'bg-red-500' :
-        client.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
-      } animate-pulse`}></div>
-
-      <div className="flex items-start space-x-3 mt-2">
-        {/* Avatar */}
-        <div className="relative">
-          <Avatar
-            src={client.avatar}
-            name={client.name}
-            size={44}
-            className="rounded-xl shadow-md"
-          />
-          <div className="absolute -bottom-1 -right-1">
-            {getStatusIcon(client.status)}
-          </div>
-        </div>
-
-        {/* Client Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center space-x-2">
-            <h3 className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-900'} truncate`}>
-              {client.name}
-            </h3>
-            {client.rating && (
-              <div className="flex items-center space-x-1">
-                <Star size={12} className="text-yellow-500 fill-current" />
-                <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {client.rating}
-                </span>
-              </div>
-            )}
-          </div>
-          
-          <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'} truncate mt-0.5`}>
-            {client.email}
-          </p>
-          
-          <div className="flex items-center space-x-3 mt-1">
-            <span className={`text-xs px-2 py-1 rounded-full ${
-              client.status === 'active' ? 'bg-green-100 text-green-700' :
-              client.status === 'inactive' ? 'bg-gray-100 text-gray-700' : 'bg-yellow-100 text-yellow-700'
-            }`}>
-              {client.caseType}
-            </span>
-            <div className="flex items-center space-x-1">
-              <MapPin size={10} className={darkMode ? 'text-gray-500' : 'text-gray-400'} />
-              <span className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'} truncate`}>
-                {client.location}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Row */}
-      <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-200/30">
-        <div className="flex items-center space-x-5 text-xs">
-          <div className="flex items-center space-x-2">
-            <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${darkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
-              <Briefcase size={12} className={darkMode ? 'text-blue-400' : 'text-blue-600'} />
-            </div>
-            <div>
-              <span className={`font-semibold ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>{client.activeCases}</span>
-              <span className={`ml-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>active</span>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${darkMode ? 'bg-green-500/20' : 'bg-green-100'}`}>
-              <IndianRupee size={12} className={darkMode ? 'text-green-400' : 'text-green-600'} />
-            </div>
-            <span className={`font-semibold ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
-              {(client.totalRevenue / 100000).toFixed(1)}L
-            </span>
-          </div>
-          {client.satisfaction && (
-            <div className="flex items-center space-x-2">
-              <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${darkMode ? 'bg-red-500/20' : 'bg-red-100'}`}>
-                <Heart size={12} className={darkMode ? 'text-red-400' : 'text-red-600'} />
-              </div>
-              <span className={`font-semibold ${darkMode ? 'text-red-400' : 'text-red-600'}`}>{client.satisfaction}%</span>
-            </div>
-          )}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center space-x-2">
-          <button 
-            className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-              darkMode ? 'bg-gray-700/50 hover:bg-blue-600 text-gray-400 hover:text-white' : 'bg-gray-100 hover:bg-blue-500 text-gray-600 hover:text-white'
-            } transition-all duration-200 hover:scale-110`}
-            onClick={() => window.open(`tel:${client.phone}`)}
-          >
-            <Phone size={14} />
-          </button>
-          <button 
-            className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-              darkMode ? 'bg-gray-700/50 hover:bg-green-600 text-gray-400 hover:text-white' : 'bg-gray-100 hover:bg-green-500 text-gray-600 hover:text-white'
-            } transition-all duration-200 hover:scale-110`}
-            onClick={() => window.open(`mailto:${client.email}`)}
-          >
-            <Mail size={14} />
-          </button>
-          <button 
-            className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-              darkMode ? 'bg-gray-700/50 hover:bg-purple-600 text-gray-400 hover:text-white' : 'bg-gray-100 hover:bg-purple-500 text-gray-600 hover:text-white'
-            } transition-all duration-200 hover:scale-110`}
-            onClick={() => {
-              setSelectedClient(client);
-              setShowActivityModal(true);
-            }}
-          >
-            <Activity size={14} />
-          </button>
-        </div>
-      </div>
-
-      {/* Last Activity & Next Appointment */}
-      <div className="mt-3 pt-3 border-t border-gray-200/30">
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center space-x-2">
-            <div className={`w-5 h-5 rounded flex items-center justify-center ${darkMode ? 'bg-gray-600/30' : 'bg-gray-200/70'}`}>
-              <Clock size={10} className={darkMode ? 'text-gray-400' : 'text-gray-500'} />
-            </div>
-            <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
-              Last: {client.lastActivity}
-            </span>
-          </div>
-          {client.upcomingAppointment && (
-            <div className="flex items-center space-x-2">
-              <div className={`w-5 h-5 rounded flex items-center justify-center ${darkMode ? 'bg-purple-600/20' : 'bg-purple-100'}`}>
-                <Calendar size={10} className={darkMode ? 'text-purple-400' : 'text-purple-600'} />
-              </div>
-              <span className={`${darkMode ? 'text-purple-400' : 'text-purple-600'} truncate max-w-24 font-medium`}>
-                {client.upcomingAppointment}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+  const filteredClients = useMemo(() => {
+    return (clients || []).filter(c => {
+      const matchesSearch = c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.email?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesFilter = filterType === 'all' ? true : (filterType === 'premium' ? c.premium : !c.premium);
+      return matchesSearch && matchesFilter;
+    });
+  }, [clients, searchQuery, filterType]);
 
   return (
-    <div className={`px-6 py-4 space-y-4 ${darkMode ? 'text-white' : 'text-gray-900'} min-h-screen max-w-7xl mx-auto`}>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-            <Users size={16} className="text-white" />
+    <div className="p-4 sm:p-5 space-y-5 max-w-[1500px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Header & Controls */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <PremiumBadge text="Client Base" type="secondary" />
+            <div className="h-0.5 w-0.5 rounded-full bg-slate-300" />
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Directory Explorer</span>
           </div>
-          <div>
-            <h1 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-              Client Management
-            </h1>
-            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Manage your clients efficiently
-            </p>
-          </div>
-        </div>
-        <button className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:shadow-lg transition-all duration-200 flex items-center space-x-2">
-          <Plus size={14} />
-          <span>Add Client</span>
-        </button>
-      </div>
-
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-        <StatCard
-          icon={Users}
-          title="Total Clients"
-          value={stats.totalClients}
-          color="bg-gradient-to-r from-blue-500 to-blue-600"
-          trend={12}
-        />
-        <StatCard
-          icon={UserCheck}
-          title="Active"
-          value={stats.activeClients}
-          color="bg-gradient-to-r from-green-500 to-green-600"
-          trend={8}
-        />
-        <StatCard
-          icon={Crown}
-          title="Premium"
-          value={stats.premiumClients}
-          color="bg-gradient-to-r from-yellow-500 to-orange-500"
-          trend={5}
-        />
-        <StatCard
-          icon={IndianRupee}
-          title="Revenue"
-          value={`₹${(stats.totalRevenue / 100000).toFixed(1)}L`}
-          color="bg-gradient-to-r from-emerald-500 to-teal-600"
-          trend={15}
-        />
-        <StatCard
-          icon={Star}
-          title="Avg Rating"
-          value={stats.avgRating.toFixed(1)}
-          color="bg-gradient-to-r from-amber-500 to-yellow-600"
-          trend={3}
-        />
-        <StatCard
-          icon={Heart}
-          title="Satisfaction"
-          value={`${stats.avgSatisfaction.toFixed(0)}%`}
-          color="bg-gradient-to-r from-rose-500 to-pink-600"
-          trend={7}
-        />
-      </div>
-
-      {/* Search and Filters */}
-      <div className="flex flex-col lg:flex-row gap-3">
-        {/* Search */}
-        <div className="flex-1 relative">
-          <Search size={16} className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-          <input
-            type="text"
-            placeholder="Search clients by name, email, case type, location..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={`w-full pl-10 pr-4 py-2 rounded-lg border text-sm ${
-              darkMode 
-                ? 'bg-gray-800/60 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500' 
-                : 'bg-white/80 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500'
-            } focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200`}
-          />
+          <h1 className={`text-2xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+            Client <span className={darkMode ? 'text-slate-400' : 'text-slate-500'}>Vault</span>
+          </h1>
         </div>
 
-        {/* Filters Row */}
-        <div className="flex items-center space-x-3">
-          {/* Status Filter */}
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className={`px-3 py-2 rounded-lg border text-sm ${
-              darkMode 
-                ? 'bg-gray-800/60 border-gray-700 text-white' 
-                : 'bg-white/80 border-gray-300 text-gray-900'
-            } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="pending">Pending</option>
-          </select>
-
-          {/* Sort By */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className={`px-3 py-2 rounded-lg border text-sm ${
-              darkMode 
-                ? 'bg-gray-800/60 border-gray-700 text-white' 
-                : 'bg-white/80 border-gray-300 text-gray-900'
-            } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
-          >
-            <option value="name">Name</option>
-            <option value="rating">Rating</option>
-            <option value="totalRevenue">Revenue</option>
-            <option value="totalCases">Cases</option>
-            <option value="lastActivity">Activity</option>
-          </select>
-
-          {/* Sort Order */}
-          <button
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className={`p-2 rounded-lg border ${
-              darkMode 
-                ? 'bg-gray-800/60 border-gray-700 text-white hover:bg-gray-700' 
-                : 'bg-white/80 border-gray-300 text-gray-900 hover:bg-gray-50'
-            } transition-all duration-200`}
-          >
-            {sortOrder === 'asc' ? <SortAsc size={16} /> : <SortDesc size={16} />}
+        <div className="flex items-center gap-2">
+          <div className={`flex items-center h-8 px-3 gap-2 rounded-xl border transition-all ${darkMode ? 'bg-white/5 border-white/10 focus-within:border-white/30' : 'bg-white border-slate-200 focus-within:border-slate-900'}`}>
+            <Search size={13} className="text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search registry..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-transparent border-none outline-none text-[11px] w-40 sm:w-64"
+            />
+          </div>
+          <button className={`h-8 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center gap-2 transition-all ${darkMode ? 'bg-white text-slate-900 shadow-white/10' : 'bg-slate-900 text-white shadow-slate-900/20 hover:scale-[1.02]'}`}>
+            <UserPlus size={14} /> New
           </button>
-
-          {/* View Mode Toggle */}
-          <div className="flex rounded-lg border overflow-hidden">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 ${
-                viewMode === 'grid'
-                  ? 'bg-blue-500 text-white'
-                  : darkMode ? 'bg-gray-800 text-gray-400 hover:text-white' : 'bg-gray-100 text-gray-600 hover:text-gray-900'
-              } transition-all duration-200`}
-            >
-              <Grid3X3 size={16} />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 ${
-                viewMode === 'list'
-                  ? 'bg-blue-500 text-white'
-                  : darkMode ? 'bg-gray-800 text-gray-400 hover:text-white' : 'bg-gray-100 text-gray-600 hover:text-gray-900'
-              } transition-all duration-200`}
-            >
-              <List size={16} />
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Results Info */}
-      <div className="flex items-center justify-between">
-        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          Showing {filteredClients.length} of {clients.length} clients
-          {searchQuery && ` for "${searchQuery}"`}
-        </p>
-        <div className="flex items-center space-x-2 text-xs">
-          <Sparkles size={12} className="text-yellow-500" />
-          <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Live search active</span>
-        </div>
-      </div>
-
-      {/* Clients Grid */}
-      <div className={`grid gap-6 ${
-        viewMode === 'grid' 
-          ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-          : 'grid-cols-1'
-      }`}>
-        {filteredClients.map((client) => (
-          <ClientCard key={client.id} client={client} />
+      {/* Tabs / Segmented Control */}
+      <div className="flex items-center gap-1 p-1 w-fit rounded-xl border bg-slate-100/50 dark:bg-white/5 dark:border-white/5">
+        {[
+          { id: 'all', label: 'All Profiles' },
+          { id: 'premium', label: 'VIP' },
+          { id: 'active', label: 'Engaged' }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setFilterType(tab.id)}
+            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${filterType === tab.id
+              ? (darkMode ? 'bg-white text-slate-900 shadow-md' : 'bg-slate-900 text-white shadow-md')
+              : 'text-slate-500 hover:text-slate-800'
+              }`}
+          >
+            {tab.label}
+          </button>
         ))}
       </div>
 
-      {/* Empty State */}
-      {filteredClients.length === 0 && (
-        <div className="text-center py-12">
-          <div className={`w-16 h-16 mx-auto mb-4 rounded-full ${
-            darkMode ? 'bg-gray-800' : 'bg-gray-100'
-          } flex items-center justify-center`}>
-            <Users size={32} className={darkMode ? 'text-gray-600' : 'text-gray-400'} />
-          </div>
-          <h3 className={`text-lg font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-            No clients found
-          </h3>
-          <p className={`text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-            {searchQuery ? 'Try adjusting your search terms' : 'Start by adding your first client'}
-          </p>
-        </div>
-      )}
-
-      {/* Activity Modal */}
-      {showActivityModal && selectedClient && (
-        <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowActivityModal(false);
-            }
-          }}
-        >
-          <div className={`max-w-2xl w-full max-h-[85vh] overflow-y-auto rounded-xl mx-4 ${
-            darkMode ? 'bg-gray-800' : 'bg-white'
-          } shadow-2xl`}>
-            <div className={`p-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Avatar
-                    src={selectedClient.avatar}
-                    name={selectedClient.name}
-                    size={48}
-                    className="rounded-xl"
-                  />
-                  <div>
-                    <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {selectedClient.name}
-                    </h2>
-                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Recent Activities & Timeline
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowActivityModal(false)}
-                  className={`p-2 rounded-lg ${
-                    darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
-                  } transition-colors duration-200`}
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-6">
-              <div className="space-y-4">
-                {/* Quick Stats */}
-                <div className="grid grid-cols-4 gap-4 mb-6">
-                  <div className="text-center">
-                    <div className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {selectedClient.totalCases}
-                    </div>
-                    <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Total Cases
+      {/* Clients Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {loading ? (
+          [1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+            <div key={i} className={`h-56 rounded-[24px] animate-pulse ${darkMode ? 'bg-white/5' : 'bg-slate-100'}`} />
+          ))
+        ) : filteredClients.length > 0 ? (
+          filteredClients.map((client, idx) => (
+            <GlassCard key={client.id || idx} darkMode={darkMode} className="group">
+              {/* Card Header */}
+              <div className={`h-16 w-full relative ${darkMode ? 'bg-white/[0.03]' : 'bg-slate-50'}`}>
+                {client.premium && (
+                  <div className="absolute top-2.5 right-2.5 z-10">
+                    <div className={`p-1 px-1.5 rounded-lg flex items-center gap-1 shadow-lg ${darkMode ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'}`}>
+                      <Crown size={9} className="fill-current" />
+                      <span className="text-[7px] font-black uppercase tracking-widest">VIP</span>
                     </div>
                   </div>
-                  <div className="text-center">
-                    <div className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {selectedClient.activeCases}
-                    </div>
-                    <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Active Cases
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      ₹{(selectedClient.totalRevenue / 100000).toFixed(1)}L
-                    </div>
-                    <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Revenue
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {selectedClient.rating || 'N/A'}
-                    </div>
-                    <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Rating
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sample Activities */}
-                <div className="space-y-4">
-                  <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'} flex items-center space-x-2`}>
-                    <Activity size={18} className={darkMode ? 'text-blue-400' : 'text-blue-600'} />
-                    <span>Recent Activities</span>
-                  </h3>
-                  <div className="space-y-3">
-                    {/* Appointment Activity */}
-                    <div className={`flex items-center space-x-4 p-4 rounded-xl ${
-                      darkMode ? 'bg-gray-700/60 border-gray-600/30' : 'bg-gray-50 border-gray-200/50'
-                    } border hover:shadow-md transition-all duration-200`}>
-                      <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center shadow-md">
-                        <Calendar size={16} className="text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <div className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                          Consultation completed
-                        </div>
-                        <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          2 hours ago
-                        </div>
-                      </div>
-                      <div className="px-3 py-1.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
-                        Completed
-                      </div>
-                    </div>
-
-                    {/* Document Activity */}
-                    <div className={`flex items-center space-x-4 p-4 rounded-xl ${
-                      darkMode ? 'bg-gray-700/60 border-gray-600/30' : 'bg-gray-50 border-gray-200/50'
-                    } border hover:shadow-md transition-all duration-200`}>
-                      <div className="w-10 h-10 rounded-lg bg-yellow-500 flex items-center justify-center shadow-md">
-                        <FileText size={16} className="text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <div className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                          Contract review pending
-                        </div>
-                        <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          1 day ago
-                        </div>
-                      </div>
-                      <div className="px-3 py-1.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-200">
-                        Pending
-                      </div>
-                    </div>
-
-                    {/* Payment Activity */}
-                    <div className={`flex items-center space-x-4 p-4 rounded-xl ${
-                      darkMode ? 'bg-gray-700/60 border-gray-600/30' : 'bg-gray-50 border-gray-200/50'
-                    } border hover:shadow-md transition-all duration-200`}>
-                      <div className="w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center shadow-md">
-                        <IndianRupee size={16} className="text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <div className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                          Invoice payment received
-                        </div>
-                        <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          3 days ago
-                        </div>
-                      </div>
-                      <div className="px-3 py-1.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
-                        Completed
-                      </div>
-                    </div>
-
-                    {/* Call Activity */}
-                    <div className={`flex items-center space-x-4 p-4 rounded-xl ${
-                      darkMode ? 'bg-gray-700/60 border-gray-600/30' : 'bg-gray-50 border-gray-200/50'
-                    } border hover:shadow-md transition-all duration-200`}>
-                      <div className="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center shadow-md">
-                        <Phone size={16} className="text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <div className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                          Phone consultation
-                        </div>
-                        <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          1 week ago
-                        </div>
-                      </div>
-                      <div className="px-3 py-1.5 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
-                        Completed
-                      </div>
-                    </div>
-                  </div>
+                )}
+                <div className="absolute -bottom-5 left-4 border-2 border-white dark:border-neutral-900 rounded-[18px] overflow-hidden shadow-lg">
+                  <Avatar name={client.name} src={client.avatar} size={44} className="rounded-none bg-slate-200" />
                 </div>
               </div>
+
+              <div className="p-4 pt-6 space-y-3">
+                <div>
+                  <div className="flex items-center gap-1 text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-0.5">
+                    <ShieldCheck size={9} /> Verified User
+                  </div>
+                  <h3 className={`text-[13px] font-black leading-none ${darkMode ? 'text-white' : 'text-slate-900'}`}>{client.name}</h3>
+                  <p className="text-[10px] text-slate-500 font-bold truncate mt-1 opacity-70">{client.company || 'Private Individual'}</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
+                    <Mail size={12} className="opacity-50" />
+                    <span className="truncate">{client.email || 'no-email@id.com'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
+                    <Phone size={12} className="opacity-50" />
+                    <span>{client.phone || '+91 000-000-0000'}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-white/5">
+                  <div className="p-1.5 rounded-xl bg-slate-50 dark:bg-white/3 flex flex-col items-center justify-center">
+                    <p className="text-[7px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Cases</p>
+                    <p className={`text-[12px] font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>04</p>
+                  </div>
+                  <div className="p-1.5 rounded-xl bg-slate-50 dark:bg-white/3 flex flex-col items-center justify-center">
+                    <p className="text-[7px] font-black uppercase text-slate-400 tracking-widest mb-0.5">Trust</p>
+                    <p className={`text-[12px] font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>98%</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button className={`flex-1 h-8 rounded-lg text-[9px] font-black uppercase tracking-widest hover:scale-[1.03] active:scale-95 transition-all shadow-lg ${darkMode ? 'bg-white text-slate-900 shadow-white/10' : 'bg-slate-900 text-white shadow-slate-900/20'}`}>
+                    View Profile
+                  </button>
+                  <button className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-colors ${darkMode ? 'border-white/10 hover:bg-white/5 text-slate-400' : 'border-slate-200 hover:bg-slate-50 text-slate-500'}`}>
+                    <MessageSquare size={14} />
+                  </button>
+                </div>
+              </div>
+            </GlassCard>
+          ))
+        ) : (
+          <div className="col-span-full py-16 flex flex-col items-center text-center">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${darkMode ? 'bg-white/5' : 'bg-slate-100'}`}>
+              <Users size={28} className="text-slate-300" />
             </div>
+            <h3 className={`text-base font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>No Clients Found</h3>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">Initialize CRM with 'New' action</p>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

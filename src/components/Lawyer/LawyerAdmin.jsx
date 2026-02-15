@@ -1,13 +1,15 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiServices, authAPI, tokenManager } from '../../api/apiService';
+import { apiServices, authAPI, tokenManager, lawyerAPI, casesAPI, consultationAPI, lawyerAdminAPI } from '../../api/apiService';
 import NotificationDropdown from '../NotificationDropdown';
 import Avatar from '../common/Avatar';
 import LawyerAppointments from '../LawyerAdmin/LawyerAppointments';
 import LawyerClients from '../LawyerAdmin/LawyerClients';
 import LawyerCases from '../LawyerAdmin/LawyerCases';
 import LawyerDocuments from '../LawyerAdmin/LawyerDocuments';
+import LawyerProfile from '../LawyerAdmin/LawyerProfile';
+import LawyerSettings from '../LawyerAdmin/LawyerSettings';
 import Sidebar from '../Sidebar';
 import {
   Home,
@@ -37,7 +39,7 @@ import {
   ArrowDown,
   Activity,
   BarChart3,
-  PieChart,
+  PieChart as LucidePieChart,
   Star,
   Award,
   Target,
@@ -49,1340 +51,958 @@ import {
   Layers,
   Bookmark,
   Flame,
-  Bot
+  Bot,
+  Video,
+  CheckCircle2,
+  Clock3,
+  ExternalLink,
+  ChevronLeft,
+  Scale
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, AreaChart, Area } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart,
+  Pie, Cell, AreaChart, Area
+} from 'recharts';
+import { useSelector, useDispatch } from 'react-redux';
+import { toggleSidebar, setSidebarOpen } from '../../redux/sidebarSlice';
+import { useTheme } from '../../context/ThemeContext';
 
-// Enhanced sample data
-const appointmentData = [
-  { month: 'Jan', appointments: 45, revenue: 15000 },
-  { month: 'Feb', appointments: 52, revenue: 18500 },
-  { month: 'Mar', appointments: 48, revenue: 16800 },
-  { month: 'Apr', appointments: 61, revenue: 22400 },
-  { month: 'May', appointments: 55, revenue: 19800 },
-  { month: 'Jun', appointments: 67, revenue: 25600 }
-];
+// --- Premium UI Constants & Styling ---
 
-const caseTypeData = [
-  { name: 'Corporate', value: 35, color: '#3B82F6' },
-  { name: 'Criminal', value: 25, color: '#EF4444' },
-  { name: 'Family', value: 20, color: '#10B981' },
-  { name: 'Civil', value: 20, color: '#F59E0B' }
-];
+const COLORS = {
+  primary: '#1E293B', // Professional Legal Navy
+  accent: '#B45309',  // Sophisticated Amber/Gold
+  dark: '#0F172A',
+  darkCard: '#111827',
+  lightCard: '#FFFFFF',
+  textMuted: '#64748B',
+  bgLight: '#F8FAFC',
+};
 
-const performanceData = [
-  { month: 'Jan', cases: 12, success: 10 },
-  { month: 'Feb', cases: 15, success: 13 },
-  { month: 'Mar', cases: 11, success: 9 },
-  { month: 'Apr', cases: 18, success: 16 },
-  { month: 'May', cases: 14, success: 12 },
-  { month: 'Jun', cases: 20, success: 18 }
-];
+const CHartColors = [COLORS.primary, COLORS.secondary, '#3B82F6', '#F59E0B'];
 
-// Enhanced Navbar Component with premium styling and MeraBakil branding
-const NavbarComponent = ({
+// --- Helper Components ---
+
+const GlassCard = ({ children, className = "", darkMode, hover = true }) => (
+  <motion.div
+    whileHover={hover ? { y: -4, shadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' } : {}}
+    className={`
+      relative overflow-hidden rounded-[24px] border transition-all duration-300
+      ${darkMode
+        ? 'bg-neutral-900/80 border-white/5 backdrop-blur-xl'
+        : 'bg-white/90 border-slate-200/50 backdrop-blur-lg shadow-sm'
+      }
+      ${className}
+    `}
+  >
+    {children}
+  </motion.div>
+);
+
+const PremiumBadge = ({ text, type = 'primary' }) => {
+  const styles = {
+    primary: 'bg-slate-900/10 text-slate-900 border-slate-900/20 dark:bg-white/10 dark:text-white dark:border-white/20',
+    secondary: 'bg-slate-500/10 text-slate-500 border-slate-500/20',
+    warning: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+    danger: 'bg-red-500/10 text-red-600 border-red-500/20',
+    info: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  };
+  return (
+    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${styles[type]}`}>
+      {text}
+    </span>
+  );
+};
+
+const CustomTooltip = ({ active, payload, label, darkMode }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className={`p-3 rounded-2xl border ${darkMode ? 'bg-black/80 border-white/10' : 'bg-white/90 border-slate-200'} backdrop-blur-md shadow-2xl`}>
+        <p className={`text-[11px] font-bold mb-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{label}</p>
+        {payload.map((entry, index) => (
+          <div key={index} className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: entry.color }} />
+            <p className={`text-[10px] font-medium ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+              {entry.name}: <span className={darkMode ? 'text-white' : 'text-slate-900'}>{entry.value}</span>
+            </p>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
+// --- Sub-Components ---
+
+const TopNavbar = ({
+  userData,
   onMenuClick,
   isSidebarOpen,
-  darkMode,
-  toggleDarkMode,
-  userData,
-  handleLogout,
+  setNotificationsDropdownOpen,
+  notificationsDropdownOpen,
   notifications,
   notificationsCount,
   notificationsLoading,
-  notificationsError,
-  notificationsDropdownOpen,
-  setNotificationsDropdownOpen,
-  notificationsDropdownRef,
+  markAllAsRead,
   fetchUserNotifications,
   handleNotificationClick,
-  markAllAsRead
+  darkMode,
+  toggleDarkMode,
+  handleLogout,
+  searchQuery,
+  setSearchQuery,
+  setActiveTab
 }) => (
-  <nav
-    className={`${darkMode
-      ? 'bg-gray-900/80 border-gray-800/80 backdrop-blur-lg'
-      : 'bg-white/90 border-gray-200/80 backdrop-blur-lg'
-      } shadow-lg border-b px-4 py-3 transition-all duration-300 sticky top-0 z-30`}
-  >
-    <div className="flex items-center justify-between">
-      <div className="flex items-center space-x-4">
-        <button
-          onClick={onMenuClick}
-          className={`lg:hidden p-2 rounded-xl ${darkMode
-            ? 'text-gray-300 hover:text-white hover:bg-gray-800/70'
-            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70'
-            } transition-all duration-200 focus:outline-none focus:ring-2 ${darkMode ? 'focus:ring-blue-600/50' : 'focus:ring-blue-500/50'
-            }`}
-        >
-          {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg relative group overflow-hidden">
-            <Briefcase size={18} className="text-white relative z-10" />
-            <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 blur-sm opacity-0 group-hover:opacity-70 transition-opacity duration-300 -z-10"></div>
-          </div>
-          <h1 className={`text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent`}>
-            MeraBakil
-          </h1>
-        </div>
+  <header className={`sticky top-0 z-40 w-full transition-all duration-500 ${darkMode
+    ? 'bg-black/20 backdrop-blur-3xl shadow-none'
+    : 'bg-white/40 backdrop-blur-2xl shadow-none'
+    }`}>
+    <div className="flex h-12 items-center justify-between px-4 sm:px-5">
+      <div className="flex items-center gap-4">
+        {/* Toggle only visible when sidebar is closed, or on mobile */}
+        {(!isSidebarOpen || window.innerWidth < 1024) && (
+          <button
+            onClick={onMenuClick}
+            className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-300 group"
+            title="Toggle System Navigation"
+          >
+            <SidebarToggleIcon isOpen={isSidebarOpen} mode={darkMode ? 'dark' : 'light'} />
+          </button>
+        )}
       </div>
 
-      <div className="flex items-center space-x-3">
-        <div className={`hidden md:flex items-center space-x-2 ${darkMode
-          ? 'bg-gray-800/70 border border-gray-700/50'
-          : 'bg-gray-100/70 border border-gray-200/50'
-          } rounded-xl px-4 py-2 transition-all duration-200 focus-within:ring-2 ${darkMode ? 'focus-within:ring-blue-600/50' : 'focus-within:ring-blue-500/50'
-          }`}>
-          <Search size={16} className={darkMode ? 'text-gray-400' : 'text-gray-500'} />
+      <div className="flex items-center gap-3">
+        {/* Search - Compact & Integrated */}
+        <div className={`hidden md:flex items-center h-8 px-3 gap-2 rounded-xl transition-all duration-300 w-48 lg:w-64 border 
+          ${darkMode
+            ? 'bg-white/5 border-white/10 focus-within:border-white/30'
+            : 'bg-white border-slate-200 focus-within:border-slate-900 shadow-sm shadow-slate-200/20'}`}>
+          <Search size={13} className={`${darkMode ? 'text-slate-500' : 'text-slate-400'}`} />
           <input
             type="text"
-            placeholder="Search cases, clients..."
-            className={`bg-transparent border-none outline-none text-sm w-48 ${darkMode ? 'text-gray-200 placeholder-gray-500' : 'text-gray-700 placeholder-gray-400'
-              }`}
+            placeholder="Search system..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-transparent border-none outline-none text-[11px] w-full placeholder:text-slate-400 font-bold focus:ring-0"
           />
         </div>
 
-        <div className="flex items-center space-x-1">
+        {/* Action Buttons */}
+        <div className="flex items-center gap-1 sm:gap-2">
           <button
             onClick={toggleDarkMode}
-            className={`p-2 rounded-xl ${darkMode
-              ? 'text-gray-300 hover:text-yellow-300 hover:bg-gray-800/70'
-              : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100/70'
-              } transition-all duration-200 focus:outline-none focus:ring-2 ${darkMode ? 'focus:ring-blue-600/50' : 'focus:ring-blue-500/50'
-              } relative overflow-hidden group`}
+            className={`p-2 rounded-xl transition-all ${darkMode ? 'text-amber-400 hover:bg-amber-400/10' : 'text-slate-600 hover:bg-slate-100'}`}
           >
-            {darkMode ? (
-              <>
-                <Sun size={18} className="relative z-10" />
-                <div className="absolute inset-0 bg-yellow-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
-              </>
-            ) : (
-              <>
-                <Moon size={18} className="relative z-10" />
-                <div className="absolute inset-0 bg-blue-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
-              </>
-            )}
+            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
 
-          <div ref={notificationsDropdownRef}>
+          <div className="relative">
             <NotificationDropdown
               notifications={notifications}
               notificationsCount={notificationsCount}
               notificationsLoading={notificationsLoading}
-              notificationsError={notificationsError}
               isOpen={notificationsDropdownOpen}
               onToggle={() => setNotificationsDropdownOpen(!notificationsDropdownOpen)}
               onMarkAllAsRead={markAllAsRead}
               onRefresh={fetchUserNotifications}
               onNotificationClick={handleNotificationClick}
               userId={userData?.id}
+              darkMode={darkMode}
+              compact={true}
             />
           </div>
         </div>
 
-        <div className="relative group">
-          <div className={`flex items-center space-x-3 cursor-pointer ${darkMode
-            ? 'hover:bg-gray-800/70 border border-gray-800'
-            : 'hover:bg-gray-50/70 border border-gray-200'
-            } rounded-xl p-2 transition-all duration-200`}>
-            <div className="w-9 h-9 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md relative group overflow-hidden">
-              <Avatar
-                src={userData?.profileImage}
-                name={userData?.name || "User"}
-                alt={userData?.name || "User"}
-                size={36}
-                className="w-full h-full rounded-xl"
-              />
-              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+        {/* Profile Dropdown */}
+        <div className="relative group ml-1">
+          <button className={`flex items-center gap-2 p-0.5 pr-2 rounded-full border transition-all ${darkMode ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-white'}`}>
+            <Avatar
+              src={userData?.profileImage}
+              name={userData?.name || 'L'}
+              size={24}
+              className="rounded-full shadow-md"
+            />
+            <div className="hidden sm:block text-left">
+              <p className="text-[10px] font-black leading-none uppercase tracking-widest">{userData?.name?.split(' ')[0] || 'Advocate'}</p>
+              <p className="text-[8px] text-slate-500 font-bold uppercase mt-1 opacity-70 tracking-tighter">Council Verified</p>
             </div>
-            <div className="hidden md:block">
-              <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                {userData?.name || "User"}
-              </p>
-              <div className="flex items-center">
-                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {userData?.role || "Lawyer"}
-                </p>
-                {userData?.isPremium && (
-                  <div className={`ml-2 flex items-center ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-                    <Shield size={10} className="mr-1" />
-                    <span className="text-[10px] font-medium">Premium</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <ChevronRight size={16} className={`hidden md:block transform group-hover:rotate-90 transition-transform duration-200 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-          </div>
+          </button>
 
-          {/* Dropdown menu */}
-          <div className={`absolute right-0 mt-2 w-48 rounded-xl shadow-lg overflow-hidden transition-all duration-200 opacity-0 invisible transform scale-95 origin-top-right group-hover:opacity-100 group-hover:visible group-hover:scale-100 ${darkMode
-            ? 'bg-gray-800 border border-gray-700'
-            : 'bg-white border border-gray-200'
-            }`}>
-            <div className={`p-3 ${darkMode ? 'border-b border-gray-700' : 'border-b border-gray-200'}`}>
-              <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                {userData?.name || "User"}
-              </p>
-              <p className={`text-xs truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                {userData?.email || ""}
-              </p>
+          {/* Dropdown Menu */}
+          <div className={`absolute right-0 mt-2 w-48 rounded-2xl shadow-2xl invisible group-hover:visible opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200 z-50 overflow-hidden border ${darkMode ? 'bg-neutral-900 border-white/10' : 'bg-white border-slate-200'}`}>
+            <div className="p-3 border-b border-inherit">
+              <p className="text-[12px] font-bold truncate">{userData?.name}</p>
+              <p className="text-[10px] text-slate-500 truncate">{userData?.email}</p>
             </div>
-
-            <div className="p-2">
-              <a href="/profile" className={`flex items-center px-3 py-2 text-sm rounded-lg ${darkMode
-                ? 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                }`}>
-                <User size={16} className="mr-2" />
-                Profile
-              </a>
-              <a href="#" className={`flex items-center px-3 py-2 text-sm rounded-lg ${darkMode
-                ? 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                }`}>
-                <Settings size={16} className="mr-2" />
-                Settings
-              </a>
+            <div className="p-1.5">
+              {[
+                { label: 'Academic Profile', icon: User, tab: 'profile' },
+                { label: 'System Settings', icon: Settings, tab: 'settings' },
+              ].map((item, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveTab(item.tab)}
+                  className={`w-full flex items-center gap-3 px-3 py-2 text-[11px] font-black uppercase tracking-widest transition-all ${darkMode ? 'text-slate-300 hover:bg-white/5' : 'text-slate-600 hover:bg-slate-50'}`}
+                >
+                  <item.icon size={14} className={darkMode ? 'text-white' : 'text-slate-900'} />
+                  {item.label}
+                </button>
+              ))}
+              <div className="my-1 border-t border-inherit" />
               <button
                 onClick={handleLogout}
-                className={`w-full flex items-center px-3 py-2 text-sm rounded-lg ${darkMode
-                  ? 'text-red-400 hover:bg-red-900/20 hover:text-red-300'
-                  : 'text-red-600 hover:bg-red-50 hover:text-red-700'
-                  }`}
+                className="w-full flex items-center gap-2 px-3 py-2 text-[11px] rounded-xl hover:bg-red-500/10 text-red-500 transition-colors"
               >
-                <LogOut size={16} className="mr-2" />
-                Logout
+                <LogOut size={14} /> Log Out
               </button>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </nav>
+  </header>
 );
 
-// Enhanced Sidebar imported from ../Sidebar.jsx
+const SidebarToggleIcon = ({ isOpen, mode }) => {
+  const isDark = mode === 'dark';
+  return (
+    <div className="relative w-5 h-5 flex flex-col justify-between items-center py-1.5">
+      <motion.span
+        animate={isOpen ? { rotate: 45, y: 5, width: "100%" } : { rotate: 0, y: 0, width: "100%" }}
+        className={`h-0.5 rounded-full ${isDark ? 'bg-slate-300' : 'bg-slate-950'}`}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      />
+      <motion.span
+        animate={isOpen ? { opacity: 0, x: -10 } : { opacity: 1, x: 0, width: "70%" }}
+        className={`h-0.5 rounded-full ${isDark ? 'bg-slate-500' : 'bg-slate-400'}`}
+        transition={{ duration: 0.2 }}
+      />
+      <motion.span
+        animate={isOpen ? { rotate: -45, y: -5, width: "100%" } : { rotate: 0, y: 0, width: "100%" }}
+        className={`h-0.5 rounded-full ${isDark ? 'bg-slate-300' : 'bg-slate-950'}`}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      />
+    </div>
+  );
+};
 
-// Enhanced Stats Card Component with premium styling
-const StatsCard = ({ stat, darkMode }) => (
-  <div className={`group relative overflow-hidden rounded-2xl ${darkMode
-    ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60'
-    : 'bg-white/90 border-gray-200/50 hover:bg-white'
-    } border shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1`}
-  >
-    {/* Animated gradient background on hover */}
-    <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}></div>
+const ScaleIcon = Scale;
 
-    {/* Decorative corner accent */}
-    <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${stat.gradient} opacity-5 rounded-bl-full transform translate-x-1/2 -translate-y-1/2`}></div>
-
-    <div className="relative p-5">
-      <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.gradient} shadow-lg relative group-hover:scale-105 transition-transform duration-300 overflow-hidden`}>
-          <stat.icon size={22} className="text-white relative z-10" />
-          <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+const LiveSessionCard = ({ appointment, darkMode, onJoin }) => (
+  <GlassCard darkMode={darkMode} className={`p-4 mb-6 border-l-4 ${darkMode ? 'border-l-white bg-white/5' : 'border-l-slate-900 bg-slate-50 shadow-sm'}`}>
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="flex items-center gap-4">
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center relative ${darkMode ? 'bg-white/10' : 'bg-white shadow-md'}`}>
+          <Video size={20} className={darkMode ? 'text-white' : 'text-slate-900'} />
+          <span className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 ${darkMode ? 'bg-white border-neutral-900' : 'bg-slate-900 border-white'} animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.5)]`} />
         </div>
-        <div className={`flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-medium ${stat.change.startsWith('+')
-          ? darkMode
-            ? 'bg-green-900/30 text-green-400 border border-green-800/30'
-            : 'bg-green-50 text-green-600 border border-green-100'
-          : darkMode
-            ? 'bg-red-900/30 text-red-400 border border-red-800/30'
-            : 'bg-red-50 text-red-600 border border-red-100'
-          } transition-all duration-300 group-hover:scale-105`}>
-          {stat.change.startsWith('+') ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
-          <span>{stat.change}</span>
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <h4 className={`text-[13px] font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>Active Channel: {appointment?.client_name || 'Legal Consultation'}</h4>
+          </div>
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+            <Shield size={10} className="text-blue-500" />
+            Secure Session • {appointment?.session_token?.slice(0, 8)}...
+          </p>
         </div>
       </div>
-      <div>
-        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'} mb-1.5 group-hover:text-opacity-80 transition-colors duration-300`}>{stat.title}</p>
-        <div className="flex items-end space-x-1">
-          <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-0.5 group-hover:text-opacity-90 transition-colors duration-300`}>{stat.value}</p>
-          <div className={`h-6 w-px mx-1 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} self-center`}></div>
-          <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'} pb-1`}>vs last month</p>
-        </div>
 
-        {/* Progress indicator */}
-        <div className="mt-3 h-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full bg-gradient-to-r ${stat.gradient}`}
-            style={{
-              width: stat.change.startsWith('+')
-                ? `${Math.min(parseInt(stat.change.replace('+', '').replace('%', '')) * 2, 100)}%`
-                : '30%'
-            }}
-          ></div>
-        </div>
+      <button
+        onClick={() => onJoin(appointment)}
+        className="relative px-8 h-12 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl text-[12px] font-black uppercase tracking-wider overflow-hidden group/btn transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-black/10"
+      >
+        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
+        <span className="relative z-10 flex items-center gap-2">
+          Join Consultation Room <ChevronRight size={16} />
+        </span>
+      </button>
+    </div>
+  </GlassCard>
+);
+
+const StatCardPremium = ({ title, value, change, trend, icon: Icon, color, darkMode }) => (
+  <GlassCard
+    darkMode={darkMode}
+    className={`p-3.5 group/stat ${darkMode ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}
+    id={`stat-${title.toLowerCase().split(' ')[0]}`}
+  >
+    <div className="flex items-start justify-between mb-2.5">
+      <div className={`p-2 rounded-xl ${darkMode ? 'bg-white/5' : 'bg-slate-50'} transition-all group-hover/stat:scale-110 group-hover/stat:bg-slate-900/10 dark:group-hover/stat:bg-white/10`}>
+        <Icon size={16} className={darkMode ? 'text-slate-300' : 'text-slate-900'} />
+      </div>
+      <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${trend === 'up' ? 'bg-amber-500/10 text-amber-600' : 'bg-red-500/10 text-red-500'}`}>
+        {trend === 'up' ? <ArrowUp size={8} /> : <ArrowDown size={8} />}
+        {change}%
       </div>
     </div>
-  </div>
+    <div>
+      <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">{title}</p>
+      <h3 className={`text-lg font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>{value}</h3>
+      <div className="mt-2 h-[3px] w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: '70%' }}
+          transition={{ duration: 1.5, ease: "easeOut" }}
+          className="h-full bg-slate-900 dark:bg-white"
+        />
+      </div>
+    </div>
+  </GlassCard>
 );
 
-// Enhanced Dashboard Component with premium styling
-const LawyerDashboard = ({ darkMode, userData }) => {
-  const stats = [
-    { title: 'Active Cases', value: '24', change: '+12%', icon: FileText, gradient: 'from-blue-500 to-blue-600' },
-    { title: 'Upcoming Appointments', value: '8', change: '+5%', icon: Calendar, gradient: 'from-green-500 to-green-600' },
-    { title: 'Pending Documents', value: '15', change: '-8%', icon: FolderOpen, gradient: 'from-orange-500 to-orange-600' },
-    { title: 'Monthly Revenue', value: '$45,230', change: '+18%', icon: DollarSign, gradient: 'from-purple-500 to-purple-600' }
-  ];
+const LawyerDashboard = ({ darkMode, userData, onNavigate, handleJoinSession, statsData, appointmentData, activeSession }) => {
+  const stats = useMemo(() => [
+    { title: 'Case Volume', value: statsData?.total_cases || '42', change: '12', trend: 'up', icon: FileText, color: COLORS.primary },
+    { title: 'Win Rate', value: '89%', change: '5', trend: 'up', icon: Award, color: COLORS.secondary },
+    { title: 'Retention', value: '94%', change: '2', trend: 'up', icon: Users, color: '#3B82F6' },
+    { title: 'Billed Rev.', value: `$${statsData?.revenue || '12.4K'}`, change: '8', trend: 'down', icon: DollarSign, color: '#F59E0B' },
+  ], [statsData]);
 
-  const recentAppointments = [
-    { id: 1, client: 'John Anderson', type: 'Consultation', time: '2:00 PM', status: 'confirmed', avatar: 'JA' },
-    { id: 2, client: 'Maria Rodriguez', type: 'Case Review', time: '3:30 PM', status: 'pending', avatar: 'MR' },
-    { id: 3, client: 'David Kim', type: 'Contract Signing', time: '4:15 PM', status: 'confirmed', avatar: 'DK' },
-    { id: 4, client: 'Emma Wilson', type: 'Initial Meeting', time: '5:00 PM', status: 'confirmed', avatar: 'EW' }
-  ];
-
-  const recentClients = [
-    { id: 1, name: 'Robert Chen', email: 'robert.chen@email.com', phone: '+1 (555) 123-4567', case: 'Corporate Law', avatar: 'RC', rating: 5 },
-    { id: 2, name: 'Lisa Thompson', email: 'lisa.t@email.com', phone: '+1 (555) 987-6543', case: 'Family Law', avatar: 'LT', rating: 4 },
-    { id: 3, name: 'Michael Brown', email: 'mbrown@email.com', phone: '+1 (555) 456-7890', case: 'Criminal Defense', avatar: 'MB', rating: 5 }
+  const performanceTrend = [
+    { name: 'Mon', value: 400, cases: 24 },
+    { name: 'Tue', value: 300, cases: 18 },
+    { name: 'Wed', value: 600, cases: 35 },
+    { name: 'Thu', value: 800, cases: 48 },
+    { name: 'Fri', value: 500, cases: 29 },
+    { name: 'Sat', value: 900, cases: 62 },
+    { name: 'Sun', value: 1100, cases: 75 },
   ];
 
   return (
-    <div className="p-6 space-y-8 max-w-7xl mx-auto">
-      {/* Welcome Section with premium styling */}
-      <div className={`relative overflow-hidden rounded-2xl ${darkMode
-        ? 'bg-gradient-to-r from-gray-800 via-gray-800/95 to-gray-800 border border-gray-700/50'
-        : 'bg-gradient-to-r from-white via-white/95 to-white border border-gray-200/50'
-        } p-6 shadow-lg`}
-      >
-        <div className="absolute inset-0 overflow-hidden">
-          <div className={`absolute top-0 right-0 w-64 h-64 rounded-full ${darkMode
-            ? 'bg-blue-600/5'
-            : 'bg-blue-100/50'
-            } blur-3xl transform translate-x-1/3 -translate-y-1/2`}
-          ></div>
-          <div className={`absolute bottom-0 left-0 w-64 h-64 rounded-full ${darkMode
-            ? 'bg-purple-600/5'
-            : 'bg-purple-100/50'
-            } blur-3xl transform -translate-x-1/3 translate-y-1/2`}
-          ></div>
-        </div>
+    <div className="p-4 sm:p-5 space-y-5 max-w-[1600px] mx-auto overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
+        <GlassCard darkMode={darkMode} className="lg:col-span-2 p-6 flex flex-col justify-between relative overflow-hidden group">
+          <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 transition-colors ${darkMode ? 'bg-white/5 group-hover:bg-white/10' : 'bg-slate-900/5 group-hover:bg-slate-900/10'}`} />
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div className="flex-1">
-            <div className="flex items-center">
-              <div className="mr-4 p-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg">
-                <Flame size={24} className="text-white" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-2">
+              <PremiumBadge text="Professional Dashboard" />
+              <span className="text-[9px] font-bold text-slate-400 italic">SYSTEM: LEG-2026-ACTIVE</span>
+            </div>
+            <h1 className={`text-2xl sm:text-3xl font-black tracking-tighter mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+              Advancing Justice,<br />
+              <span className="text-slate-900 dark:text-white underline decoration-slate-400/30 underline-offset-8">
+                Adv. {userData?.name || 'Vakil'}
+              </span>
+            </h1>
+            <p className={`text-[12px] max-w-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'} leading-relaxed font-bold opacity-80`}>
+              Current roster: <span className="text-slate-900 dark:text-slate-300">{appointmentData?.length || 0} active sessions</span>. Efficiency up <span className="text-slate-900 dark:text-slate-300">15.2%</span>.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-white/5">
+            <div className="flex -space-x-2">
+              {[1, 2, 3].map(i => (
+                <div key={i} className={`w-8 h-8 rounded-full border-2 ${darkMode ? 'border-neutral-900' : 'border-white'} overflow-hidden shadow-lg shadow-black/10`}>
+                  <img src={`https://i.pravatar.cc/150?u=${i}`} alt="Client" />
+                </div>
+              ))}
+              <div className={`w-8 h-8 rounded-full border-2 ${darkMode ? 'border-neutral-900' : 'border-white'} bg-slate-900 dark:bg-white flex items-center justify-center text-[10px] font-black text-white dark:text-slate-900 shadow-lg shadow-black/10`}>
+                +5
               </div>
+            </div>
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">New Clients Queue</p>
+          </div>
+        </GlassCard>
+
+        <GlassCard darkMode={darkMode} className="p-0 overflow-hidden group">
+          <div className={`h-full p-6 flex flex-col justify-between text-white relative transition-all ${darkMode ? 'bg-gradient-to-br from-indigo-950 via-slate-950 to-black' : 'bg-gradient-to-br from-slate-900 via-slate-800 to-black'}`}>
+            <div className={`absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-from)_0%,_transparent_50%)] ${darkMode ? 'from-white/10' : 'from-slate-400/20'}`} />
+
+            <div className="relative z-10 flex items-start justify-between">
               <div>
-                <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Welcome back, {userData?.name?.split(' ')[0] || 'Lawyer'}! 👋
-                </h2>
-                <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} mt-1`}>
-                  Here's what's happening with your practice today.
-                </p>
+                <p className={`text-[10px] font-black uppercase tracking-wider mb-0.5 ${darkMode ? 'text-slate-400' : 'text-slate-300'}`}>Key Milestone</p>
+                <h3 className="text-lg font-black leading-tight">Supreme Court Review<br />Case #882-B</h3>
               </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-4">
-            <div className={`flex-1 min-w-[140px] p-3 rounded-xl ${darkMode
-              ? 'bg-gray-800/70 border border-gray-700/50'
-              : 'bg-white/70 border border-gray-200/50'
-              } backdrop-blur-sm`}
-            >
-              <div className="flex items-center mb-1">
-                <Target size={16} className={`mr-2 ${darkMode ? 'text-green-400' : 'text-green-500'}`} />
-                <p className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Success Rate</p>
-              </div>
-              <div className="flex items-baseline">
-                <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {userData?.success_rate || '0%'}
-                </p>
-                <p className={`ml-2 text-xs ${darkMode ? 'text-green-400' : 'text-green-500'}`}>
-                  {userData?.success_rate_change || '+0%'}
-                </p>
+              <div className="w-9 h-9 bg-white/10 backdrop-blur-xl rounded-xl flex items-center justify-center border border-white/20">
+                <Gavel size={18} />
               </div>
             </div>
 
-            <div className={`flex-1 min-w-[140px] p-3 rounded-xl ${darkMode
-              ? 'bg-gray-800/70 border border-gray-700/50'
-              : 'bg-white/70 border border-gray-200/50'
-              } backdrop-blur-sm`}
-            >
-              <div className="flex items-center mb-1">
-                <Layers size={16} className={`mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
-                <p className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Total Cases</p>
+            <div className="relative z-10 mt-auto">
+              <div className="flex items-center gap-1.5 mb-4 text-slate-300">
+                <Flame size={12} className="animate-pulse" />
+                <span className="text-[9px] font-black uppercase tracking-widest font-mono">High Priority</span>
               </div>
-              <div className="flex items-baseline">
-                <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {userData?.cases_handled || '0'}
-                </p>
-                <p className={`ml-2 text-xs ${darkMode ? 'text-blue-400' : 'text-blue-500'}`}>
-                  {userData?.new_cases ? `+${userData.new_cases} new` : '+0 new'}
-                </p>
+              <div className="space-y-3">
+                <div className="flex justify-between items-end border-b border-white/10 pb-1.5">
+                  <span className="text-[9px] text-white/50 font-bold uppercase">Win Prob.</span>
+                  <span className="text-base font-black tracking-tighter">92%</span>
+                </div>
+                <button className={`w-full h-9 bg-white text-slate-900 font-black text-[10px] uppercase tracking-widest rounded-lg hover:scale-[1.02] transition-all`}>
+                  Insight Detail
+                </button>
               </div>
             </div>
           </div>
-        </div>
+        </GlassCard>
       </div>
 
-      {/* Lawyer Profile Card */}
-      <div className={`relative overflow-hidden rounded-2xl ${darkMode
-        ? 'bg-gradient-to-r from-gray-800 via-gray-800/95 to-gray-800 border border-gray-700/50'
-        : 'bg-gradient-to-r from-white via-white/95 to-white border border-gray-200/50'
-        } p-6 shadow-lg`}
-      >
-        <div className="absolute inset-0 overflow-hidden">
-          <div className={`absolute top-0 right-0 w-64 h-64 rounded-full ${darkMode
-            ? 'bg-purple-600/5'
-            : 'bg-purple-100/50'
-            } blur-3xl transform translate-x-1/3 -translate-y-1/2`}
-          ></div>
-        </div>
+      <AnimatePresence>
+        {activeSession && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+          >
+            <LiveSessionCard appointment={activeSession} darkMode={darkMode} onJoin={handleJoinSession} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        <div className="relative z-10">
-          <div className="flex flex-col md:flex-row gap-6">
-            <div className="md:w-1/3">
-              <div className={`p-5 rounded-xl ${darkMode
-                ? 'bg-gray-800/70 border border-gray-700/50'
-                : 'bg-white/70 border border-gray-200/50'
-                } backdrop-blur-sm`}
-              >
-                <div className="flex flex-col items-center">
-                  <div className="w-24 h-24 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg relative overflow-hidden mb-4">
-                    <Avatar
-                      src={userData?.profileImage}
-                      name={userData?.name || "Lawyer"}
-                      alt={userData?.name || "Lawyer"}
-                      size={96}
-                      className="w-full h-full rounded-xl"
-                    />
-                  </div>
-                  <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {userData?.name || "Lawyer"}
-                  </h3>
-                  <p className={`text-sm ${darkMode ? 'text-blue-400' : 'text-blue-600'} font-medium`}>
-                    {userData?.role || "Lawyer"}
-                  </p>
-                  <div className="flex items-center mt-2">
-                    <Award size={16} className={`mr-1 ${darkMode ? 'text-yellow-400' : 'text-yellow-500'}`} />
-                    <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      {userData?.experience || "0 years"} experience
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-6 space-y-3">
-                  <div className="flex items-center">
-                    <Mail size={16} className={`mr-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      {userData?.email || "email@merabakil.com"}
-                    </p>
-                  </div>
-                  <div className="flex items-center">
-                    <Phone size={16} className={`mr-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      {userData?.phone || "Not provided"}
-                    </p>
-                  </div>
-                  <div className="flex items-center">
-                    <MapPin size={16} className={`mr-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      {userData?.location || "Not provided"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="md:w-2/3">
-              <div className={`p-5 rounded-xl h-full ${darkMode
-                ? 'bg-gray-800/70 border border-gray-700/50'
-                : 'bg-white/70 border border-gray-200/50'
-                } backdrop-blur-sm`}
-              >
-                <h3 className={`text-lg font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Professional Information
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className={`text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Specialization
-                    </h4>
-                    <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {userData?.specialization || "General Law"}
-                    </p>
-
-                    <h4 className={`text-sm font-medium mb-2 mt-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Bar Association
-                    </h4>
-                    <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {userData?.bar_association || "Not provided"}
-                    </p>
-
-                    <h4 className={`text-sm font-medium mb-2 mt-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      License Number
-                    </h4>
-                    <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {userData?.license_number || "Not provided"}
-                    </p>
-                  </div>
-
-                  <div>
-                    <h4 className={`text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Education
-                    </h4>
-                    <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {userData?.education || "Not provided"}
-                    </p>
-
-                    <h4 className={`text-sm font-medium mb-2 mt-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Languages
-                    </h4>
-                    <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {userData?.languages || "Not provided"}
-                    </p>
-
-                    <h4 className={`text-sm font-medium mb-2 mt-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Availability
-                    </h4>
-                    <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {userData?.availability || "Not provided"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-        {stats.map((stat, index) => (
-          <StatsCard key={index} stat={stat} darkMode={darkMode} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {stats.map((stat, i) => (
+          <StatCardPremium key={i} {...stat} darkMode={darkMode} />
         ))}
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Appointments & Revenue Trend */}
-        <div className={`${darkMode
-          ? 'bg-gray-800/40 border-gray-700/50'
-          : 'bg-white/90 border-gray-200/50'
-          } rounded-2xl shadow-lg border p-5 transition-all duration-300 hover:shadow-xl`}
-        >
-          <div className="flex items-center justify-between mb-5">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <GlassCard darkMode={darkMode} className="xl:col-span-2 p-5 h-[340px] flex flex-col">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                Appointment & Revenue Trends
-              </h3>
-              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} mt-0.5`}>
-                Last 6 months performance
-              </p>
+              <h3 className={`text-base font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>Performance Analytics</h3>
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Growth Metrics Over Time</p>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-1">
-                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Appointments</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Revenue</span>
-              </div>
-              <button className={`p-1.5 rounded-lg ${darkMode
-                ? 'bg-blue-900/20 text-blue-400 hover:bg-blue-900/30'
-                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                } transition-colors ml-2`}
-              >
-                <TrendingUp size={16} />
+            <div className="flex gap-2">
+              <PremiumBadge text="Monthly" type="dark" />
+              <button className={`p-2 rounded-xl transition-all ${darkMode ? 'bg-white/5' : 'bg-slate-100'}`}>
+                <Filter size={14} />
               </button>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={appointmentData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="appointmentGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke={darkMode ? 'rgba(55, 65, 81, 0.3)' : 'rgba(229, 231, 235, 0.8)'}
-                vertical={false}
-              />
-              <XAxis
-                dataKey="month"
-                stroke={darkMode ? '#9CA3AF' : '#6B7280'}
-                tick={{ fontSize: 12 }}
-                axisLine={{ stroke: darkMode ? 'rgba(75, 85, 99, 0.3)' : 'rgba(209, 213, 219, 0.8)' }}
-                tickLine={false}
-              />
-              <YAxis
-                stroke={darkMode ? '#9CA3AF' : '#6B7280'}
-                tick={{ fontSize: 12 }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(value) => value.toLocaleString()}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: darkMode ? 'rgba(31, 41, 55, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-                  border: 'none',
-                  borderRadius: '12px',
-                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                  color: darkMode ? '#F9FAFB' : '#111827',
-                  padding: '12px'
-                }}
-                itemStyle={{
-                  color: darkMode ? '#F9FAFB' : '#111827',
-                  fontSize: '12px',
-                  padding: '2px 0'
-                }}
-                labelStyle={{
-                  color: darkMode ? '#D1D5DB' : '#4B5563',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  marginBottom: '6px'
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="appointments"
-                stroke="#3B82F6"
-                strokeWidth={2}
-                fill="url(#appointmentGradient)"
-                activeDot={{ r: 6, strokeWidth: 0 }}
-              />
-              <Area
-                type="monotone"
-                dataKey="revenue"
-                stroke="#10B981"
-                strokeWidth={2}
-                fill="url(#revenueGradient)"
-                activeDot={{ r: 6, strokeWidth: 0 }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Case Types Distribution */}
-        <div className={`${darkMode
-          ? 'bg-gray-800/40 border-gray-700/50'
-          : 'bg-white/90 border-gray-200/50'
-          } rounded-2xl shadow-lg border p-5 transition-all duration-300 hover:shadow-xl`}
-        >
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                Case Types Distribution
-              </h3>
-              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} mt-0.5`}>
-                Current active cases by category
-              </p>
-            </div>
-            <button className={`p-1.5 rounded-lg ${darkMode
-              ? 'bg-purple-900/20 text-purple-400 hover:bg-purple-900/30'
-              : 'bg-purple-50 text-purple-600 hover:bg-purple-100'
-              } transition-colors`}
-            >
-              <PieChart size={16} />
-            </button>
-          </div>
-          <div className="flex flex-col md:flex-row items-center justify-center">
-            <ResponsiveContainer width="100%" height={240}>
-              <RechartsPieChart>
-                <Pie
-                  data={caseTypeData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  innerRadius={55}
-                  dataKey="value"
-                  strokeWidth={2}
-                  stroke={darkMode ? '#1F2937' : '#FFFFFF'}
-                >
-                  {caseTypeData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: darkMode ? 'rgba(31, 41, 55, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-                    border: 'none',
-                    borderRadius: '12px',
-                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                    color: darkMode ? '#F9FAFB' : '#111827',
-                    padding: '12px'
-                  }}
+          <div className="flex-1 w-full min-h-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={performanceTrend}>
+                <defs>
+                  <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? 'rgba(255,255,255,0.05)' : '#f1f5f9'} vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 10, fill: darkMode ? '#64748B' : '#94A3B8', fontWeight: 700 }}
                 />
-              </RechartsPieChart>
+                <YAxis hide />
+                <Tooltip content={<CustomTooltip darkMode={darkMode} />} cursor={{ stroke: COLORS.primary, strokeWidth: 1 }} />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke={COLORS.primary}
+                  strokeWidth={4}
+                  fillOpacity={1}
+                  fill="url(#colorVal)"
+                  animationDuration={1500}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="cases"
+                  stroke={COLORS.secondary}
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                  fill="transparent"
+                />
+              </AreaChart>
             </ResponsiveContainer>
-
-            <div className="flex flex-col space-y-3 md:w-1/3">
-              {caseTypeData.map((item, index) => (
-                <div key={index} className="flex items-center">
-                  <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></div>
-                  <span className={`text-xs ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{item.name}</span>
-                  <span className={`ml-auto text-xs font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{item.value}%</span>
-                </div>
-              ))}
-            </div>
           </div>
-        </div>
-      </div>
+        </GlassCard>
 
-      {/* Recent Activities */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Today's Appointments */}
-        <div className={`${darkMode
-          ? 'bg-gray-800/40 border-gray-700/50'
-          : 'bg-white/90 border-gray-200/50'
-          } rounded-2xl shadow-lg border p-5 transition-all duration-300 hover:shadow-xl`}
-        >
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                Today's Appointments
-              </h3>
-              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} mt-0.5`}>
-                {recentAppointments.length} appointments scheduled
-              </p>
-            </div>
-            <button className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl ${darkMode
-              ? 'bg-gradient-to-r from-blue-600/90 to-purple-600/90 hover:from-blue-600 hover:to-purple-600'
-              : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
-              } text-white text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200`}
-            >
-              <Plus size={14} />
-              <span>Add New</span>
-            </button>
-          </div>
-          <div className="space-y-3">
-            {recentAppointments.map((appointment) => (
-              <div
-                key={appointment.id}
-                className={`group flex items-center justify-between p-3 ${darkMode
-                  ? 'bg-gray-700/30 hover:bg-gray-700/50 border border-gray-700/50'
-                  : 'bg-gray-50/70 hover:bg-gray-100/70 border border-gray-200/50'
-                  } rounded-xl transition-all duration-200 cursor-pointer hover:shadow-sm`}
+        <div className="space-y-5">
+          <GlassCard darkMode={darkMode} className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={`text-[11px] font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900 uppercase'} tracking-wider`}>Active Consultations</h3>
+              <button
+                onClick={() => onNavigate('appointments')}
+                className={`text-[9px] font-black uppercase tracking-widest hover:underline ${darkMode ? 'text-slate-400' : 'text-slate-900'}`}
               >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-white font-semibold shadow-sm group-hover:shadow-md transition-all duration-200 relative overflow-hidden">
-                    <span className="relative z-10">{appointment.avatar}</span>
-                    <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-                  </div>
-                  <div>
-                    <p className={`font-medium text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>{appointment.client}</p>
-                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{appointment.type}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{appointment.time}</p>
-                  <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${appointment.status === 'confirmed'
-                    ? darkMode
-                      ? 'bg-green-900/30 text-green-400 border border-green-800/30'
-                      : 'bg-green-50 text-green-600 border border-green-100'
-                    : darkMode
-                      ? 'bg-yellow-900/30 text-yellow-400 border border-yellow-800/30'
-                      : 'bg-yellow-50 text-yellow-600 border border-yellow-100'
-                    }`}>
-                    {appointment.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 text-center">
-            <button className={`text-xs font-medium ${darkMode
-              ? 'text-blue-400 hover:text-blue-300'
-              : 'text-blue-600 hover:text-blue-700'
-              } transition-colors`}
-            >
-              View All Appointments
-            </button>
-          </div>
-        </div>
-
-        {/* Recent Clients */}
-        <div className={`${darkMode
-          ? 'bg-gray-800/40 border-gray-700/50'
-          : 'bg-white/90 border-gray-200/50'
-          } rounded-2xl shadow-lg border p-5 transition-all duration-300 hover:shadow-xl`}
-        >
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                Recent Clients
-              </h3>
-              <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} mt-0.5`}>
-                {recentClients.length} clients recently active
-              </p>
+                View Registry
+              </button>
             </div>
-            <button className={`flex items-center space-x-1 ${darkMode
-              ? 'text-blue-400 hover:text-blue-300'
-              : 'text-blue-600 hover:text-blue-700'
-              } transition-colors text-sm font-medium`}
-            >
-              <span>View All</span>
-              <ChevronRight size={16} />
-            </button>
-          </div>
-          <div className="space-y-3">
-            {recentClients.map((client) => (
-              <div
-                key={client.id}
-                className={`group flex items-center justify-between p-3 ${darkMode
-                  ? 'bg-gray-700/30 hover:bg-gray-700/50 border border-gray-700/50'
-                  : 'bg-gray-50/70 hover:bg-gray-100/70 border border-gray-200/50'
-                  } rounded-xl transition-all duration-200 cursor-pointer hover:shadow-sm`}
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl flex items-center justify-center text-white font-semibold shadow-sm group-hover:shadow-md transition-all duration-200 relative overflow-hidden">
-                    <span className="relative z-10">{client.avatar}</span>
-                    <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-                  </div>
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <p className={`font-medium text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>{client.name}</p>
-                      <div className="flex items-center">
-                        {[...Array(client.rating)].map((_, i) => (
-                          <Star key={i} size={10} className="text-yellow-400 fill-current" />
-                        ))}
-                      </div>
+            <div className="space-y-3">
+              {(appointmentData && appointmentData.length > 0 ? appointmentData.slice(0, 3) : [1, 2, 3]).map((apt, i) => {
+                const isAptLive = typeof apt === 'object' && apt.appointment_time && (
+                  apt.consultation_status === 'in_progress' ||
+                  ((new Date(apt.appointment_time).getTime() - new Date().getTime()) < 15 * 60 * 1000 &&
+                    (new Date().getTime() - new Date(apt.appointment_time).getTime()) < 120 * 60 * 1000)
+                );
+                const isActiveSessionForApt = activeSession && typeof apt === 'object' && activeSession.appointment_id === apt.id;
+
+                return (
+                  <div key={i} className="flex items-center gap-2.5 group/item">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-black text-[11px] transition-all group-hover/item:scale-110 relative ${darkMode ? 'bg-white/5 text-slate-300' : 'bg-slate-100 text-slate-900'}`}>
+                      {typeof apt === 'object' ? apt.client_name?.charAt(0) : 'C'}
+                      {(isAptLive || isActiveSessionForApt) && (
+                        <span className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 ${darkMode ? 'bg-white border-neutral-900' : 'bg-slate-900 border-white'} animate-pulse`} />
+                      )}
                     </div>
-                    <div className="flex items-center mt-0.5">
-                      <Bookmark size={10} className={`mr-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                      <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{client.case}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-[11px] font-black truncate ${darkMode ? 'text-white' : 'text-slate-900 group-hover/item:text-slate-500 transition-colors'}`}>
+                        {typeof apt === 'object' ? apt.client_name : 'Client Session ' + i}
+                      </p>
+                      <p className="text-[9px] text-slate-500 font-bold uppercase opacity-70">
+                        {typeof apt === 'object' ? new Date(apt.appointment_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '9:30 AM'} • {typeof apt === 'object' ? apt.case_type : 'Cons.'}
+                      </p>
                     </div>
+
+                    {(isAptLive || isActiveSessionForApt) ? (
+                      <button
+                        onClick={() => handleJoinSession(isActiveSessionForApt ? activeSession : { session_token: apt.session_token || 'pending', appointment_id: apt.id })}
+                        className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${darkMode ? 'bg-white text-slate-900' : 'bg-slate-900 text-white shadow-lg shadow-black/10'}`}
+                      >
+                        Join Room
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onNavigate('appointments')}
+                        className={`p-1.5 rounded-lg opacity-0 group-hover/item:opacity-100 transition-all ${darkMode ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-slate-100 hover:bg-slate-900 text-slate-500 hover:text-white'}`}
+                      >
+                        <ChevronRight size={12} />
+                      </button>
+                    )}
                   </div>
-                </div>
-                <div className="flex space-x-1">
-                  <button className={`p-1.5 rounded-lg ${darkMode
-                    ? 'text-gray-400 hover:text-blue-400 hover:bg-blue-900/20 border border-gray-700/50'
-                    : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50/70 border border-gray-200/50'
-                    } transition-all duration-200`}
-                  >
-                    <Phone size={14} />
-                  </button>
-                  <button className={`p-1.5 rounded-lg ${darkMode
-                    ? 'text-gray-400 hover:text-blue-400 hover:bg-blue-900/20 border border-gray-700/50'
-                    : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50/70 border border-gray-200/50'
-                    } transition-all duration-200`}
-                  >
-                    <Mail size={14} />
-                  </button>
-                  <button className={`p-1.5 rounded-lg ${darkMode
-                    ? 'text-gray-400 hover:text-purple-400 hover:bg-purple-900/20 border border-gray-700/50'
-                    : 'text-gray-400 hover:text-purple-600 hover:bg-purple-50/70 border border-gray-200/50'
-                    } transition-all duration-200`}
-                  >
-                    <MoreHorizontal size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 text-center">
-            <button className={`text-xs font-medium ${darkMode
-              ? 'text-blue-400 hover:text-blue-300'
-              : 'text-blue-600 hover:text-blue-700'
-              } transition-colors`}
-            >
-              View All Clients
+                );
+              })}
+            </div>
+          </GlassCard>
+
+          <GlassCard darkMode={darkMode} className={`p-5 bg-gradient-to-br transition-all relative overflow-hidden ${darkMode ? 'from-purple-900/10 to-transparent' : 'from-purple-50 to-white'}`}>
+            <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500" />
+            <h4 className={`text-[9px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+              <Bot size={12} /> AI Strategy
+            </h4>
+            <p className={`text-[11px] font-bold leading-[1.4] mb-3 ${darkMode ? 'text-slate-400' : 'text-slate-600'} opacity-80`}>
+              "Case #441-D strategy shift recommended due to new local ordinance."
+            </p>
+            <button className={`w-full h-8 border border-purple-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest ${darkMode ? 'text-purple-400 hover:bg-purple-500/20' : 'text-purple-700 hover:bg-purple-500 hover:text-white'} transition-all`}>
+              Open AI Insight
             </button>
-          </div>
+          </GlassCard>
         </div>
       </div>
     </div>
   );
 };
 
-// Enhanced Placeholder Component with premium styling
-const PlaceholderComponent = ({ title, darkMode }) => (
-  <div className="p-6 max-w-7xl mx-auto">
-    <div className={`${darkMode
-      ? 'bg-gradient-to-r from-gray-800 via-gray-800/95 to-gray-800 border border-gray-700/50'
-      : 'bg-gradient-to-r from-white via-white/95 to-white border border-gray-200/50'
-      } rounded-2xl shadow-lg p-8 text-center relative overflow-hidden`}
-    >
-      {/* Decorative elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className={`absolute top-0 right-0 w-64 h-64 rounded-full ${darkMode
-          ? 'bg-blue-600/5'
-          : 'bg-blue-100/50'
-          } blur-3xl transform translate-x-1/3 -translate-y-1/2`}
-        ></div>
-        <div className={`absolute bottom-0 left-0 w-64 h-64 rounded-full ${darkMode
-          ? 'bg-purple-600/5'
-          : 'bg-purple-100/50'
-          } blur-3xl transform -translate-x-1/3 translate-y-1/2`}
-        ></div>
-      </div>
+// --- Main LawyerAdmin Component ---
 
-      <div className="relative z-10">
-        <div className="inline-flex items-center justify-center p-4 mb-6 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg">
-          <Sparkles size={28} className="text-white" />
-        </div>
-        <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'} mb-3`}>{title}</h2>
-        <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} max-w-md mx-auto mb-6`}>
-          This section is currently in development and will be available soon. We're working hard to bring you the best experience.
-        </p>
-        <button className={`inline-flex items-center px-4 py-2 rounded-xl ${darkMode
-          ? 'bg-gradient-to-r from-blue-600/90 to-purple-600/90 hover:from-blue-600 hover:to-purple-600'
-          : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
-          } text-white text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200`}
-        >
-          <Zap size={16} className="mr-2" />
-          Get Notified When Ready
-        </button>
-      </div>
-    </div>
-  </div>
-);
-
-// Main Layout Component with its own navbar
 const LawyerAdmin = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState('chatbot');
-  const [darkMode, setDarkMode] = useState(() => {
-    // Check if user has a preference stored
-    const savedPreference = localStorage.getItem('darkMode');
-    if (savedPreference !== null) {
-      return JSON.parse(savedPreference);
-    }
-    // Otherwise check system preference
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
+  const { isDark, toggleTheme } = useTheme();
+  const dispatch = useDispatch();
+  const { isOpen: isSidebarOpen } = useSelector((state) => state.sidebar);
 
-  // Add subtle animation effect for page transitions
-  const [pageTransition, setPageTransition] = useState(false);
-
-  // User data state
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // Notification states
+  const [statsData, setStatsData] = useState(null);
+  const [appointmentData, setAppointmentData] = useState([]);
+  const [activeSession, setActiveSession] = useState(null);
+
   const [notifications, setNotifications] = useState([]);
   const [notificationsCount, setNotificationsCount] = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
-  const [notificationsError, setNotificationsError] = useState(null);
   const [notificationsDropdownOpen, setNotificationsDropdownOpen] = useState(false);
-  const notificationsDropdownRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch user profile data
+  // Intelligent Search & Navigation Logic
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        setLoading(true);
-        // First try to get from localStorage for immediate display
-        const cachedUser = tokenManager.getUser();
-        if (cachedUser) {
-          setUserData({
-            name: cachedUser.name || "User",
-            email: cachedUser.email || "",
-            role: cachedUser.role || "Lawyer",
-            profileImage: cachedUser.avatar || cachedUser.profile_image || null,
-            isPremium: cachedUser.is_premium || cachedUser.isPremium || false,
-            experience: cachedUser.experience || "0 years",
-            specialization: cachedUser.specialization || "General Law",
-            cases_handled: cachedUser.cases_handled || 0,
-            success_rate: cachedUser.success_rate || "0%",
-            id: cachedUser.id,
-            phone: cachedUser.phone || cachedUser.contact_number || "",
-            location: cachedUser.location || cachedUser.address || "",
-            bar_association: cachedUser.bar_association || "",
-            license_number: cachedUser.license_number || "",
-            education: cachedUser.education || "",
-            languages: cachedUser.languages || "English",
-            availability: cachedUser.availability || "Weekdays 9AM-5PM",
-            rating: cachedUser.rating || "4.8"
-          });
+    if (!searchQuery) return;
+
+    const query = searchQuery.toLowerCase().trim();
+
+    // 1. Tab Navigation Routing
+    const tabMap = {
+      'dashboard': ['dash', 'home', 'main', 'overview'],
+      'appointments': ['appt', 'consult', 'meet', 'session', 'calendar', 'schedule'],
+      'clients': ['client', 'customer', 'people', 'user', 'vault', 'crm'],
+      'cases': ['case', 'legal', 'suit', 'litigation', 'active', 'portfolio'],
+      'documents': ['doc', 'file', 'record', 'paper', 'archive', 'bucket'],
+      'profile': ['profile', 'academic', 'my info', 'account'],
+      'settings': ['settings', 'security', 'preferences', 'config']
+    };
+
+    for (const [tabId, keywords] of Object.entries(tabMap)) {
+      if (keywords.some(k => query.includes(k))) {
+        setActiveTab(tabId);
+        break;
+      }
+    }
+
+    // 2. Fragment Highlighting (Dashboard scroll/highlight)
+    if (activeTab === 'dashboard') {
+      const highlights = {
+        'total': ['volume', 'total', 'case load'],
+        'win': ['win', 'ratio', 'success', 'award', 'target'],
+        'revenue': ['rev', 'bill', 'money', 'dollar', 'earn'],
+        'active': ['hearing', 'active', 'urgent']
+      };
+
+      for (const [id, kwset] of Object.entries(highlights)) {
+        if (kwset.some(k => query.includes(k))) {
+          const el = document.getElementById(`stat-${id}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Brief visual highlight effect
+            el.style.boxShadow = `0 0 20px ${isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(30, 41, 59, 0.2)'}`;
+            setTimeout(() => { if (el) el.style.boxShadow = ''; }, 2000);
+          }
+          break;
         }
+      }
+    }
+  }, [searchQuery, activeTab]);
 
-        // Then fetch fresh data from API using the apiServices
-        const profileData = await apiServices.getUserProfile();
+  const fetchData = React.useCallback(async (profileId, fallbackProfile = null) => {
+    try {
+      const [dashResponse, activeConsultResponse] = await Promise.all([
+        lawyerAdminAPI.getDashboardData(profileId).catch((err) => {
+          console.error("Dashboard API error:", err);
+          return { data: {} };
+        }),
+        consultationAPI.getActiveSession().catch((err) => {
+          console.error("Session API error:", err);
+          return { data: null };
+        })
+      ]);
 
-        // Update state with fresh data
-        setUserData({
-          name: profileData.name || "User",
-          email: profileData.email || "",
-          role: profileData.role || "Lawyer",
-          profileImage: profileData.avatar || profileData.profile_image || null,
-          isPremium: profileData.is_premium || profileData.isPremium || false,
-          experience: profileData.experience || "0 years",
-          specialization: profileData.specialization || "General Law",
-          cases_handled: profileData.cases_handled || 0,
-          success_rate: profileData.success_rate || "0%",
-          id: profileData.id,
-          phone: profileData.phone || profileData.contact_number || "",
-          location: profileData.location || profileData.address || "",
-          bar_association: profileData.bar_association || "",
-          license_number: profileData.license_number || "",
-          education: profileData.education || "",
-          languages: profileData.languages || "English",
-          availability: profileData.availability || "Weekdays 9AM-5PM",
-          rating: profileData.rating || "4.8"
+      const dashData = dashResponse?.data || {};
+
+      const stats = {
+        total_cases: dashData.active_cases || 0,
+        revenue: dashData.monthly_revenue || 0,
+        upcoming_count: dashData.upcoming_appointments?.length || 0,
+        trends: dashData.appointment_trends || [],
+        revenue_trends: dashData.revenue_trends || []
+      };
+
+      // Merge and sanitize appointments from profile JSON hierarchy
+      // We use localStorage as a high-integrity source of truth to avoid stale closures in polling
+      let appointments = dashData.upcoming_appointments || [];
+      const profileData = fallbackProfile || JSON.parse(localStorage.getItem('user_profile') || '{}');
+      const profileAppointments = profileData?.recent_activity?.appointments;
+
+      if ((!appointments || appointments.length === 0) && Array.isArray(profileAppointments)) {
+        console.log(`Smart Data Sync: Falling back to profile stream for appointments. Found ${profileAppointments.length} appointments.`);
+        appointments = profileAppointments;
+      } else if (appointments.length > 0) {
+        console.log(`Smart Data Sync: Using ${appointments.length} appointments from dashboard API.`);
+      } else {
+        console.log(`Smart Data Sync: No appointments found from dashboard API or profile stream.`);
+      }
+
+      const activeConsult = activeConsultResponse?.data?.has_active_session
+        ? activeConsultResponse.data.session
+        : null;
+
+      // Auto-promote live or in-progress appointments to dashboard focus
+      let effectivelyActive = activeConsult;
+      if (!effectivelyActive && Array.isArray(appointments)) {
+        const liveApt = appointments.find(apt => {
+          if (!apt?.appointment_time) return false;
+
+          // Priority 1: Explicitly marked as in_progress
+          if (apt.consultation_status === 'in_progress') return true;
+
+          const aptTime = new Date(apt.appointment_time).getTime();
+          const now = new Date().getTime();
+
+          // Priority 2: Temporal proximity (15m before, 2h after)
+          return apt.status === 'scheduled' &&
+            (aptTime - now) < 15 * 60 * 1000 &&
+            (now - aptTime) < 120 * 60 * 1000;
         });
 
-        // Update localStorage with fresh data
-        tokenManager.setUser(profileData);
-        setLoading(false);
-      } catch (err) {
-        console.error("Error fetching user profile:", err);
-        setError("Failed to load profile data");
-        setLoading(false);
-
-        // If no data in state yet, set default values
-        if (!userData) {
-          setUserData({
-            name: "User",
-            email: "",
-            role: "Lawyer",
-            profileImage: null,
-            isPremium: false,
-            experience: "0 years",
-            specialization: "General Law",
-            cases_handled: 0,
-            success_rate: "0%",
-            phone: "",
-            location: "",
-            bar_association: "",
-            license_number: "",
-            education: "",
-            languages: "English",
-            availability: "Weekdays 9AM-5PM",
-            rating: "4.8"
-          });
+        if (liveApt) {
+          effectivelyActive = {
+            ...liveApt,
+            is_auto_detected: true,
+            session_token: liveApt.session_token || 'pending'
+          };
         }
       }
-    };
 
-    fetchUserProfile();
-  }, []);
+      setStatsData(stats);
+      setAppointmentData(Array.isArray(appointments) ? appointments : []);
+      setActiveSession(effectivelyActive);
+    } catch (error) {
+      console.error('Background sync failed:', error);
+    }
+  }, []); // REMOVED userData dependency to kill the loop
 
-  // Listen for system theme changes
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e) => {
-      if (localStorage.getItem('darkMode') === null) {
-        setDarkMode(e.matches);
+    // If sidebar preference isn't set, default to open for lawyer admin
+    if (localStorage.getItem('sidebarOpen') === null) {
+      dispatch(setSidebarOpen(true));
+    }
+
+    const initData = async () => {
+      setLoading(true);
+      try {
+        const profile = await authAPI.getUserProfile();
+        setUserData(profile);
+
+        // IMMEDIATE DATA PRE-WARMING
+        // Inject consultations from profile activity instantly before dashboard API cycle
+        if (profile?.recent_activity?.appointments) {
+          console.log(`Pre-warming dashboard with ${profile.recent_activity.appointments.length} consultations from profile`);
+          setAppointmentData(profile.recent_activity.appointments);
+
+          // Also set active session if any are live in the pre-warmed data
+          const liveApt = profile.recent_activity.appointments.find(apt =>
+            apt.consultation_status === 'in_progress'
+          );
+          if (liveApt) setActiveSession(liveApt);
+        }
+
+        setLoading(false);
+        if (profile?.id) {
+          // Trigger deep background fetch for professional metrics
+          await fetchData(profile.id, profile);
+          fetchUserNotifications(profile.id);
+        }
+      } catch (error) {
+        console.error('Error initializing lawyer admin:', error);
+        setLoading(false); // Safety fallback
       }
     };
+    initData();
+  }, [dispatch, fetchData]);
 
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
-
-  // Save dark mode preference to localStorage
+  // Real-time synchronization polling (every 30 seconds)
   useEffect(() => {
-    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+    if (!userData?.id) return;
 
-    // Apply dark mode to document for global styling
-    if (darkMode) {
-      document.documentElement.classList.add('dark-theme');
-    } else {
-      document.documentElement.classList.remove('dark-theme');
-    }
-  }, [darkMode]);
+    const intervalId = setInterval(() => {
+      // Only poll if the tab is visible to save resources
+      if (document.visibilityState === 'visible') {
+        fetchData(userData.id);
+      }
+    }, 30000);
 
-  // Fetch notifications when user data is loaded
-  useEffect(() => {
-    if (userData?.id) {
-      console.log('User data loaded, fetching notifications for user ID:', userData.id);
-      fetchUserNotifications(userData.id);
+    return () => clearInterval(intervalId);
+  }, [userData?.id, fetchData]);
 
-      // Set up interval to refresh notifications every 60 seconds
-      const intervalId = setInterval(() => {
-        console.log('Refreshing notifications for user ID:', userData.id);
-        fetchUserNotifications(userData.id);
-      }, 60000); // 60 seconds
-
-      return () => clearInterval(intervalId);
-    }
-  }, [userData?.id]);
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const closeSidebar = () => {
-    setIsSidebarOpen(false);
-  };
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
-
-  // Handle page transitions with animation
-  const handlePageChange = (itemId) => {
-    setPageTransition(true);
-    setTimeout(() => {
-      setActiveItem(itemId);
-      setPageTransition(false);
-    }, 300);
-    closeSidebar();
-  };
-
-  // Navigation hook for redirects
-  const navigate = useNavigate();
-
-  // Fetch user notifications
   const fetchUserNotifications = async (userId) => {
-    if (!userId) return;
-
-    console.log(`Fetching notifications for user ID: ${userId}`);
     setNotificationsLoading(true);
-    setNotificationsError(null);
-
     try {
-      // Make the API call with the provided user ID
-      const response = await apiServices.getUserNotifications(userId);
-      console.log('Notifications response:', response);
-
-      // Process the response data
-      if (response && Array.isArray(response.data)) {
-        // If the API returns data in a nested 'data' property
-        setNotifications(response.data);
-        // Count unread notifications
-        const unreadCount = response.data.filter(notification => !notification.read_at).length;
-        setNotificationsCount(unreadCount);
-        console.log(`Found ${response.data.length} notifications, ${unreadCount} unread`);
-      } else if (response && Array.isArray(response)) {
-        // If the API returns data directly as an array
-        setNotifications(response);
-        // Count unread notifications
-        const unreadCount = response.filter(notification => !notification.read_at).length;
-        setNotificationsCount(unreadCount);
-        console.log(`Found ${response.length} notifications, ${unreadCount} unread`);
-      } else {
-        console.log('No notifications found or invalid response format:', response);
-        setNotifications([]);
-        setNotificationsCount(0);
-      }
+      const data = await apiServices.getUserNotifications(userId);
+      setNotifications(data.notifications || []);
+      setNotificationsCount(data.unread_count || 0);
     } catch (error) {
       console.error('Error fetching notifications:', error);
-
-      // Detailed error logging
-      if (error.response) {
-        console.error('Error response:', error.response.status, error.response.data);
-        setNotificationsError(`Failed to load notifications: ${error.response.status}`);
-      } else if (error.request) {
-        console.error('No response received:', error.request);
-        setNotificationsError('Network error. Please check your connection.');
-      } else {
-        console.error('Error message:', error.message);
-        setNotificationsError('Failed to load notifications');
-      }
-
-      setNotifications([]);
-      setNotificationsCount(0);
     } finally {
       setNotificationsLoading(false);
     }
   };
 
-  // Handle notification click
-  const handleNotificationClick = async (notification) => {
-    console.log('Notification clicked:', notification);
-
-    if (!notification.read_at) {
-      console.log(`Marking notification ${notification.id} as read`);
-
-      try {
-        // Use the updated endpoint for marking a notification as read
-        await apiServices.markNotificationAsRead(notification.id);
-
-        // Update local state to mark this notification as read
-        setNotifications(prevNotifications =>
-          prevNotifications.map(n =>
-            n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n
-          )
-        );
-
-        // Update unread count
-        setNotificationsCount(prevCount => Math.max(0, prevCount - 1));
-        console.log(`Notification ${notification.id} marked as read`);
-      } catch (error) {
-        console.error('Error marking notification as read:', error);
-      }
-    }
-
-    // Handle navigation based on notification type or link
-    if (notification.link) {
-      // Navigate to the link
-      navigate(notification.link);
-    }
-
-    // Close the dropdown
-    setNotificationsDropdownOpen(false);
-  };
-
-  // Mark all notifications as read
   const markAllAsRead = async () => {
-    // Use user ID if available, otherwise use default
-    const userId = userData?.id;
-
-    if (!userId || notifications.length === 0) return;
-
-    console.log(`Marking all notifications as read for user ID: ${userId}`);
-    setNotificationsLoading(true);
-
+    if (!userData?.id) return;
     try {
-      // Call the updated endpoint
-      await apiServices.markAllNotificationsAsRead(userId);
-
-      // Update local state
-      setNotifications(prevNotifications =>
-        prevNotifications.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
-      );
-
-      // Reset unread count
+      await apiServices.markAllNotificationsAsRead(userData.id);
       setNotificationsCount(0);
-      console.log('All notifications marked as read');
+      setNotifications(notifications.map(n => ({ ...n, read: true })));
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
-    } finally {
-      setNotificationsLoading(false);
     }
   };
 
-  // Handle user logout
+  const handleNotificationClick = (notification) => {
+    setNotificationsDropdownOpen(false);
+    if (notification.type === 'APPOINTMENT') setActiveTab('appointments');
+    else if (notification.type === 'CASE') setActiveTab('cases');
+  };
+
+  const handleJoinSession = async (session) => {
+    if (!session) return;
+    let token = session?.session_token;
+
+    // If we only have an appointment ID and the token is pending
+    if (!token || token === 'pending') {
+      try {
+        setLoading(true);
+        // We might need to call startSession to get the real token
+        if (!session?.appointment_id && !session?.id) {
+          throw new Error('No valid session or appointment ID provided');
+        }
+        const result = await consultationAPI.startSession(session.appointment_id || session.id);
+        token = result.session_token;
+      } catch (err) {
+        console.error('Failed to initialize session:', err);
+        setLoading(false);
+        return;
+      }
+    }
+
+    if (!token) return;
+
+    // Smooth "Secure Tunneling" transition effect
+    setLoading(true);
+    // Extra delay for professional "establishing connection" feel
+    setTimeout(() => {
+      navigate(`/consultation/${token}`);
+    }, 1200);
+  };
+
   const handleLogout = async () => {
     try {
-      // Show loading state if needed
-      setLoading(true);
-
-      // Call logout API
       await authAPI.logout();
-
-      // Clear local storage
       tokenManager.removeToken();
-
-      // Redirect to login page
       navigate('/auth');
     } catch (error) {
-      console.error('Logout error:', error);
-
-      // Even if API fails, clear local storage and redirect
       tokenManager.removeToken();
       navigate('/auth');
     }
   };
 
-  const renderContent = () => {
-    // Show loading state if user data is still loading
-    if (loading) {
-      return (
-        <div className="flex items-center justify-center h-full">
-          <div className={`p-4 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
-            <div className="flex items-center space-x-3">
-              <div className="w-6 h-6 border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
-              <p className={darkMode ? 'text-gray-300' : 'text-gray-700'}>Loading your dashboard...</p>
+  const sidebarItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: Home, color: COLORS.primary },
+    { id: 'appointments', label: 'Consultations', icon: Calendar, color: COLORS.primary },
+    { id: 'clients', label: 'Client Center', icon: Users, color: COLORS.primary },
+    { id: 'cases', label: 'Active Cases', icon: Briefcase, color: COLORS.primary },
+    { id: 'documents', label: 'Knowledge Base', icon: FolderOpen, color: COLORS.primary },
+    { id: 'profile', label: 'Academic Profile', icon: User, color: COLORS.primary },
+    { id: 'settings', label: 'System Settings', icon: Settings, color: COLORS.primary },
+  ];
+
+  if (loading) {
+    return (
+      <div className={`fixed inset-0 flex flex-col items-center justify-center z-[100] transition-colors duration-500 ${isDark ? 'bg-[#0A0A0A]' : 'bg-slate-50'}`}>
+        <div className="relative flex flex-col items-center max-w-[280px] w-full px-6">
+          {/* Main Loader Ring */}
+          <div className="relative w-24 h-24 mb-10">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+              className={`absolute inset-0 rounded-full border-2 ${isDark ? 'border-white/10 border-t-white' : 'border-slate-200 border-t-slate-900 shadow-[0_0_15px_rgba(30,41,59,0.1)]'}`}
+            />
+            <motion.div
+              animate={{ rotate: -360 }}
+              transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+              className={`absolute inset-4 rounded-full border ${isDark ? 'border-white/5 border-b-white/20' : 'border-slate-100 border-b-slate-400'}`}
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Scale size={32} className={`opacity-20 ${isDark ? 'text-white' : 'text-slate-900'}`} />
             </div>
           </div>
-        </div>
-      );
-    }
 
-    // Show error state if there was an error loading user data
-    if (error) {
-      return (
-        <div className="flex items-center justify-center h-full">
-          <div className={`p-4 rounded-xl ${darkMode ? 'bg-red-900/20' : 'bg-red-50'} border ${darkMode ? 'border-red-800' : 'border-red-200'} shadow-lg`}>
-            <p className={darkMode ? 'text-red-300' : 'text-red-700'}>{error}</p>
+          <div className="text-center space-y-3 w-full">
+            <h2 className={`text-[13px] font-black uppercase tracking-[0.4em] ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Preparing Dashboard
+            </h2>
+            <div className={`h-[2px] w-full rounded-full overflow-hidden relative ${isDark ? 'bg-white/10' : 'bg-slate-100'}`}>
+              <motion.div
+                initial={{ x: "-100%" }}
+                animate={{ x: "100%" }}
+                transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                className={`absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent ${isDark ? 'via-white to-transparent' : 'via-slate-900 to-transparent'}`}
+              />
+            </div>
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+              Establishing Secure Session...
+            </p>
           </div>
         </div>
-      );
-    }
 
-    // Render the appropriate component based on the active menu item
-    switch (activeItem) {
-      case 'chatbot':
-        return <LawyerDashboard darkMode={darkMode} userData={userData} />;
-      case 'appointments':
-        return <LawyerAppointments darkMode={darkMode} userData={userData} />;
-      case 'clients':
-        return <LawyerClients darkMode={darkMode} userData={userData} />;
-      case 'cases':
-        return <LawyerCases darkMode={darkMode} userData={userData} />;
-      case 'documents':
-        return <LawyerDocuments darkMode={darkMode} userData={userData} />;
-      case 'analytics':
-        return <PlaceholderComponent title="Analytics" darkMode={darkMode} />;
-      case 'notifications':
-        return <PlaceholderComponent title="Notifications" darkMode={darkMode} />;
-      case 'settings':
-        return <PlaceholderComponent title="Settings" darkMode={darkMode} />;
-      default:
-        return <LawyerDashboard darkMode={darkMode} userData={userData} />;
-    }
-  };
+        {/* Subtle background branding */}
+        <div className="absolute bottom-12 left-0 right-0 text-center opacity-10 pointer-events-none">
+          <span className={`text-[14px] font-black tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            MERA VAKIL
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`flex h-screen ${darkMode ? 'bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800' : 'bg-gradient-to-br from-gray-50 via-gray-50 to-gray-100'} transition-colors duration-300`}>
-      {/* Background decorative elements for premium look */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className={`absolute top-0 right-0 w-1/3 h-1/3 bg-gradient-to-br ${darkMode ? 'from-blue-900/10 to-purple-900/5' : 'from-blue-200/20 to-purple-200/10'} rounded-full blur-3xl transform translate-x-1/3 -translate-y-1/2`}></div>
-        <div className={`absolute bottom-0 left-0 w-1/4 h-1/4 bg-gradient-to-tr ${darkMode ? 'from-purple-900/10 to-blue-900/5' : 'from-purple-200/20 to-blue-200/10'} rounded-full blur-3xl transform -translate-x-1/3 translate-y-1/2`}></div>
-      </div>
-
-      {/* Sidebar with user data */}
+    <div className={`flex min-h-screen transition-colors duration-300 ${isDark ? 'bg-black text-slate-100' : 'bg-[#F8FAFC] text-slate-900'}`}>
       <Sidebar
-        isMobileOpen={isSidebarOpen}
-        setIsMobileOpen={setIsSidebarOpen}
-        activeItem={activeItem}
-        onNavigate={handlePageChange}
+        isLawyerAdmin={true}
+        activeItem={activeTab}
+        onNavigate={(id) => setActiveTab(id)}
+        items={sidebarItems}
         user={userData}
-        items={[
-          { id: 'chatbot', label: 'AI Chatbot', icon: Bot, path: '/', color: '#8B5CF6' },
-          { id: 'appointments', label: 'Appointments', icon: Calendar, count: 5, path: '/legal-consoltation', color: '#10B981' },
-          { id: 'documents', label: 'Documents', icon: FileText, path: '/legal-documents-review', color: '#3B82F6' },
-          { id: 'cases', label: 'Active Cases', icon: Briefcase, count: 12, color: '#F59E0B' },
-          { id: 'clients', label: 'Clients', icon: Users, color: '#EC4899' },
-          { id: 'analytics', label: 'Analytics', icon: BarChart3, color: '#6366F1' },
-          { id: 'notifications', label: 'Notifications', icon: Bell, count: 3, color: '#EF4444' },
-          { id: 'settings', label: 'Settings', icon: Settings, color: '#6B7280' },
-        ]}
+        activeConsultations={appointmentData}
       />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden relative z-10">
-        {/* Custom Navbar with user data */}
-        <NavbarComponent
-          onMenuClick={toggleSidebar}
-          isSidebarOpen={isSidebarOpen}
-          darkMode={darkMode}
-          toggleDarkMode={toggleDarkMode}
+      <div className="flex flex-col flex-1 transition-all duration-300 min-w-0">
+        <TopNavbar
           userData={userData}
-          handleLogout={handleLogout}
+          isSidebarOpen={isSidebarOpen}
+          onMenuClick={() => dispatch(toggleSidebar())}
           notifications={notifications}
           notificationsCount={notificationsCount}
           notificationsLoading={notificationsLoading}
-          notificationsError={notificationsError}
           notificationsDropdownOpen={notificationsDropdownOpen}
           setNotificationsDropdownOpen={setNotificationsDropdownOpen}
-          notificationsDropdownRef={notificationsDropdownRef}
-          fetchUserNotifications={fetchUserNotifications}
-          handleNotificationClick={handleNotificationClick}
           markAllAsRead={markAllAsRead}
+          fetchUserNotifications={() => fetchUserNotifications(userData?.id)}
+          handleNotificationClick={handleNotificationClick}
+          darkMode={isDark}
+          toggleDarkMode={toggleTheme}
+          handleLogout={handleLogout}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          setActiveTab={setActiveTab} // Pass setActiveTab to TopNavbar
         />
 
-        {/* Page Content with transition effect */}
-        <main
-          className={`flex-1 overflow-y-auto ${darkMode
-            ? 'bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800'
-            : 'bg-gradient-to-br from-gray-50 via-gray-50 to-gray-100'
-            } transition-all duration-300 ${pageTransition ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
-            }`}
-        >
-          {renderContent()}
+        <main className="flex-1 overflow-x-hidden pt-2 scrollbar-hide">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.02 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+            >
+              {activeTab === 'dashboard' && (
+                <LawyerDashboard
+                  darkMode={isDark}
+                  userData={userData}
+                  onNavigate={setActiveTab}
+                  handleJoinSession={handleJoinSession}
+                  statsData={statsData}
+                  appointmentData={appointmentData}
+                  activeSession={activeSession}
+                />
+              )}
+              {activeTab === 'appointments' && (
+                <LawyerAppointments
+                  darkMode={isDark}
+                  initialAppointments={appointmentData}
+                  userData={userData}
+                  activeSession={activeSession}
+                />
+              )}
+              {activeTab === 'clients' && <LawyerClients darkMode={isDark} />}
+              {activeTab === 'cases' && <LawyerCases darkMode={isDark} />}
+              {activeTab === 'documents' && <LawyerDocuments darkMode={isDark} />}
+              {activeTab === 'profile' && <LawyerProfile darkMode={isDark} />}
+              {activeTab === 'settings' && <LawyerSettings darkMode={isDark} />}
+            </motion.div>
+          </AnimatePresence>
         </main>
+      </div>
+
+      <div className="sm:hidden fixed bottom-6 right-6 z-50">
+        <button className={`w-14 h-14 rounded-full shadow-2xl flex items-center justify-center active:scale-95 transition-transform ${isDark ? 'bg-white text-slate-900 shadow-white/20' : 'bg-slate-900 text-white shadow-slate-900/30'}`}>
+          <Plus size={24} />
+        </button>
       </div>
     </div>
   );
 };
+
+const Gavel = (props) => (
+  <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 11a1 1 0 01-1 1H4a1 1 0 01-1-1l3-11zm12 0l3 11a1 1 0 01-1 1h-1a1 1 0 01-1-1l3-11zm-6-2v2m0 12v2m-4-7h8m-11 5h14" />
+  </svg>
+);
 
 export default LawyerAdmin;

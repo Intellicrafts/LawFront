@@ -1,95 +1,85 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { FaCheckCircle, FaExclamationTriangle, FaInfoCircle, FaTimes } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  CheckCircle,
+  AlertCircle,
+  Info,
+  AlertTriangle,
+  X
+} from 'lucide-react';
 
-/**
- * Toast notification component
- * 
- * @param {Object} props - Component props
- * @param {string} props.type - Toast type: 'success', 'error', 'info'
- * @param {string} props.message - Toast message
- * @param {number} props.duration - Duration in ms before auto-close (default: 5000)
- * @param {Function} props.onClose - Function to call when toast is closed
- */
 const Toast = ({ type = 'info', message, duration = 5000, onClose }) => {
-  const [visible, setVisible] = useState(true);
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setVisible(false);
-      setTimeout(() => {
-        onClose && onClose();
-      }, 300); // Wait for fade-out animation
+      onClose && onClose();
     }, duration);
 
     return () => clearTimeout(timer);
   }, [duration, onClose]);
 
-  const handleClose = () => {
-    setVisible(false);
-    setTimeout(() => {
-      onClose && onClose();
-    }, 300); // Wait for fade-out animation
-  };
-
-  // Define styles based on type
-  const getTypeStyles = () => {
+  const getStyle = () => {
     switch (type) {
       case 'success':
         return {
-          icon: <FaCheckCircle className="text-emerald-500 text-lg" />,
-          bg: isDarkMode ? 'bg-slate-800' : 'bg-white',
-          border: isDarkMode ? 'border-slate-700' : 'border-emerald-100',
-          text: isDarkMode ? 'text-emerald-400' : 'text-emerald-700',
-          shadow: 'shadow-lg shadow-emerald-100/20'
+          icon: <CheckCircle size={16} className="text-emerald-500" />,
+          border: 'border-emerald-500/20',
+          bg: isDarkMode ? 'bg-emerald-500/10' : 'bg-emerald-50',
+          glow: 'shadow-emerald-500/10'
         };
       case 'error':
         return {
-          icon: <FaExclamationTriangle className="text-red-500 text-lg" />,
-          bg: isDarkMode ? 'bg-slate-800' : 'bg-white',
-          border: isDarkMode ? 'border-slate-700' : 'border-red-100',
-          text: isDarkMode ? 'text-red-400' : 'text-red-700',
-          shadow: 'shadow-lg shadow-red-100/20'
+          icon: <AlertCircle size={16} className="text-red-500" />,
+          border: 'border-red-500/20',
+          bg: isDarkMode ? 'bg-red-500/10' : 'bg-red-50',
+          glow: 'shadow-red-500/10'
+        };
+      case 'warning':
+        return {
+          icon: <AlertTriangle size={16} className="text-amber-500" />,
+          border: 'border-amber-500/20',
+          bg: isDarkMode ? 'bg-amber-500/10' : 'bg-amber-50',
+          glow: 'shadow-amber-500/10'
         };
       case 'info':
       default:
         return {
-          icon: <FaInfoCircle className="text-blue-500 text-lg" />,
-          bg: isDarkMode ? 'bg-slate-800' : 'bg-white',
-          border: isDarkMode ? 'border-slate-700' : 'border-blue-100',
-          text: isDarkMode ? 'text-blue-400' : 'text-blue-700',
-          shadow: 'shadow-lg shadow-blue-100/20'
+          icon: <Info size={16} className="text-blue-500" />,
+          border: 'border-blue-500/20',
+          bg: isDarkMode ? 'bg-blue-500/10' : 'bg-blue-50',
+          glow: 'shadow-blue-500/10'
         };
     }
   };
 
-  const { icon, bg, border, text, shadow } = getTypeStyles();
+  const style = getStyle();
 
   return (
-    <div 
-      className={`fixed top-6 right-6 z-50 flex items-center p-4 rounded-lg ${shadow} border ${border} ${bg} transform transition-all duration-300 ${
-        visible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
-      }`}
-      role="alert"
+    <motion.div
+      initial={{ opacity: 0, y: -20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+      className={`pointer-events-auto flex items-center gap-3 px-3 py-2.5 rounded-xl border ${style.border} ${style.bg} backdrop-blur-md shadow-lg ${style.glow} min-w-[280px] max-w-[380px] mb-3`}
     >
-      <div className="flex items-center">
-        <div className="mr-3 flex-shrink-0">
-          {icon}
-        </div>
-        <div className="mr-6">
-          <p className={`font-medium ${text}`}>{message}</p>
-        </div>
-        <button 
-          onClick={handleClose}
-          className={`ml-auto -mx-1.5 -my-1.5 rounded-lg p-1.5 inline-flex items-center justify-center h-8 w-8 ${text} hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors`}
-          aria-label="Close"
-        >
-          <FaTimes />
-        </button>
+      <div className="flex-shrink-0">
+        {style.icon}
       </div>
-    </div>
+
+      <p className={`flex-1 text-[13px] font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} leading-snug tracking-wide`}>
+        {message}
+      </p>
+
+      <button
+        onClick={onClose}
+        className={`flex-shrink-0 p-1 rounded-md transition-colors ${isDarkMode ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-black/5 text-gray-500'
+          }`}
+      >
+        <X size={14} />
+      </button>
+    </motion.div>
   );
 };
 

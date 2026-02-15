@@ -272,6 +272,18 @@ export const lawyerAPI = {
     }
   },
 
+  getLawyerAppointments: async (lawyerId) => {
+    try {
+      console.log(`Fetching appointments for lawyer ID: ${lawyerId}`);
+      const response = await apiClient.get(`/lawyers/${lawyerId}/appointments`);
+      console.log('Lawyer appointments response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Lawyer appointments error:', error.response || error);
+      throw error;
+    }
+  },
+
   /**
    * Book a consultation with a lawyer
    * @param {number} lawyerId - Lawyer ID
@@ -1582,7 +1594,18 @@ export const apiServices = {
   getUserProfile: async () => {
     try {
       const response = await apiClient.get('/user/profile');
-      console.log('User profile response:', response.data);
+      // Log for debugging
+      console.log(`User profile response (${response.status}):`, response.data);
+
+      // Handle 204 No Content or empty responses
+      if (response.status === 204 || (!response.data && response.status !== 200)) {
+        console.warn('User profile returned no content, attempting fallback to cache');
+        const cachedProfile = localStorage.getItem('user_profile');
+        if (cachedProfile) {
+          return JSON.parse(cachedProfile);
+        }
+        throw new Error('Profile not found and no cache available');
+      }
 
       // Extract the actual user data from the response
       const userData = response.data.data || response.data;
@@ -1891,17 +1914,6 @@ export const apiServices = {
     }
   },
 
-  getLawyerAppointments: async (lawyerId) => {
-    try {
-      console.log(`Fetching appointments for lawyer ID: ${lawyerId}`);
-      const response = await apiClient.get(`/lawyers/${lawyerId}/appointments`);
-      console.log('Lawyer appointments response:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Lawyer appointments error:', error.response || error);
-      throw error;
-    }
-  },
 
   getLawyerReviews: async (lawyerId) => {
     try {
@@ -2116,6 +2128,217 @@ export const lawyerVerificationAPI = {
       return response.data;
     } catch (error) {
       console.error('Error fetching my verification application:', error.response || error);
+      throw error;
+    }
+  }
+};
+
+/**
+ * Consultation API Service
+ * Handles real-time consultation sessions between users and lawyers
+ */
+export const consultationAPI = {
+  /**
+   * Get all consultation sessions for authenticated user
+   */
+  getSessions: async () => {
+    try {
+      const response = await apiClient.get('/consultations');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching consultation sessions:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Start/Join a consultation session for an appointment
+   * @param {number} appointmentId - The appointment ID
+   */
+  startSession: async (appointmentId) => {
+    try {
+      console.log('Starting consultation session for appointment:', appointmentId);
+      const response = await apiClient.post(`/consultations/start/${appointmentId}`);
+      console.log('Consultation session started:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error starting consultation session:', error.response || error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get active consultation session (if any)
+   */
+  getActiveSession: async () => {
+    try {
+      const response = await apiClient.get('/consultations/active');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching active session:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get consultation session details by token
+   * @param {string} sessionToken - The session token (UUID)
+   */
+  getSession: async (sessionToken) => {
+    try {
+      const response = await apiClient.get(`/consultations/${sessionToken}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching consultation session:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Check if user can join a session
+   * @param {string} sessionToken - The session token
+   */
+  canJoinSession: async (sessionToken) => {
+    try {
+      const response = await apiClient.get(`/consultations/${sessionToken}/can-join`);
+      return response.data;
+    } catch (error) {
+      console.error('Error checking join eligibility:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * End a consultation session
+   * @param {string} sessionToken - The session token
+   * @param {string} reason - Reason for ending (completed, cancelled)
+   */
+  endSession: async (sessionToken, reason = 'completed') => {
+    try {
+      const response = await apiClient.post(`/consultations/${sessionToken}/end`, { reason });
+      return response.data;
+    } catch (error) {
+      console.error('Error ending consultation session:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get all messages for a consultation session
+   * @param {string} sessionToken - The session token
+   */
+  getMessages: async (sessionToken) => {
+    try {
+      const response = await apiClient.get(`/consultations/${sessionToken}/messages`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Send a message in consultation session
+   * @param {string} sessionToken - The session token
+   * @param {string} content - Message content
+   * @param {File} file - Optional file attachment
+   */
+  sendMessage: async (sessionToken, content, file = null) => {
+    try {
+      let data;
+
+      if (file) {
+        // Send as FormData if file included
+        data = new FormData();
+        data.append('content', content);
+        data.append('file', file);
+        data.append('message_type', 'file');
+      } else {
+        data = {
+          content,
+          message_type: 'text'
+        };
+      }
+
+      const response = await apiClient.post(
+        `/consultations/${sessionToken}/messages`,
+        data,
+        file ? {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        } : {}
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Mark a message as read
+   * @param {string} sessionToken - The session token
+   * @param {number} messageId - The message ID
+   */
+  markMessageAsRead: async (sessionToken, messageId) => {
+    try {
+      const response = await apiClient.patch(
+        `/consultations/${sessionToken}/messages/${messageId}/read`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get unread message count for a session
+   * @param {string} sessionToken - The session token
+   */
+  getUnreadCount: async (sessionToken) => {
+    try {
+      const response = await apiClient.get(
+        `/consultations/${sessionToken}/messages/unread-count`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Send typing indicator
+   * @param {string} sessionToken - The session token
+   * @param {boolean} isTyping - Whether user is typing
+   */
+  sendTypingIndicator: async (sessionToken, isTyping) => {
+    try {
+      const response = await apiClient.post(
+        `/consultations/${sessionToken}/typing`,
+        { is_typing: isTyping }
+      );
+      return response.data;
+    } catch (error) {
+      // Don't throw on typing indicator errors
+      console.warn('Error sending typing indicator:', error);
+    }
+  }
+};
+
+/**
+ * Lawyer Admin Dashboard API Service
+ */
+export const lawyerAdminAPI = {
+  getDashboardData: async (userId) => {
+    try {
+      const response = await apiClient.get(`/lawyer_admin/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching lawyer dashboard data:', error);
       throw error;
     }
   }
