@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { lawyerAPI, apiServices } from '../api/apiService';
+import useToast from '../../hooks/useToast';
+import config from '../../config';
 import {
   User, Mail, Phone, MapPin, Calendar, Briefcase, Globe, Camera, X,
   Award, Settings, Lock, Bell, Share2, Download,
@@ -8,10 +9,11 @@ import {
   Building, Pencil, Check, Eye, EyeOff,
   Trash2, RefreshCw, Github, Twitter, Linkedin, Facebook,
   Laptop, Video, Clock, Star, ArrowRight, ChevronRight,
-  Sparkles, Shield, Lock as LockIcon, Zap, Search, Filter,
-  ChevronLeft, Layout, CheckCircle, Info, HelpCircle, Scale, Heart
+  Mic, MicOff, PhoneOff, Headphones, Wallet,
+  Scale, Shield, Heart, Layout, Sparkles, Zap, Search, Filter,
+  ChevronLeft, Info, CheckCircle
 } from 'lucide-react';
-import useToast from '../hooks/useToast';
+import { lawyerAPI, apiServices, walletServices } from '../../api/apiService';
 
 // Premium Professional Color Palette matching Hero and Sidebar - Production App
 const colors = {
@@ -127,7 +129,9 @@ const timeSlots = [
  */
 const LegalCosultation = () => {
   // Get dark mode state from Redux
+  // Get dark mode state from Redux
   const { mode } = useSelector((state) => state.theme);
+  const toast = useToast();
   const isDarkMode = mode === 'dark';
   const currentTheme = isDarkMode ? colors.dark : colors.light;
 
@@ -183,6 +187,18 @@ const LegalCosultation = () => {
     caseDetails: '',
   });
   const [bookingStep, setBookingStep] = useState(1);
+  const [activeTab, setActiveTab] = useState('experts'); // 'experts' or 'appointments'
+
+  // Sync active tab with URL query params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get('view');
+    if (viewParam === 'appointments') {
+      setActiveTab('appointments');
+    } else {
+      setActiveTab('experts');
+    }
+  }, []);
 
   // Auto-fill form data with user details when component mounts
   useEffect(() => {
@@ -225,6 +241,140 @@ const LegalCosultation = () => {
   }, []);
   const [bookingComplete, setBookingComplete] = useState(false);
 
+  // Instant Call Feature States
+  const [onlineLawyers, setOnlineLawyers] = useState(new Set());
+  const [showOnlineOnly, setShowOnlineOnly] = useState(false);
+  const [callState, setCallState] = useState({
+    status: 'idle', // idle, dialing, connected, ended
+    lawyer: null,
+    duration: 0
+  });
+
+  // Wallet State
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [showRechargeModal, setShowRechargeModal] = useState(false);
+
+  // Fetch Wallet Balance
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      // Get user ID from local storage or auth context
+      const userStr = localStorage.getItem('user');
+      const userId = userStr ? JSON.parse(userStr).id : '1'; // Default to '1' for demo
+
+      try {
+        const walletData = await walletServices.getBalance(userId);
+        if (walletData && walletData.balance !== undefined) {
+          setWalletBalance(walletData.balance);
+        }
+      } catch (err) {
+        console.error('Failed to fetch wallet balance', err);
+      }
+    };
+
+    fetchWalletBalance();
+  }, []);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isOnSpeaker, setIsOnSpeaker] = useState(false);
+
+  // Initialize online status for lawyers
+  useEffect(() => {
+    if (lawyers.length > 0) {
+      const onlineSet = new Set();
+      lawyers.forEach(lawyer => {
+        // Randomly assign online status (approx 30%)
+        // Rodger Prosacco is ALWAYS online
+        if (lawyer.full_name === 'Rodger Prosacco' || Math.random() < 0.3) {
+          onlineSet.add(lawyer.id);
+        }
+      });
+
+      // Ensure we have at least a few online lawyers for demo
+      if (onlineSet.size < 3) {
+        lawyers.slice(0, 3).forEach(l => onlineSet.add(l.id));
+      }
+
+      setOnlineLawyers(onlineSet);
+    }
+  }, [lawyers]);
+
+  // Call Timer Effect
+  useEffect(() => {
+    let interval;
+    if (callState.status === 'connected') {
+      interval = setInterval(() => {
+        setCallState(prev => ({
+          ...prev,
+          duration: prev.duration + 1
+        }));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [callState.status]);
+
+  const formatCallDuration = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const initiateCall = (lawyer) => {
+    // Check wallet balance
+    if (walletBalance < 500) {
+      toast.showError('Insufficient wallet balance. Please recharge.');
+      setShowRechargeModal(true);
+      return;
+    }
+
+    setCallState({
+      status: 'dialing',
+      lawyer: lawyer,
+      duration: 0
+    });
+    setIsMuted(false);
+    setIsOnSpeaker(false);
+
+    // Simulate connection after 3 seconds
+    setTimeout(async () => {
+      setCallState(prev => ({
+        ...prev,
+        status: 'connected'
+      }));
+
+      // Deduct balance
+      try {
+        const userStr = localStorage.getItem('user');
+        const userId = userStr ? JSON.parse(userStr).id : '1';
+
+        await walletServices.processPayment({
+          payer_user_id: userId,
+          receiver_user_id: lawyer.id,
+          amount: 500,
+          description: "Quick Call Connection Fee",
+          category: "call"
+        });
+
+        setWalletBalance(prev => Math.max(0, prev - 500));
+        setWalletBalance(prev => Math.max(0, prev - 500));
+        toast.showInfo('₹500 deducted for call connection');
+
+        apiServices.startCallSession(lawyer.id).catch(err => console.error('Call log error:', err));
+      } catch (err) {
+        console.error("Payment failed", err);
+      }
+    }, 3000);
+  };
+
+  const endCall = () => {
+    setCallState(prev => ({ ...prev, status: 'ended' }));
+    setTimeout(() => {
+      setCallState({
+        status: 'idle',
+        lawyer: null,
+        duration: 0
+      });
+    }, 2000);
+  };
+
   // Function to handle booking with Rodger Prosacco
   const bookWithRodgerProsacco = () => {
     // Find Rodger Prosacco in the lawyers list
@@ -262,6 +412,8 @@ const LegalCosultation = () => {
 
     // Set view to booking
     setView('booking');
+    setBookingStep(1);
+    setBookingComplete(false);
 
     // Pre-fill form with user data if logged in
     const isAuthenticated = localStorage.getItem('auth_token');
@@ -366,7 +518,6 @@ const LegalCosultation = () => {
       (entries) => {
         const [entry] = entries;
         if (entry.isIntersecting && hasMore && !loading && !loadingMore) {
-          // Load more data when the user scrolls to the bottom
           fetchLawyers(currentPage + 1, false);
         }
       },
@@ -1071,7 +1222,26 @@ const LegalCosultation = () => {
         // Show loading state
         setLoading(true);
 
+        // Check wallet balance for consultation fee
+        const CONSULTATION_FEE = 1500;
+        if (walletBalance < CONSULTATION_FEE) {
+          showError(`Insufficient wallet balance. Consultation fee is ₹${CONSULTATION_FEE}. Please recharge.`);
+          setShowRechargeModal(true);
+          setLoading(false);
+          return;
+        }
+
         try {
+          // Process Wallet Payment
+          await walletServices.processPayment({
+            payer_user_id: userId,
+            receiver_user_id: selectedLawyer.id,
+            amount: CONSULTATION_FEE,
+            description: `Consultation with ${selectedLawyer.full_name}`,
+            category: "consultation"
+          });
+          setWalletBalance(prev => Math.max(0, prev - CONSULTATION_FEE));
+
           // Call the API to book appointment with lawyer
           // Note: lawyer_id is already in appointmentData, but we still pass it separately
           // to the function for clarity and to maintain the API function signature
@@ -1127,6 +1297,30 @@ const LegalCosultation = () => {
             }
 
             setBookingComplete(true);
+
+            // Save to local storage for "My Appointments" view
+            try {
+              // Format date and time for display
+              const dateObj = new Date(appointmentData.appointment_time);
+              const displayDate = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+              const displayTime = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+              const newAppointment = {
+                id: Date.now(),
+                lawyer: selectedLawyer,
+                date: displayDate,
+                time: displayTime,
+                status: 'Scheduled',
+                meetingLink: "https://meet.google.com/cbx-twdp-qhm",
+                type: 'Video Consultation'
+              };
+
+              const existingAppointments = JSON.parse(localStorage.getItem('user_appointments') || '[]');
+              localStorage.setItem('user_appointments', JSON.stringify([newAppointment, ...existingAppointments]));
+              console.log('Saved appointment to local storage:', newAppointment);
+            } catch (err) {
+              console.error('Error saving appointment locally:', err);
+            }
           }
         } catch (error) {
           console.error('Error booking appointment:', error);
@@ -1341,10 +1535,110 @@ const LegalCosultation = () => {
   };
 
   /**
+   * Render Appointments View
+   */
+  const renderAppointments = () => {
+    // Get appointments from local storage
+    const localAppointments = JSON.parse(localStorage.getItem('user_appointments') || '[]');
+
+    // Sample appointments if empty (for demo)
+    const appointments = localAppointments.length > 0 ? localAppointments : [
+      {
+        id: 1,
+        lawyer: { full_name: 'Aditya Gupta', specialization: 'Corporate Law' },
+        date: 'Today',
+        time: '4:00 PM',
+        status: 'Confirmed',
+        meetingLink: '#',
+        type: 'Video Consultation'
+      }
+    ];
+
+    if (appointments.length === 0 && localAppointments.length === 0) {
+      return (
+        <div className={`rounded-2xl p-12 text-center border backdrop-blur-md ${isDarkMode ? 'bg-white/5 border-[#2A2A2A]' : 'bg-white border-gray-100 shadow-xl'}`}>
+          <div className="flex flex-col items-center">
+            <div className={`p-4 rounded-full mb-4 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+              <Calendar size={32} className={isDarkMode ? 'text-gray-400' : 'text-gray-400'} />
+            </div>
+            <h3 className={`text-sm font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No Upcoming Appointments</h3>
+            <p className={`text-xs mb-6 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>You haven't scheduled any consultations yet.</p>
+            <button
+              onClick={() => {
+                setActiveTab('experts');
+                const url = new URL(window.location);
+                url.searchParams.delete('view');
+                window.history.pushState({}, '', url);
+              }}
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
+            >
+              Find an Expert
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4 max-w-4xl mx-auto">
+        {appointments.map((apt) => (
+          <div key={apt.id} className={`p-5 rounded-xl border transition-all hover:shadow-lg ${isDarkMode ? 'bg-[#1A1A1A] border-[#2A2A2A]' : 'bg-white border-gray-200'}`}>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-lg bg-gradient-to-br from-blue-500 to-blue-600`}>
+                  {getInitials(apt.lawyer?.full_name)}
+                </div>
+                <div>
+                  <h3 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{apt.lawyer?.full_name}</h3>
+                  <p className={`text-xs ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-medium`}>{apt.lawyer?.specialization}</p>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <div className={`flex items-center gap-1 text-[10px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <Calendar size={10} />
+                      <span>{apt.date}</span>
+                    </div>
+                    <div className={`flex items-center gap-1 text-[10px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <Clock size={10} />
+                      <span>{apt.time}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 self-end md:self-center">
+                <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${apt.status === 'Confirmed' || apt.status === 'Scheduled'
+                  ? 'bg-emerald-500/10 text-emerald-500'
+                  : 'bg-amber-500/10 text-amber-500'
+                  }`}>
+                  {apt.status}
+                </div>
+                {apt.meetingLink && (
+                  <a
+                    href={apt.meetingLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-all flex items-center gap-2"
+                  >
+                    <Video size={14} />
+                    Join Call
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  /**
    * Render different views based on the current state
    */
   const renderView = () => {
     if (view === 'lawyers') {
+      const visibleLawyers = showOnlineOnly
+        ? lawyers.filter(l => onlineLawyers.has(l.id))
+        : lawyers;
+
       return (
         <>
           {/* Premium Quick Action Cards */}
@@ -1360,19 +1654,25 @@ const LegalCosultation = () => {
                   color: 'text-blue-500'
                 },
                 {
-                  label: 'Top Rated',
-                  desc: 'Highest client reviews',
-                  icon: Award,
-                  onClick: fetchTopRatedLawyers,
-                  loading: topRatedLoading,
-                  color: 'text-amber-500'
+                  label: 'My Wallet',
+                  desc: `Balance: ₹${walletBalance.toLocaleString('en-IN')}`,
+                  icon: Wallet,
+                  onClick: () => setShowRechargeModal(true),
+                  loading: false,
+                  color: 'text-emerald-500'
                 },
                 {
-                  label: 'Quick Call',
-                  desc: 'Instant consultation',
-                  icon: Zap,
-                  onClick: bookWithRodgerProsacco,
-                  color: 'text-violet-500'
+                  label: showOnlineOnly ? 'Close Quick Call' : 'Quick Call',
+                  desc: showOnlineOnly ? 'Showing Online' : 'Instant consultation',
+                  icon: showOnlineOnly ? X : Zap,
+                  onClick: () => {
+                    setShowOnlineOnly(!showOnlineOnly);
+                    if (!showOnlineOnly) {
+                      setSelectedCategory('All');
+                      setSearchQuery('');
+                    }
+                  },
+                  color: showOnlineOnly ? 'text-red-500' : 'text-violet-500'
                 }
               ].map((card, i) => (
                 <button
@@ -1398,362 +1698,420 @@ const LegalCosultation = () => {
             </div>
           </div>
 
-          {/* Professional Search & Filter Interface */}
-          <div
-            className={`rounded-2xl transition-all duration-300 backdrop-blur-xl mb-5 overflow-hidden border ${isDarkMode
-              ? `bg-[#1A1A1A]/80 border-[#2A2A2A] ${isFilterSticky ? 'sticky z-30 shadow-2xl' : ''}`
-              : `bg-white/90 border-gray-200 ${isFilterSticky ? 'sticky z-30 shadow-xl' : ''}`
-              }`}
-            style={{
-              top: isFilterSticky ? '80px' : '0'
-            }}
-          >
-            {/* Premium Search Header */}
-            <div className={`px-4 py-3 border-b ${isDarkMode ? 'border-[#2A2A2A]/50 bg-white/5' : 'border-gray-50/30'
-              }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={`p-1.5 rounded-lg bg-blue-500/10 text-blue-500`}>
-                    <Search size={14} />
-                  </div>
-                  <div>
-                    <h2 className={`font-bold text-xs ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Legal Experts</h2>
-                    <p className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                      {lawyers.length} Verified Professionals
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-200 border ${showFilters
-                      ? 'bg-blue-600 text-white border-blue-500'
-                      : isDarkMode
-                        ? 'bg-white/5 hover:bg-white/10 text-gray-400 border-[#2A2A2A]'
-                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200'
-                      }`}
-                  >
-                    <Filter size={10} />
-                    <span>Filter Experts</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={toggleLocationSearch}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-200 border ${locationEnabled
-                      ? 'bg-emerald-600 text-white border-emerald-500'
-                      : isDarkMode
-                        ? 'bg-white/5 hover:bg-white/10 text-gray-400 border-[#2A2A2A]'
-                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200'
-                      }`}
-                  >
-                    {locationSearching ? (
-                      <Loader size={10} className="animate-spin" />
-                    ) : (
-                      <MapPin size={10} />
-                    )}
-                    <span>{locationSearching ? 'Locating...' : locationEnabled ? 'Located' : 'Near Me'}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Professional Search Bar */}
-            <div className={`px-4 py-3 border-b ${isDarkMode ? 'border-[#2A2A2A]/50' : 'border-gray-100'}`}>
-              <form onSubmit={handleSearch} className="relative">
-                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 size={14} ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} />
-                <input
-                  type="text"
-                  placeholder="Search by legal issue, lawyer name, or specialization..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`w-full pl-10 pr-24 py-2 text-xs rounded-xl border focus:outline-none transition-all duration-200 ${isDarkMode
-                    ? 'bg-[#0D0D0D] border-[#2A2A2A] text-white placeholder-gray-600 focus:border-blue-500/50'
-                    : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-500/20'
-                    }`}
-                />
-                <button
-                  type="submit"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all"
-                >
-                  Find Expert
-                </button>
-              </form>
-
-              {locationError && (
-                <div className={`mt-2 p-2 rounded-lg flex items-center gap-2 text-[10px] font-medium ${isDarkMode ? 'bg-red-500/10 text-red-400' : 'bg-red-50 text-red-600'
-                  }`}>
-                  <AlertCircle size={10} />
-                  <span>{locationError}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Professional Category Filter */}
-            <div
-              className={`transition-all duration-300 overflow-hidden border-t ${isDarkMode ? 'border-[#2A2A2A]/50' : 'border-gray-100'}`}
-              style={{ maxHeight: showFilters ? '500px' : '0px' }}
-            >
-              <div className={`p-4 ${isDarkMode ? 'bg-white/[0.02]' : 'bg-gray-50/50'}`}>
-                <div className="flex items-center mb-3">
-                  <Layout size={12} className={`mr-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-                  <h3 className={`font-bold text-[10px] uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Filter by Specialization
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-                  {categories.map((category) => {
-                    const IconComponent = category.icon;
-                    const isSelected = selectedCategory === category.name;
-
-                    return (
-                      <button
-                        key={category.name}
-                        onClick={() => {
-                          setSelectedCategory(category.name);
-                          setCurrentPage(1);
-                        }}
-                        className={`group p-2 rounded-xl text-left transition-all duration-200 border ${isSelected
-                          ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/20'
-                          : isDarkMode
-                            ? 'bg-white/5 hover:bg-white/10 text-gray-400 border-[#2A2A2A]'
-                            : 'bg-white hover:bg-gray-100 text-gray-700 border-gray-200'
-                          }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <IconComponent size={12} className={isSelected ? 'text-white' : 'text-blue-500'} />
-                          <span className="font-bold text-[10px] tracking-tight truncate">{category.name}</span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+          {/* Tab Switcher */}
+          <div className="flex justify-center mb-6">
+            <div className={`p-1 rounded-xl flex gap-1 border ${isDarkMode ? 'bg-[#1A1A1A] border-[#2A2A2A]' : 'bg-white border-gray-200 shadow-sm'}`}>
+              <button
+                onClick={() => {
+                  setActiveTab('experts');
+                  // Update URL without reloading
+                  const url = new URL(window.location);
+                  url.searchParams.delete('view');
+                  window.history.pushState({}, '', url);
+                }}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 ${activeTab === 'experts'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                  : isDarkMode ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}
+              >
+                <Search size={14} />
+                Find Expert
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('appointments');
+                  // Update URL without reloading
+                  const url = new URL(window.location);
+                  url.searchParams.set('view', 'appointments');
+                  window.history.pushState({}, '', url);
+                }}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 ${activeTab === 'appointments'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                  : isDarkMode ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}
+              >
+                <Calendar size={14} />
+                My Appointments
+              </button>
             </div>
           </div>
 
-          {/* Premium Loading State */}
-          {loading && (
-            <div className={`rounded-2xl p-12 text-center border backdrop-blur-md ${isDarkMode ? 'bg-white/5 border-[#2A2A2A]' : 'bg-white border-gray-100 shadow-xl'
-              }`}>
-              <div className="flex flex-col items-center">
-                <Loader size={32} className="animate-spin text-blue-500 mb-4" />
-                <h3 className={`text-sm font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Finding Best Legal Minds</h3>
-                <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Scanning verified professional database...</p>
-              </div>
-            </div>
-          )}
-
-          {/* Premium Error State */}
-          {error && !loading && (
-            <div className={`rounded-2xl p-10 mb-8 text-center border backdrop-blur-md ${isDarkMode ? 'bg-white/5 border-[#2A2A2A]' : 'bg-white border-gray-100 shadow-xl'
-              }`}>
-              <div className="flex flex-col items-center">
-                <div className="p-3 bg-red-500/10 rounded-full mb-4">
-                  <AlertCircle size={32} className="text-red-500" />
-                </div>
-                <h3 className={`text-sm font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {error.includes('login') ? 'Authentication Required' : 'Service Interrupted'}
-                </h3>
-                <p className={`text-xs max-w-xs mb-6 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>
-                  {error.includes('login')
-                    ? 'Accessing our legal network requires an active membership. Join now to find your perfect legal counsel.'
-                    : 'We are currently optimizing our expert database. Please try again shortly.'}
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => fetchLawyers(1, true)}
-                    className="px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider bg-blue-600 text-white hover:bg-blue-700 transition-all"
-                  >
-                    Try Refreshing
-                  </button>
-                  {error.includes('login') && (
-                    <button
-                      onClick={() => window.location.href = '/auth'}
-                      className={`px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border ${isDarkMode ? 'bg-white/5 border-[#2A2A2A] text-white' : 'bg-gray-800 text-white'
-                        }`}
-                    >
-                      Login
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Premium Empty State */}
-          {!loading && !error && lawyers.length === 0 && (
-            <div className={`rounded-2xl p-12 mb-8 text-center border backdrop-blur-md ${isDarkMode ? 'bg-white/5 border-[#2A2A2A]' : 'bg-white border-gray-100 shadow-xl'
-              }`}>
-              <div className="flex flex-col items-center">
-                <div className="p-3 bg-blue-500/10 rounded-full mb-4">
-                  <Search size={32} className="text-blue-500" />
-                </div>
-                <h3 className={`text-sm font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Expert Match Not Found</h3>
-                <p className={`text-xs max-w-xs mb-6 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>
-                  No professionals currently match your specific criteria. Try adjusting your filters or location search.
-                </p>
-
-                <div className="flex flex-wrap gap-2 justify-center">
-                  <button
-                    onClick={() => {
-                      setSelectedCategory('All');
-                      setSearchQuery('');
-                      setCurrentPage(1);
-                      fetchLawyers(1, true);
-                    }}
-                    className="px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-600 text-white hover:bg-blue-700 transition-all"
-                  >
-                    Clear All Filters
-                  </button>
-                  <button
-                    onClick={() => setShowFilters(true)}
-                    className={`px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${isDarkMode ? 'bg-white/5 border-[#2A2A2A] text-gray-300' : 'bg-gray-100 text-gray-700 border-gray-200'
-                      }`}
-                  >
-                    Adjust Filters
-                  </button>
-                </div>
-
-                {selectedCategory !== 'All' && (
-                  <div className={`mt-4 text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                    Active Category: <span className="text-blue-500">{selectedCategory}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Premium Lawyers Cards */}
-          {
-            !loading && !error && lawyers.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                {lawyers.map((lawyer) => (
-                  <div
-                    key={lawyer.id}
-                    className={`group rounded-2xl transition-all duration-300 hover:shadow-2xl overflow-hidden border backdrop-blur-md ${isDarkMode
-                      ? 'bg-white/5 border-[#2A2A2A] hover:bg-white/10'
-                      : 'bg-white border-gray-100 hover:shadow-lg'
-                      }`}
-                  >
-                    <div className="p-4">
-                      {/* Header - Profile Picture & Info */}
-                      <div className="flex gap-3 mb-3 items-start">
-                        {/* Profile Picture */}
-                        <div className="flex-shrink-0 relative">
-                          {lawyer.profile_picture_url && lawyer.profile_picture_url.trim() !== '' ? (
-                            <img
-                              src={lawyer.profile_picture_url}
-                              alt={lawyer.full_name}
-                              className="w-12 h-12 rounded-xl object-cover border border-[#2A2A2A]/50"
-                            />
-                          ) : (
-                            <div
-                              className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-sm"
-                              style={{
-                                background: `linear-gradient(135deg, ${getProfileGradient(lawyer.full_name).from}, ${getProfileGradient(lawyer.full_name).to})`
-                              }}
-                            >
-                              {getInitials(lawyer.full_name)}
-                            </div>
-                          )}
-                          {lawyer.is_verified && (
-                            <div className={`absolute -bottom-1 -right-1 bg-blue-600 text-white p-0.5 rounded-full border-2 ${isDarkMode ? 'border-[#1A1A1A]' : 'border-white'}`}>
-                              <Check size={8} strokeWidth={4} />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Name & Specialization */}
-                        <div className="flex-1 min-w-0">
-                          <h2 className={`text-xs font-bold truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                            {lawyer.full_name}
-                          </h2>
-                          <p className={`text-[10px] ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-bold uppercase tracking-wider`}>
-                            {lawyer.specialization}
-                          </p>
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <Star size={10} className="text-amber-500 fill-amber-500" />
-                            <span className={`text-[10px] font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>4.9</span>
-                            <span className="text-[9px] text-gray-500">(120+)</span>
-                          </div>
-                        </div>
+          {activeTab === 'experts' ? (
+            <>
+              {/* Professional Search & Filter Interface */}
+              <div
+                className={`rounded-2xl transition-all duration-300 backdrop-blur-xl mb-5 overflow-hidden border ${isDarkMode
+                  ? `bg-[#1A1A1A]/80 border-[#2A2A2A] ${isFilterSticky ? 'sticky z-30 shadow-2xl' : ''}`
+                  : `bg-white/90 border-gray-200 ${isFilterSticky ? 'sticky z-30 shadow-xl' : ''}`
+                  }`}
+                style={{
+                  top: isFilterSticky ? '80px' : '0'
+                }}
+              >
+                {/* Premium Search Header */}
+                <div className={`px-4 py-3 border-b ${isDarkMode ? 'border-[#2A2A2A]/50 bg-white/5' : 'border-gray-50/30'
+                  }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className={`p-1.5 rounded-lg bg-blue-500/10 text-blue-500`}>
+                        <Search size={14} />
                       </div>
-
-                      {/* Bio/Description */}
-                      <p className={`text-[10px] leading-relaxed mb-3 line-clamp-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                        {lawyer.bio || `Specialized in ${lawyer.specialization} with ${lawyer.years_of_experience} years of professional practice.`}
-                      </p>
-
-                      {/* Compact Stats */}
-                      <div className="grid grid-cols-3 gap-2 mb-4 py-2 px-1 rounded-xl" style={{
-                        backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)'
-                      }}>
-                        {[
-                          { label: 'Exp', value: `${lawyer.years_of_experience}Y`, icon: Briefcase },
-                          { label: 'Cases', value: lawyer.appointments_count || '0', icon: Shield },
-                          { label: 'Fee', value: `₹${lawyer.consultation_fee}`, icon: Award }
-                        ].map((stat, i) => (
-                          <div key={i} className="text-center">
-                            <div className={`text-[8px] font-bold uppercase tracking-tighter ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{stat.label}</div>
-                            <div className={`text-xs font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{stat.value}</div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => viewLawyerDetails(lawyer)}
-                          className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border ${isDarkMode
-                            ? 'bg-white/5 hover:bg-white/10 text-gray-300 border-[#2A2A2A]'
-                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200'
-                            }`}
-                        >
-                          Profile
-                        </button>
-                        <button
-                          onClick={() => startBooking(lawyer)}
-                          className="flex-[2] py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-lg shadow-blue-600/20"
-                        >
-                          Book Now
-                        </button>
+                      <div>
+                        <h2 className={`font-bold text-xs ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Legal Experts</h2>
+                        <p className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          {lawyers.length} Verified Professionals
+                        </p>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )
-          }
 
-          {/* Infinite Scroll Loading Indicator */}
-          {
-            !loading && !error && lawyers.length > 0 && (
-              <div
-                ref={loadMoreRef}
-                className="flex justify-center items-center py-6 mb-2"
-              >
-                {loadingMore ? (
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 border-t-2 border-b-2 border-sky-500 rounded-full animate-spin mb-2"></div>
-                    <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                      Loading more lawyers...
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-200 border ${showFilters
+                          ? 'bg-blue-600 text-white border-blue-500'
+                          : isDarkMode
+                            ? 'bg-white/5 hover:bg-white/10 text-gray-400 border-[#2A2A2A]'
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200'
+                          }`}
+                      >
+                        <Filter size={10} />
+                        <span>Filter Experts</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={toggleLocationSearch}
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-200 border ${locationEnabled
+                          ? 'bg-emerald-600 text-white border-emerald-500'
+                          : isDarkMode
+                            ? 'bg-white/5 hover:bg-white/10 text-gray-400 border-[#2A2A2A]'
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200'
+                          }`}
+                      >
+                        {locationSearching ? (
+                          <Loader size={10} className="animate-spin" />
+                        ) : (
+                          <MapPin size={10} />
+                        )}
+                        <span>{locationSearching ? 'Locating...' : locationEnabled ? 'Located' : 'Near Me'}</span>
+                      </button>
+                    </div>
                   </div>
-                ) : hasMore ? (
-                  <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                    Scroll for more lawyers
-                  </p>
-                ) : (
-                  <p className={`text-sm font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-                    No more lawyers to load
-                  </p>
-                )}
+                </div>
+
+                {/* Professional Search Bar */}
+                <div className={`px-4 py-3 border-b ${isDarkMode ? 'border-[#2A2A2A]/50' : 'border-gray-100'}`}>
+                  <form onSubmit={handleSearch} className="relative">
+                    <Search className={`absolute left-3 top-1/2 -translate-y-1/2 size={14} ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} />
+                    <input
+                      type="text"
+                      placeholder="Search by legal issue, lawyer name, or specialization..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className={`w-full pl-10 pr-24 py-2 text-xs rounded-xl border focus:outline-none transition-all duration-200 ${isDarkMode
+                        ? 'bg-[#0D0D0D] border-[#2A2A2A] text-white placeholder-gray-600 focus:border-blue-500/50'
+                        : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-500/20'
+                        }`}
+                    />
+                    <button
+                      type="submit"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all"
+                    >
+                      Find Expert
+                    </button>
+                  </form>
+
+                  {locationError && (
+                    <div className={`mt-2 p-2 rounded-lg flex items-center gap-2 text-[10px] font-medium ${isDarkMode ? 'bg-red-500/10 text-red-400' : 'bg-red-50 text-red-600'
+                      }`}>
+                      <AlertCircle size={10} />
+                      <span>{locationError}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Professional Category Filter */}
+                <div
+                  className={`transition-all duration-300 overflow-hidden border-t ${isDarkMode ? 'border-[#2A2A2A]/50' : 'border-gray-100'}`}
+                  style={{ maxHeight: showFilters ? '500px' : '0px' }}
+                >
+                  <div className={`p-4 ${isDarkMode ? 'bg-white/[0.02]' : 'bg-gray-50/50'}`}>
+                    <div className="flex items-center mb-3">
+                      <Layout size={12} className={`mr-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                      <h3 className={`font-bold text-[10px] uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Filter by Specialization
+                      </h3>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+                      {categories.map((category) => {
+                        const IconComponent = category.icon;
+                        const isSelected = selectedCategory === category.name;
+
+                        return (
+                          <button
+                            key={category.name}
+                            onClick={() => {
+                              setSelectedCategory(category.name);
+                              setCurrentPage(1);
+                            }}
+                            className={`group p-2 rounded-xl text-left transition-all duration-200 border ${isSelected
+                              ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/20'
+                              : isDarkMode
+                                ? 'bg-white/5 hover:bg-white/10 text-gray-400 border-[#2A2A2A]'
+                                : 'bg-white hover:bg-gray-100 text-gray-700 border-gray-200'
+                              }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <IconComponent size={12} className={isSelected ? 'text-white' : 'text-blue-500'} />
+                              <span className="font-bold text-[10px] tracking-tight truncate">{category.name}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               </div>
-            )
-          }
+
+              {/* Premium Loading State */}
+              {loading && (
+                <div className={`rounded-2xl p-12 text-center border backdrop-blur-md ${isDarkMode ? 'bg-white/5 border-[#2A2A2A]' : 'bg-white border-gray-100 shadow-xl'
+                  }`}>
+                  <div className="flex flex-col items-center">
+                    <Loader size={32} className="animate-spin text-blue-500 mb-4" />
+                    <h3 className={`text-sm font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Finding Best Legal Minds</h3>
+                    <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Scanning verified professional database...</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Premium Error State */}
+              {error && !loading && (
+                <div className={`rounded-2xl p-10 mb-8 text-center border backdrop-blur-md ${isDarkMode ? 'bg-white/5 border-[#2A2A2A]' : 'bg-white border-gray-100 shadow-xl'
+                  }`}>
+                  <div className="flex flex-col items-center">
+                    <div className="p-3 bg-red-500/10 rounded-full mb-4">
+                      <AlertCircle size={32} className="text-red-500" />
+                    </div>
+                    <h3 className={`text-sm font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {error.includes('login') ? 'Authentication Required' : 'Service Interrupted'}
+                    </h3>
+                    <p className={`text-xs max-w-xs mb-6 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>
+                      {error.includes('login')
+                        ? 'Accessing our legal network requires an active membership. Join now to find your perfect legal counsel.'
+                        : 'We are currently optimizing our expert database. Please try again shortly.'}
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => fetchLawyers(1, true)}
+                        className="px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider bg-blue-600 text-white hover:bg-blue-700 transition-all"
+                      >
+                        Try Refreshing
+                      </button>
+                      {error.includes('login') && (
+                        <button
+                          onClick={() => window.location.href = '/auth'}
+                          className={`px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border ${isDarkMode ? 'bg-white/5 border-[#2A2A2A] text-white' : 'bg-gray-800 text-white'
+                            }`}
+                        >
+                          Login
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Premium Empty State */}
+              {!loading && !error && visibleLawyers.length === 0 && (
+                <div className={`rounded-2xl p-12 mb-8 text-center border backdrop-blur-md ${isDarkMode ? 'bg-white/5 border-[#2A2A2A]' : 'bg-white border-gray-100 shadow-xl'
+                  }`}>
+                  <div className="flex flex-col items-center">
+                    <div className="p-3 bg-blue-500/10 rounded-full mb-4">
+                      <Search size={32} className="text-blue-500" />
+                    </div>
+                    <h3 className={`text-sm font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Expert Match Not Found</h3>
+                    <p className={`text-xs max-w-xs mb-6 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>
+                      No professionals currently match your specific criteria. Try adjusting your filters or location search.
+                    </p>
+
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      <button
+                        onClick={() => {
+                          setSelectedCategory('All');
+                          setSearchQuery('');
+                          setCurrentPage(1);
+                          fetchLawyers(1, true);
+                        }}
+                        className="px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-600 text-white hover:bg-blue-700 transition-all"
+                      >
+                        Clear All Filters
+                      </button>
+                      <button
+                        onClick={() => setShowFilters(true)}
+                        className={`px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${isDarkMode ? 'bg-white/5 border-[#2A2A2A] text-gray-300' : 'bg-gray-100 text-gray-700 border-gray-200'
+                          }`}
+                      >
+                        Adjust Filters
+                      </button>
+                    </div>
+
+                    {selectedCategory !== 'All' && (
+                      <div className={`mt-4 text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                        Active Category: <span className="text-blue-500">{selectedCategory}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Premium Lawyers Cards */}
+              {
+                !loading && !error && visibleLawyers.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    {visibleLawyers.map((lawyer) => (
+                      <div
+                        key={lawyer.id}
+                        className={`group rounded-2xl transition-all duration-300 hover:shadow-2xl overflow-hidden border backdrop-blur-md ${isDarkMode
+                          ? 'bg-white/5 border-[#2A2A2A] hover:bg-white/10'
+                          : 'bg-white border-gray-100 hover:shadow-lg'
+                          }`}
+                      >
+                        <div className="p-4 relative">
+                          {onlineLawyers.has(lawyer.id) && (
+                            <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-full z-10">
+                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                              <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-wider">Online</span>
+                            </div>
+                          )}
+                          {/* Header - Profile Picture & Info */}
+                          <div className="flex gap-3 mb-3 items-start">
+                            {/* Profile Picture */}
+                            <div className="flex-shrink-0 relative">
+                              {lawyer.profile_picture_url && lawyer.profile_picture_url.trim() !== '' ? (
+                                <img
+                                  src={lawyer.profile_picture_url}
+                                  alt={lawyer.full_name}
+                                  className="w-12 h-12 rounded-xl object-cover border border-[#2A2A2A]/50"
+                                />
+                              ) : (
+                                <div
+                                  className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-sm"
+                                  style={{
+                                    background: `linear-gradient(135deg, ${getProfileGradient(lawyer.full_name).from}, ${getProfileGradient(lawyer.full_name).to})`
+                                  }}
+                                >
+                                  {getInitials(lawyer.full_name)}
+                                </div>
+                              )}
+                              {lawyer.is_verified && (
+                                <div className={`absolute -bottom-1 -right-1 bg-blue-600 text-white p-0.5 rounded-full border-2 ${isDarkMode ? 'border-[#1A1A1A]' : 'border-white'}`}>
+                                  <Check size={8} strokeWidth={4} />
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Name & Specialization */}
+                            <div className="flex-1 min-w-0">
+                              <h2 className={`text-xs font-bold truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                {lawyer.full_name}
+                              </h2>
+                              <p className={`text-[10px] ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-bold uppercase tracking-wider`}>
+                                {lawyer.specialization || 'General Practice'}
+                              </p>
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <Star size={10} className="text-amber-500 fill-amber-500" />
+                                <span className={`text-[10px] font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{lawyer.rating || '—'}</span>
+                                {lawyer.reviews_count ? <span className="text-[9px] text-gray-500">({lawyer.reviews_count}+)</span> : <span className="text-[9px] text-gray-500">New</span>}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Bio/Description */}
+                          <p className={`text-[10px] leading-relaxed mb-3 line-clamp-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                            {lawyer.bio || `${lawyer.specialization ? `Specialized in ${lawyer.specialization}` : 'Legal professional'}${lawyer.years_of_experience ? ` with ${lawyer.years_of_experience} years of experience` : ''}.`}
+                          </p>
+
+                          {/* Compact Stats */}
+                          <div className="grid grid-cols-3 gap-2 mb-4 py-2 px-1 rounded-xl" style={{
+                            backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)'
+                          }}>
+                            {[
+                              { label: 'Exp', value: lawyer.years_of_experience ? `${lawyer.years_of_experience}Y` : 'New', icon: Briefcase },
+                              { label: 'Cases', value: lawyer.appointments_count || '—', icon: Shield },
+                              { label: 'Fee', value: parseFloat(lawyer.consultation_fee) > 0 ? `₹${Number(lawyer.consultation_fee).toLocaleString('en-IN')}` : 'Free', icon: Award }
+                            ].map((stat, i) => (
+                              <div key={i} className="text-center">
+                                <div className={`text-[8px] font-bold uppercase tracking-tighter ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{stat.label}</div>
+                                <div className={`text-xs font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{stat.value}</div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => viewLawyerDetails(lawyer)}
+                              className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border ${isDarkMode
+                                ? 'bg-white/5 hover:bg-white/10 text-gray-300 border-[#2A2A2A]'
+                                : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200'
+                                }`}
+                            >
+                              Profile
+                            </button>
+                            {onlineLawyers.has(lawyer.id) ? (
+                              <button
+                                onClick={() => initiateCall(lawyer)}
+                                className="flex-[2] py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2"
+                              >
+                                <Phone size={12} fill="currentColor" />
+                                Call Now
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => startBooking(lawyer)}
+                                className="flex-[2] py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-lg shadow-blue-600/20"
+                              >
+                                Book Now
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              }
+
+              {/* Infinite Scroll Loading Indicator */}
+              {
+                !loading && !error && visibleLawyers.length > 0 && (
+                  <div
+                    ref={loadMoreRef}
+                    className="flex justify-center items-center py-6 mb-2"
+                  >
+                    {loadingMore ? (
+                      <div className="flex flex-col items-center">
+                        <div className="w-8 h-8 border-t-2 border-b-2 border-sky-500 rounded-full animate-spin mb-2"></div>
+                        <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                          Loading more lawyers...
+                        </p>
+                      </div>
+                    ) : hasMore ? (
+                      <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                        Scroll for more lawyers
+                      </p>
+                    ) : (
+                      <p className={`text-sm font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                        No more lawyers to load
+                      </p>
+                    )}
+                  </div>
+                )
+              }
+            </>
+          ) : (
+            renderAppointments()
+          )}
         </>
       );
     } else if (view === 'detail' && selectedLawyer) {
@@ -1793,11 +2151,11 @@ const LegalCosultation = () => {
                   </div>
                   <div>
                     <h1 className="text-sm font-bold text-white">{selectedLawyer.full_name}</h1>
-                    <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">{selectedLawyer.specialization}</p>
+                    <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">{selectedLawyer.specialization || 'General Practice'}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <div className="flex items-center gap-1">
                         <Star size={10} className="text-amber-500 fill-amber-500" />
-                        <span className="text-[10px] font-bold text-white">4.9</span>
+                        <span className="text-[10px] font-bold text-white">{selectedLawyer.rating || '—'}</span>
                       </div>
                       <span className="text-[9px] text-gray-400">• {selectedLawyer.appointments_count || 0} Consultations</span>
                     </div>
@@ -1821,15 +2179,15 @@ const LegalCosultation = () => {
                     Professional Profile
                   </h3>
                   <p className={`text-[11px] leading-relaxed ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {selectedLawyer.bio || `${selectedLawyer.full_name} is a distinguished legal expert with over ${selectedLawyer.years_of_experience} years of experience in ${selectedLawyer.specialization}.`}
+                    {selectedLawyer.bio || `${selectedLawyer.full_name || 'This attorney'} is a ${selectedLawyer.specialization ? `distinguished ${selectedLawyer.specialization} expert` : 'legal professional'}${selectedLawyer.years_of_experience ? ` with over ${selectedLawyer.years_of_experience} years of experience` : ''}.`}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { label: 'Experience', value: `${selectedLawyer.years_of_experience}Y`, icon: Briefcase },
-                    { label: 'Consultation', value: `₹${selectedLawyer.consultation_fee}`, icon: Award },
-                    { label: 'License', value: selectedLawyer.license_number, icon: Shield }
+                    { label: 'Experience', value: selectedLawyer.years_of_experience ? `${selectedLawyer.years_of_experience}Y` : 'New', icon: Briefcase },
+                    { label: 'Consultation', value: parseFloat(selectedLawyer.consultation_fee) > 0 ? `₹${Number(selectedLawyer.consultation_fee).toLocaleString('en-IN')}` : 'Free', icon: Award },
+                    { label: 'License', value: selectedLawyer.license_number || '—', icon: Shield }
                   ].map((stat, i) => (
                     <div key={i} className={`p-3 rounded-xl border text-center ${isDarkMode ? 'bg-white/[0.02] border-[#2A2A2A]' : 'bg-gray-50 border-gray-100'}`}>
                       <stat.icon size={12} className="mx-auto mb-1 text-blue-500" />
@@ -2040,6 +2398,124 @@ const LegalCosultation = () => {
       <div className="max-w-7xl mx-auto px-4 py-6" ref={contentRef}>
         {renderView()}
       </div>
+
+      {/* Call Connection Modal */}
+      {callState.status !== 'idle' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#1A1A1A] border border-[#2A2A2A] text-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center relative overflow-hidden animate-in fade-in zoom-in duration-300">
+            {/* Background Animation */}
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl animate-pulse" />
+            </div>
+
+            <div className="relative z-10 flex flex-col items-center">
+              {/* Lawyer Image */}
+              <div className="w-24 h-24 rounded-full border-4 border-[#2A2A2A] shadow-xl mb-6 relative">
+                <img
+                  src={callState.lawyer?.profile_picture_url || "https://t4.ftcdn.net/jpg/03/46/93/61/360_F_346936114_RaxE6OQogOtOt9Wgc91G1oST5p5huzJS.jpg"}
+                  alt={callState.lawyer?.full_name}
+                  className="w-full h-full rounded-full object-cover"
+                />
+                {callState.status === 'connected' && (
+                  <div className="absolute bottom-1 right-1 bg-emerald-500 w-5 h-5 rounded-full border-2 border-[#1A1A1A]" />
+                )}
+              </div>
+
+              <h3 className="text-xl font-bold mb-1">{callState.lawyer?.full_name}</h3>
+              <p className="text-sm text-gray-400 mb-8 font-medium">
+                {callState.status === 'dialing' ? 'Dialing...' : formatCallDuration(callState.duration)}
+              </p>
+
+              {/* Call Controls */}
+              <div className="flex items-center gap-6">
+                <button
+                  onClick={() => setIsMuted(!isMuted)}
+                  className={`p-4 rounded-full transition-all ${isMuted ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20 text-white'}`}
+                >
+                  {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
+                </button>
+
+                <button
+                  onClick={endCall}
+                  className="p-4 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30 transition-all transform hover:scale-105"
+                >
+                  <PhoneOff size={28} />
+                </button>
+
+                <button
+                  onClick={() => setIsOnSpeaker(!isOnSpeaker)}
+                  className={`p-4 rounded-full transition-all ${isOnSpeaker ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20 text-white'}`}
+                >
+                  <Headphones size={24} />
+                </button>
+              </div>
+
+              <div className="mt-8 flex items-center gap-2 text-xs text-emerald-500 font-bold uppercase tracking-wider bg-emerald-500/10 px-3 py-1.5 rounded-full">
+                <Shield size={12} />
+                Encrypted Audio Connection
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recharge Modal */}
+      {showRechargeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className={`w-full max-w-md p-6 rounded-2xl shadow-2xl border animate-in fade-in zoom-in duration-300 ${isDarkMode ? 'bg-[#1A1A1A] border-[#2A2A2A] text-white' : 'bg-white border-gray-100 text-gray-900'}`}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold">Top Up Wallet</h3>
+              <button
+                onClick={() => setShowRechargeModal(false)}
+                className={`p-2 rounded-full hover:bg-gray-100/10 transition-colors`}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="mb-6 flex flex-col items-center">
+              <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mb-3">
+                <Wallet size={32} className="text-blue-500" />
+              </div>
+              <p className="text-sm font-medium opacity-60">Current Balance</p>
+              <h2 className="text-3xl font-bold mt-1">₹{walletBalance.toLocaleString('en-IN')}</h2>
+            </div>
+
+            <p className="text-xs font-bold uppercase tracking-wider opacity-60 mb-3">Select Amount</p>
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              {[500, 1000, 2000].map(amount => (
+                <button
+                  key={amount}
+                  onClick={async () => {
+                    try {
+                      const userStr = localStorage.getItem('user');
+                      const userId = userStr ? JSON.parse(userStr).id : '1';
+                      await walletServices.recharge({
+                        user_id: userId,
+                        amount: amount,
+                        description: "Wallet Recharge"
+                      });
+                      setWalletBalance(prev => prev + amount);
+                      toast.showSuccess(`Recharged ₹${amount} successfully!`);
+                      setShowRechargeModal(false);
+                    } catch (err) {
+                      console.error(err);
+                      toast.showError('Recharge failed');
+                    }
+                  }}
+                  className={`py-3 rounded-xl border font-bold text-sm transition-all hover:scale-105 ${isDarkMode ? 'border-[#2A2A2A] bg-white/5 hover:bg-white/10' : 'border-gray-200 bg-gray-50 hover:bg-gray-100'}`}
+                >
+                  ₹{amount}
+                </button>
+              ))}
+            </div>
+
+            <p className="text-[10px] text-center opacity-40">
+              Secure payments processed via Kuberdhan Wallet Service.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

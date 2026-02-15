@@ -8,7 +8,7 @@ import LawyerAppointments from '../LawyerAdmin/LawyerAppointments';
 import LawyerClients from '../LawyerAdmin/LawyerClients';
 import LawyerCases from '../LawyerAdmin/LawyerCases';
 import LawyerDocuments from '../LawyerAdmin/LawyerDocuments';
-import Sidebar from '../Sidebar';
+import Sidebar from '../layout/Sidebar';
 import {
   Home,
   Calendar,
@@ -123,7 +123,7 @@ const NavbarComponent = ({
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 blur-sm opacity-0 group-hover:opacity-70 transition-opacity duration-300 -z-10"></div>
           </div>
           <h1 className={`text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent`}>
-            MeraBakil
+            Mera Vakil
           </h1>
         </div>
       </div>
@@ -325,7 +325,7 @@ const LawyerDashboard = ({ darkMode, userData }) => {
     { title: 'Active Cases', value: '24', change: '+12%', icon: FileText, gradient: 'from-blue-500 to-blue-600' },
     { title: 'Upcoming Appointments', value: '8', change: '+5%', icon: Calendar, gradient: 'from-green-500 to-green-600' },
     { title: 'Pending Documents', value: '15', change: '-8%', icon: FolderOpen, gradient: 'from-orange-500 to-orange-600' },
-    { title: 'Monthly Revenue', value: '$45,230', change: '+18%', icon: DollarSign, gradient: 'from-purple-500 to-purple-600' }
+    { title: 'Monthly Revenue', value: '₹45,230', change: '+18%', icon: DollarSign, gradient: 'from-purple-500 to-purple-600' }
   ];
 
   const recentAppointments = [
@@ -477,13 +477,13 @@ const LawyerDashboard = ({ darkMode, userData }) => {
                   <div className="flex items-center">
                     <Phone size={16} className={`mr-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                     <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      {userData?.phone || "Not provided"}
+                      {userData?.phone || "Not specified"}
                     </p>
                   </div>
                   <div className="flex items-center">
                     <MapPin size={16} className={`mr-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                     <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      {userData?.location || "Not provided"}
+                      {userData?.location || "Not specified"}
                     </p>
                   </div>
                 </div>
@@ -513,14 +513,14 @@ const LawyerDashboard = ({ darkMode, userData }) => {
                       Bar Association
                     </h4>
                     <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {userData?.bar_association || "Not provided"}
+                      {userData?.bar_association || "Not specified"}
                     </p>
 
                     <h4 className={`text-sm font-medium mb-2 mt-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                       License Number
                     </h4>
                     <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {userData?.license_number || "Not provided"}
+                      {userData?.license_number || "Not specified"}
                     </p>
                   </div>
 
@@ -529,21 +529,21 @@ const LawyerDashboard = ({ darkMode, userData }) => {
                       Education
                     </h4>
                     <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {userData?.education || "Not provided"}
+                      {userData?.education || "Not specified"}
                     </p>
 
                     <h4 className={`text-sm font-medium mb-2 mt-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                       Languages
                     </h4>
                     <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {userData?.languages || "Not provided"}
+                      {userData?.languages || "Not specified"}
                     </p>
 
                     <h4 className={`text-sm font-medium mb-2 mt-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                       Availability
                     </h4>
                     <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {userData?.availability || "Not provided"}
+                      {userData?.availability || "Not specified"}
                     </p>
                   </div>
                 </div>

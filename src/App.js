@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { setTheme } from './redux/themeSlice';
 import { initializeTheme } from './utils/theme';
+import WalletLayout from './components/Wallet/WalletLayout';
 import FloatingThemeToggle from './components/common/FloatingThemeToggle';
 import { ToastProvider } from './context/ToastContext';
 import './App.css';
@@ -11,18 +12,18 @@ import './index.css';
 import './styles/darkMode.css';
 
 // Components
-import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import Sidebar from './components/Sidebar';
-import PracticeAreas from './components/PracticeAreas';
-import Contact from './components/Contact';
-import ScrollToTop from './components/ScrollToTop';
-import { Login as AuthComponent } from './components/AuthComponent';
-import { Signup as SignupComponent } from './components/SignupComponent';
-import { ForgotPassword } from './components/ForgotPassword';
-import LegalCosultation from './components/LegalCosultation';
-import TaskAutomation from './components/TaskAutomation';
-import LegalDocumentsReview from './components/LegalDocumentsReview';
+import Navbar from './components/layout/Navbar';
+import Footer from './components/layout/Footer';
+import Hero from './components/features/Hero';
+import Sidebar from './components/layout/Sidebar';
+import PracticeAreas from './components/features/PracticeAreas';
+import ScrollToTop from './components/layout/ScrollToTop';
+import { Login as AuthComponent } from './pages/Auth/Login';
+import { Signup as SignupComponent } from './pages/Auth/Signup';
+import { ForgotPassword } from './pages/Auth/ForgotPassword';
+import LegalCosultation from './pages/Legal/FindLawyer';
+import TaskAutomation from './components/features/TaskAutomation';
+import LegalDocumentsReview from './pages/Legal/DocumentReview';
 import VoiceModal from './components/VoiceModal';
 import Profile from './components/Auth/Profile';
 import LegalAIPortfolio from './components/LegalAIPortfolio';
@@ -32,8 +33,13 @@ import LawyerAdmin from './components/Lawyer/LawyerAdmin';
 import ProfileTypeSelection from './components/ProfileTypeSelection';
 import LawyerAdditionalDetails from './components/LawyerAdditionalDetails';
 import UserOnboarding from './components/UserOnboarding';
-import LandingPage from './components/LandingPage';
-import Pricing from './components/Pricing';
+import LandingPage from './pages/General/LandingPage';
+import Pricing from './pages/General/Pricing';
+import Contact from './pages/General/Contact';
+// Compliance pages
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsOfService from './components/TermsOfService';
+import LegalDisclaimer from './components/LegalDisclaimer';
 
 // Home Route component
 const HomeRoute = () => {
@@ -68,6 +74,8 @@ const AppLayout = ({ children }) => {
           {children}
         </main>
       </div>
+      {/* Footer — shown on landing pages; other pages get FloatingThemeToggle */}
+      {!isLawyerAdmin && isLandingPage && <Footer />}
       {!isLawyerAdmin && !isLandingPage && <FloatingThemeToggle />}
     </>
   );
@@ -124,13 +132,19 @@ const App = () => {
 
                     {/* Public Routes */}
                     <Route path="/contact" element={<Contact />} />
-                    <Route path="/legal-consoltation" element={<LegalCosultation />} />
+                    <Route path="/legal-consoltation" element={isAuthenticated ? <LegalCosultation /> : <Navigate to="/auth" replace />} />
                     <Route path="/task-automation" element={<TaskAutomation />} />
                     <Route path="/legal-documents-review" element={<LegalDocumentsReview />} />
                     <Route path="/voice-modal" element={<VoiceModal />} />
                     <Route path="/portfolio" element={<LegalAIPortfolio />} />
                     <Route path="/personal-room" element={<PersonalRoom />} />
+                    <Route path="/wallet" element={isAuthenticated ? <WalletLayout /> : <Navigate to="/auth" replace />} />
                     <Route path="/pricing" element={<Pricing />} />
+
+                    {/* Compliance / Legal Pages */}
+                    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                    <Route path="/terms-of-service" element={<TermsOfService />} />
+                    <Route path="/disclaimer" element={<LegalDisclaimer />} />
 
                     {/* Authentication Routes */}
                     <Route path="/auth" element={isAuthenticated ? <Navigate to="/" replace /> : <AuthComponent />} />

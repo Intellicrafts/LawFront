@@ -1,12 +1,12 @@
 // src/components/Navbar.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { toggleTheme } from '../redux/themeSlice';
-import { Link } from 'react-router-dom';
-import { authAPI, tokenManager, apiServices } from '../api/apiService';
-import Avatar from './common/Avatar';
-import NotificationDropdown from './NotificationDropdown';
-import OnboardingTour from './OnboardingTour';
+import { toggleTheme } from '../../redux/themeSlice';
+import { Link, useLocation } from 'react-router-dom';
+import { authAPI, tokenManager, apiServices } from '../../api/apiService';
+import Avatar from '../common/Avatar';
+import NotificationDropdown from '../NotificationDropdown';
+import OnboardingTour from '../OnboardingTour';
 import { useGoogleLogin } from '@react-oauth/google';
 import { FaGoogle } from 'react-icons/fa';
 
@@ -43,10 +43,11 @@ import {
   Search,
   MoreVertical,
   PanelLeftOpen,
-  PanelLeftClose
+  PanelLeftClose,
+  Wallet
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toggleSidebar } from '../redux/sidebarSlice';
+import { toggleSidebar } from '../../redux/sidebarSlice';
 
 // Professional Animated Sidebar Toggle Icon (Lottie-style)
 const SidebarToggleIcon = ({ isOpen, mode }) => {
@@ -157,7 +158,7 @@ const OneTapPrompt = ({ onGoogleLogin, onDismiss, isDarkMode }) => {
             </div>
             <p className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'
               }`}>
-              Sign in to merabakil.com with google.com
+              Sign in to meravakil.com with google.com
             </p>
           </div>
 
@@ -200,6 +201,47 @@ const OneTapPrompt = ({ onGoogleLogin, onDismiss, isDarkMode }) => {
   );
 };
 
+
+
+// NavLink Component for consistent styling
+const NavLink = ({ to, children, className = "", mobile = false }) => {
+  const location = useLocation();
+  const isActiveLink = (path) => location.pathname === path;
+  const active = isActiveLink(to);
+
+  if (mobile) {
+    return (
+      <Link
+        to={to}
+        className={`block px-4 py-3 rounded-xl text-lg font-medium transition-all duration-200 
+              ${active
+            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+          } ${className}`}
+      >
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <Link
+      to={to}
+      className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 group
+          ${active
+          ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/10'
+          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
+        } ${className}`}
+    >
+      {children}
+      {/* Active Indicator Dot */}
+      {active && (
+        <span className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-600 dark:bg-blue-400 rounded-full"></span>
+      )}
+    </Link>
+  );
+};
+
 const Navbar = ({ isLandingPage = false }) => {
   // Authentication and Notification states
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -213,9 +255,11 @@ const Navbar = ({ isLandingPage = false }) => {
   const [notificationsDropdownOpen, setNotificationsDropdownOpen] = useState(false);
   const [showOnboardingTour, setShowOnboardingTour] = useState(false);
   const [showOneTapPrompt, setShowOneTapPrompt] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { mode } = useSelector((state) => state.theme);
   const { isOpen: sidebarOpen } = useSelector((state) => state.sidebar);
   const dispatch = useDispatch();
+  const location = useLocation();
   const userDropdownRef = useRef(null);
   const notificationsDropdownRef = useRef(null);
 
@@ -346,7 +390,7 @@ const Navbar = ({ isLandingPage = false }) => {
       setTimeout(() => {
         setShowOneTapPrompt(true);
         localStorage.setItem('hasSeenOneTapPrompt', 'true');
-      }, 2000); // Show after 2 seconds
+      }, 5000); // Show after 5 seconds — less intrusive on first load
     }
   };
 
@@ -501,12 +545,26 @@ const Navbar = ({ isLandingPage = false }) => {
         setNotificationsDropdownOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto'; // Re-enable scroll when menu closes
+    }
+    return () => {
+      document.body.style.overflow = 'auto'; // Ensure cleanup
+    };
+  }, [mobileMenuOpen]);
 
   const toggleDropdown = (index) => {
     if (activeDropdown === index) {
@@ -819,13 +877,55 @@ const Navbar = ({ isLandingPage = false }) => {
     }
   };
 
+  // Helper for active link state
+  const isActiveLink = (path) => {
+    return location.pathname === path;
+  };
+
+  // NavLink Component for consistent styling
+  const NavLink = ({ to, children, className = "", mobile = false }) => {
+    const active = isActiveLink(to);
+
+    if (mobile) {
+      return (
+        <Link
+          to={to}
+          className={`block px-4 py-3 rounded-xl text-lg font-medium transition-all duration-200 
+                ${active
+              ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+            } ${className}`}
+        >
+          {children}
+        </Link>
+      );
+    }
+
+    return (
+      <Link
+        to={to}
+        className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 group
+            ${active
+            ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/10'
+            : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
+          } ${className}`}
+      >
+        {children}
+        {/* Active Indicator Dot */}
+        {active && (
+          <span className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-600 dark:bg-blue-400 rounded-full"></span>
+        )}
+      </Link>
+    );
+  };
+
   return (
     <>
       <nav
         className={`fixed top-0 w-full z-[100] transition-all duration-300 py-3
                    ${isLandingPage
-            ? 'bg-white/70 dark:bg-[#0A0A0A]/70 backdrop-blur-xl border-b border-transparent'
-            : 'bg-white dark:bg-[#0A0A0A] border-b border-transparent'
+            ? 'bg-white/80 dark:bg-[#0A0A0A]/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-transparent'
+            : 'bg-white/90 dark:bg-[#0A0A0A] backdrop-blur-md border-b border-gray-200 dark:border-transparent'
           }`}
         data-tour="navbar"
       >
@@ -852,8 +952,20 @@ const Navbar = ({ isLandingPage = false }) => {
               </Link>
             </div>
 
-            {/* Truly Centered Section - Empty or for future use */}
-            <div className="hidden lg:flex lg:items-center">
+            {/* Unified Navigation Links - Shown on all pages */}
+            <div className="hidden lg:flex lg:items-center lg:space-x-1 mx-4">
+              {/* Dashboard - Only for Lawyers */}
+              {isAuthenticated && user?.user_type === 2 && (
+                <NavLink to="/lawyer-admin">Dashboard</NavLink>
+              )}
+
+              {/* AI Assistant - Available to generally everyone, or logic can be refined */}
+              <NavLink to="/chatbot">AI Assistant</NavLink>
+
+              {/* Core Features */}
+              <NavLink to="/legal-consoltation">Find Lawyer</NavLink>
+              <NavLink to="/legal-documents-review">Documents</NavLink>
+              <NavLink to="/pricing">Pricing</NavLink>
             </div>
 
             {/* Desktop Right Side - Auth & Theme - Right Aligned */}
@@ -878,9 +990,9 @@ const Navbar = ({ isLandingPage = false }) => {
                           relative group"
                 onClick={handleStartTour}
                 aria-label="Start tour"
-                title="Take a tour of MeraBakil"
+                title="Take a tour of Mera Vakil"
               >
-                <Compass size={20} className="group-hover:rotate-12 transition-transform duration-200" />
+                <Compass size={20} />
                 {/* Subtle glow effect */}
                 <span className="absolute inset-0 rounded-full bg-blue-500/20 scale-0 group-hover:scale-110 
                                 transition-transform duration-200 opacity-0 group-hover:opacity-100"></span>
@@ -967,6 +1079,14 @@ const Navbar = ({ isLandingPage = false }) => {
                       >
                         <User size={16} className="mr-2 text-gray-400" />
                         Profile
+                      </Link>
+                      <Link
+                        to="/wallet"
+                        className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-[#2C2C2C] transition-colors"
+                        onClick={() => setUserDropdownOpen(false)}
+                      >
+                        <Wallet size={16} className="mr-2 text-gray-400" />
+                        Wallet
                       </Link>
                       <Link
                         to="/settings"
@@ -1060,65 +1180,103 @@ const Navbar = ({ isLandingPage = false }) => {
             </div>
 
             {/* Mobile menu button */}
-            <div className="flex lg:hidden items-center">
-              <button
-                className="p-2 mr-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200
-                          dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 focus:outline-none"
-                onClick={() => dispatch(toggleTheme())}
-                aria-label="Toggle dark mode"
-                data-tour="theme-toggle"
-              >
-                {mode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-              </button>
+            <div className="flex lg:hidden items-center gap-2">
+              {isAuthenticated && (
+                <Link
+                  to="/profile"
+                  className="relative group focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full p-0.5"
+                >
+                  <Avatar
+                    src={user?.avatar_url}
+                    name={user?.name || user?.first_name}
+                    size={32}
+                    className="border-2 border-transparent group-hover:border-blue-500/50 transition-all duration-300 shadow-md transform group-hover:scale-105"
+                  />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-[#121212] rounded-full shadow-sm"></div>
+                </Link>
+              )}
 
-              {/* Mobile Start Tour Button */}
               <button
-                className="p-2 mr-2 rounded-full text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200
-                          dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/30 focus:outline-none"
-                onClick={handleStartTour}
-                aria-label="Start tour"
-                title="Take a tour of MeraBakil"
+                className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200
+                          dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 focus:outline-none"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label="Toggle mobile menu"
               >
-                <Compass size={20} />
+                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
-              {/* Profile/Auth Section */}
-              <div className="flex items-center gap-1.5 ml-1">
-                {isAuthenticated ? (
-                  <Link
-                    to="/profile"
-                    className="relative group focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full p-0.5"
-                  >
-                    <Avatar
-                      src={user?.avatar_url}
-                      name={user?.name || user?.first_name}
-                      size={32}
-                      className="border-2 border-transparent group-hover:border-blue-500/50 transition-all duration-300 shadow-md transform group-hover:scale-105"
-                    />
-                    <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-[#121212] rounded-full shadow-sm"></div>
-                  </Link>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to="/auth"
-                      className="p-2 rounded-xl bg-gradient-to-br from-gray-900 to-black text-white hover:shadow-lg hover:shadow-black/40 transition-all duration-300 transform active:scale-95 border border-gray-800"
-                      title="Login"
-                    >
-                      <LogIn size={18} strokeWidth={2.5} />
-                    </Link>
-                    <Link
-                      to="/signup"
-                      className="p-2 rounded-xl bg-gradient-to-br from-white to-gray-100 text-gray-900 hover:shadow-lg hover:shadow-gray-300/40 dark:from-gray-800 dark:to-gray-900 dark:text-gray-100 dark:hover:shadow-black/60 transition-all duration-300 transform active:scale-95 border border-gray-200 dark:border-gray-700"
-                      title="Register"
-                    >
-                      <UserPlus size={18} strokeWidth={2.5} />
-                    </Link>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         </div>
       </nav>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 lg:hidden bg-white/95 dark:bg-[#0A0A0A]/95 backdrop-blur-xl pt-20 px-4 pb-6 overflow-y-auto"
+          >
+            <div className="flex flex-col space-y-2">
+              {/* Theme Toggle in Mobile Menu */}
+              <div className="flex items-center justify-between px-4 py-3 mb-4 rounded-xl bg-gray-50 dark:bg-gray-900">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Appearance</span>
+                <button
+                  className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-200 transition-all duration-200
+                                    dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 focus:outline-none"
+                  onClick={() => dispatch(toggleTheme())}
+                >
+                  {mode === 'dark' ? <Sun size={20} className="text-yellow-300" /> : <Moon size={20} />}
+                </button>
+              </div>
+
+              {/* Unified Mobile Links */}
+              {isAuthenticated && user?.user_type === 2 && (
+                <NavLink to="/lawyer-admin" mobile>Dashboard</NavLink>
+              )}
+              <NavLink to="/chatbot" mobile>AI Assistant</NavLink>
+              <NavLink to="/legal-consoltation" mobile>Find Lawyer</NavLink>
+              <NavLink to="/legal-documents-review" mobile>Documents</NavLink>
+              <NavLink to="/pricing" mobile>Pricing</NavLink>
+              <NavLink to="/contact" mobile>Contact</NavLink>
+
+              {isAuthenticated && (
+                <>
+                  <NavLink to="/wallet" mobile>My Wallet</NavLink>
+                  <div className="my-2 border-t border-gray-100 dark:border-gray-800"></div>
+                  <NavLink to="/settings" mobile>Settings</NavLink>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center w-full px-4 py-3 rounded-xl text-lg font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
+                  >
+                    <LogOut size={20} className="mr-3" />
+                    Logout
+                  </button>
+                </>
+              )}
+
+              {!isAuthenticated && (
+                <div className="pt-6 space-y-3">
+                  <Link
+                    to="/auth"
+                    className="flex items-center justify-center w-full px-6 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold text-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="flex items-center justify-center w-full px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold text-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30"
+                  >
+                    Sign Up
+                  </Link>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
 
 

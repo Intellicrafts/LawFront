@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Mail, Lock, Eye, EyeOff, Scale, Check, AlertCircle, CheckCircle, Smartphone, Globe, Shield } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
-import { authAPI, tokenManager } from '../api/apiService';
+import { authAPI, tokenManager } from '../../api/apiService';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Enhanced Toast notification component with different types
@@ -99,72 +99,46 @@ const Toast = ({ message, type = 'success', onClose }) => {
   );
 };
 
-// Premium Legal strip component with black/silver/blue accents
+// Minimal legal strip
 const LegalStrip = () => {
   return (
-    <div className="relative w-full py-2.5 px-4 bg-gradient-to-r from-gray-900 via-black to-gray-900 text-gray-200 text-xs font-light flex items-center justify-between overflow-hidden border-b border-gray-800">
-      {/* Silver shine effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-700/10 to-transparent"></div>
-      {/* Blue accent line */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
-
-      <div className="relative z-10 flex items-center">
-        <Shield className="mr-2 text-blue-400" />
-        <span className="text-gray-300">Secure Authentication | ISO 27001 Certified</span>
+    <div className="relative w-full py-2 px-4 bg-gradient-to-r from-brand-900 via-brand-950 to-brand-900 text-gray-300 text-xs font-light flex items-center justify-between overflow-hidden border-b border-brand-800">
+      <div className="relative z-10 flex items-center gap-2">
+        <Lock className="h-3 w-3 text-brand-400" />
+        <span>Secure · 256-bit Encrypted</span>
       </div>
-      <div className="relative z-10">
-        <a href="/privacy" className="hover:text-blue-400 hover:underline transition-all duration-200">Privacy Policy</a>
-        <span className="mx-2 text-gray-600">|</span>
-        <a href="/terms" className="hover:text-blue-400 hover:underline transition-all duration-200">Terms of Service</a>
+      <div className="relative z-10 flex items-center gap-3">
+        <a href="/privacy-policy" className="hover:text-brand-300 transition-colors">Privacy Policy</a>
+        <span className="text-gray-600">·</span>
+        <a href="/terms-of-service" className="hover:text-brand-300 transition-colors">Terms of Service</a>
       </div>
     </div>
   );
 };
 
-// Premium Logo component with black/silver gradient and Scale icon
+// Brand Logo component
 const Logo = () => {
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
   return (
     <div className="flex justify-center mb-4">
-      <div
-        className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-300 overflow-hidden border border-gray-700/50"
-        style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)" }}
-      >
-        {/* Silver shine effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-gray-400/10 to-transparent"></div>
-        <Scale size={24} className="relative z-10 text-white drop-shadow-lg" strokeWidth={2} />
+      <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${isDarkMode ? 'bg-brand-500/10' : 'bg-brand-50'}`}>
+        <Scale size={22} className="text-brand-500" strokeWidth={2.5} />
+        <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-brand-900'}`}>Mera Vakil</span>
       </div>
     </div>
   );
 };
 
-// Premium Button component with black/silver/blue shine - Compact version
+// Brand Button component
 const Button = ({ children, loading, onClick, type = "button", className = "", disabled = false }) => {
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={loading || disabled}
-      className={`group w-full py-2.5 px-4 rounded-lg flex items-center justify-center text-white text-sm font-semibold shadow-md transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg relative overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none border ${className}`}
-      style={{
-        background: (loading || disabled)
-          ? "linear-gradient(135deg, #4a5568 0%, #2d3748 100%)"
-          : "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 25%, #1a1a1a 50%, #2563eb 75%, #1e40af 100%)",
-        borderColor: disabled ? "#4a5568" : "rgba(59, 130, 246, 0.3)"
-      }}
+      className={`group w-full py-2.5 px-4 rounded-xl flex items-center justify-center text-white text-sm font-semibold shadow-md transition-all duration-200 hover:shadow-lg relative overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed bg-brand-500 hover:bg-brand-600 ${className}`}
     >
-      {/* Silver shine animation */}
-      {!loading && !disabled && (
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-400/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
-      )}
-
-      {/* Blue accent glow */}
-      {!loading && !disabled && (
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-      )}
-
-      {/* Top highlight for depth */}
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-transparent via-transparent to-white/5"></div>
-
       <span className="relative z-10 flex items-center tracking-wide">
         {loading ? (
           <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -262,7 +236,7 @@ const SocialButtons = ({ onSocialLogin, loading, onGoogleLogin }) => {
         className={socialButtonClass}
         aria-label="Continue with Google"
       >
-        <Smartphone className="text-red-500" size={18} />
+        <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" /><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" /><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" /><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" /></svg>
         <span className="text-sm">Continue with Google</span>
       </button>
 
@@ -758,7 +732,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
               Welcome Back
             </h1>
             <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              Sign in to manage your legal workspace
+              Sign in to your Mera Vakil account
             </p>
           </div>
 
@@ -774,8 +748,8 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
 
             <div className="relative flex items-center">
               <div className="flex-grow border-t border-gray-200 dark:border-gray-800"></div>
-              <span className="flex-shrink mx-4 text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-                Protected Login
+              <span className="flex-shrink mx-4 text-xs font-medium text-gray-400 dark:text-gray-500">
+                or sign in with email
               </span>
               <div className="flex-grow border-t border-gray-200 dark:border-gray-800"></div>
             </div>
@@ -811,13 +785,13 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <label htmlFor="password" className={`block text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Access Password
+                    Password
                   </label>
                   <a
                     href="/forgot-password"
-                    className="text-xs font-medium text-blue-500 hover:text-blue-600 transition-colors"
+                    className="text-xs font-medium text-brand-500 hover:text-brand-600 transition-colors"
                   >
-                    Lost Access?
+                    Forgot Password?
                   </a>
                 </div>
                 <InputField
@@ -851,7 +825,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                   name="rememberMe"
                   checked={formState.rememberMe}
                   onChange={handleCheckboxChange}
-                  label="Stay connected"
+                  label="Remember me"
                   disabled={formState.loading}
                   isDarkMode={isDarkMode}
                 />
@@ -867,7 +841,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                   disabled={formState.loading || !formData.email || !formData.password || !validatePassword(formData.password)}
                   className="rounded-xl h-11"
                 >
-                  {formState.loading ? 'Authenticating...' : 'Sign In Now'}
+                  {formState.loading ? 'Signing in...' : 'Sign In'}
                 </Button>
               </motion.div>
             </form>
@@ -879,9 +853,9 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                   type="button"
                   onClick={handleSwitchToRegister}
                   disabled={formState.loading}
-                  className="font-bold text-blue-500 hover:text-blue-600 transition-colors focus:outline-none"
+                  className="font-bold text-brand-500 hover:text-brand-600 transition-colors focus:outline-none"
                 >
-                  Create Secure Account
+                  Create an Account
                 </button>
               </p>
             </div>

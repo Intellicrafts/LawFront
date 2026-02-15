@@ -1157,60 +1157,23 @@ const UserProfile = () => {
                         ))}
                       </div>
 
-                      {/* Social Section */}
-                      <div className="space-y-2">
-                        <label className={`text-[10px] uppercase tracking-wider font-bold ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Professional Links</label>
-                        {isEditing ? (
-                          <div className="grid grid-cols-2 gap-2">
-                            {[
-                              { id: 'linkedin', icon: Linkedin, placeholder: 'LinkedIn' },
-                              { id: 'twitter', icon: Twitter, placeholder: 'Twitter' },
-                              { id: 'github', icon: Github, placeholder: 'GitHub' },
-                              { id: 'facebook', icon: Facebook, placeholder: 'Facebook' }
-                            ].map((s) => (
-                              <div key={s.id} className="relative">
-                                <s.icon size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500" />
-                                <input
-                                  type="text"
-                                  placeholder={s.placeholder}
-                                  value={editForm.social?.[s.id] || ''}
-                                  onChange={(e) => handleSocialInputChange(s.id, e.target.value)}
-                                  className={`w-full pl-6 pr-2 py-1.5 text-[10px] rounded-md border focus:outline-none transition-all ${isDarkMode ? 'bg-[#1A1A1A]/60 border-[#2A2A2A] text-gray-300 focus:ring-1 focus:ring-blue-500/50' : 'bg-gray-50 border-gray-200 focus:ring-1 focus:ring-blue-500/20'}`}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="flex gap-2">
-                            {[
-                              { id: 'linkedin', icon: Linkedin },
-                              { id: 'twitter', icon: Twitter },
-                              { id: 'github', icon: Github },
-                              { id: 'facebook', icon: Facebook }
-                            ].map((s) => (
-                              userInfo.social?.[s.id] && (
-                                <a key={s.id} href={userInfo.social[s.id]} target="_blank" rel="noopener noreferrer" className={`p-1.5 rounded-md transition-all ${isDarkMode ? 'bg-[#2A2A2A] hover:bg-blue-600/20 text-gray-400 hover:text-blue-400' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}`}>
-                                  <s.icon size={12} />
-                                </a>
-                              )
-                            ))}
-                          </div>
-                        )}
-                      </div>
+
                     </div>
 
-                    {/* Trust Card */}
-                    <div className={`p-4 rounded-2xl border transition-all duration-300 ${isDarkMode ? 'bg-[#1A1A1A]/40 border-[#2A2A2A]' : 'bg-white/40 border-gray-200'}`}>
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg">
-                          <Shield size={14} className="text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className={`text-[11px] font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>Verified Professional</h4>
-                          <p className={`text-[9px] truncate ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Member since {userInfo.joinDate}</p>
+                    {/* Trust Card - Only for Lawyers */}
+                    {(userInfo.account_type === 'Lawyer' || userInfo.user_type === 2) && (
+                      <div className={`p-4 rounded-2xl border transition-all duration-300 ${isDarkMode ? 'bg-[#1A1A1A]/40 border-[#2A2A2A]' : 'bg-white/40 border-gray-200'}`}>
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg">
+                            <Shield size={14} className="text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className={`text-[11px] font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>Verified Professional</h4>
+                            <p className={`text-[9px] truncate ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Member since {userInfo.joinDate}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </motion.div>
                 </div>
 
@@ -1297,68 +1260,71 @@ const UserProfile = () => {
                     </div>
                   </motion.div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Skills/Expertise */}
-                    <div className={`rounded-xl border backdrop-blur-md transition-all duration-300 ${isDarkMode ? 'bg-[#1A1A1A]/40 border-[#2A2A2A]' : 'bg-white/40 border-gray-200'}`}>
-                      <div className="px-4 py-2 border-b flex items-center gap-2 border-[#2A2A2A]/20">
-                        <Zap size={11} className="text-amber-500" />
-                        <h3 className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Expertise</h3>
-                      </div>
-                      <div className="p-3">
-                        {isEditing ? (
-                          <div className="space-y-3">
-                            <div className="flex gap-1">
-                              <input
-                                type="text"
-                                ref={skillInputRef}
-                                value={skillInput}
-                                onChange={(e) => setSkillInput(e.target.value)}
-                                onKeyPress={handleSkillKeyPress}
-                                placeholder="Add skill..."
-                                className={`flex-1 p-1.5 text-[10px] rounded border focus:outline-none ${isDarkMode ? 'bg-[#0D0D0D] border-[#2A2A2A] text-white' : 'bg-white border-gray-200'}`}
-                              />
-                              <button onClick={handleAddSkill} className="px-2 bg-blue-600 text-white rounded text-[10px] font-bold">Add</button>
+                  {(userInfo.account_type === 'Lawyer' || userInfo.user_type === 2) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Skills/Expertise */}
+                      <div className={`rounded-xl border backdrop-blur-md transition-all duration-300 ${isDarkMode ? 'bg-[#1A1A1A]/40 border-[#2A2A2A]' : 'bg-white/40 border-gray-200'}`}>
+                        <div className="px-4 py-2 border-b flex items-center gap-2 border-[#2A2A2A]/20">
+                          <Zap size={11} className="text-amber-500" />
+                          <h3 className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Expertise</h3>
+                        </div>
+                        <div className="p-3">
+                          {isEditing ? (
+                            <div className="space-y-3">
+                              <div className="flex gap-1">
+                                <input
+                                  type="text"
+                                  ref={skillInputRef}
+                                  value={skillInput}
+                                  onChange={(e) => setSkillInput(e.target.value)}
+                                  onKeyPress={handleSkillKeyPress}
+                                  placeholder="Add skill..."
+                                  className={`flex-1 p-1.5 text-[10px] rounded border focus:outline-none ${isDarkMode ? 'bg-[#0D0D0D] border-[#2A2A2A] text-white' : 'bg-white border-gray-200'}`}
+                                />
+                                <button onClick={handleAddSkill} className="px-2 bg-blue-600 text-white rounded text-[10px] font-bold">Add</button>
+                              </div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {editForm.skills?.map((s, i) => (
+                                  <span key={i} className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium ${isDarkMode ? 'bg-white/5 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>
+                                    {s}
+                                    <X size={10} className="cursor-pointer hover:text-red-500" onClick={() => handleRemoveSkill(s)} />
+                                  </span>
+                                ))}
+                              </div>
                             </div>
+                          ) : (
                             <div className="flex flex-wrap gap-1.5">
-                              {editForm.skills?.map((s, i) => (
-                                <span key={i} className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium ${isDarkMode ? 'bg-white/5 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>
+                              {userInfo.skills?.length > 0 ? userInfo.skills.map((s, i) => (
+                                <span key={i} className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-tight ${isDarkMode ? 'bg-[#2A2A2A] text-blue-400 border border-blue-500/10' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
                                   {s}
-                                  <X size={10} className="cursor-pointer hover:text-red-500" onClick={() => handleRemoveSkill(s)} />
                                 </span>
-                              ))}
+                              )) : <p className="text-[10px] text-gray-500 italic">No expertise areas listed</p>}
                             </div>
-                          </div>
-                        ) : (
-                          <div className="flex flex-wrap gap-1.5">
-                            {userInfo.skills?.length > 0 ? userInfo.skills.map((s, i) => (
-                              <span key={i} className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-tight ${isDarkMode ? 'bg-[#2A2A2A] text-blue-400 border border-blue-500/10' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
-                                {s}
-                              </span>
-                            )) : <p className="text-[10px] text-gray-500 italic">No expertise areas listed</p>}
-                          </div>
-                        )}
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Achievements Card */}
+                      <div className={`rounded-xl border backdrop-blur-md transition-all duration-300 ${isDarkMode ? 'bg-[#1A1A1A]/40 border-[#2A2A2A]' : 'bg-white/40 border-gray-200'}`}>
+                        <div className="px-4 py-2 border-b flex items-center gap-2 border-[#2A2A2A]/20">
+                          <Award size={11} className="text-purple-500" />
+                          <h3 className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Recognitions</h3>
+                        </div>
+                        <div className="p-3">
+                          <ul className="space-y-2">
+                            {userInfo.achievements?.length > 0 ? userInfo.achievements.map((a, i) => (
+                              <li key={i} className="flex gap-2 items-start">
+                                <div className="mt-1 w-1 h-1 rounded-full bg-purple-500 flex-shrink-0" />
+                                <span className={`text-[10px] leading-tight ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{a}</span>
+                              </li>
+                            )) : <p className="text-[10px] text-gray-500 italic">No recognitions found</p>}
+                          </ul>
+                        </div>
                       </div>
                     </div>
-
-                    {/* Achievements Card */}
-                    <div className={`rounded-xl border backdrop-blur-md transition-all duration-300 ${isDarkMode ? 'bg-[#1A1A1A]/40 border-[#2A2A2A]' : 'bg-white/40 border-gray-200'}`}>
-                      <div className="px-4 py-2 border-b flex items-center gap-2 border-[#2A2A2A]/20">
-                        <Award size={11} className="text-purple-500" />
-                        <h3 className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Recognitions</h3>
-                      </div>
-                      <div className="p-3">
-                        <ul className="space-y-2">
-                          {userInfo.achievements?.length > 0 ? userInfo.achievements.map((a, i) => (
-                            <li key={i} className="flex gap-2 items-start">
-                              <div className="mt-1 w-1 h-1 rounded-full bg-purple-500 flex-shrink-0" />
-                              <span className={`text-[10px] leading-tight ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{a}</span>
-                            </li>
-                          )) : <p className="text-[10px] text-gray-500 italic">No recognitions found</p>}
-                        </ul>
-                      </div>
-                    </div>
-
-                    {/* Activity Card */}
+                  )}
+                  {/* Activity Card - Only for Lawyers */}
+                  {(userInfo.account_type === 'Lawyer' || userInfo.user_type === 2) && (
                     <div className={`md:col-span-2 rounded-xl border backdrop-blur-md transition-all duration-300 ${isDarkMode ? 'bg-[#1A1A1A]/40 border-[#2A2A2A]' : 'bg-white/40 border-gray-200'}`}>
                       <div className="px-4 py-2 border-b flex items-center justify-between border-[#2A2A2A]/20">
                         <div className="flex items-center gap-2">
@@ -1384,7 +1350,7 @@ const UserProfile = () => {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -1862,8 +1828,8 @@ const UserProfile = () => {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 

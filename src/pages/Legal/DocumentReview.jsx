@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useDarkMode } from '../hooks/useDarkMode';
+import { useDarkMode } from '../../hooks/useDarkMode';
 import {
   Upload, FileText, User, Star, MessageCircle, Clock, DollarSign,
   Filter, Search, Calendar, CheckCircle, AlertCircle, Eye, Download,

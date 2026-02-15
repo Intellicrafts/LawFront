@@ -127,7 +127,7 @@ class SessionManager {
 
     getOrCreateSession(userId, appName) {
         // Find existing active session for this user and app
-        for (const [id, session] of this.sessions) {
+        for (const [, session] of this.sessions) {
             if (session.userId === userId && session.appName === appName) {
                 // Check if session is less than 24 hours old
                 const age = Date.now() - new Date(session.createdAt).getTime();

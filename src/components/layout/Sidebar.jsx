@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { toggleSidebar, setSidebarOpen } from '../redux/sidebarSlice';
+import { toggleSidebar, setSidebarOpen } from '../../redux/sidebarSlice';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Home,
@@ -24,7 +24,7 @@ import {
   Gavel
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../../context/ThemeContext';
 
 // Sample Data
 const DEFAULT_USER = {
@@ -34,8 +34,9 @@ const DEFAULT_USER = {
 
 const NAV_ITEMS = [
   { id: 'chatbot', label: 'AI Chatbot', icon: Bot, color: '#8B5CF6', path: '/' },
-  { id: 'appointments', label: 'Appointments', icon: Calendar, color: '#10B981', path: '/legal-consoltation' },
+  { id: 'appointments', label: 'Appointments', icon: Calendar, color: '#10B981', path: '/legal-consoltation?view=appointments' },
   { id: 'documents', label: 'Documents', icon: FileText, color: '#3B82F6', path: '/legal-documents-review' },
+  { id: 'wallet', label: 'Wallet', icon: require('lucide-react').Wallet, color: '#10B981', path: '/wallet' },
   { id: 'cases', label: 'Active Cases', icon: Briefcase, color: '#F59E0B' },
 ];
 

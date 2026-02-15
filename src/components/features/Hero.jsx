@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useAuth } from '../context/AuthContext';
-import Sidebar from './Sidebar';
-import VoiceModal from './VoiceModal';
+import { useAuth } from '../../context/AuthContext';
+import Sidebar from '../layout/Sidebar';
+import VoiceModal from '../VoiceModal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toggleSidebar } from '../redux/sidebarSlice';
+import { toggleSidebar } from '../../redux/sidebarSlice';
 import {
   Menu, X, Bell, Settings, User, LogOut, Sun, Moon,
   Mic, Upload, SendHorizontal, ImageIcon, Globe, Bot,
@@ -14,7 +14,7 @@ import {
   PanelLeftClose, PanelLeftOpen, ArrowRight, TrendingUp, Cpu, Target,
   History, Archive, Star as StarIcon
 } from 'lucide-react';
-import { chatbotService, CHAT_STATES, AI_MODELS } from '../services/chatbotApiService';
+import { chatbotService, CHAT_STATES, AI_MODELS } from '../../services/chatbotApiService';
 
 // Enhanced Streaming Text Component with faster, smoother typing and auto-scroll
 const StreamingText = ({ text, isDark }) => {

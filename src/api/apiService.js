@@ -1,10 +1,11 @@
 // apiService.js - Centralized API configuration
 
 import axios from 'axios';
+import config from '../config';
 
 // Create axios instance with default configuration
 const apiClient = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'https://chambersapi.logicera.in', // Changed from 127.0.0.1
+  baseURL: config.API_BASE_URL,
   timeout: 10000,
   withCredentials: true,
   headers: {
@@ -2063,7 +2064,71 @@ export const lawyerVerificationAPI = {
       console.error('Error fetching my verification application:', error.response || error);
       throw error;
     }
+  },
+
+  /**
+   * Wallet API integrations
+   */
+  walletAPI: {
+    /**
+     * Get user wallet balance and details
+     */
+    getBalance: async (userId) => {
+      try {
+        if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
+          // Mock response
+          return {
+            user_id: userId,
+            balance: 2500.00,
+            currency: "INR",
+            status: "active"
+          };
+        }
+        const response = await apiClient.get(config.WALLET.GET_BALANCE(userId));
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching wallet balance:', error);
+        // Fallback for demo if API fails
+        return { balance: 0, currency: "INR" };
+      }
+    },
+
+    /**
+     * Process service payment
+     */
+    processPayment: async (paymentData) => {
+      // Expected payload: { payer_user_id, receiver_user_id, amount, description, category }
+      try {
+        if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
+          return { status: "success", transaction_id: "mock_tx_" + Date.now() };
+        }
+        const response = await apiClient.post(config.WALLET.PAY, paymentData);
+        return response.data;
+      } catch (error) {
+        console.error('Error processing wallet payment:', error);
+        throw error;
+      }
+    },
+
+    /**
+     * Recharge wallet
+     */
+    recharge: async (rechargeData) => {
+      // Expected payload: { user_id, amount, description }
+      try {
+        if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
+          return { status: "success", new_balance: 5000 };
+        }
+        const response = await apiClient.post(config.WALLET.RECHARGE, rechargeData);
+        return response.data;
+      } catch (error) {
+        console.error('Error recharging wallet:', error);
+        throw error;
+      }
+    }
   }
 };
 
 export default apiClient;
+// Export wallet and other services
+export { apiServices as walletServices };
