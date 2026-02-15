@@ -964,6 +964,7 @@ const Navbar = ({ isLandingPage = false }) => {
 
               {/* Core Features */}
               <NavLink to="/legal-consoltation">Find Lawyer</NavLink>
+              {/* <NavLink to="/verify-lawyer">Verify Lawyer</NavLink> removed as requested */}
               <NavLink to="/legal-documents-review">Documents</NavLink>
               <NavLink to="/pricing">Pricing</NavLink>
             </div>

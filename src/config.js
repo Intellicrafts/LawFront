@@ -10,6 +10,9 @@ const config = {
     // Wallet Microservice URL (Python FastAPI)
     WALLET_API_URL: process.env.REACT_APP_WALLET_API_URL || 'http://localhost:8000',
 
+    // Lawyer Verification Service (Satyapan)
+    VERIFICATION_API_URL: process.env.REACT_APP_VERIFICATION_API_URL || 'https://wgywp2sazh56bc7zg7ydni2uv40xfzji.lambda-url.ap-south-1.on.aws',
+
     // Wallet Service Endpoints (Kuberdhan)
     WALLET: {
         BASE: '/api/v1/wallets',

@@ -40,6 +40,7 @@ import Contact from './pages/General/Contact';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import LegalDisclaimer from './components/LegalDisclaimer';
+import VerifyLawyer from './pages/Legal/VerifyLawyer';
 
 // Home Route component
 const HomeRoute = () => {
@@ -132,6 +133,7 @@ const App = () => {
 
                     {/* Public Routes */}
                     <Route path="/contact" element={<Contact />} />
+                    <Route path="/verify-lawyer" element={<VerifyLawyer />} />
                     <Route path="/legal-consoltation" element={isAuthenticated ? <LegalCosultation /> : <Navigate to="/auth" replace />} />
                     <Route path="/task-automation" element={<TaskAutomation />} />
                     <Route path="/legal-documents-review" element={<LegalDocumentsReview />} />

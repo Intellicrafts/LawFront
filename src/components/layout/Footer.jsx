@@ -88,6 +88,11 @@ const Footer = () => {
             </h4>
             <ul className="space-y-2 text-sm">
               <li><Link to="/consultation" className={linkClass}>Find a Lawyer</Link></li>
+              <li>
+                <Link to="/verify-lawyer" className={`${linkClass} flex items-center gap-2`}>
+                  Verify Lawyer <span className="bg-green-100 text-green-700 text-[10px] px-1.5 py-0.5 rounded-full font-medium border border-green-200">New</span>
+                </Link>
+              </li>
               <li><Link to="/chatbot" className={linkClass}>AI Assistant</Link></li>
               <li><Link to="/pricing" className={linkClass}>Pricing</Link></li>
               <li><Link to="/contact" className={linkClass}>Contact Us</Link></li>

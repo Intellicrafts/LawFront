@@ -413,7 +413,7 @@ const LandingPage = () => {
                                 ))}
                             </ul>
                             <button
-                                onClick={() => navigate('/chatbot')}
+                                onClick={() => navigate('/verify-lawyer')}
                                 className="mt-8 inline-flex items-center gap-2 px-6 py-3 bg-verified-500 hover:bg-verified-600 text-white rounded-xl font-semibold transition-all"
                             >
                                 <BadgeCheck className="h-5 w-5" />
