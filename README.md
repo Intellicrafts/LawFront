@@ -24,6 +24,7 @@ A modern React frontend for the **Mera Vakil** legal-tech platform — connectin
 | 👨‍⚖️ **Find a Lawyer** | Browse, filter, and book consultations with verified lawyers |
 | 📄 **Document Review** | Upload documents for AI-powered legal analysis |
 | 💰 **Wallet System** | Pay-per-use credits with earned/promotional balance, transaction history, and fund management |
+| 🔍 **Verify Lawyer** | Real-time Bar Council verification with anti-scraping protection and masked PII |
 | 📊 **Lawyer Dashboard** | Full admin panel for lawyers — appointments, clients, cases, documents, and analytics |
 | 🔐 **Authentication** | Email/password + Google OAuth with role-based access (Client vs Lawyer) |
 | 🌗 **Dark Mode** | System-aware theme with smooth transitions and persistent preference |
@@ -134,6 +135,7 @@ REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id
 |---|---|---|
 | `/` | Landing Page | Public |
 | `/chatbot` | AI Legal Assistant | Public |
+| `/verify-lawyer` | Verify Lawyer | Public |
 | `/legal-consoltation` | Find a Lawyer | 🔒 Auth |
 | `/legal-documents-review` | Document Review | Public |
 | `/task-automation` | Task Dashboard | Public |
