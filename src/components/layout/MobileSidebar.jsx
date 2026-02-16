@@ -2,25 +2,25 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
-import Avatar from './common/Avatar';
-import '../styles/MobileSidebar.css';
+import Avatar from '../common/Avatar';
+import '../../styles/MobileSidebar.css';
 import {
-  X, ChevronDown, ChevronRight, Home, Users, Clock, Briefcase, 
+  X, ChevronDown, ChevronRight, Home, Users, Clock, Briefcase,
   Star, MessageSquare, History, Award, Scale, FileText, Calendar, HelpCircle,
-  UserPlus, LogIn, LogOut, User, Settings, Bell, Zap, Shield, 
+  UserPlus, LogIn, LogOut, User, Settings, Bell, Zap, Shield,
   Sparkles, Heart, Compass, Globe, Menu, TrendingUp, Target,
   BookOpen, Phone, Mail, MapPin, Instagram, Facebook, Twitter,
   Linkedin, Youtube, Coffee, Palette, Headphones, Camera
 } from 'lucide-react';
 
-const MobileSidebar = ({ 
-  isOpen, 
-  onClose, 
-  isAuthenticated, 
-  user, 
-  onLogout, 
+const MobileSidebar = ({
+  isOpen,
+  onClose,
+  isAuthenticated,
+  user,
+  onLogout,
   navItems,
-  onStartTour 
+  onStartTour
 }) => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [showQuickActions, setShowQuickActions] = useState(false);
@@ -34,41 +34,41 @@ const MobileSidebar = ({
 
   // Enhanced quick actions for professional features
   const quickActions = [
-    { 
-      id: 'tour', 
-      icon: <Compass size={16} className="text-white" />, 
-      label: 'Start Tour', 
+    {
+      id: 'tour',
+      icon: <Compass size={16} className="text-white" />,
+      label: 'Start Tour',
       action: onStartTour,
       gradient: 'from-indigo-500 to-blue-600',
       isGuide: true
     },
-    { 
-      id: 'consultation', 
-      icon: <Scale size={16} className="text-white" />, 
-      label: 'Quick Consult', 
+    {
+      id: 'consultation',
+      icon: <Scale size={16} className="text-white" />,
+      label: 'Quick Consult',
       path: '/legal-consoltation',
       gradient: 'from-emerald-500 to-teal-600',
       isNew: true
     },
-    { 
-      id: 'document', 
-      icon: <FileText size={16} className="text-white" />, 
-      label: 'Document Review', 
+    {
+      id: 'document',
+      icon: <FileText size={16} className="text-white" />,
+      label: 'Document Review',
       path: '/legal-documents-review',
       gradient: 'from-blue-500 to-indigo-600',
       isHot: true
     },
-    { 
-      id: 'appointment', 
-      icon: <Calendar size={16} className="text-white" />, 
-      label: 'Book Meeting', 
+    {
+      id: 'appointment',
+      icon: <Calendar size={16} className="text-white" />,
+      label: 'Book Meeting',
       path: '/personal-room',
       gradient: 'from-purple-500 to-pink-600'
     },
-    { 
-      id: 'chat', 
-      icon: <MessageSquare size={16} className="text-white" />, 
-      label: 'AI Assistant', 
+    {
+      id: 'chat',
+      icon: <MessageSquare size={16} className="text-white" />,
+      label: 'AI Assistant',
       path: '/virtual-bakil',
       gradient: 'from-orange-500 to-red-600',
       isPro: true
@@ -172,7 +172,7 @@ const MobileSidebar = ({
 
               {/* Header Section */}
               <div className="relative z-10 bg-gray-50 dark:bg-gray-800 px-4 py-5 border-b border-gray-200 dark:border-gray-700 rounded-tl-2xl rounded-tr-lg">
-                
+
                 {/* Close button */}
                 <motion.button
                   onClick={onClose}
@@ -184,7 +184,7 @@ const MobileSidebar = ({
                 </motion.button>
 
                 {/* User Profile Section */}
-                <motion.div 
+                <motion.div
                   className="flex items-center space-x-3 mb-4"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -193,11 +193,11 @@ const MobileSidebar = ({
                   {isAuthenticated ? (
                     <>
                       <div className="relative">
-                        <Avatar 
-                          src={user?.avatar_url} 
-                          alt={user?.name || 'User'} 
+                        <Avatar
+                          src={user?.avatar_url}
+                          alt={user?.name || 'User'}
                           name={`${user?.name || ''} ${user?.last_name || ''}`.trim() || 'User'}
-                          size={48} 
+                          size={48}
                           className="border-2 border-white/40 dark:border-gray-600/40 shadow-md"
                         />
                         <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-white dark:border-gray-900 status-badge"></div>
@@ -231,7 +231,7 @@ const MobileSidebar = ({
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md">
                           <User size={20} className="text-white" />
                         </div>
-                        <motion.div 
+                        <motion.div
                           className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-blue-400 rounded-full border-2 border-white dark:border-gray-900 status-badge"
                           animate={{ scale: [1, 1.1, 1] }}
                           transition={{ duration: 2, repeat: Infinity }}
@@ -272,13 +272,13 @@ const MobileSidebar = ({
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <ChevronDown 
-                        size={14} 
-                        className={`text-gray-500 dark:text-gray-400 transition-transform duration-300 ${showQuickActions ? 'rotate-180' : ''}`} 
+                      <ChevronDown
+                        size={14}
+                        className={`text-gray-500 dark:text-gray-400 transition-transform duration-300 ${showQuickActions ? 'rotate-180' : ''}`}
                       />
                     </motion.button>
                   </div>
-                  
+
                   <AnimatePresence>
                     {showQuickActions && (
                       <motion.div
@@ -322,7 +322,7 @@ const MobileSidebar = ({
                                     <Compass size={8} className="text-white" />
                                   </div>
                                 )}
-                                
+
                                 <div className="mb-1.5 p-1 rounded-lg bg-white/20 group-hover:bg-white/30 transition-colors">
                                   {action.icon}
                                 </div>
@@ -359,7 +359,7 @@ const MobileSidebar = ({
                                     <Compass size={8} className="text-white" />
                                   </div>
                                 )}
-                                
+
                                 <div className="mb-1.5 p-1 rounded-lg bg-white/20 group-hover:bg-white/30 transition-colors">
                                   {action.icon}
                                 </div>
@@ -410,7 +410,7 @@ const MobileSidebar = ({
                               <ChevronDown size={14} className="text-gray-500 dark:text-gray-400" />
                             </motion.div>
                           </motion.button>
-                          
+
                           <AnimatePresence>
                             {activeDropdown === index && (
                               <motion.div
@@ -487,7 +487,7 @@ const MobileSidebar = ({
                           </span>
                         </Link>
                       </motion.div>
-                      
+
                       {/* Settings Button */}
                       <motion.div whileHover={{ x: 2 }} whileTap={{ scale: 0.98 }}>
                         <Link
@@ -503,7 +503,7 @@ const MobileSidebar = ({
                           </span>
                         </Link>
                       </motion.div>
-                      
+
                       {/* Logout Button */}
                       <motion.div whileHover={{ x: 2 }} whileTap={{ scale: 0.98 }}>
                         <button
@@ -522,8 +522,8 @@ const MobileSidebar = ({
                   ) : (
                     <div className="flex gap-3">
                       {/* Professional Mobile Login Button */}
-                      <motion.div 
-                        whileTap={{ scale: 0.95 }} 
+                      <motion.div
+                        whileTap={{ scale: 0.95 }}
                         className="flex-1"
                       >
                         <Link
@@ -541,10 +541,10 @@ const MobileSidebar = ({
                           <span className="text-sm text-white">Login</span>
                         </Link>
                       </motion.div>
-                      
+
                       {/* Professional Mobile Register Button */}
-                      <motion.div 
-                        whileTap={{ scale: 0.95 }} 
+                      <motion.div
+                        whileTap={{ scale: 0.95 }}
                         className="flex-1"
                       >
                         <Link

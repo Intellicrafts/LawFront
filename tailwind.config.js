@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+const defaultTheme = require('tailwindcss/defaultTheme');
+
 module.exports = {
   content: [
     "./index.html",
@@ -7,6 +9,10 @@ module.exports = {
   darkMode: 'class',
   theme: {
     extend: {
+      /* ── Typography ─────────────────────────────────── */
+      fontFamily: {
+        sans: ['Inter', ...defaultTheme.fontFamily.sans],
+      },
       animation: {
         'fade-in-right': 'fadeInRight 0.3s ease-out',
         'fade-out-right': 'fadeOutRight 0.3s ease-in',
@@ -38,22 +44,58 @@ module.exports = {
           '100%': { transform: 'scale(1)', opacity: '1' },
         },
       },
+      /* ── Brand Colors ─────────────────────────────── */
       colors: {
-        // Custom dark mode colors
+        // Primary brand palette — navy/blue for trust & authority
+        brand: {
+          50:  '#EFF6FF',
+          100: '#DBEAFE',
+          200: '#BFDBFE',
+          300: '#93C5FD',
+          400: '#60A5FA',
+          500: '#2563EB',  // Primary blue — CTAs, links
+          600: '#1D4ED8',
+          700: '#1E40AF',
+          800: '#1E3A8A',
+          900: '#0F172A',  // Navy — dark background, headings
+          950: '#020617',
+        },
+        // Accent palette — gold for premium features & wallet
+        accent: {
+          50:  '#FFFBEB',
+          100: '#FEF3C7',
+          200: '#FDE68A',
+          300: '#FCD34D',
+          400: '#FBBF24',
+          500: '#F59E0B',  // Gold — pricing, credits, premium
+          600: '#D97706',
+          700: '#B45309',
+        },
+        // Verified palette — emerald for trust badges, verification
+        verified: {
+          50:  '#ECFDF5',
+          100: '#D1FAE5',
+          200: '#A7F3D0',
+          400: '#34D399',
+          500: '#10B981',  // Emerald — verified badges, success
+          600: '#059669',
+          700: '#047857',
+        },
+        // Dark mode surface colors (kept from original)
         'dark-bg': {
-          DEFAULT: '#0F172A', // Dark background
-          secondary: '#1E293B', // Secondary dark background
-          tertiary: '#334155', // Tertiary dark background
+          DEFAULT: '#0F172A',
+          secondary: '#1E293B',
+          tertiary: '#334155',
         },
         'dark-text': {
-          DEFAULT: '#F8FAFC', // Primary text in dark mode
-          secondary: '#E2E8F0', // Secondary text in dark mode
-          tertiary: '#CBD5E1', // Tertiary text in dark mode
-          muted: '#94A3B8', // Muted text in dark mode
+          DEFAULT: '#F8FAFC',
+          secondary: '#E2E8F0',
+          tertiary: '#CBD5E1',
+          muted: '#94A3B8',
         },
         'dark-border': {
-          DEFAULT: '#334155', // Primary border in dark mode
-          secondary: '#475569', // Secondary border in dark mode
+          DEFAULT: '#334155',
+          secondary: '#475569',
         },
       },
       boxShadow: {

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { FaShieldAlt, FaEnvelope, FaLock, FaCheck, FaEye, FaEyeSlash, FaExclamationCircle, FaClock, FaCheckCircle } from 'react-icons/fa';
 import { Scale } from 'lucide-react';
-import { apiServices } from '../api/apiService';
+import { apiServices } from '../../api/apiService';
 
 // Premium Legal strip component with black/silver/blue accents
 const LegalStrip = () => {
@@ -144,10 +144,10 @@ const PasswordRequirements = ({ password }) => {
             {req.met ? <FaCheck size={12} /> : '○'}
           </div>
           <span className={`${req.met
-              ? 'text-green-500'
-              : isDarkMode
-                ? 'text-gray-400'
-                : 'text-gray-600'
+            ? 'text-green-500'
+            : isDarkMode
+              ? 'text-gray-400'
+              : 'text-gray-600'
             }`}>{req.text}</span>
         </div>
       ))}
@@ -352,8 +352,8 @@ export const ForgotPassword = ({ onBack }) => {
                 </label>
                 <div className="relative group">
                   <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${isDarkMode
-                      ? 'text-gray-500 group-focus-within:text-gray-300'
-                      : 'text-gray-400 group-focus-within:text-gray-600'
+                    ? 'text-gray-500 group-focus-within:text-gray-300'
+                    : 'text-gray-400 group-focus-within:text-gray-600'
                     } transition-colors duration-200`}>
                     <FaEnvelope className="h-4 w-4" />
                   </div>
@@ -364,8 +364,8 @@ export const ForgotPassword = ({ onBack }) => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className={`block w-full pl-9 pr-10 py-2.5 text-sm rounded-lg shadow-sm transition-all duration-300 ${isDarkMode
-                        ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
-                        : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
+                      ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
+                      : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
                       }`}
                     placeholder="you@example.com"
                     required
@@ -427,8 +427,8 @@ export const ForgotPassword = ({ onBack }) => {
                       type="text"
                       maxLength="1"
                       className={`w-10 h-10 text-center text-lg font-bold rounded-md shadow-sm focus:outline-none focus:ring-2 ${isDarkMode
-                          ? 'border border-gray-600 bg-gray-700 text-white focus:ring-gray-500/30 focus:border-gray-500'
-                          : 'border border-gray-300 bg-white text-gray-900 focus:ring-gray-400/30 focus:border-gray-400'
+                        ? 'border border-gray-600 bg-gray-700 text-white focus:ring-gray-500/30 focus:border-gray-500'
+                        : 'border border-gray-300 bg-white text-gray-900 focus:ring-gray-400/30 focus:border-gray-400'
                         }`}
                       value={verificationCode[i] || ''}
                       onChange={(e) => {
@@ -506,8 +506,8 @@ export const ForgotPassword = ({ onBack }) => {
                 </label>
                 <div className="relative group">
                   <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${isDarkMode
-                      ? 'text-gray-500 group-focus-within:text-gray-300'
-                      : 'text-gray-400 group-focus-within:text-gray-600'
+                    ? 'text-gray-500 group-focus-within:text-gray-300'
+                    : 'text-gray-400 group-focus-within:text-gray-600'
                     } transition-colors duration-200`}>
                     <FaLock className="h-4 w-4" />
                   </div>
@@ -518,8 +518,8 @@ export const ForgotPassword = ({ onBack }) => {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     className={`block w-full pl-9 pr-10 py-2.5 text-sm rounded-lg shadow-sm transition-all duration-300 ${isDarkMode
-                        ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
-                        : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
+                      ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
+                      : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
                       }`}
                     placeholder="••••••••"
                     required
@@ -527,8 +527,8 @@ export const ForgotPassword = ({ onBack }) => {
                   <button
                     type="button"
                     className={`absolute inset-y-0 right-0 pr-3 flex items-center ${isDarkMode
-                        ? 'text-gray-400 hover:text-gray-300'
-                        : 'text-gray-400 hover:text-gray-600'
+                      ? 'text-gray-400 hover:text-gray-300'
+                      : 'text-gray-400 hover:text-gray-600'
                       } transition-colors duration-200`}
                     onClick={() => setShowPassword(!showPassword)}
                   >
@@ -544,8 +544,8 @@ export const ForgotPassword = ({ onBack }) => {
                 </label>
                 <div className="relative group">
                   <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${isDarkMode
-                      ? 'text-gray-500 group-focus-within:text-gray-300'
-                      : 'text-gray-400 group-focus-within:text-gray-600'
+                    ? 'text-gray-500 group-focus-within:text-gray-300'
+                    : 'text-gray-400 group-focus-within:text-gray-600'
                     } transition-colors duration-200`}>
                     <FaLock className="h-4 w-4" />
                   </div>
@@ -556,8 +556,8 @@ export const ForgotPassword = ({ onBack }) => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className={`block w-full pl-9 pr-10 py-2.5 text-sm rounded-lg shadow-sm transition-all duration-300 ${isDarkMode
-                        ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
-                        : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
+                      ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
+                      : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
                       }`}
                     placeholder="••••••••"
                     required
@@ -565,8 +565,8 @@ export const ForgotPassword = ({ onBack }) => {
                   <button
                     type="button"
                     className={`absolute inset-y-0 right-0 pr-3 flex items-center ${isDarkMode
-                        ? 'text-gray-400 hover:text-gray-300'
-                        : 'text-gray-400 hover:text-gray-600'
+                      ? 'text-gray-400 hover:text-gray-300'
+                      : 'text-gray-400 hover:text-gray-600'
                       } transition-colors duration-200`}
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >

@@ -8,9 +8,13 @@ import LawyerAppointments from '../LawyerAdmin/LawyerAppointments';
 import LawyerClients from '../LawyerAdmin/LawyerClients';
 import LawyerCases from '../LawyerAdmin/LawyerCases';
 import LawyerDocuments from '../LawyerAdmin/LawyerDocuments';
+<<<<<<< HEAD
 import LawyerProfile from '../LawyerAdmin/LawyerProfile';
 import LawyerSettings from '../LawyerAdmin/LawyerSettings';
 import Sidebar from '../Sidebar';
+=======
+import Sidebar from '../layout/Sidebar';
+>>>>>>> 3025c6eef82af96806191418216703d105f834d2
 import {
   Home,
   Calendar,
@@ -156,6 +160,7 @@ const TopNavbar = ({
   setSearchQuery,
   setActiveTab
 }) => (
+<<<<<<< HEAD
   <header className={`sticky top-0 z-40 w-full transition-all duration-500 ${darkMode
     ? 'bg-black/20 backdrop-blur-3xl shadow-none'
     : 'bg-white/40 backdrop-blur-2xl shadow-none'
@@ -172,6 +177,36 @@ const TopNavbar = ({
             <SidebarToggleIcon isOpen={isSidebarOpen} mode={darkMode ? 'dark' : 'light'} />
           </button>
         )}
+=======
+  <nav
+    className={`${darkMode
+      ? 'bg-gray-900/80 border-gray-800/80 backdrop-blur-lg'
+      : 'bg-white/90 border-gray-200/80 backdrop-blur-lg'
+      } shadow-lg border-b px-4 py-3 transition-all duration-300 sticky top-0 z-30`}
+  >
+    <div className="flex items-center justify-between">
+      <div className="flex items-center space-x-4">
+        <button
+          onClick={onMenuClick}
+          className={`lg:hidden p-2 rounded-xl ${darkMode
+            ? 'text-gray-300 hover:text-white hover:bg-gray-800/70'
+            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70'
+            } transition-all duration-200 focus:outline-none focus:ring-2 ${darkMode ? 'focus:ring-blue-600/50' : 'focus:ring-blue-500/50'
+            }`}
+        >
+          {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg relative group overflow-hidden">
+            <Briefcase size={18} className="text-white relative z-10" />
+            <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 blur-sm opacity-0 group-hover:opacity-70 transition-opacity duration-300 -z-10"></div>
+          </div>
+          <h1 className={`text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent`}>
+            Mera Vakil
+          </h1>
+        </div>
+>>>>>>> 3025c6eef82af96806191418216703d105f834d2
       </div>
 
       <div className="flex items-center gap-3">
@@ -353,6 +388,7 @@ const StatCardPremium = ({ title, value, change, trend, icon: Icon, color, darkM
   </GlassCard>
 );
 
+<<<<<<< HEAD
 const LawyerDashboard = ({ darkMode, userData, onNavigate, handleJoinSession, statsData, appointmentData, activeSession }) => {
   const stats = useMemo(() => [
     { title: 'Case Volume', value: statsData?.total_cases || '42', change: '12', trend: 'up', icon: FileText, color: COLORS.primary },
@@ -360,6 +396,16 @@ const LawyerDashboard = ({ darkMode, userData, onNavigate, handleJoinSession, st
     { title: 'Retention', value: '94%', change: '2', trend: 'up', icon: Users, color: '#3B82F6' },
     { title: 'Billed Rev.', value: `$${statsData?.revenue || '12.4K'}`, change: '8', trend: 'down', icon: DollarSign, color: '#F59E0B' },
   ], [statsData]);
+=======
+// Enhanced Dashboard Component with premium styling
+const LawyerDashboard = ({ darkMode, userData }) => {
+  const stats = [
+    { title: 'Active Cases', value: '24', change: '+12%', icon: FileText, gradient: 'from-blue-500 to-blue-600' },
+    { title: 'Upcoming Appointments', value: '8', change: '+5%', icon: Calendar, gradient: 'from-green-500 to-green-600' },
+    { title: 'Pending Documents', value: '15', change: '-8%', icon: FolderOpen, gradient: 'from-orange-500 to-orange-600' },
+    { title: 'Monthly Revenue', value: '₹45,230', change: '+18%', icon: DollarSign, gradient: 'from-purple-500 to-purple-600' }
+  ];
+>>>>>>> 3025c6eef82af96806191418216703d105f834d2
 
   const performanceTrend = [
     { name: 'Mon', value: 400, cases: 24 },
@@ -453,9 +499,134 @@ const LawyerDashboard = ({ darkMode, userData, onNavigate, handleJoinSession, st
         )}
       </AnimatePresence>
 
+<<<<<<< HEAD
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {stats.map((stat, i) => (
           <StatCardPremium key={i} {...stat} darkMode={darkMode} />
+=======
+        <div className="relative z-10">
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="md:w-1/3">
+              <div className={`p-5 rounded-xl ${darkMode
+                ? 'bg-gray-800/70 border border-gray-700/50'
+                : 'bg-white/70 border border-gray-200/50'
+                } backdrop-blur-sm`}
+              >
+                <div className="flex flex-col items-center">
+                  <div className="w-24 h-24 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg relative overflow-hidden mb-4">
+                    <Avatar
+                      src={userData?.profileImage}
+                      name={userData?.name || "Lawyer"}
+                      alt={userData?.name || "Lawyer"}
+                      size={96}
+                      className="w-full h-full rounded-xl"
+                    />
+                  </div>
+                  <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {userData?.name || "Lawyer"}
+                  </h3>
+                  <p className={`text-sm ${darkMode ? 'text-blue-400' : 'text-blue-600'} font-medium`}>
+                    {userData?.role || "Lawyer"}
+                  </p>
+                  <div className="flex items-center mt-2">
+                    <Award size={16} className={`mr-1 ${darkMode ? 'text-yellow-400' : 'text-yellow-500'}`} />
+                    <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {userData?.experience || "0 years"} experience
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-6 space-y-3">
+                  <div className="flex items-center">
+                    <Mail size={16} className={`mr-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {userData?.email || "email@merabakil.com"}
+                    </p>
+                  </div>
+                  <div className="flex items-center">
+                    <Phone size={16} className={`mr-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {userData?.phone || "Not specified"}
+                    </p>
+                  </div>
+                  <div className="flex items-center">
+                    <MapPin size={16} className={`mr-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {userData?.location || "Not specified"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="md:w-2/3">
+              <div className={`p-5 rounded-xl h-full ${darkMode
+                ? 'bg-gray-800/70 border border-gray-700/50'
+                : 'bg-white/70 border border-gray-200/50'
+                } backdrop-blur-sm`}
+              >
+                <h3 className={`text-lg font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Professional Information
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className={`text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Specialization
+                    </h4>
+                    <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {userData?.specialization || "General Law"}
+                    </p>
+
+                    <h4 className={`text-sm font-medium mb-2 mt-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Bar Association
+                    </h4>
+                    <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {userData?.bar_association || "Not specified"}
+                    </p>
+
+                    <h4 className={`text-sm font-medium mb-2 mt-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      License Number
+                    </h4>
+                    <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {userData?.license_number || "Not specified"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className={`text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Education
+                    </h4>
+                    <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {userData?.education || "Not specified"}
+                    </p>
+
+                    <h4 className={`text-sm font-medium mb-2 mt-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Languages
+                    </h4>
+                    <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {userData?.languages || "Not specified"}
+                    </p>
+
+                    <h4 className={`text-sm font-medium mb-2 mt-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Availability
+                    </h4>
+                    <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {userData?.availability || "Not specified"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        {stats.map((stat, index) => (
+          <StatsCard key={index} stat={stat} darkMode={darkMode} />
+>>>>>>> 3025c6eef82af96806191418216703d105f834d2
         ))}
       </div>
 

@@ -63,10 +63,10 @@ const Toast = ({ toast, onClose, isDarkMode }) => {
           className={`fixed top-6 right-6 z-[100] max-w-sm w-full`}
         >
           <div className={`p-4 rounded-xl border shadow-2xl backdrop-blur-xl ${toast.type === 'success'
-              ? 'bg-green-500/10 border-green-500/20 text-green-500'
-              : toast.type === 'error'
-                ? 'bg-red-500/10 border-red-500/20 text-red-500'
-                : 'bg-blue-500/10 border-blue-500/20 text-blue-500'
+            ? 'bg-green-500/10 border-green-500/20 text-green-500'
+            : toast.type === 'error'
+              ? 'bg-red-500/10 border-red-500/20 text-red-500'
+              : 'bg-blue-500/10 border-blue-500/20 text-blue-500'
             }`}>
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0 mt-0.5">
@@ -444,7 +444,7 @@ const Contact = () => {
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Frequently Asked Questions</h2>
             <p className="text-gray-500 text-sm mb-6">Can't find what you're looking for? Try our Help Center.</p>
             <div className="flex flex-wrap justify-center gap-3">
-              {['Pricing & Plans', 'AI Consultant Help', 'Verified Lawyer Search', 'Document Management'].map((tag, i) => (
+              {['Service Rates', 'AI Consultant Help', 'Verified Lawyer Search', 'Document Management'].map((tag, i) => (
                 <button key={i} className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-xs font-bold text-gray-600 dark:text-gray-400 hover:border-blue-500 transition-colors">
                   {tag}
                 </button>
