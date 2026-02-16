@@ -134,12 +134,8 @@ class SessionManager {
     }
 
     getOrCreateSession(userId, appName) {
-<<<<<<< HEAD
-        for (const [id, session] of this.sessions) {
-=======
         // Find existing active session for this user and app
         for (const [, session] of this.sessions) {
->>>>>>> 3025c6eef82af96806191418216703d105f834d2
             if (session.userId === userId && session.appName === appName) {
                 const age = Date.now() - new Date(session.createdAt).getTime();
                 if (age < 24 * 60 * 60 * 1000) {

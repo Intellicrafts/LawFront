@@ -137,7 +137,7 @@ const LandingPage = () => {
     /* ── Render ────────────────────────────────── */
 
     return (
-        <div className={`w-full min-h-screen overflow-x-hidden ${isDark ? 'bg-dark-bg' : 'bg-white'}`}>
+        <div className={`w-full min-h-screen overflow-x-hidden transition-colors duration-500 ${isDark ? 'bg-[#0A0A0A] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/10 via-[#0A0A0A] to-[#0A0A0A]' : 'bg-white'}`}>
 
             {/* ═══════════════════════════════════════════
           HERO SECTION

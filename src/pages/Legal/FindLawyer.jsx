@@ -13,12 +13,8 @@ import {
   Scale, Shield, Heart, Layout, Sparkles, Zap, Search, Filter,
   ChevronLeft, Info, CheckCircle
 } from 'lucide-react';
-<<<<<<< HEAD:src/components/LegalCosultation.jsx
-import useToast from '../hooks/useToast';
-import MyAppointments from './MyAppointments';
-=======
 import { lawyerAPI, apiServices, walletServices } from '../../api/apiService';
->>>>>>> 3025c6eef82af96806191418216703d105f834d2:src/pages/Legal/FindLawyer.jsx
+import MyAppointments from '../../components/MyAppointments';
 
 // Premium Professional Color Palette matching Hero and Sidebar - Production App
 const colors = {
@@ -192,10 +188,8 @@ const LegalCosultation = () => {
     caseDetails: '',
   });
   const [bookingStep, setBookingStep] = useState(1);
-<<<<<<< HEAD:src/components/LegalCosultation.jsx
   const [customTime, setCustomTime] = useState('');
   const [useCustomTime, setUseCustomTime] = useState(false);
-=======
   const [activeTab, setActiveTab] = useState('experts'); // 'experts' or 'appointments'
 
   // Sync active tab with URL query params
@@ -208,7 +202,6 @@ const LegalCosultation = () => {
       setActiveTab('experts');
     }
   }, []);
->>>>>>> 3025c6eef82af96806191418216703d105f834d2:src/pages/Legal/FindLawyer.jsx
 
   // Auto-fill form data with user details when component mounts
   useEffect(() => {
@@ -1585,98 +1578,8 @@ const LegalCosultation = () => {
   /**
    * Render Appointments View
    */
-  const renderAppointments = () => {
-    // Get appointments from local storage
-    const localAppointments = JSON.parse(localStorage.getItem('user_appointments') || '[]');
+  // renderAppointments has been replaced by the standalone MyAppointments component
 
-    // Sample appointments if empty (for demo)
-    const appointments = localAppointments.length > 0 ? localAppointments : [
-      {
-        id: 1,
-        lawyer: { full_name: 'Aditya Gupta', specialization: 'Corporate Law' },
-        date: 'Today',
-        time: '4:00 PM',
-        status: 'Confirmed',
-        meetingLink: '#',
-        type: 'Video Consultation'
-      }
-    ];
-
-    if (appointments.length === 0 && localAppointments.length === 0) {
-      return (
-        <div className={`rounded-2xl p-12 text-center border backdrop-blur-md ${isDarkMode ? 'bg-white/5 border-[#2A2A2A]' : 'bg-white border-gray-100 shadow-xl'}`}>
-          <div className="flex flex-col items-center">
-            <div className={`p-4 rounded-full mb-4 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-              <Calendar size={32} className={isDarkMode ? 'text-gray-400' : 'text-gray-400'} />
-            </div>
-            <h3 className={`text-sm font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No Upcoming Appointments</h3>
-            <p className={`text-xs mb-6 ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>You haven't scheduled any consultations yet.</p>
-            <button
-              onClick={() => {
-                setActiveTab('experts');
-                const url = new URL(window.location);
-                url.searchParams.delete('view');
-                window.history.pushState({}, '', url);
-              }}
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
-            >
-              Find an Expert
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-4 max-w-4xl mx-auto">
-        {appointments.map((apt) => (
-          <div key={apt.id} className={`p-5 rounded-xl border transition-all hover:shadow-lg ${isDarkMode ? 'bg-[#1A1A1A] border-[#2A2A2A]' : 'bg-white border-gray-200'}`}>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-lg bg-gradient-to-br from-blue-500 to-blue-600`}>
-                  {getInitials(apt.lawyer?.full_name)}
-                </div>
-                <div>
-                  <h3 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{apt.lawyer?.full_name}</h3>
-                  <p className={`text-xs ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-medium`}>{apt.lawyer?.specialization}</p>
-                  <div className="flex items-center gap-3 mt-1.5">
-                    <div className={`flex items-center gap-1 text-[10px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      <Calendar size={10} />
-                      <span>{apt.date}</span>
-                    </div>
-                    <div className={`flex items-center gap-1 text-[10px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      <Clock size={10} />
-                      <span>{apt.time}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 self-end md:self-center">
-                <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${apt.status === 'Confirmed' || apt.status === 'Scheduled'
-                  ? 'bg-emerald-500/10 text-emerald-500'
-                  : 'bg-amber-500/10 text-amber-500'
-                  }`}>
-                  {apt.status}
-                </div>
-                {apt.meetingLink && (
-                  <a
-                    href={apt.meetingLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-all flex items-center gap-2"
-                  >
-                    <Video size={14} />
-                    Join Call
-                  </a>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
 
   /**
    * Render different views based on the current state
@@ -1685,7 +1588,13 @@ const LegalCosultation = () => {
     if (view === 'appointments') {
       return (
         <div className="pt-20 sm:pt-24 min-h-screen">
-          <MyAppointments onBack={() => setView('lawyers')} />
+          <MyAppointments onBack={() => {
+            setActiveTab('experts');
+            setView('lawyers');
+            const url = new URL(window.location);
+            url.searchParams.delete('view');
+            window.history.pushState({}, '', url);
+          }} />
         </div>
       );
     }
@@ -1754,164 +1663,6 @@ const LegalCosultation = () => {
             </div>
           </div>
 
-<<<<<<< HEAD:src/components/LegalCosultation.jsx
-          {/* Professional Search & Filter Interface */}
-          <div
-            className={`rounded-2xl transition-all duration-300 backdrop-blur-xl mb-5 overflow-hidden border ${isDarkMode
-              ? `bg-[#1A1A1A]/80 border-[#2A2A2A] ${isFilterSticky ? 'sticky z-30 shadow-2xl' : ''}`
-              : `bg-white/90 border-gray-200 ${isFilterSticky ? 'sticky z-30 shadow-xl' : ''}`
-              }`}
-            style={{
-              top: isFilterSticky ? '80px' : '0'
-            }}
-          >
-            {/* Premium Search Header */}
-            <div className={`px-4 py-3 border-b ${isDarkMode ? 'border-[#2A2A2A]/50 bg-white/5' : 'border-gray-50/30'
-              }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={`p-1.5 rounded-lg bg-blue-500/10 text-blue-500`}>
-                    <Search size={14} />
-                  </div>
-                  <div>
-                    <h2 className={`font-bold text-xs ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Legal Experts</h2>
-                    <p className={`text-[9px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                      {lawyers.length} Verified Professionals
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-
-
-                  <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-200 border ${showFilters
-                      ? 'bg-blue-600 text-white border-blue-500'
-                      : isDarkMode
-                        ? 'bg-white/5 hover:bg-white/10 text-gray-400 border-[#2A2A2A]'
-                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200'
-                      }`}
-                  >
-                    <Filter size={10} />
-                    <span>Filter Experts</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={toggleLocationSearch}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-200 border ${locationEnabled
-                      ? 'bg-emerald-600 text-white border-emerald-500'
-                      : isDarkMode
-                        ? 'bg-white/5 hover:bg-white/10 text-gray-400 border-[#2A2A2A]'
-                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200'
-                      }`}
-                  >
-                    {locationSearching ? (
-                      <Loader size={10} className="animate-spin" />
-                    ) : (
-                      <MapPin size={10} />
-                    )}
-                    <span>{locationSearching ? 'Locating...' : locationEnabled ? 'Located' : 'Near Me'}</span>
-                  </button>
-
-                  <button
-                    onClick={() => setView('appointments')}
-                    className={`relative flex items-center gap-2 px-3.5 py-1.5 rounded-2xl text-[10px] font-bold uppercase tracking-wider transition-all duration-300 border backdrop-blur-md active:scale-95 ${view === 'appointments'
-                      ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-violet-500 shadow-lg shadow-violet-500/25'
-                      : isDarkMode
-                        ? 'bg-white/5 hover:bg-white/10 text-violet-400 border-white/5'
-                        : 'bg-white hover:bg-gray-50 text-violet-600 border-gray-100 shadow-sm'
-                      }`}
-                  >
-                    <div className={`p-1.5 rounded-xl ${view === 'appointments' ? 'bg-white/20' : isDarkMode ? 'bg-violet-500/10' : 'bg-violet-50'
-                      }`}>
-                      <Calendar size={10} className={view === 'appointments' ? 'text-white' : 'text-violet-500'} />
-                    </div>
-                    <span className="opacity-90">My Appointments</span>
-                    {appointmentsCount > 0 && (
-                      <span className="absolute -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-gradient-to-tr from-rose-500 to-pink-500 text-white text-[8px] font-black border-2 border-white dark:border-[#1A1A1A] shadow-lg animate-pulse">
-                        {appointmentsCount}
-                      </span>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Professional Search Bar */}
-            <div className={`px-4 py-3 border-b ${isDarkMode ? 'border-[#2A2A2A]/50' : 'border-gray-100'}`}>
-              <form onSubmit={handleSearch} className="relative">
-                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 size={14} ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} />
-                <input
-                  type="text"
-                  placeholder="Search by legal issue, lawyer name, or specialization..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`w-full pl-10 pr-24 py-2 text-xs rounded-xl border focus:outline-none transition-all duration-200 ${isDarkMode
-                    ? 'bg-[#0D0D0D] border-[#2A2A2A] text-white placeholder-gray-600 focus:border-blue-500/50'
-                    : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-blue-500/20'
-                    }`}
-                />
-                <button
-                  type="submit"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all"
-                >
-                  Find Expert
-                </button>
-              </form>
-
-              {locationError && (
-                <div className={`mt-2 p-2 rounded-lg flex items-center gap-2 text-[10px] font-medium ${isDarkMode ? 'bg-red-500/10 text-red-400' : 'bg-red-50 text-red-600'
-                  }`}>
-                  <AlertCircle size={10} />
-                  <span>{locationError}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Professional Category Filter */}
-            <div
-              className={`transition-all duration-300 overflow-hidden border-t ${isDarkMode ? 'border-[#2A2A2A]/50' : 'border-gray-100'}`}
-              style={{ maxHeight: showFilters ? '500px' : '0px' }}
-            >
-              <div className={`p-4 ${isDarkMode ? 'bg-white/[0.02]' : 'bg-gray-50/50'}`}>
-                <div className="flex items-center mb-3">
-                  <Layout size={12} className={`mr-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-                  <h3 className={`font-bold text-[10px] uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Filter by Specialization
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-                  {categories.map((category) => {
-                    const IconComponent = category.icon;
-                    const isSelected = selectedCategory === category.name;
-
-                    return (
-                      <button
-                        key={category.name}
-                        onClick={() => {
-                          setSelectedCategory(category.name);
-                          setCurrentPage(1);
-                        }}
-                        className={`group p-2 rounded-xl text-left transition-all duration-200 border ${isSelected
-                          ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/20'
-                          : isDarkMode
-                            ? 'bg-white/5 hover:bg-white/10 text-gray-400 border-[#2A2A2A]'
-                            : 'bg-white hover:bg-gray-100 text-gray-700 border-gray-200'
-                          }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <IconComponent size={12} className={isSelected ? 'text-white' : 'text-blue-500'} />
-                          <span className="font-bold text-[10px] tracking-tight truncate">{category.name}</span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-=======
           {/* Tab Switcher */}
           <div className="flex justify-center mb-6">
             <div className={`p-1 rounded-xl flex gap-1 border ${isDarkMode ? 'bg-[#1A1A1A] border-[#2A2A2A]' : 'bg-white border-gray-200 shadow-sm'}`}>
@@ -1945,7 +1696,6 @@ const LegalCosultation = () => {
                 <Calendar size={14} />
                 My Appointments
               </button>
->>>>>>> 3025c6eef82af96806191418216703d105f834d2:src/pages/Legal/FindLawyer.jsx
             </div>
           </div>
 
@@ -2015,7 +1765,7 @@ const LegalCosultation = () => {
                 {/* Professional Search Bar */}
                 <div className={`px-4 py-3 border-b ${isDarkMode ? 'border-[#2A2A2A]/50' : 'border-gray-100'}`}>
                   <form onSubmit={handleSearch} className="relative">
-                    <Search className={`absolute left-3 top-1/2 -translate-y-1/2 size={14} ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} />
+                    <Search size={14} className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} />
                     <input
                       type="text"
                       placeholder="Search by legal issue, lawyer name, or specialization..."
@@ -2325,7 +2075,7 @@ const LegalCosultation = () => {
               }
             </>
           ) : (
-            renderAppointments()
+            <MyAppointments onBack={() => setActiveTab('experts')} />
           )}
         </>
       );

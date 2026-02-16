@@ -7,12 +7,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
-<<<<<<< HEAD:src/components/SignupComponent.jsx
-import { authAPI, tokenManager } from '../api/apiService';
-import { useToast } from '../context/ToastContext';
-=======
 import { authAPI, tokenManager } from '../../api/apiService';
->>>>>>> 3025c6eef82af96806191418216703d105f834d2:src/pages/Auth/Signup.jsx
+import { useToast } from '../../context/ToastContext';
 
 // Configure axios defaults
 axios.defaults.withCredentials = true;

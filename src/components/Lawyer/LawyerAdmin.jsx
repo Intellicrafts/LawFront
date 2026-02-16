@@ -8,13 +8,9 @@ import LawyerAppointments from '../LawyerAdmin/LawyerAppointments';
 import LawyerClients from '../LawyerAdmin/LawyerClients';
 import LawyerCases from '../LawyerAdmin/LawyerCases';
 import LawyerDocuments from '../LawyerAdmin/LawyerDocuments';
-<<<<<<< HEAD
 import LawyerProfile from '../LawyerAdmin/LawyerProfile';
 import LawyerSettings from '../LawyerAdmin/LawyerSettings';
-import Sidebar from '../Sidebar';
-=======
 import Sidebar from '../layout/Sidebar';
->>>>>>> 3025c6eef82af96806191418216703d105f834d2
 import {
   Home,
   Calendar,
@@ -160,7 +156,6 @@ const TopNavbar = ({
   setSearchQuery,
   setActiveTab
 }) => (
-<<<<<<< HEAD
   <header className={`sticky top-0 z-40 w-full transition-all duration-500 ${darkMode
     ? 'bg-black/20 backdrop-blur-3xl shadow-none'
     : 'bg-white/40 backdrop-blur-2xl shadow-none'
@@ -177,25 +172,6 @@ const TopNavbar = ({
             <SidebarToggleIcon isOpen={isSidebarOpen} mode={darkMode ? 'dark' : 'light'} />
           </button>
         )}
-=======
-  <nav
-    className={`${darkMode
-      ? 'bg-gray-900/80 border-gray-800/80 backdrop-blur-lg'
-      : 'bg-white/90 border-gray-200/80 backdrop-blur-lg'
-      } shadow-lg border-b px-4 py-3 transition-all duration-300 sticky top-0 z-30`}
-  >
-    <div className="flex items-center justify-between">
-      <div className="flex items-center space-x-4">
-        <button
-          onClick={onMenuClick}
-          className={`lg:hidden p-2 rounded-xl ${darkMode
-            ? 'text-gray-300 hover:text-white hover:bg-gray-800/70'
-            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70'
-            } transition-all duration-200 focus:outline-none focus:ring-2 ${darkMode ? 'focus:ring-blue-600/50' : 'focus:ring-blue-500/50'
-            }`}
-        >
-          {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg relative group overflow-hidden">
             <Briefcase size={18} className="text-white relative z-10" />
@@ -206,7 +182,6 @@ const TopNavbar = ({
             Mera Vakil
           </h1>
         </div>
->>>>>>> 3025c6eef82af96806191418216703d105f834d2
       </div>
 
       <div className="flex items-center gap-3">
@@ -388,24 +363,13 @@ const StatCardPremium = ({ title, value, change, trend, icon: Icon, color, darkM
   </GlassCard>
 );
 
-<<<<<<< HEAD
 const LawyerDashboard = ({ darkMode, userData, onNavigate, handleJoinSession, statsData, appointmentData, activeSession }) => {
   const stats = useMemo(() => [
-    { title: 'Case Volume', value: statsData?.total_cases || '42', change: '12', trend: 'up', icon: FileText, color: COLORS.primary },
-    { title: 'Win Rate', value: '89%', change: '5', trend: 'up', icon: Award, color: COLORS.secondary },
-    { title: 'Retention', value: '94%', change: '2', trend: 'up', icon: Users, color: '#3B82F6' },
-    { title: 'Billed Rev.', value: `$${statsData?.revenue || '12.4K'}`, change: '8', trend: 'down', icon: DollarSign, color: '#F59E0B' },
+    { title: 'Case Volume', value: statsData?.total_cases || '42', change: '+12%', icon: FileText, gradient: 'from-blue-500 to-blue-600' },
+    { title: 'Appointments', value: statsData?.appointments || '8', change: '+5%', icon: Calendar, gradient: 'from-green-500 to-green-600' },
+    { title: 'Win Rate', value: '89%', change: '+5%', icon: Award, gradient: 'from-purple-500 to-purple-600' },
+    { title: 'Billed Rev.', value: `₹${statsData?.revenue || '45,230'}`, change: '+8%', icon: DollarSign, gradient: 'from-orange-500 to-orange-600' },
   ], [statsData]);
-=======
-// Enhanced Dashboard Component with premium styling
-const LawyerDashboard = ({ darkMode, userData }) => {
-  const stats = [
-    { title: 'Active Cases', value: '24', change: '+12%', icon: FileText, gradient: 'from-blue-500 to-blue-600' },
-    { title: 'Upcoming Appointments', value: '8', change: '+5%', icon: Calendar, gradient: 'from-green-500 to-green-600' },
-    { title: 'Pending Documents', value: '15', change: '-8%', icon: FolderOpen, gradient: 'from-orange-500 to-orange-600' },
-    { title: 'Monthly Revenue', value: '₹45,230', change: '+18%', icon: DollarSign, gradient: 'from-purple-500 to-purple-600' }
-  ];
->>>>>>> 3025c6eef82af96806191418216703d105f834d2
 
   const performanceTrend = [
     { name: 'Mon', value: 400, cases: 24 },
@@ -422,11 +386,9 @@ const LawyerDashboard = ({ darkMode, userData }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
         <GlassCard darkMode={darkMode} className="lg:col-span-2 p-6 flex flex-col justify-between relative overflow-hidden group">
           <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 transition-colors ${darkMode ? 'bg-white/5 group-hover:bg-white/10' : 'bg-slate-900/5 group-hover:bg-slate-900/10'}`} />
-
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-2">
               <PremiumBadge text="Professional Dashboard" />
-              <span className="text-[9px] font-bold text-slate-400 italic">SYSTEM: LEG-2026-ACTIVE</span>
             </div>
             <h1 className={`text-2xl sm:text-3xl font-black tracking-tighter mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
               Advancing Justice,<br />
@@ -435,55 +397,14 @@ const LawyerDashboard = ({ darkMode, userData }) => {
               </span>
             </h1>
             <p className={`text-[12px] max-w-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'} leading-relaxed font-bold opacity-80`}>
-              Current roster: <span className="text-slate-900 dark:text-slate-300">{appointmentData?.length || 0} active sessions</span>. Efficiency up <span className="text-slate-900 dark:text-slate-300">15.2%</span>.
+              Current roster: <span className="text-slate-900 dark:text-slate-300">{appointmentData?.length || 0} active sessions</span>.
             </p>
-          </div>
-
-          <div className="flex items-center gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-white/5">
-            <div className="flex -space-x-2">
-              {[1, 2, 3].map(i => (
-                <div key={i} className={`w-8 h-8 rounded-full border-2 ${darkMode ? 'border-neutral-900' : 'border-white'} overflow-hidden shadow-lg shadow-black/10`}>
-                  <img src={`https://i.pravatar.cc/150?u=${i}`} alt="Client" />
-                </div>
-              ))}
-              <div className={`w-8 h-8 rounded-full border-2 ${darkMode ? 'border-neutral-900' : 'border-white'} bg-slate-900 dark:bg-white flex items-center justify-center text-[10px] font-black text-white dark:text-slate-900 shadow-lg shadow-black/10`}>
-                +5
-              </div>
-            </div>
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">New Clients Queue</p>
           </div>
         </GlassCard>
 
-        <GlassCard darkMode={darkMode} className="p-0 overflow-hidden group">
-          <div className={`h-full p-6 flex flex-col justify-between text-white relative transition-all ${darkMode ? 'bg-gradient-to-br from-indigo-950 via-slate-950 to-black' : 'bg-gradient-to-br from-slate-900 via-slate-800 to-black'}`}>
-            <div className={`absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-from)_0%,_transparent_50%)] ${darkMode ? 'from-white/10' : 'from-slate-400/20'}`} />
-
-            <div className="relative z-10 flex items-start justify-between">
-              <div>
-                <p className={`text-[10px] font-black uppercase tracking-wider mb-0.5 ${darkMode ? 'text-slate-400' : 'text-slate-300'}`}>Key Milestone</p>
-                <h3 className="text-lg font-black leading-tight">Supreme Court Review<br />Case #882-B</h3>
-              </div>
-              <div className="w-9 h-9 bg-white/10 backdrop-blur-xl rounded-xl flex items-center justify-center border border-white/20">
-                <Gavel size={18} />
-              </div>
-            </div>
-
-            <div className="relative z-10 mt-auto">
-              <div className="flex items-center gap-1.5 mb-4 text-slate-300">
-                <Flame size={12} className="animate-pulse" />
-                <span className="text-[9px] font-black uppercase tracking-widest font-mono">High Priority</span>
-              </div>
-              <div className="space-y-3">
-                <div className="flex justify-between items-end border-b border-white/10 pb-1.5">
-                  <span className="text-[9px] text-white/50 font-bold uppercase">Win Prob.</span>
-                  <span className="text-base font-black tracking-tighter">92%</span>
-                </div>
-                <button className={`w-full h-9 bg-white text-slate-900 font-black text-[10px] uppercase tracking-widest rounded-lg hover:scale-[1.02] transition-all`}>
-                  Insight Detail
-                </button>
-              </div>
-            </div>
-          </div>
+        <GlassCard darkMode={darkMode} className="p-6 relative">
+          <h3 className="text-lg font-black">AI Insights</h3>
+          <p className="text-sm opacity-70">Strategy shift recommended for case #29-B.</p>
         </GlassCard>
       </div>
 
@@ -499,262 +420,39 @@ const LawyerDashboard = ({ darkMode, userData }) => {
         )}
       </AnimatePresence>
 
-<<<<<<< HEAD
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {stats.map((stat, i) => (
           <StatCardPremium key={i} {...stat} darkMode={darkMode} />
-=======
-        <div className="relative z-10">
-          <div className="flex flex-col md:flex-row gap-6">
-            <div className="md:w-1/3">
-              <div className={`p-5 rounded-xl ${darkMode
-                ? 'bg-gray-800/70 border border-gray-700/50'
-                : 'bg-white/70 border border-gray-200/50'
-                } backdrop-blur-sm`}
-              >
-                <div className="flex flex-col items-center">
-                  <div className="w-24 h-24 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg relative overflow-hidden mb-4">
-                    <Avatar
-                      src={userData?.profileImage}
-                      name={userData?.name || "Lawyer"}
-                      alt={userData?.name || "Lawyer"}
-                      size={96}
-                      className="w-full h-full rounded-xl"
-                    />
-                  </div>
-                  <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {userData?.name || "Lawyer"}
-                  </h3>
-                  <p className={`text-sm ${darkMode ? 'text-blue-400' : 'text-blue-600'} font-medium`}>
-                    {userData?.role || "Lawyer"}
-                  </p>
-                  <div className="flex items-center mt-2">
-                    <Award size={16} className={`mr-1 ${darkMode ? 'text-yellow-400' : 'text-yellow-500'}`} />
-                    <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      {userData?.experience || "0 years"} experience
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-6 space-y-3">
-                  <div className="flex items-center">
-                    <Mail size={16} className={`mr-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      {userData?.email || "email@merabakil.com"}
-                    </p>
-                  </div>
-                  <div className="flex items-center">
-                    <Phone size={16} className={`mr-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      {userData?.phone || "Not specified"}
-                    </p>
-                  </div>
-                  <div className="flex items-center">
-                    <MapPin size={16} className={`mr-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                    <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      {userData?.location || "Not specified"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="md:w-2/3">
-              <div className={`p-5 rounded-xl h-full ${darkMode
-                ? 'bg-gray-800/70 border border-gray-700/50'
-                : 'bg-white/70 border border-gray-200/50'
-                } backdrop-blur-sm`}
-              >
-                <h3 className={`text-lg font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Professional Information
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className={`text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Specialization
-                    </h4>
-                    <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {userData?.specialization || "General Law"}
-                    </p>
-
-                    <h4 className={`text-sm font-medium mb-2 mt-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Bar Association
-                    </h4>
-                    <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {userData?.bar_association || "Not specified"}
-                    </p>
-
-                    <h4 className={`text-sm font-medium mb-2 mt-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      License Number
-                    </h4>
-                    <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {userData?.license_number || "Not specified"}
-                    </p>
-                  </div>
-
-                  <div>
-                    <h4 className={`text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Education
-                    </h4>
-                    <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {userData?.education || "Not specified"}
-                    </p>
-
-                    <h4 className={`text-sm font-medium mb-2 mt-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Languages
-                    </h4>
-                    <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {userData?.languages || "Not specified"}
-                    </p>
-
-                    <h4 className={`text-sm font-medium mb-2 mt-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Availability
-                    </h4>
-                    <p className={`text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {userData?.availability || "Not specified"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-        {stats.map((stat, index) => (
-          <StatsCard key={index} stat={stat} darkMode={darkMode} />
->>>>>>> 3025c6eef82af96806191418216703d105f834d2
         ))}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <GlassCard darkMode={darkMode} className="xl:col-span-2 p-5 h-[340px] flex flex-col">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className={`text-base font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>Performance Analytics</h3>
-              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Growth Metrics Over Time</p>
-            </div>
-            <div className="flex gap-2">
-              <PremiumBadge text="Monthly" type="dark" />
-              <button className={`p-2 rounded-xl transition-all ${darkMode ? 'bg-white/5' : 'bg-slate-100'}`}>
-                <Filter size={14} />
-              </button>
-            </div>
-          </div>
-          <div className="flex-1 w-full min-h-0">
+          <h3 className="font-bold mb-4">Performance Analytics</h3>
+          <div className="flex-1">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={performanceTrend}>
-                <defs>
-                  <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.3} />
-                    <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? 'rgba(255,255,255,0.05)' : '#f1f5f9'} vertical={false} />
-                <XAxis
-                  dataKey="name"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 10, fill: darkMode ? '#64748B' : '#94A3B8', fontWeight: 700 }}
-                />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" />
                 <YAxis hide />
-                <Tooltip content={<CustomTooltip darkMode={darkMode} />} cursor={{ stroke: COLORS.primary, strokeWidth: 1 }} />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke={COLORS.primary}
-                  strokeWidth={4}
-                  fillOpacity={1}
-                  fill="url(#colorVal)"
-                  animationDuration={1500}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="cases"
-                  stroke={COLORS.secondary}
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  fill="transparent"
-                />
+                <Tooltip />
+                <Area type="monotone" dataKey="value" stroke="#3b82f6" fillOpacity={0.3} fill="#3b82f6" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </GlassCard>
 
-        <div className="space-y-5">
-          <GlassCard darkMode={darkMode} className="p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className={`text-[11px] font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900 uppercase'} tracking-wider`}>Active Consultations</h3>
-              <button
-                onClick={() => onNavigate('appointments')}
-                className={`text-[9px] font-black uppercase tracking-widest hover:underline ${darkMode ? 'text-slate-400' : 'text-slate-900'}`}
-              >
-                View Registry
-              </button>
-            </div>
-            <div className="space-y-3">
-              {(appointmentData && appointmentData.length > 0 ? appointmentData.slice(0, 3) : [1, 2, 3]).map((apt, i) => {
-                const isAptLive = typeof apt === 'object' && apt.appointment_time && (
-                  apt.consultation_status === 'in_progress' ||
-                  ((new Date(apt.appointment_time).getTime() - new Date().getTime()) < 15 * 60 * 1000 &&
-                    (new Date().getTime() - new Date(apt.appointment_time).getTime()) < 120 * 60 * 1000)
-                );
-                const isActiveSessionForApt = activeSession && typeof apt === 'object' && activeSession.appointment_id === apt.id;
-
-                return (
-                  <div key={i} className="flex items-center gap-2.5 group/item">
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-black text-[11px] transition-all group-hover/item:scale-110 relative ${darkMode ? 'bg-white/5 text-slate-300' : 'bg-slate-100 text-slate-900'}`}>
-                      {typeof apt === 'object' ? apt.client_name?.charAt(0) : 'C'}
-                      {(isAptLive || isActiveSessionForApt) && (
-                        <span className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 ${darkMode ? 'bg-white border-neutral-900' : 'bg-slate-900 border-white'} animate-pulse`} />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-[11px] font-black truncate ${darkMode ? 'text-white' : 'text-slate-900 group-hover/item:text-slate-500 transition-colors'}`}>
-                        {typeof apt === 'object' ? apt.client_name : 'Client Session ' + i}
-                      </p>
-                      <p className="text-[9px] text-slate-500 font-bold uppercase opacity-70">
-                        {typeof apt === 'object' ? new Date(apt.appointment_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '9:30 AM'} • {typeof apt === 'object' ? apt.case_type : 'Cons.'}
-                      </p>
-                    </div>
-
-                    {(isAptLive || isActiveSessionForApt) ? (
-                      <button
-                        onClick={() => handleJoinSession(isActiveSessionForApt ? activeSession : { session_token: apt.session_token || 'pending', appointment_id: apt.id })}
-                        className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${darkMode ? 'bg-white text-slate-900' : 'bg-slate-900 text-white shadow-lg shadow-black/10'}`}
-                      >
-                        Join Room
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => onNavigate('appointments')}
-                        className={`p-1.5 rounded-lg opacity-0 group-hover/item:opacity-100 transition-all ${darkMode ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-slate-100 hover:bg-slate-900 text-slate-500 hover:text-white'}`}
-                      >
-                        <ChevronRight size={12} />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </GlassCard>
-
-          <GlassCard darkMode={darkMode} className={`p-5 bg-gradient-to-br transition-all relative overflow-hidden ${darkMode ? 'from-purple-900/10 to-transparent' : 'from-purple-50 to-white'}`}>
-            <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500" />
-            <h4 className={`text-[9px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>
-              <Bot size={12} /> AI Strategy
-            </h4>
-            <p className={`text-[11px] font-bold leading-[1.4] mb-3 ${darkMode ? 'text-slate-400' : 'text-slate-600'} opacity-80`}>
-              "Case #441-D strategy shift recommended due to new local ordinance."
-            </p>
-            <button className={`w-full h-8 border border-purple-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest ${darkMode ? 'text-purple-400 hover:bg-purple-500/20' : 'text-purple-700 hover:bg-purple-500 hover:text-white'} transition-all`}>
-              Open AI Insight
-            </button>
-          </GlassCard>
-        </div>
+        <GlassCard darkMode={darkMode} className="p-5">
+          <h3 className="font-bold mb-4">Active Sessions</h3>
+          <div className="space-y-3">
+            {appointmentData?.slice(0, 3).map((apt, i) => (
+              <div key={i} className="flex justify-between items-center">
+                <span className="text-sm font-medium">{apt.client_name || 'Client'}</span>
+                <span className="text-[10px] opacity-50">{apt.case_type}</span>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
       </div>
     </div>
   );
@@ -828,7 +526,7 @@ const LawyerAdmin = () => {
         }
       }
     }
-  }, [searchQuery, activeTab]);
+  }, [searchQuery, activeTab, isDark]);
 
   const fetchData = React.useCallback(async (profileId, fallbackProfile = null) => {
     try {

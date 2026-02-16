@@ -4,7 +4,7 @@ import { Mail, Lock, Eye, EyeOff, Scale, Check, AlertCircle, CheckCircle, Smartp
 import { useGoogleLogin } from '@react-oauth/google';
 import { authAPI, tokenManager } from '../../api/apiService';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../../context/ToastContext';
 
 // Minimal legal strip
 const LegalStrip = () => {

@@ -48,7 +48,7 @@ module.exports = {
       colors: {
         // Primary brand palette — navy/blue for trust & authority
         brand: {
-          50:  '#EFF6FF',
+          50: '#EFF6FF',
           100: '#DBEAFE',
           200: '#BFDBFE',
           300: '#93C5FD',
@@ -62,7 +62,7 @@ module.exports = {
         },
         // Accent palette — gold for premium features & wallet
         accent: {
-          50:  '#FFFBEB',
+          50: '#FFFBEB',
           100: '#FEF3C7',
           200: '#FDE68A',
           300: '#FCD34D',
@@ -73,7 +73,7 @@ module.exports = {
         },
         // Verified palette — emerald for trust badges, verification
         verified: {
-          50:  '#ECFDF5',
+          50: '#ECFDF5',
           100: '#D1FAE5',
           200: '#A7F3D0',
           400: '#34D399',
@@ -83,9 +83,9 @@ module.exports = {
         },
         // Dark mode surface colors (kept from original)
         'dark-bg': {
-          DEFAULT: '#0F172A',
-          secondary: '#1E293B',
-          tertiary: '#334155',
+          DEFAULT: '#0A0A0A',
+          secondary: '#111111',
+          tertiary: '#1A1A1A',
         },
         'dark-text': {
           DEFAULT: '#F8FAFC',

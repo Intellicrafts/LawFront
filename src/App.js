@@ -33,22 +33,17 @@ import LawyerAdmin from './components/Lawyer/LawyerAdmin';
 import ProfileTypeSelection from './components/ProfileTypeSelection';
 import LawyerAdditionalDetails from './components/LawyerAdditionalDetails';
 import UserOnboarding from './components/UserOnboarding';
-<<<<<<< HEAD
-import LandingPage from './components/LandingPage';
-import Pricing from './components/Pricing';
-import { ConsultationSession } from './components/ConsultationSession';
-
-import { fetchChatSessions } from './redux/chatSlice';
-=======
 import LandingPage from './pages/General/LandingPage';
 import Pricing from './pages/General/Pricing';
 import Contact from './pages/General/Contact';
+import { ConsultationSession } from './components/ConsultationSession';
 // Compliance pages
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import LegalDisclaimer from './components/LegalDisclaimer';
 import VerifyLawyer from './pages/Legal/VerifyLawyer';
->>>>>>> 3025c6eef82af96806191418216703d105f834d2
+
+import { fetchChatSessions } from './redux/chatSlice';
 
 // Home Route component
 const HomeRoute = () => {
@@ -109,13 +104,9 @@ const AppLayout = ({ children }) => {
           {children}
         </main>
       </div>
-<<<<<<< HEAD
-      {!isLawyerAdmin && !isLandingPage && !isConsultation && <FloatingThemeToggle />}
-=======
       {/* Footer — shown on landing pages; other pages get FloatingThemeToggle */}
       {!isLawyerAdmin && isLandingPage && <Footer />}
-      {!isLawyerAdmin && !isLandingPage && <FloatingThemeToggle />}
->>>>>>> 3025c6eef82af96806191418216703d105f834d2
+      {!isLawyerAdmin && !isLandingPage && !isConsultation && <FloatingThemeToggle />}
     </>
   );
 };
@@ -239,9 +230,9 @@ const App = () => {
 
                     {/* Public Routes */}
                     <Route path="/contact" element={<Contact />} />
-<<<<<<< HEAD
 
                     {/* User Specific Protected Routes */}
+                    <Route path="/verify-lawyer" element={<VerifyLawyer />} />
                     <Route path="/legal-consoltation" element={
                       <ProtectedRoute allowedRoles={['user', 'client']}>
                         <LegalCosultation />
@@ -265,16 +256,7 @@ const App = () => {
 
                     <Route path="/voice-modal" element={<VoiceModal />} />
                     <Route path="/portfolio" element={<LegalAIPortfolio />} />
-=======
-                    <Route path="/verify-lawyer" element={<VerifyLawyer />} />
-                    <Route path="/legal-consoltation" element={isAuthenticated ? <LegalCosultation /> : <Navigate to="/auth" replace />} />
-                    <Route path="/task-automation" element={<TaskAutomation />} />
-                    <Route path="/legal-documents-review" element={<LegalDocumentsReview />} />
-                    <Route path="/voice-modal" element={<VoiceModal />} />
-                    <Route path="/portfolio" element={<LegalAIPortfolio />} />
-                    <Route path="/personal-room" element={<PersonalRoom />} />
                     <Route path="/wallet" element={isAuthenticated ? <WalletLayout /> : <Navigate to="/auth" replace />} />
->>>>>>> 3025c6eef82af96806191418216703d105f834d2
                     <Route path="/pricing" element={<Pricing />} />
 
                     {/* Compliance / Legal Pages */}

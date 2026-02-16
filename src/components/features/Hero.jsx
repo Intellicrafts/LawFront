@@ -14,14 +14,10 @@ import {
   PanelLeftClose, PanelLeftOpen, ArrowRight, TrendingUp, Cpu, Target,
   History, Archive, Star as StarIcon
 } from 'lucide-react';
-<<<<<<< HEAD:src/components/Hero.jsx
-import { chatbotService, CHAT_STATES, AI_MODELS } from '../services/chatbotApiService';
-import { useParams, useNavigate } from 'react-router-dom';
-import { chatbotAPI } from '../api/apiService';
-import { fetchChatSessions } from '../redux/chatSlice';
-=======
 import { chatbotService, CHAT_STATES, AI_MODELS } from '../../services/chatbotApiService';
->>>>>>> 3025c6eef82af96806191418216703d105f834d2:src/components/features/Hero.jsx
+import { useParams, useNavigate } from 'react-router-dom';
+import { chatbotAPI } from '../../api/apiService';
+import { fetchChatSessions } from '../../redux/chatSlice';
 
 // Custom Lawyer Tia Avatar Component
 const TiaAvatar = ({ isStreaming }) => (
