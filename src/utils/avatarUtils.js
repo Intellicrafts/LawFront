@@ -48,18 +48,27 @@ export const cleanAvatarUrl = (avatarUrl) => {
     cleanedUrl = cleanedUrl.replace('/api/api', '/api');
   }
 
-  // Extract storage path from complex URLs
-  // Look for the actual storage path within the URL
-  const storagePathMatch = cleanedUrl.match(/(\/storage\/avatars\/[^/\s]+\.[a-zA-Z0-9]+)/);
-  if (storagePathMatch) {
-    const storagePath = storagePathMatch[1];
-    const baseUrl = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
-    cleanedUrl = `${baseUrl}${storagePath}`;
+  // If the URL is already a fully qualified valid URL with a storage/avatar path,
+  // use it directly — do NOT re-prefix with REACT_APP_API_URL
+  const isAlreadyFullUrl = /^https?:\/\/.+\/storage\/avatars\//.test(cleanedUrl);
+
+  if (!isAlreadyFullUrl) {
+    // Extract storage path from complex or relative URLs
+    // Look for the actual storage path within the URL
+    const storagePathMatch = cleanedUrl.match(/(\/storage\/avatars\/[^/\s]+\.[a-zA-Z0-9]+)/);
+    if (storagePathMatch) {
+      const storagePath = storagePathMatch[1];
+      // Use REACT_APP_API_URL but strip any trailing /api to get the base domain
+      const rawBase = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
+      const baseUrl = rawBase.replace(/\/api\/?$/, '');
+      cleanedUrl = `${baseUrl}${storagePath}`;
+    }
   }
 
   // Ensure it's a valid URL
   if (!cleanedUrl.startsWith('http')) {
-    const baseUrl = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
+    const rawBase = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
+    const baseUrl = rawBase.replace(/\/api\/?$/, '');
     cleanedUrl = cleanedUrl.startsWith('/') ? `${baseUrl}${cleanedUrl}` : `${baseUrl}/${cleanedUrl}`;
   }
 
@@ -222,6 +231,7 @@ export const updateAvatarRealTime = (newAvatarUrl, userId = 'current') => {
     try {
       const parsedUser = JSON.parse(storedUser);
       parsedUser.avatar = cleanedUrl;
+      parsedUser.avatar_url = cleanedUrl;
       localStorage.setItem('user', JSON.stringify(parsedUser));
     } catch (e) {
       console.error('Error updating user avatar in localStorage:', e);
