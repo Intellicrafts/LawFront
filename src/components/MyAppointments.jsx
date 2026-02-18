@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { apiServices, consultationAPI } from '../api/apiService';
+import { apiServices, consultationAPI, appointmentAPI } from '../api/apiService';
 import { useToast } from '../context/ToastContext';
 import {
     Calendar, Clock, Search, Filter, ArrowLeft,
@@ -35,9 +35,28 @@ const MyAppointments = ({ onBack }) => {
                 const response = await apiServices.getUserProfile();
                 console.log('Full API Response:', response);
                 const userData = response.data || response;
-                console.log('User Data:', userData);
-                const rawAppointments = userData.recent_activity?.appointments || [];
-                console.log('Raw Appointments from API:', rawAppointments);
+                // Use tokenManager logic or user profile to get ID
+                const userId = userData.id || userData.user_id;
+
+                let rawAppointments = [];
+                try {
+                    if (userId) {
+                        const aptResponse = await appointmentAPI.getUserAppointments(userId);
+                        rawAppointments = aptResponse.data || [];
+                        console.log('Fetched Appointments via ID:', rawAppointments);
+                    } else {
+                        console.warn('User ID not found, falling back to profile activity');
+                        rawAppointments = userData.recent_activity?.appointments || [];
+                    }
+                } catch (aptError) {
+                    console.error('Error fetching appointments via ID:', aptError);
+                    rawAppointments = userData.recent_activity?.appointments || [];
+                }
+
+                // If rawAppointments is empty, check if we got it from profile
+                if (!rawAppointments || rawAppointments.length === 0) {
+                    rawAppointments = userData.recent_activity?.appointments || [];
+                }
 
                 const processed = rawAppointments.map(apt => {
                     const dateObj = new Date(apt.appointment_time);

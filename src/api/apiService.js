@@ -1036,6 +1036,54 @@ export const documentsAPI = {
   }
 };
 
+/**
+ * Appointment API Service
+ */
+export const appointmentAPI = {
+  /**
+    * Get appointments for a specific user
+    * @param {number} userId - User ID
+    * @returns {Promise} - API response with appointments
+    */
+  getUserAppointments: async (userId) => {
+    try {
+      const response = await apiClient.get(`/appointments/user/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching appointments for user ${userId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get specific appointment details
+   * @param {number} appointmentId - Appointment ID
+   */
+  getAppointment: async (appointmentId) => {
+    try {
+      const response = await apiClient.get(`/appointments/${appointmentId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching appointment ${appointmentId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+  * Generate meeting link for appointment
+  * @param {number} appointmentId - Appointment ID
+  */
+  generateMeetingLink: async (appointmentId) => {
+    try {
+      const response = await apiClient.post(`/appointments/${appointmentId}/generate-meeting-link`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error generating meeting link for appointment ${appointmentId}:`, error);
+      throw error;
+    }
+  }
+};
+
 // Utility functions for token management
 export const tokenManager = {
   setToken: (token) => {

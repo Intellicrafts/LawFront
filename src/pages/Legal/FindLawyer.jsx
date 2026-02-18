@@ -1257,24 +1257,24 @@ const LegalCosultation = () => {
         setLoading(true);
 
         // Check wallet balance for consultation fee
-        const CONSULTATION_FEE = 1500;
-        if (walletBalance < CONSULTATION_FEE) {
-          showError(`Insufficient wallet balance. Consultation fee is ₹${CONSULTATION_FEE}. Please recharge.`);
-          setShowRechargeModal(true);
-          setLoading(false);
-          return;
-        }
+        // const CONSULTATION_FEE = 1500;
+        // if (walletBalance < CONSULTATION_FEE) {
+        //   showError(`Insufficient wallet balance. Consultation fee is ₹${CONSULTATION_FEE}. Please recharge.`);
+        //   setShowRechargeModal(true);
+        //   setLoading(false);
+        //   return;
+        // }
 
         try {
           // Process Wallet Payment
-          await walletServices.processPayment({
-            payer_user_id: userId,
-            receiver_user_id: selectedLawyer.id,
-            amount: CONSULTATION_FEE,
-            description: `Consultation with ${selectedLawyer.full_name}`,
-            category: "consultation"
-          });
-          setWalletBalance(prev => Math.max(0, prev - CONSULTATION_FEE));
+          // await walletServices.processPayment({
+          //   payer_user_id: userId,
+          //   receiver_user_id: selectedLawyer.id,
+          //   amount: CONSULTATION_FEE,
+          //   description: `Consultation with ${selectedLawyer.full_name}`,
+          //   category: "consultation"
+          // });
+          // setWalletBalance(prev => Math.max(0, prev - CONSULTATION_FEE));
 
           // Call the API to book appointment with lawyer
           // Note: lawyer_id is already in appointmentData, but we still pass it separately
