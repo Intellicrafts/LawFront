@@ -3,11 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { FaUser, FaBriefcase, FaCheckCircle, FaExclamationCircle, FaShieldAlt } from 'react-icons/fa';
 import { authAPI, tokenManager } from '../api/apiService';
+import { useToast } from '../context/ToastContext';
 
 // Toast notification component
 const Toast = ({ message, type = 'success', onClose }) => {
   const [isVisible, setIsVisible] = useState(true);
-  
+
   // Get theme from Redux
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
@@ -19,7 +20,7 @@ const Toast = ({ message, type = 'success', onClose }) => {
     }, type === 'error' ? 7000 : 5000);
     return () => clearTimeout(timer);
   }, [onClose, type]);
-  
+
   const getToastStyles = () => {
     if (isDarkMode) {
       switch (type) {
@@ -49,12 +50,11 @@ const Toast = ({ message, type = 'success', onClose }) => {
       }
     }
   };
-  
+
   return (
-    <div 
-      className={`fixed top-16 right-4 flex items-center p-4 rounded-lg shadow-lg transition-all duration-300 z-50 ${
-        isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
-      } ${getToastStyles()}`}
+    <div
+      className={`fixed top-16 right-4 flex items-center p-4 rounded-lg shadow-lg transition-all duration-300 z-50 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
+        } ${getToastStyles()}`}
       role="alert"
       style={{ maxWidth: '90%', width: '400px' }}
     >
@@ -70,21 +70,20 @@ const Toast = ({ message, type = 'success', onClose }) => {
         )}
       </div>
       <div className="ml-3 text-sm font-medium">{message}</div>
-      <button 
-        type="button" 
+      <button
+        type="button"
         onClick={() => {
           setIsVisible(false);
           setTimeout(onClose, 300);
         }}
-        className={`ml-auto -mx-1.5 -my-1.5 ${
-          isDarkMode 
-            ? 'bg-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
+        className={`ml-auto -mx-1.5 -my-1.5 ${isDarkMode
+            ? 'bg-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-700'
             : 'bg-white text-gray-400 hover:text-gray-900 hover:bg-gray-100'
-        } rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 inline-flex items-center justify-center h-8 w-8`}
+          } rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 inline-flex items-center justify-center h-8 w-8`}
       >
         <span className="sr-only">Close</span>
         <svg className="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
         </svg>
       </button>
     </div>
@@ -112,7 +111,7 @@ const LegalStrip = () => {
 const Logo = () => {
   return (
     <div className="flex justify-center mb-6 animate-fadeIn">
-      <div 
+      <div
         className="w-20 h-20 rounded-lg flex items-center justify-center text-white text-3xl font-bold shadow-lg transform hover:rotate-3 transition-all duration-300"
         style={{ background: "linear-gradient(to right, rgb(34, 87, 122), rgb(92, 172, 222))" }}
       >
@@ -126,7 +125,6 @@ const Logo = () => {
 const ProfileTypeSelection = () => {
   const [selectedType, setSelectedType] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState(null);
   const [fadeIn, setFadeIn] = useState(false);
   const [userData, setUserData] = useState(null);
 
@@ -134,10 +132,13 @@ const ProfileTypeSelection = () => {
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
 
+  // Global toast system
+  const { showSuccess, showError } = useToast();
+
   useEffect(() => {
     // Trigger fade-in animation after component mounts
     setFadeIn(true);
-    
+
     // Get user data from localStorage
     const user = tokenManager.getUser();
     if (user) {
@@ -148,15 +149,9 @@ const ProfileTypeSelection = () => {
     }
   }, []);
 
-  // Show toast notification
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 5000);
-  };
-
   const handleProfileTypeSubmit = async () => {
     if (!selectedType) {
-      showToast('Please select your profile type', 'error');
+      showError('Please select your profile type');
       return;
     }
 
@@ -169,7 +164,7 @@ const ProfileTypeSelection = () => {
 
       // Call the additional details API
       const response = await authAPI.saveAdditionalDetails(payload);
-      
+
       console.log('Profile type saved:', response.data);
 
       if (response.data.success) {
@@ -182,7 +177,7 @@ const ProfileTypeSelection = () => {
           detail: { authenticated: true, user: updatedUser }
         }));
 
-        showToast('Profile type saved successfully!', 'success');
+        showSuccess('Profile type saved successfully!');
 
         setTimeout(() => {
           if (selectedType === 'personal') {
@@ -194,64 +189,51 @@ const ProfileTypeSelection = () => {
           }
         }, 1500);
       } else {
-        showToast('Failed to save profile type. Please try again.', 'error');
+        showError('Failed to save profile type. Please try again.');
       }
     } catch (error) {
       console.error('Profile type save error:', error);
       const errorMessage = error.response?.data?.message || 'Failed to save profile type. Please try again.';
-      showToast(errorMessage, 'error');
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      isDarkMode 
-        ? 'bg-gray-900 text-gray-100' 
+    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode
+        ? 'bg-gray-900 text-gray-100'
         : 'bg-gradient-to-br from-blue-50 via-white to-indigo-50'
-    }`}>
+      }`}>
       {/* Legal strip */}
       <LegalStrip />
-      
-      {/* Toast notification */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+
+      {/* Toasts handled by global ToastProvider */}
 
       <div className="flex items-center justify-center min-h-screen px-4 py-12">
-        <div className={`w-full max-w-md transform transition-all duration-1000 ${
-          fadeIn ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-        }`}>
-          
-          {/* Card container */}
-          <div className={`rounded-2xl shadow-2xl overflow-hidden ${
-            isDarkMode 
-              ? 'bg-gray-800 border border-gray-700' 
-              : 'bg-white'
+        <div className={`w-full max-w-md transform transition-all duration-1000 ${fadeIn ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
           }`}>
-            
-            {/* Header */}
-            <div className={`px-8 pt-8 pb-6 ${
-              isDarkMode 
-                ? 'bg-gray-800' 
-                : 'bg-white'
+
+          {/* Card container */}
+          <div className={`rounded-2xl shadow-2xl overflow-hidden ${isDarkMode
+              ? 'bg-gray-800 border border-gray-700'
+              : 'bg-white'
             }`}>
+
+            {/* Header */}
+            <div className={`px-8 pt-8 pb-6 ${isDarkMode
+                ? 'bg-gray-800'
+                : 'bg-white'
+              }`}>
               <Logo />
-              
+
               <div className="text-center mb-6">
-                <h1 className={`text-2xl font-bold mb-2 ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>
+                <h1 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'
+                  }`}>
                   Welcome, {userData?.name || 'User'}!
                 </h1>
-                <p className={`text-sm ${
-                  isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                }`}>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
                   Please select your profile type to complete setup
                 </p>
               </div>
@@ -262,26 +244,24 @@ const ProfileTypeSelection = () => {
                   <button
                     type="button"
                     onClick={() => setSelectedType('personal')}
-                    className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all duration-200 ${
-                      selectedType === 'personal' 
+                    className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all duration-200 ${selectedType === 'personal'
                         ? isDarkMode
-                          ? 'border-blue-600 bg-blue-900 bg-opacity-20' 
+                          ? 'border-blue-600 bg-blue-900 bg-opacity-20'
                           : 'border-blue-500 bg-blue-50'
                         : isDarkMode
                           ? 'border-gray-700 hover:border-gray-600'
                           : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center mr-4 ${
-                        selectedType === 'personal' 
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center mr-4 ${selectedType === 'personal'
                           ? isDarkMode
                             ? 'bg-blue-800 text-blue-400'
-                            : 'bg-blue-100 text-blue-600' 
+                            : 'bg-blue-100 text-blue-600'
                           : isDarkMode
                             ? 'bg-gray-800 text-gray-400'
                             : 'bg-gray-100 text-gray-500'
-                      }`}>
+                        }`}>
                         <FaUser size={20} />
                       </div>
                       <div className="text-left">
@@ -297,30 +277,28 @@ const ProfileTypeSelection = () => {
                       <FaCheckCircle className="text-blue-500 w-5 h-5" />
                     )}
                   </button>
-                  
+
                   <button
                     type="button"
                     onClick={() => setSelectedType('business')}
-                    className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all duration-200 ${
-                      selectedType === 'business' 
+                    className={`flex items-center justify-between p-4 rounded-lg border-2 transition-all duration-200 ${selectedType === 'business'
                         ? isDarkMode
-                          ? 'border-blue-600 bg-blue-900 bg-opacity-20' 
+                          ? 'border-blue-600 bg-blue-900 bg-opacity-20'
                           : 'border-blue-500 bg-blue-50'
                         : isDarkMode
                           ? 'border-gray-700 hover:border-gray-600'
                           : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center mr-4 ${
-                        selectedType === 'business' 
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center mr-4 ${selectedType === 'business'
                           ? isDarkMode
                             ? 'bg-blue-800 text-blue-400'
-                            : 'bg-blue-100 text-blue-600' 
+                            : 'bg-blue-100 text-blue-600'
                           : isDarkMode
                             ? 'bg-gray-800 text-gray-400'
                             : 'bg-gray-100 text-gray-500'
-                      }`}>
+                        }`}>
                         <FaBriefcase size={20} />
                       </div>
                       <div className="text-left">
@@ -342,13 +320,12 @@ const ProfileTypeSelection = () => {
                 <button
                   onClick={handleProfileTypeSubmit}
                   disabled={loading || !selectedType}
-                  className={`w-full py-3 px-4 rounded-md flex items-center justify-center text-white font-medium shadow-md transition-all duration-300 transform hover:scale-102 hover:shadow-xl relative overflow-hidden ${
-                    loading || !selectedType ? 'opacity-70 cursor-not-allowed' : ''
-                  }`}
-                  style={{ 
-                    background: loading || !selectedType 
-                      ? "#64a6db" 
-                      : "linear-gradient(to right, rgb(34, 87, 122), rgb(92, 172, 222))" 
+                  className={`w-full py-3 px-4 rounded-md flex items-center justify-center text-white font-medium shadow-md transition-all duration-300 transform hover:scale-102 hover:shadow-xl relative overflow-hidden ${loading || !selectedType ? 'opacity-70 cursor-not-allowed' : ''
+                    }`}
+                  style={{
+                    background: loading || !selectedType
+                      ? "#64a6db"
+                      : "linear-gradient(to right, rgb(34, 87, 122), rgb(92, 172, 222))"
                   }}
                 >
                   <span className="relative z-10 flex items-center">
@@ -368,9 +345,8 @@ const ProfileTypeSelection = () => {
               <div className="mt-6 text-center">
                 <button
                   onClick={() => window.location.href = '/'}
-                  className={`text-sm ${
-                    isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-700'
-                  } transition-colors duration-200`}
+                  className={`text-sm ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-700'
+                    } transition-colors duration-200`}
                 >
                   Skip for now
                 </button>

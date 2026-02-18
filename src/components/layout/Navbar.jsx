@@ -555,6 +555,9 @@ const Navbar = ({ isLandingPage = false }) => {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
 
+      // Clear session-based data (like profile cover image) so new login gets fresh data
+      sessionStorage.removeItem('profile_cover_image_session');
+
       // Dispatch event to notify other components of authentication change
       window.dispatchEvent(new CustomEvent('auth-status-changed', {
         detail: { authenticated: false, user: null }
@@ -1086,7 +1089,7 @@ const Navbar = ({ isLandingPage = false }) => {
                       <div className="relative rounded-full overflow-hidden">
                         <Avatar
                           src={user?.avatar_url}
-                          name={user?.name || user?.first_name}
+                          name={`${user?.name || user?.first_name || ''} ${user?.last_name || ''}`}
                           size={36}
                           forceRefresh={true}
                           className={`rounded-full object-cover border-2 transition-all duration-300 ${userDropdownOpen
@@ -1268,7 +1271,7 @@ const Navbar = ({ isLandingPage = false }) => {
                 >
                   <Avatar
                     src={user?.avatar_url}
-                    name={user?.name || user?.first_name}
+                    name={`${user?.name || user?.first_name || ''} ${user?.last_name || ''}`}
                     size={32}
                     className="border-2 border-transparent group-hover:border-blue-500/50 transition-all duration-300 shadow-md transform group-hover:scale-105"
                   />

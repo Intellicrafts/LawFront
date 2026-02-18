@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { FaShieldAlt, FaEnvelope, FaLock, FaCheck, FaEye, FaEyeSlash, FaExclamationCircle, FaClock, FaCheckCircle } from 'react-icons/fa';
 import { Scale } from 'lucide-react';
 import { apiServices } from '../../api/apiService';
+import { useToast } from '../../context/ToastContext';
 
 // Premium Legal strip component with black/silver/blue accents
 const LegalStrip = () => {
@@ -169,7 +170,9 @@ export const ForgotPassword = ({ onBack }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [toast, setToast] = useState(null);
+
+  // Global toast
+  const { showSuccess, showError: showToastError } = useToast();
 
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
@@ -180,25 +183,16 @@ export const ForgotPassword = ({ onBack }) => {
       const response = await apiServices.sendPasswordResetOtp({ email });
 
       if (response.success) {
-        setToast({
-          message: 'Verification code sent to your email',
-          type: 'success'
-        });
+        showSuccess('Verification code sent to your email');
         setStep('verify');
       } else {
         setError(response.message || 'Failed to send verification code. Please try again.');
-        setToast({
-          message: response.message || 'Failed to send verification code',
-          type: 'error'
-        });
+        showToastError(response.message || 'Failed to send verification code');
       }
     } catch (error) {
       console.error('Forgot password error:', error);
       setError('An error occurred. Please try again later.');
-      setToast({
-        message: error.response?.data?.message || 'An error occurred. Please try again later.',
-        type: 'error'
-      });
+      showToastError(error.response?.data?.message || 'An error occurred. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -216,25 +210,16 @@ export const ForgotPassword = ({ onBack }) => {
       });
 
       if (response.success) {
-        setToast({
-          message: 'Code verified successfully',
-          type: 'success'
-        });
+        showSuccess('Code verified successfully');
         setStep('reset');
       } else {
         setError(response.message || 'Invalid verification code. Please try again.');
-        setToast({
-          message: response.message || 'Invalid verification code',
-          type: 'error'
-        });
+        showToastError(response.message || 'Invalid verification code');
       }
     } catch (error) {
       console.error('Verify code error:', error);
       setError('An error occurred. Please try again later.');
-      setToast({
-        message: error.response?.data?.message || 'An error occurred. Please try again later.',
-        type: 'error'
-      });
+      showToastError(error.response?.data?.message || 'An error occurred. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -245,10 +230,7 @@ export const ForgotPassword = ({ onBack }) => {
 
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match');
-      setToast({
-        message: 'Passwords do not match',
-        type: 'error'
-      });
+      showToastError('Passwords do not match');
       return;
     }
 
@@ -264,25 +246,16 @@ export const ForgotPassword = ({ onBack }) => {
       });
 
       if (response.success) {
-        setToast({
-          message: 'Password reset successfully',
-          type: 'success'
-        });
+        showSuccess('Password reset successfully');
         setStep('success');
       } else {
         setError(response.message || 'Failed to reset password. Please try again.');
-        setToast({
-          message: response.message || 'Failed to reset password',
-          type: 'error'
-        });
+        showToastError(response.message || 'Failed to reset password');
       }
     } catch (error) {
       console.error('Reset password error:', error);
       setError('An error occurred. Please try again later.');
-      setToast({
-        message: error.response?.data?.message || 'An error occurred. Please try again later.',
-        type: 'error'
-      });
+      showToastError(error.response?.data?.message || 'An error occurred. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -297,14 +270,7 @@ export const ForgotPassword = ({ onBack }) => {
 
   return (
     <div className={`min-h-screen flex flex-col pt-16 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-white'} relative overflow-hidden`}>
-      {/* Toast notification */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+      {/* Toasts handled by global ToastProvider */}
 
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import useToast from '../../hooks/useToast';
+import { useToast } from '../../context/ToastContext';
 import config from '../../config';
 import {
   User, Mail, Phone, MapPin, Calendar, Briefcase, Globe, Camera, X,
@@ -132,7 +132,7 @@ const LegalCosultation = () => {
   // Get dark mode state from Redux
   // Get dark mode state from Redux
   const { mode } = useSelector((state) => state.theme);
-  const toast = useToast();
+  const { showError: showToastError, showInfo } = useToast();
   const isDarkMode = mode === 'dark';
   const currentTheme = isDarkMode ? colors.dark : colors.light;
 
@@ -323,7 +323,7 @@ const LegalCosultation = () => {
   const initiateCall = (lawyer) => {
     // Check wallet balance
     if (walletBalance < 500) {
-      toast.showError('Insufficient wallet balance. Please recharge.');
+      showToastError('Insufficient wallet balance. Please recharge.');
       setShowRechargeModal(true);
       return;
     }
@@ -358,7 +358,7 @@ const LegalCosultation = () => {
 
         setWalletBalance(prev => Math.max(0, prev - 500));
         setWalletBalance(prev => Math.max(0, prev - 500));
-        toast.showInfo('₹500 deducted for call connection');
+        showInfo('₹500 deducted for call connection');
 
         apiServices.startCallSession(lawyer.id).catch(err => console.error('Call log error:', err));
       } catch (err) {
@@ -2536,11 +2536,11 @@ const LegalCosultation = () => {
                         description: "Wallet Recharge"
                       });
                       setWalletBalance(prev => prev + amount);
-                      toast.showSuccess(`Recharged ₹${amount} successfully!`);
+                      showInfo(`Recharged ₹${amount} successfully!`);
                       setShowRechargeModal(false);
                     } catch (err) {
                       console.error(err);
-                      toast.showError('Recharge failed');
+                      showToastError('Recharge failed');
                     }
                   }}
                   className={`py-3 rounded-xl border font-bold text-sm transition-all hover:scale-105 ${isDarkMode ? 'border-[#2A2A2A] bg-white/5 hover:bg-white/10' : 'border-gray-200 bg-gray-50 hover:bg-gray-100'}`}

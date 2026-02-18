@@ -41,6 +41,7 @@ import { ConsultationSession } from './components/ConsultationSession';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import LegalDisclaimer from './components/LegalDisclaimer';
+import RefundPolicy from './components/RefundPolicy';
 import VerifyLawyer from './pages/Legal/VerifyLawyer';
 
 import { fetchChatSessions } from './redux/chatSlice';
@@ -73,7 +74,7 @@ const AppLayout = ({ children }) => {
   const dispatch = useDispatch(); // Get dispatch
   const isLawyerAdmin = location.pathname.startsWith('/lawyer-admin');
   const isConsultation = location.pathname.startsWith('/consultation/');
-  const isLandingPage = location.pathname === '/' || location.pathname === '/pricing' || location.pathname === '/contact';
+  const isLandingPage = location.pathname === '/' || location.pathname === '/pricing' || location.pathname === '/contact' || location.pathname === '/terms-of-service' || location.pathname === '/privacy-policy' || location.pathname === '/refund-policy' || location.pathname === '/disclaimer';
   const isChatbotPage = location.pathname === '/chatbot';
   const { chatHistory } = useSelector((state) => state.chat);
 
@@ -263,6 +264,7 @@ const App = () => {
                     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                     <Route path="/terms-of-service" element={<TermsOfService />} />
                     <Route path="/disclaimer" element={<LegalDisclaimer />} />
+                    <Route path="/refund-policy" element={<RefundPolicy />} />
 
                     {/* Authentication Routes */}
                     <Route path="/auth" element={isAuthenticated ? <Navigate to="/" replace /> : <AuthComponent />} />

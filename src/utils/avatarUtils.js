@@ -11,7 +11,7 @@ export const cleanAvatarUrl = (avatarUrl) => {
   }
 
   let cleanedUrl = avatarUrl;
-  
+
   // Handle escaped backslashes (like "http:\/\/127.0.0.1:8000\/api\/api...")
   if (cleanedUrl.includes('\\/')) {
     cleanedUrl = cleanedUrl.replace(/\\\//g, '/');
@@ -22,7 +22,7 @@ export const cleanAvatarUrl = (avatarUrl) => {
   // Pattern: "http://127.0.0.1:8000/api/apihttp://127.0.0.1:8000/storage/avatars/filename.jpg"
   const malformedPattern = /^(https?:\/\/[^/]+)\/api\/api(https?:\/\/[^/]+)(\/storage\/avatars\/.+)$/;
   const malformedMatch = cleanedUrl.match(malformedPattern);
-  
+
   if (malformedMatch) {
     // Extract the base URL and file path
     const baseUrl = malformedMatch[1];
@@ -35,7 +35,7 @@ export const cleanAvatarUrl = (avatarUrl) => {
   // Pattern: "http://127.0.0.1:8000http://127.0.0.1:8000/storage/avatars/filename.jpg"
   const duplicateBasePattern = /^(https?:\/\/[^/]+)(https?:\/\/[^/]+)(\/storage\/.+)$/;
   const duplicateMatch = cleanedUrl.match(duplicateBasePattern);
-  
+
   if (duplicateMatch) {
     const baseUrl = duplicateMatch[1];
     const filePath = duplicateMatch[3];
@@ -46,7 +46,6 @@ export const cleanAvatarUrl = (avatarUrl) => {
   // Remove duplicate /api prefixes
   while (cleanedUrl.includes('/api/api')) {
     cleanedUrl = cleanedUrl.replace('/api/api', '/api');
-    console.log('Removed duplicate /api prefix:', cleanedUrl);
   }
 
   // Extract storage path from complex URLs
@@ -56,7 +55,6 @@ export const cleanAvatarUrl = (avatarUrl) => {
     const storagePath = storagePathMatch[1];
     const baseUrl = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
     cleanedUrl = `${baseUrl}${storagePath}`;
-    console.log('Extracted storage path and reconstructed URL:', cleanedUrl);
   }
 
   // Ensure it's a valid URL
@@ -65,10 +63,12 @@ export const cleanAvatarUrl = (avatarUrl) => {
     cleanedUrl = cleanedUrl.startsWith('/') ? `${baseUrl}${cleanedUrl}` : `${baseUrl}/${cleanedUrl}`;
   }
 
-  // Final validation - check if it looks like a valid avatar URL
-  const isValidAvatarUrl = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(cleanedUrl);
-  
-  if (!isValidAvatarUrl) {
+  // Final validation - accept URLs with image extensions OR storage/avatar paths OR any valid-looking URL
+  const hasImageExtension = /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico|avif)(\?.*)?$/i.test(cleanedUrl);
+  const hasStoragePath = /\/(storage|avatars?|uploads?|images?|media|profile|photo)/i.test(cleanedUrl);
+  const isValidHttpUrl = /^https?:\/\/.+\..+/i.test(cleanedUrl);
+
+  if (!hasImageExtension && !hasStoragePath && !isValidHttpUrl) {
     console.warn('Invalid avatar URL after cleaning:', cleanedUrl);
     return null;
   }
@@ -84,15 +84,15 @@ export const cleanAvatarUrl = (avatarUrl) => {
  */
 export const generateInitials = (name, lastName = '') => {
   if (!name && !lastName) return '?';
-  
+
   const fullName = `${name || ''} ${lastName || ''}`.trim();
-  
+
   if (!fullName) return '?';
-  
+
   const nameParts = fullName.split(/\s+/).filter(part => part.length > 0);
-  
+
   if (nameParts.length === 0) return '?';
-  
+
   if (nameParts.length === 1) {
     // Single name - return first and last character if long enough
     const singleName = nameParts[0];
@@ -101,7 +101,7 @@ export const generateInitials = (name, lastName = '') => {
     }
     return (singleName.charAt(0) + singleName.charAt(singleName.length - 1)).toUpperCase();
   }
-  
+
   // Multiple names - return first character of first and last name
   return (nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)).toUpperCase();
 };
@@ -113,7 +113,7 @@ export const generateInitials = (name, lastName = '') => {
  */
 export const generateAvatarColor = (name) => {
   if (!name) return '#6B7280';
-  
+
   const colors = [
     '#EF4444', // Red
     '#F97316', // Orange
@@ -128,13 +128,13 @@ export const generateAvatarColor = (name) => {
     '#F43F5E', // Rose
     '#14B8A6', // Teal
   ];
-  
+
   // Simple hash function
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  
+
   const index = Math.abs(hash) % colors.length;
   return colors[index];
 };
@@ -146,13 +146,13 @@ export const generateAvatarColor = (name) => {
  */
 export const cacheAvatarUrl = (avatarUrl, userId = 'current') => {
   if (!avatarUrl) return;
-  
+
   const cacheData = {
     url: avatarUrl,
     timestamp: Date.now(),
     userId: userId
   };
-  
+
   localStorage.setItem(`avatar_cache_${userId}`, JSON.stringify(cacheData));
   // Also set the old key for backward compatibility
   localStorage.setItem('user_avatar', avatarUrl);
@@ -171,15 +171,15 @@ export const getCachedAvatarUrl = (userId = 'current', maxAge = 3600000) => {
       // Try old format as fallback
       return localStorage.getItem('user_avatar');
     }
-    
+
     const cacheData = JSON.parse(cached);
-    
+
     // Check if cache is still valid
     if (Date.now() - cacheData.timestamp > maxAge) {
       localStorage.removeItem(`avatar_cache_${userId}`);
       return null;
     }
-    
+
     return cacheData.url;
   } catch (error) {
     console.error('Error retrieving cached avatar:', error);
@@ -205,17 +205,17 @@ export const clearAvatarCache = (userId = 'current') => {
  */
 export const updateAvatarRealTime = (newAvatarUrl, userId = 'current') => {
   if (!newAvatarUrl) return;
-  
+
   // Clean the URL first
   const cleanedUrl = cleanAvatarUrl(newAvatarUrl);
   if (!cleanedUrl) return;
-  
+
   // Cache the new URL
   cacheAvatarUrl(cleanedUrl, userId);
-  
+
   // Update localStorage for backward compatibility
   localStorage.setItem('user_avatar', cleanedUrl);
-  
+
   // Update user object in localStorage
   const storedUser = localStorage.getItem('user');
   if (storedUser) {
@@ -227,11 +227,11 @@ export const updateAvatarRealTime = (newAvatarUrl, userId = 'current') => {
       console.error('Error updating user avatar in localStorage:', e);
     }
   }
-  
+
   // Trigger a storage event to notify other components
-  window.dispatchEvent(new CustomEvent('avatar-updated', { 
-    detail: { avatarUrl: cleanedUrl, userId } 
+  window.dispatchEvent(new CustomEvent('avatar-updated', {
+    detail: { avatarUrl: cleanedUrl, userId }
   }));
-  
+
   console.log('Avatar updated in real-time:', cleanedUrl);
 };

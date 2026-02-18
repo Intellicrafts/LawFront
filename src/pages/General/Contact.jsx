@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../../context/ToastContext';
 import {
   MapPin,
   Phone,
@@ -51,43 +52,7 @@ const tokenManager = {
   }
 };
 
-// Toast Component
-const Toast = ({ toast, onClose, isDarkMode }) => {
-  return (
-    <AnimatePresence>
-      {toast.show && (
-        <motion.div
-          initial={{ opacity: 0, y: -20, x: 20 }}
-          animate={{ opacity: 1, y: 0, x: 0 }}
-          exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-          className={`fixed top-6 right-6 z-[100] max-w-sm w-full`}
-        >
-          <div className={`p-4 rounded-xl border shadow-2xl backdrop-blur-xl ${toast.type === 'success'
-            ? 'bg-green-500/10 border-green-500/20 text-green-500'
-            : toast.type === 'error'
-              ? 'bg-red-500/10 border-red-500/20 text-red-500'
-              : 'bg-blue-500/10 border-blue-500/20 text-blue-500'
-            }`}>
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 mt-0.5">
-                {toast.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold tracking-tight">{toast.title}</p>
-                {toast.message && (
-                  <p className="text-xs opacity-80 mt-1 leading-relaxed">{toast.message}</p>
-                )}
-              </div>
-              <button onClick={onClose} className="flex-shrink-0 opacity-50 hover:opacity-100 transition-opacity">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-};
+// Toast is now handled by global ToastProvider
 
 const Contact = () => {
   const navigate = useNavigate();
@@ -107,8 +72,10 @@ const Contact = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
-  const [toast, setToast] = useState({ show: false, type: 'info', title: '', message: '' });
   const [user, setUser] = useState(null);
+
+  // Global toast
+  const { showSuccess, showError: showToastError, showInfo } = useToast();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -132,12 +99,7 @@ const Contact = () => {
     }
   };
 
-  const showToast = (type, title, message = '') => {
-    setToast({ show: true, type, title, message });
-    setTimeout(() => {
-      setToast(prev => ({ ...prev, show: false }));
-    }, 5000);
-  };
+
 
   const validateField = (name, value) => {
     switch (name) {
@@ -178,14 +140,14 @@ const Contact = () => {
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       setTouched({ name: true, email: true, message: true });
-      showToast('error', 'Validation Error', 'Please check the required fields.');
+      showToastError('Validation Error', 'Please check the required fields.');
       return;
     }
 
     setIsSubmitting(true);
     try {
       await mockApiClient.post('/api/contact', formData);
-      showToast('success', 'Message Sent!', 'We have received your message and will get back to you soon.');
+      showSuccess('Message Sent!', 'We have received your message and will get back to you soon.');
       setFormData(prev => ({
         ...prev,
         subject: '',
@@ -195,7 +157,7 @@ const Contact = () => {
       }));
       setTouched({});
     } catch (error) {
-      showToast('error', 'Sending Failed', 'Could not send message. Please try again later.');
+      showToastError('Sending Failed', 'Could not send message. Please try again later.');
     } finally {
       setIsSubmitting(false);
     }
@@ -203,7 +165,7 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0A0A0A] overflow-x-hidden">
-      <Toast toast={toast} onClose={() => setToast(prev => ({ ...prev, show: false }))} isDarkMode={isDarkMode} />
+      {/* Toasts handled by global ToastProvider */}
 
       {/* Content wrapper with scale for "zoomed out" look */}
       <div className="relative z-10 scale-90 origin-top">

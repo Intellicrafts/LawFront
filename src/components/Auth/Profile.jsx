@@ -11,9 +11,10 @@ import {
 } from 'lucide-react';
 import { apiServices } from '../../api/apiService';
 import { useSelector } from 'react-redux';
-import Toast from '../common/Toast';
-import useToast from '../../hooks/useToast';
+import { useToast } from '../../context/ToastContext';
 import { useLocation } from 'react-router-dom';
+import Avatar from '../common/Avatar';
+import { generateInitials, generateAvatarColor } from '../../utils/avatarUtils';
 
 
 
@@ -44,10 +45,8 @@ const UserProfile = () => {
   const [skillInput, setSkillInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // Toast notifications
+  // Toast notifications — using global ToastContext
   const {
-    toast,
-    hideToast,
     showSuccess,
     showError,
     showWarning,
@@ -101,6 +100,8 @@ const UserProfile = () => {
   const [queriesDetails, setQueriesDetails] = useState([]);
   const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [reviewsDetails, setReviewsDetails] = useState([]);
+  const [coverImage, setCoverImage] = useState(null);
+  const [coverImageLoaded, setCoverImageLoaded] = useState(false);
 
   // Show message - updated to use our toast system
   const showMessage = useCallback((type, text, duration = 5000) => {
@@ -500,6 +501,53 @@ const UserProfile = () => {
     fetchUserData(true);
   }, [fetchUserData]);
 
+  // Fetch a random law-related cover image (copyright-free Unsplash images)
+  useEffect(() => {
+    // Curated pool of law-related images from Unsplash (free to use under Unsplash license)
+    const lawCoverImages = [
+      'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&h=300&fit=crop&q=80', // Law books & gavel
+      'https://images.unsplash.com/photo-1505664194779-8beaceb93744?w=800&h=300&fit=crop&q=80', // Library with columns
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=300&fit=crop&q=80', // Modern office
+      'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=300&fit=crop&q=80', // Office workspace
+      'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&h=300&fit=crop&q=80', // Library books
+      'https://images.unsplash.com/photo-1568667256549-094345857637?w=800&h=300&fit=crop&q=80', // Library architecture
+      'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=800&h=300&fit=crop&q=80', // Books stacked
+      'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=800&h=300&fit=crop&q=80', // Modern office interior
+      'https://images.unsplash.com/photo-1436450412740-6b988f486c6b?w=800&h=300&fit=crop&q=80', // Desk workspace
+      'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&h=300&fit=crop&q=80', // Library rows
+    ];
+
+    // Check if we already have a cached cover image for this session
+    const sessionCoverKey = 'profile_cover_image_session';
+    const sessionId = sessionStorage.getItem('currentUserId');
+    const cachedCover = sessionStorage.getItem(sessionCoverKey);
+
+    if (cachedCover && sessionId) {
+      setCoverImage(cachedCover);
+      setCoverImageLoaded(true);
+    } else {
+      // Pick a random image from the pool
+      const randomIndex = Math.floor(Math.random() * lawCoverImages.length);
+      const selectedImage = lawCoverImages[randomIndex];
+
+      // Preload the image then set it
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        setCoverImage(selectedImage);
+        setCoverImageLoaded(true);
+        sessionStorage.setItem(sessionCoverKey, selectedImage);
+      };
+      img.onerror = () => {
+        // Fallback: use a guaranteed working static image
+        const fallbackUrl = lawCoverImages[0];
+        setCoverImage(fallbackUrl);
+        setCoverImageLoaded(true);
+      };
+      img.src = selectedImage;
+    }
+  }, []);
+
   // Validate form
   const validateForm = useCallback(() => {
     const newErrors = {};
@@ -599,27 +647,19 @@ const UserProfile = () => {
         // Clear the preview since we have the actual URL now
         setImagePreview(null);
 
-        hideToast();
         showSuccess('Avatar Updated', 'Your profile picture has been updated successfully!');
-
-        // Reload page after a short delay to show the success message
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
       } else {
         // Keep the preview if no URL returned
-        hideToast();
         showWarning('Upload Complete', 'Avatar uploaded. The image will update after refresh.');
       }
     } catch (error) {
       console.error('Avatar upload failed:', error);
-      hideToast();
       showError('Upload Failed', 'Failed to upload your profile picture. Please try again.');
     } finally {
       setIsUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
-  }, [showSuccess, showError, showWarning, showInfo, hideToast, userInfo?.id]);
+  }, [showSuccess, showError, showWarning, showInfo, userInfo?.id]);
 
   // Save profile changes - enhanced with better error handling and UX
   const handleSave = useCallback(async () => {
@@ -685,8 +725,6 @@ const UserProfile = () => {
       // Send to server
       const updatedProfile = await apiServices.updateUserProfile(updateData);
 
-      // Hide the loading toast
-      hideToast();
 
       // Transform the response back to our component structure
       const transformedData = {
@@ -741,8 +779,6 @@ const UserProfile = () => {
     } catch (error) {
       console.error('Profile update failed:', error);
 
-      // Hide the loading toast
-      hideToast();
 
       // Even if the server update fails, keep the local changes
       setUserInfo(prev => ({ ...prev, ...editForm }));
@@ -772,7 +808,7 @@ const UserProfile = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [editForm, validateForm, showSuccess, showError, showWarning, showInfo, hideToast, userInfo]);
+  }, [editForm, validateForm, showSuccess, showError, showWarning, showInfo, userInfo]);
 
   // Cancel editing - improved with confirmation for unsaved changes
   const handleCancel = useCallback(() => {
@@ -795,10 +831,9 @@ const UserProfile = () => {
     setImagePreview(null);
     setIsEditing(false);
     setErrors({});
-    hideToast(); // Hide any active toasts
 
     if (fileInputRef.current) fileInputRef.current.value = '';
-  }, [userInfo, isEditing, editForm, hideToast, showWarning]);
+  }, [userInfo, isEditing, editForm, showWarning]);
 
   // Handle share - improved with better error handling and UX
   const handleShare = useCallback(async () => {
@@ -976,8 +1011,7 @@ const UserProfile = () => {
   // Main UI with Professional Premium Design
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-gradient-to-br from-slate-50 to-blue-50'}`}>
-      {/* Toast Notification */}
-      <Toast toast={toast} onClose={hideToast} />
+      {/* Toasts are now handled by the global ToastProvider in App.js */}
       <div className="max-w-7xl mx-auto px-4 sm:px-3 lg:px-8 pt-24 sm:pt-20 pb-8 sm:pb-8 md:min-h-[calc(100vh-100px)] md:overflow-y-auto md:pr-2 scrollbar-hide">
         {/* Premium Tab Navigation with Framer Motion */}
         <motion.div
@@ -1040,22 +1074,47 @@ const UserProfile = () => {
                     animate={{ opacity: 1, scale: 1 }}
                     className={`rounded-2xl overflow-hidden backdrop-blur-md border shadow-2xl transition-all duration-300 ${isDarkMode ? 'bg-[#1A1A1A]/40 border-[#2A2A2A]' : 'bg-white/40 border-gray-200'}`}
                   >
-                    {/* Header Decoration */}
-                    <div className="h-20 bg-gradient-to-br from-blue-600/30 via-purple-600/30 to-pink-600/30 relative">
-                      <div className="absolute inset-0 backdrop-blur-[2px]" />
+                    {/* Header Decoration - Law-related Cover Image */}
+                    <div className="h-24 sm:h-28 relative overflow-hidden">
+                      {coverImage ? (
+                        <motion.img
+                          src={coverImage}
+                          alt="Profile cover"
+                          className="w-full h-full object-cover"
+                          initial={{ opacity: 0, scale: 1.05 }}
+                          animate={{ opacity: coverImageLoaded ? 1 : 0, scale: 1 }}
+                          transition={{ duration: 0.8, ease: 'easeOut' }}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-blue-600/30 via-purple-600/30 to-pink-600/30" />
+                      )}
+                      {/* Dark overlay for better text/avatar contrast */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/50" />
+                      {/* Subtle blur overlay for premium feel */}
+                      <div className="absolute inset-0 backdrop-blur-[0.5px]" />
                     </div>
 
                     {/* Avatar Section */}
                     <div className="relative px-4 pb-6">
-                      <div className="flex flex-col items-center -mt-10">
+                      <div className="flex flex-col items-center -mt-12 sm:-mt-14">
                         <div className="relative group">
                           <div className="p-1 rounded-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 shadow-xl">
                             <div className={`rounded-full p-0.5 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
-                              <img
-                                src={imagePreview || userInfo?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo?.name || 'User')}&background=3182ce&color=ffffff&size=128`}
-                                alt="Avatar"
-                                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover transition-transform duration-500 group-hover:scale-105"
-                              />
+                              {imagePreview ? (
+                                <img
+                                  src={imagePreview}
+                                  alt="Avatar preview"
+                                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                />
+                              ) : (
+                                <Avatar
+                                  src={userInfo?.avatar_url}
+                                  name={`${userInfo?.name || ''} ${userInfo?.last_name || ''}`}
+                                  size={96}
+                                  forceRefresh={true}
+                                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                />
+                              )}
                             </div>
                           </div>
 
@@ -1206,7 +1265,6 @@ const UserProfile = () => {
                     <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                       {[
                         { label: 'Full Name', value: `${userInfo.name} ${userInfo.last_name}`, icon: User, key: 'name', secondaryKey: 'last_name' },
-                        { label: 'Professional Title', value: userInfo.title || 'Not specified', icon: Briefcase, key: 'title' },
                         { label: 'Email Address', value: userInfo.email, icon: Mail, key: 'email', required: true },
                         { label: 'Phone Number', value: userInfo.phone || 'Not specified', icon: Phone, key: 'phone' },
                         { label: 'Primary Location', value: userInfo.location || 'Not specified', icon: MapPin, key: 'location' },
