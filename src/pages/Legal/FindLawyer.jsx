@@ -1608,7 +1608,7 @@ const LegalCosultation = () => {
         <>
           {/* Premium Quick Action Cards */}
           <div className="pt-20 sm:pt-24 mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {[
                 {
                   label: 'Nearby Experts',
@@ -1617,14 +1617,6 @@ const LegalCosultation = () => {
                   onClick: fetchNearbyLawyers,
                   loading: nearbyLoading,
                   color: 'text-blue-500'
-                },
-                {
-                  label: 'My Wallet',
-                  desc: `Balance: ₹${walletBalance.toLocaleString('en-IN')}`,
-                  icon: Wallet,
-                  onClick: () => setShowRechargeModal(true),
-                  loading: false,
-                  color: 'text-emerald-500'
                 },
                 {
                   label: showOnlineOnly ? 'Close Quick Call' : 'Quick Call',
