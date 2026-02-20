@@ -265,6 +265,8 @@ const Navbar = ({ isLandingPage = false }) => {
   const dispatch = useDispatch();
   const location = useLocation();
   const isFindLawyer = location.pathname === '/legal-consoltation';
+  const isWalletPage = location.pathname === '/wallet';
+  const isAuthPage = location.pathname === '/auth' || location.pathname === '/signup';
   const userDropdownRef = useRef(null);
   const notificationsDropdownRef = useRef(null);
 
@@ -893,7 +895,7 @@ const Navbar = ({ isLandingPage = false }) => {
 
             {/* Logo Section - Left Aligned */}
             <div className="flex-1 flex justify-start items-center gap-2">
-              {!isLandingPage && !isFindLawyer && (
+              {!isLandingPage && !isFindLawyer && !isWalletPage && !isAuthPage && (
                 <button
                   onClick={() => dispatch(toggleSidebar())}
                   className={`p-1.5 rounded-lg transition-all duration-200 group flex items-center

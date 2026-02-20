@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
   Scale, Check, User as UserIcon, Briefcase as BriefcaseIcon, Shield, Mail, Lock,
@@ -475,6 +476,7 @@ export const Signup = ({ onSignupSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const { showSuccess, showError, showInfo, showWarning } = useToast();
+  const navigate = useNavigate();
 
   // Lawyer-specific fields
   const [enrollmentNo, setEnrollmentNo] = useState('');
@@ -488,9 +490,9 @@ export const Signup = ({ onSignupSuccess }) => {
 
   useEffect(() => {
     if (tokenManager.isAuthenticated()) {
-      window.location.href = '/';
+      navigate('/', { replace: true });
     }
-  }, []);
+  }, [navigate]);
 
   // Email validation helper
   const isValidEmail = (email) => {
@@ -678,13 +680,13 @@ export const Signup = ({ onSignupSuccess }) => {
             onSignupSuccess(response.data);
           }
 
-          window.location.href = redirectUrl;
+          navigate(redirectUrl, { replace: true });
         }, 1500);
 
       } else {
         showWarning('Registration completed but authentication failed. Please try logging in.');
         setTimeout(() => {
-          window.location.href = '/auth';
+          navigate('/auth');
         }, 2000);
       }
 
@@ -811,7 +813,7 @@ export const Signup = ({ onSignupSuccess }) => {
           }
 
           console.log(`Google Signup - Redirecting user (type: ${userType}, role: ${role}) to: ${redirectUrl}`);
-          window.location.href = redirectUrl;
+          navigate(redirectUrl, { replace: true });
         }, 2000); // Wait 2 seconds before redirecting so user can see Toasts
 
       } else {

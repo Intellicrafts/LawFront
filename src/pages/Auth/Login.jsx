@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Mail, Lock, Eye, EyeOff, Scale, Check, AlertCircle, CheckCircle, Smartphone, Globe, Shield } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -257,6 +258,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
   // Get theme from Redux
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -273,9 +275,9 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
   useEffect(() => {
     // Check if user is already authenticated
     if (tokenManager.isAuthenticated()) {
-      window.location.href = '/';
+      navigate('/', { replace: true });
     }
-  }, []);
+  }, [navigate]);
 
   // Input validation functions
   const validateEmail = (email) => {
@@ -456,7 +458,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
           }
 
           console.log(`Redirecting user (type: ${userType}, role: ${role}) to: ${redirectUrl}`);
-          window.location.href = redirectUrl;
+          navigate(redirectUrl, { replace: true });
         }, 1500);
 
       } else {
@@ -557,7 +559,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
           }
 
           console.log(`Google Login - Redirecting user (type: ${userType}, role: ${role}) to: ${redirectUrl}`);
-          window.location.href = redirectUrl;
+          navigate(redirectUrl, { replace: true });
         }, 1500);
 
       } else {
@@ -579,7 +581,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     if (onSwitchToRegister) {
       onSwitchToRegister();
     } else {
-      window.location.href = '/register';
+      navigate('/register');
     }
   };
 
