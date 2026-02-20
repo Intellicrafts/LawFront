@@ -18,7 +18,8 @@ import { chatbotService, CHAT_STATES, AI_MODELS } from '../../services/chatbotAp
 import { useParams, useNavigate } from 'react-router-dom';
 import { chatbotAPI } from '../../api/apiService';
 import { fetchChatSessions } from '../../redux/chatSlice';
-
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 // Custom Lawyer Tia Avatar Component
 const TiaAvatar = ({ isStreaming }) => (
   <div className="relative group">
@@ -46,43 +47,163 @@ const TiaAvatar = ({ isStreaming }) => (
   </div>
 );
 
-// High-Tech Intelligence Log Box
+// High-Tech Intelligence Log Box - Redesigned for Customer Centricity
 const IntelligenceLog = ({ thought, isStreaming, isDark }) => {
   if (!thought && !isStreaming) return null;
+
+  // We parse the raw backend string into UI steps
+  // Example thought: "[STATUS] Analyzing query... \n [CLASSIFICATION] other \n [CACHE_MISS] No relevant cache found"
+  const rawText = thought || '';
+
+  const steps = [];
+  if (rawText.includes('[STATUS]')) steps.push({ label: 'Analyzing Legal Query', active: true, done: rawText.includes('[CLASSIFICATION]') });
+  if (rawText.includes('[CLASSIFICATION]')) {
+    const match = rawText.match(/\[CLASSIFICATION\]\s*([^\n]+)/i);
+    const intent = match ? match[1].trim() : 'Legal Matter';
+    steps.push({ label: `Identified Intent: ${intent}`, active: true, done: rawText.includes('[CACHE') || rawText.includes('keep-alive') });
+  }
+  if (rawText.includes('[CACHE_HIT]')) steps.push({ label: 'Retrieving Prior Legal Precedents...', active: true, done: true });
+  if (rawText.includes('[CACHE_MISS]')) steps.push({ label: 'Consulting Knowledge Base...', active: true, done: true });
+
+  const fallBackSteps = [{ label: 'Initializing Neural Engine...', active: true, done: false }];
+  const displaySteps = steps.length > 0 ? steps : fallBackSteps;
 
   return (
     <motion.div
       initial={{ height: 0, opacity: 0 }}
       animate={{ height: 'auto', opacity: 1 }}
       exit={{ height: 0, opacity: 0 }}
-      className={`mb-4 w-full rounded-2xl border overflow-hidden backdrop-blur-xl transition-all duration-500
-        ${isDark ? 'bg-[#0A0A0A]/40 border-white/5' : 'bg-slate-50/50 border-slate-200'}`}
+      className={`mb-6 w-full max-w-sm rounded-2xl overflow-hidden p-[1px] transition-all duration-700 shadow-2xl
+        ${isDark ? 'bg-gradient-to-br from-emerald-500/20 via-blue-500/10 to-transparent' : 'bg-gradient-to-br from-emerald-400/30 via-blue-400/20 to-transparent'}`}
     >
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-white/5">
-        <div className="flex items-center gap-2">
-          <Cpu size={14} className="text-blue-500" />
-          <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Intelligence Process Log</span>
+      <div className={`relative px-5 py-4 w-full h-full backdrop-blur-2xl rounded-2xl ${isDark ? 'bg-[#0A0A0E]/95' : 'bg-white/95'}`}>
+
+        {/* Header */}
+        <div className={`flex items-center justify-between pb-3 mb-3 border-b ${isDark ? 'border-white/5' : 'border-slate-200'}`}>
+          <div className="flex items-center gap-2.5">
+            <Cpu className={isStreaming ? "text-emerald-400 animate-pulse" : "text-emerald-500"} size={14} />
+            <span className={`text-[10px] font-black uppercase tracking-[0.15em] ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+              Intelligence Pipeline
+            </span>
+          </div>
+          {isStreaming && (
+            <div className="flex gap-[3px]">
+              {[1, 2, 3].map(i => (
+                <motion.div
+                  key={i}
+                  animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
+                  transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.2 }}
+                  className="w-1 h-1 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                />
+              ))}
+            </div>
+          )}
         </div>
-        {isStreaming && (
-          <div className="flex gap-1">
-            {[1, 2, 3].map(i => (
-              <motion.div
-                key={i}
-                animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
-                transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.2 }}
-                className="w-1 h-1 rounded-full bg-blue-500"
-              />
-            ))}
-          </div>
-        )}
+
+        {/* Steps */}
+        <div className="flex flex-col gap-3">
+          {displaySteps.map((step, idx) => (
+            <div key={idx} className="flex items-start gap-4">
+              <div className="relative flex flex-col items-center mt-0.5">
+                {/* Step Circle */}
+                <div className={`w-4 h-4 rounded-full flex items-center justify-center z-10 shadow-sm transition-all duration-500
+                  ${step.done ? 'bg-gradient-to-tr from-emerald-500 to-emerald-400 shadow-emerald-500/30'
+                    : 'bg-[#1a1a1a] border border-blue-500/50'}`}>
+                  {step.done ? (
+                    <CheckCircle size={10} className="text-white drop-shadow-md" />
+                  ) : (
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                  )}
+                </div>
+                {/* Connecting Line */}
+                {idx !== displaySteps.length - 1 && (
+                  <div className={`absolute top-4 bottom-[-16px] w-[1px] ${step.done ? 'bg-gradient-to-b from-emerald-500/50 to-transparent' : 'bg-gray-300/30 dark:bg-gray-700/50'}`} />
+                )}
+              </div>
+
+              <div className={`text-[12px] font-semibold pt-0.5 tracking-wide transition-colors duration-500 ${step.done ? (isDark ? 'text-gray-200' : 'text-slate-700') : (isDark ? 'text-blue-400' : 'text-blue-600')}`}>
+                {step.label}
+                {!step.done && isStreaming && (
+                  <span className="inline-block ml-1 opacity-70 animate-pulse">...</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
       </div>
-      <div className="p-4 text-[12px] font-mono leading-relaxed max-h-[160px] overflow-y-auto custom-scrollbar">
-        <FormattedResponse text={thought || 'Initializing neural channels...'} isDark={isDark} />
-        {isStreaming && (
-          <div className="mt-2 text-blue-500/60 lowercase italic animate-pulse">
-            &gt; processing metadata streams...
+    </motion.div>
+  );
+};
+
+const AmbientWaitingState = ({ isDark }) => {
+  const [phase, setPhase] = useState(0);
+  const phrases = [
+    "Structuring legal framework...",
+    "Reviewing statutory compiliances...",
+    "Cross-referencing judicial precedents...",
+    "Synthesizing final counsel..."
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPhase((prev) => (prev + 1) % phrases.length);
+    }, 2800); // Slightly faster rotation
+    return () => clearInterval(interval);
+  }, [phrases.length]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`relative w-full max-w-sm rounded-2xl overflow-hidden p-[1px] mb-6 ${isDark ? 'bg-gradient-to-b from-blue-500/30 to-purple-500/10' : 'bg-gradient-to-b from-blue-400/30 to-indigo-400/10'}`}
+    >
+      <div className={`relative px-5 py-4 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-xl ${isDark ? 'bg-[#0f0f13]/90' : 'bg-white/95'}`}>
+
+        {/* Animated Background Scanline */}
+        <motion.div
+          animate={{ y: ['-100%', '200%'] }}
+          transition={{ repeat: Infinity, duration: 3, ease: 'linear' }}
+          className="absolute inset-0 w-full h-1/2 bg-gradient-to-b from-transparent via-blue-500/10 to-transparent pointer-events-none"
+        />
+
+        <div className="flex items-center gap-4 relative z-10">
+          {/* Breathing Neural Core */}
+          <div className="relative flex items-center justify-center w-8 h-8">
+            <motion.div
+              animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.8, 0.4] }}
+              transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+              className={`absolute inset-0 rounded-full blur-md ${isDark ? 'bg-blue-500' : 'bg-blue-600'}`}
+            />
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
+              className="absolute inset-0 rounded-full border border-blue-400/30 border-t-blue-400"
+            />
+            <div className={`w-3 h-3 rounded-full shadow-[0_0_12px_rgba(59,130,246,0.9)] ${isDark ? 'bg-white' : 'bg-blue-50'}`} />
           </div>
-        )}
+
+          <div className="flex flex-col justify-center flex-1 h-10 overflow-hidden">
+            <span className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-1 ${isDark ? 'text-blue-400/80' : 'text-blue-600/80'}`}>
+              Neural Engine Active
+            </span>
+            <div className="relative h-5">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={phase}
+                  initial={{ y: 20, opacity: 0, filter: 'blur(4px)' }}
+                  animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ y: -20, opacity: 0, filter: 'blur(4px)' }}
+                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} // Spring-like easing
+                  className={`absolute inset-0 text-[14px] font-semibold tracking-wide flex items-center ${isDark ? 'text-gray-100' : 'text-slate-800'}`}
+                >
+                  {phrases[phase]}
+                </motion.span>
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+
       </div>
     </motion.div>
   );
@@ -101,6 +222,10 @@ const StreamingText = ({ text, isDark }) => {
     }
   }, [text]);
 
+  if (!text) {
+    return <AmbientWaitingState isDark={isDark} />;
+  }
+
   return (
     <div className={`relative ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
       <FormattedResponse text={text} isDark={isDark} isStreaming={true} cursorAtEnd={true} />
@@ -115,215 +240,68 @@ const StreamingText = ({ text, isDark }) => {
 const FormattedResponse = ({ text, isDark, isStreaming = false, cursorAtEnd = false }) => {
   if (!text) return null;
 
-  // New Heuristic: Ensure points and numbers start on new lines for better readability
-  const optimizedText = (text || '')
-    .replace(/(\d+\.\s+[A-Z\u0900-\u097F])/g, '\n$1') // New line before numbered points (Eng/Hindi)
-    .replace(/([•\*\-])\s+/g, '\n$1 ')                 // New line before bullet points
-    .replace(/(\n{3,})/g, '\n\n')                      // Collapse excessive newlines
-    .trim();
-
-  // Professional Syntax Highlighter (Lightweight)
-  const highlightLegalCode = (code) => {
-    if (!code) return '';
-    const keywords = /\b(SECTION|ARTICLE|CLAUSE|PURSUANT|PROVIDED|WHEREAS|THEREFORE|NOTWITHSTANDING|AGREEMENT|PARTY|CONTRACT|LIABILITY|WARRANTY|INDEMNITY)\b/g;
-    const values = /\b(true|false|null|\d+)\b/g;
-    const strings = /(['"])(?:(?=(\\?))\2.)*?\1/g;
-
-    return code
-      .replace(strings, m => `<span class="text-emerald-400 font-medium">${m}</span>`)
-      .replace(keywords, m => `<span class="text-blue-400 font-black">${m}</span>`)
-      .replace(values, m => `<span class="text-amber-400 font-medium">${m}</span>`);
-  };
-
-  // Process sections of the text (Code blocks, tables, etc.)
-  const parseContent = (content) => {
-    const sections = (content || '').split(/(```[\s\S]*?```)/g);
-
-    return sections.map((section, sIdx) => {
-      if (section.startsWith('```')) {
-        const match = section.match(/```(\w+)?\n([\s\S]*?)\n?```/);
-        const language = match?.[1] || 'Draft';
-        const code = match?.[2] || '';
-
-        return (
-          <div key={sIdx} className={`my-6 rounded-2xl border overflow-hidden font-mono text-[13.5px] leading-relaxed shadow-xl ${isDark ? 'bg-[#0A0A0A] border-white/10' : 'bg-slate-900 text-slate-100 border-slate-800'
-            }`}>
-            <div className="px-5 py-2.5 border-b border-white/5 flex justify-between items-center bg-white/5 backdrop-blur-md">
-              <div className="flex items-center gap-3">
-                <div className="flex gap-1.5 leading-none">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F56] shadow-sm" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E] shadow-sm" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#27C93F] shadow-sm" />
-                </div>
-                <span className="opacity-60 uppercase tracking-[0.25em] text-[10px] font-black">{language}</span>
-              </div>
-              <button
-                onClick={() => navigator.clipboard.writeText(code)}
-                className="p-1 hover:text-blue-400 transition-all active:scale-90"
-                title="Copy Code"
-              >
-                <Copy size={14} />
-              </button>
-            </div>
-            <pre className="p-5 overflow-x-auto selection:bg-blue-500/30 custom-scrollbar">
-              <code dangerouslySetInnerHTML={{ __html: highlightLegalCode(code) }} />
-            </pre>
-          </div>
-        );
+  return (
+    <div className={`prose max-w-none w-full space-y-2 animate-in fade-in duration-700 slide-in-from-bottom-2
+      ${isDark
+        ? 'prose-invert prose-p:text-gray-300 prose-headings:text-white prose-strong:text-white prose-a:text-blue-400 marker:text-blue-500'
+        : 'prose-p:text-slate-700/90 prose-headings:text-slate-900 prose-strong:text-slate-900 prose-a:text-blue-600 marker:text-blue-600'
       }
-
-      const lines = section.split('\n');
-      return (
-        <div key={sIdx} className="space-y-4">
-          {lines.map((line, lIdx) => {
-            const trimmed = line.trim();
-            if (!trimmed) return <div key={lIdx} className="h-1" />;
-
-            // Table Detection
-            if (trimmed.startsWith('|')) {
-              if (trimmed.includes('---')) return null;
-              const cells = trimmed.split('|').map(c => c.trim()).filter(c => c !== '');
+      prose-h1:text-2xl prose-h1:font-black prose-h1:bg-gradient-to-r prose-h1:from-blue-600 prose-h1:to-indigo-600 prose-h1:bg-clip-text prose-h1:text-transparent
+      prose-h2:text-xl prose-h2:font-extrabold prose-h2:tracking-tight prose-h2:mt-8 prose-h2:mb-4
+      prose-h3:text-lg prose-h3:font-bold prose-h3:mt-6 prose-h3:mb-3
+      prose-p:leading-relaxed prose-p:text-[15.5px] prose-p:tracking-tight prose-p:my-3
+      prose-ul:my-4 prose-ul:list-disc prose-li:my-1 prose-li:leading-relaxed
+      prose-ol:my-4 prose-ol:list-decimal
+      prose-table:my-6 prose-table:w-full prose-table:rounded-xl prose-table:overflow-hidden prose-table:border prose-table:shadow-sm
+      ${isDark ? 'prose-table:border-white/10' : 'prose-table:border-slate-200'}
+      prose-th:bg-blue-500/10 prose-th:px-4 prose-th:py-3 prose-th:text-left prose-th:font-semibold prose-th:text-blue-600
+      prose-td:px-4 prose-td:py-3 prose-td:border-t prose-td:border-gray-500/10
+      prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-blue-500/5 prose-blockquote:py-2 prose-blockquote:px-5 prose-blockquote:rounded-r-lg prose-blockquote:italic prose-blockquote:my-6
+      prose-a:underline prose-a:decoration-blue-500/30 prose-a:underline-offset-4 hover:prose-a:text-blue-500 prose-a:transition-colors
+      prose-strong:font-bold prose-strong:drop-shadow-sm
+    `}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          code: ({ node, inline, className, children, ...props }) => {
+            const match = /language-(\w+)/.exec(className || '');
+            const language = match ? match[1] : 'text';
+            if (!inline) {
               return (
-                <div key={lIdx} className={`overflow-hidden my-6 rounded-2xl border shadow-lg ${isDark ? 'border-white/10 bg-white/5 backdrop-blur-sm' : 'border-slate-200 bg-white'}`}>
-                  <table className="min-w-full divide-y divide-gray-500/10">
-                    <tbody className="divide-y divide-gray-500/10">
-                      <tr className="transition-colors hover:bg-blue-500/5">
-                        {cells.map((cell, cIdx) => (
-                          <td key={cIdx} className={`px-5 py-4 text-[14px] border-x border-gray-500/5 ${cIdx === 0 ? 'font-black text-blue-500 bg-blue-500/10' : ''}`}>
-                            {parseInline(cell, isDark)}
-                          </td>
-                        ))}
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              );
-            }
-
-            // Heading Detection
-            const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)/);
-            if (headingMatch) {
-              const level = headingMatch[1].length;
-              const content = headingMatch[2];
-              return (
-                <div key={lIdx} className={`${level === 1 ? 'pt-10 pb-4 border-b border-gray-500/10 mb-6' : 'pt-7 pb-3'} group first:pt-0`}>
-                  <h4 className={`font-black tracking-tight flex items-center gap-4 ${isDark ? 'text-white' : 'text-slate-900 font-extrabold'
-                    } ${level === 1 ? 'text-2xl' : level === 2 ? 'text-xl' : 'text-lg'}`}>
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-blue-500 blur-[10px] opacity-40 rounded-full" />
-                      <span className="relative w-1.5 h-6 rounded-full bg-gradient-to-b from-blue-400 to-indigo-600 block shadow-lg" />
+                <div className={`not-prose my-6 rounded-2xl border overflow-hidden font-mono text-[13.5px] leading-relaxed shadow-xl ${isDark ? 'bg-[#0A0A0A] border-white/10' : 'bg-slate-900 border-slate-800 text-slate-100'}`}>
+                  <div className="px-5 py-2.5 border-b border-white/5 flex justify-between items-center bg-white/5 backdrop-blur-md">
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-1.5 leading-none">
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F56] shadow-sm" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E] shadow-sm" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#27C93F] shadow-sm" />
+                      </div>
+                      <span className="opacity-70 uppercase tracking-[0.2em] text-[10.5px] font-black text-blue-400">{language}</span>
                     </div>
-                    {parseInline(content, isDark)}
-                  </h4>
+                    <button onClick={() => navigator.clipboard.writeText(String(children))} className="hover:text-blue-400 transition-colors active:scale-95 p-1" title="Copy Code">
+                      <Copy size={14} />
+                    </button>
+                  </div>
+                  <pre className="p-5 overflow-x-auto selection:bg-blue-500/30 custom-scrollbar">
+                    <code className={className} {...props}>{children}</code>
+                  </pre>
                 </div>
               );
             }
-
-            // List Detection
-            const listMatch = trimmed.match(/^(\d+\.|[\*\-\•])\s+(.*)/);
-            if (listMatch) {
-              const content = listMatch[2];
-              const isNumber = /\d+\./.test(listMatch[1]);
-              return (
-                <div key={lIdx} className="flex gap-5 pl-2 items-start group py-1">
-                  <div className={`mt-[6px] shrink-0 flex items-center justify-center w-7 h-7 rounded-xl text-[12px] font-black shadow-xl transition-all group-hover:scale-110 group-hover:rotate-6 ${isDark ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-blue-500/10' : 'bg-white text-blue-600 border border-blue-100 shadow-blue-100'
-                    }`}>
-                    {isNumber ? listMatch[1].replace('.', '') : '§'}
-                  </div>
-                  <div className={`flex-1 text-[16px] leading-[1.6] py-0.5 tracking-tight ${isDark ? 'text-gray-200' : 'text-slate-700 font-medium'}`}>
-                    {parseInline(content, isDark)}
-                  </div>
-                </div>
-              );
-            }
-
-            // Paragraph
-            return (
-              <p key={lIdx} className={`leading-relaxed text-[15.5px] tracking-tight ${isDark ? 'text-gray-300' : 'text-slate-700/90 font-medium'
-                }`}>
-                {parseInline(trimmed, isDark)}
-                {isStreaming && cursorAtEnd && lIdx === lines.length - 1 && section === sections[sections.length - 1] && (
-                  <span className="relative inline-block ml-2 top-[3px]">
-                    <span className="absolute inset-0 bg-blue-500/60 blur-[8px] rounded-full animate-pulse" />
-                    <span className="relative block w-2 h-4 bg-blue-600 rounded-sm animate-[pulse_0.8s_infinite] shadow-[0_0_12px_rgba(37,99,235,0.6)]" />
-                  </span>
-                )}
-              </p>
-            );
-          })}
-        </div>
-      );
-    });
-  };
-
-  return <div className="space-y-6 animate-in fade-in duration-1000 slide-in-from-bottom-2">{parseContent(optimizedText)}</div>;
-};
-
-/**
- * High-Speed Inline Parser
- * Handles Bold, Italic, Links, and Highlighting
- */
-const parseInline = (text, isDark) => {
-  if (typeof text !== 'string') return text;
-
-  // Process segments for Markdown features
-  // 1. Links: [text](url)
-  // 2. Bold: **text**
-  // 3. Italic: *text* or _text_
-  // 4. Highlight: ==text==
-
-  const segments = text.split(/(\[.*?\]\(.*?\))|(\*\*.*?\*\*)|(\*.*?\*)|(__.*?__)|(==.*?==)/g);
-
-  return segments.map((seg, i) => {
-    if (!seg) return null;
-
-    // Link: [text](url)
-    if (seg.startsWith('[') && seg.includes('](')) {
-      const match = seg.match(/\[(.*?)\]\((.*?)\)/);
-      if (match) {
-        return (
-          <a
-            key={i}
-            href={match[2]}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 hover:text-blue-600 underline decoration-blue-500/30 underline-offset-4 transition-all"
-          >
-            {match[1]}
-          </a>
-        );
-      }
-    }
-
-    // Bold: **text**
-    if (seg.startsWith('**') && seg.endsWith('**')) {
-      return (
-        <strong key={i} className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'} drop-shadow-sm`}>
-          {seg.slice(2, -2)}
-        </strong>
-      );
-    }
-
-    // Italic: *text* or _text_
-    if ((seg.startsWith('*') && seg.endsWith('*')) || (seg.startsWith('_') && seg.endsWith('_'))) {
-      return (
-        <em key={i} className="italic opacity-90">
-          {seg.slice(1, -1)}
-        </em>
-      );
-    }
-
-    // Highlight: ==text==
-    if (seg.startsWith('==') && seg.endsWith('==')) {
-      return (
-        <mark key={i} className={`px-1 rounded-sm ${isDark ? 'bg-blue-500/30 text-blue-200' : 'bg-blue-100 text-blue-900'} font-medium`}>
-          {seg.slice(2, -2)}
-        </mark>
-      );
-    }
-
-    return seg;
-  });
+            return <code className={`px-1.5 py-0.5 rounded-md text-[13px] font-mono ${isDark ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-50 text-blue-700'}`} {...props}>{children}</code>;
+          },
+        }}
+      >
+        {text}
+      </ReactMarkdown>
+      {isStreaming && cursorAtEnd && (
+        <span className="relative inline-block ml-2 top-[2px]">
+          <span className="absolute inset-0 bg-blue-500/60 blur-[8px] rounded-full animate-pulse" />
+          <span className="relative block w-2 h-4 bg-blue-600 rounded-sm animate-[pulse_0.8s_infinite] shadow-[0_0_12px_rgba(37,99,235,0.6)]" />
+        </span>
+      )}
+    </div>
+  );
 };
 
 /**
