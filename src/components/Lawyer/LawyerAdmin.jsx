@@ -179,7 +179,7 @@ const TopNavbar = ({
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 blur-sm opacity-0 group-hover:opacity-70 transition-opacity duration-300 -z-10"></div>
           </div>
           <h1 className={`text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent`}>
-            Mera Vakil
+            MeraBakil
           </h1>
         </div>
       </div>
@@ -782,7 +782,7 @@ const LawyerAdmin = () => {
         {/* Subtle background branding */}
         <div className="absolute bottom-12 left-0 right-0 text-center opacity-10 pointer-events-none">
           <span className={`text-[14px] font-black tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            MERA VAKIL
+            MERABAKIL
           </span>
         </div>
       </div>

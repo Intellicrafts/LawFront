@@ -55,16 +55,16 @@ const Footer = () => {
           <div className="col-span-2 md:col-span-1 lg:col-span-2">
             <Link to="/" className="inline-flex items-center gap-2 mb-3 group">
               <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent group-hover:from-blue-500 group-hover:to-blue-300 transition-all">
-                Mera Vakil
+                MeraBakil
               </span>
             </Link>
             <p className={`text-xs leading-relaxed mb-4 max-w-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
               India's AI-powered legal marketplace. Get instant legal guidance, connect with verified lawyers, and manage legal documents — all from one platform.
             </p>
             <div className="space-y-1.5">
-              <a href="mailto:info@meravakil.com" className={`flex items-center gap-2 text-xs transition-colors ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}>
+              <a href="mailto:info@merabakil.com" className={`flex items-center gap-2 text-xs transition-colors ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}>
                 <Mail className="h-3 w-3" />
-                info@meravakil.com
+                info@merabakil.com
               </a>
               <a href="tel:+917017858269" className={`flex items-center gap-2 text-xs transition-colors ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}>
                 <Phone className="h-3 w-3" />
@@ -145,7 +145,7 @@ const Footer = () => {
       <div className={`border-t ${isDark ? 'border-gray-800/60' : 'border-gray-100'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className={`text-[11px] font-medium ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
-            © {currentYear} Mera Vakil. All rights reserved.
+            © {currentYear} MeraBakil. All rights reserved.
           </p>
           <div className="flex items-center gap-3">
             <span className={`flex items-center gap-1 text-[10px] font-medium ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>

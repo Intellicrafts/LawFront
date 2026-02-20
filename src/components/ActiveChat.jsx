@@ -480,7 +480,7 @@ const ActiveChat = ({
                 </motion.div>
 
                 <h3 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 mb-3">
-                  Mera Vakil
+                  MeraBakil
                 </h3>
                 <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 mb-8 max-w-lg">
                   Your AI Legal Assistant for Indian Law

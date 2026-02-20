@@ -191,7 +191,7 @@ const ProfessionalTour = ({ isOpen, onClose, onComplete, isDark }) => {
         {
           element: '[data-tour="welcome-title"]',
           popover: {
-            title: '<div class="tour-title-compact"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4M12 16h.01"></path></svg> Welcome to Mera Vakil</div>',
+            title: '<div class="tour-title-compact"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4M12 16h.01"></path></svg> Welcome to MeraBakil</div>',
             description: '<div class="tour-image-container"><img src="/tour-step-1.svg" alt="Legal Excellence" class="tour-step-image" /></div><div class="tour-description-compact"><strong>Your trusted AI legal companion</strong><br/>Get instant answers to legal questions, draft documents professionally, and receive expert guidance on Indian law—all in one intelligent platform.</div>',
             side: 'bottom',
             align: 'center'

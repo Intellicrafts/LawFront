@@ -31,7 +31,7 @@ const Logo = () => {
     <div className="flex justify-center mb-4">
       <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${isDarkMode ? 'bg-brand-500/10' : 'bg-brand-50'}`}>
         <Scale size={22} className="text-brand-500" strokeWidth={2.5} />
-        <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-brand-900'}`}>Mera Vakil</span>
+        <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-brand-900'}`}>MeraBakil</span>
       </div>
     </div>
   );
@@ -631,7 +631,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
               Welcome Back
             </h1>
             <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              Sign in to your Mera Vakil account
+              Sign in to your MeraBakil account
             </p>
           </div>
 
@@ -747,7 +747,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
 
             <div className="pt-6 border-t border-gray-100 dark:border-gray-800 text-center">
               <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                New to Mera Vakil?{' '}
+                New to MeraBakil?{' '}
                 <button
                   type="button"
                   onClick={handleSwitchToRegister}

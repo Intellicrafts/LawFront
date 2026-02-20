@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { FileText, Wallet, Bot, AlertTriangle, Mail } from 'lucide-react';
 
 /* ──────────────────────────────────────────────────
-   Terms of Service Page — Mera Vakil
+   Terms of Service Page — MeraBakil
    Covers platform role, wallet terms, AI limitations,
    and user/lawyer obligations.
    ────────────────────────────────────────────────── */
@@ -35,9 +35,9 @@ const TermsOfService = () => {
 
                 {/* Platform Role */}
                 <div className={sectionClass}>
-                    <h2 className={headingClass}>1. About Mera Vakil</h2>
+                    <h2 className={headingClass}>1. About MeraBakil</h2>
                     <p className={textClass}>
-                        Mera Vakil is a technology marketplace that connects clients with verified legal professionals.
+                        MeraBakil is a technology marketplace that connects clients with verified legal professionals.
                         We are <strong>not a law firm</strong> and do not provide legal advice directly. Lawyers on our
                         platform are independent professionals responsible for the quality of their services.
                     </p>
@@ -50,7 +50,7 @@ const TermsOfService = () => {
                         2. Wallet & Credits
                     </h2>
                     <p className={`${textClass} mb-3`}>
-                        Mera Vakil operates on a wallet-based credit system. By using credits, you agree to the following:
+                        MeraBakil operates on a wallet-based credit system. By using credits, you agree to the following:
                     </p>
                     <ul className={listClass}>
                         <li><strong>Dual Balance:</strong> Your wallet contains two pools — earned balance (from recharges) and promotional balance (from welcome bonuses, coupons, referrals).</li>
@@ -107,7 +107,7 @@ const TermsOfService = () => {
                         6. Limitation of Liability
                     </h2>
                     <p className={textClass}>
-                        Mera Vakil shall not be liable for any direct, indirect, incidental, or consequential damages
+                        MeraBakil shall not be liable for any direct, indirect, incidental, or consequential damages
                         arising from the use of our platform, including but not limited to: reliance on AI-generated
                         content, outcomes of lawyer consultations, or wallet transaction disputes. Our total liability
                         shall not exceed the amount of credits in your wallet at the time of the claim.
@@ -118,7 +118,7 @@ const TermsOfService = () => {
                 <div className={sectionClass}>
                     <h2 className={headingClass}>7. Governing Law</h2>
                     <p className={textClass}>
-                        These terms are governed by the laws of India. Any disputes arising from the use of Mera Vakil
+                        These terms are governed by the laws of India. Any disputes arising from the use of MeraBakil
                         shall be subject to the exclusive jurisdiction of the courts in Greater Noida, Uttar Pradesh, India.
                     </p>
                 </div>
@@ -131,7 +131,7 @@ const TermsOfService = () => {
                     </h2>
                     <p className={textClass}>
                         For questions about these terms, contact us at{' '}
-                        <a href="mailto:legal@meravakil.com" className="text-brand-500 hover:underline">legal@meravakil.com</a>.
+                        <a href="mailto:legal@merabakil.com" className="text-brand-500 hover:underline">legal@merabakil.com</a>.
                     </p>
                 </div>
             </div>

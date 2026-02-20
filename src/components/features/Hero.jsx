@@ -1454,7 +1454,7 @@ const Hero = () => {
                       transition={{ delay: 0.3, duration: 0.5 }}
                       className={`text-xl sm:text-2xl font-bold mb-2 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent`}
                     >
-                      Welcome to Mera Vakil
+                      Welcome to MeraBakil
                     </motion.h2>
 
                     <motion.p

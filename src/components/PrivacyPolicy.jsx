@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { Shield, Lock, Database, Globe, Mail } from 'lucide-react';
 
 /* ──────────────────────────────────────────────────
-   Privacy Policy Page — Mera Vakil
+   Privacy Policy Page — MeraBakil
    Covers data collection, usage, cookies, third-party
    services, and user rights under Indian IT Act.
    ────────────────────────────────────────────────── */
@@ -36,7 +36,7 @@ const PrivacyPolicy = () => {
                 {/* Introduction */}
                 <div className={sectionClass}>
                     <p className={textClass}>
-                        Mera Vakil ("we", "our", or "us") operates the meravakil.com website and platform. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform. By using Mera Vakil, you consent to the practices described in this policy.
+                        MeraBakil ("we", "our", or "us") operates the merabakil.com website and platform. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform. By using MeraBakil, you consent to the practices described in this policy.
                     </p>
                 </div>
 
@@ -116,7 +116,7 @@ const PrivacyPolicy = () => {
                     </h2>
                     <p className={textClass}>
                         For privacy-related inquiries, contact our Data Protection Officer at{' '}
-                        <a href="mailto:privacy@meravakil.com" className="text-brand-500 hover:underline">privacy@meravakil.com</a>.
+                        <a href="mailto:privacy@merabakil.com" className="text-brand-500 hover:underline">privacy@merabakil.com</a>.
                     </p>
                 </div>
             </div>

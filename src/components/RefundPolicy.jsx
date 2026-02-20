@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { Wallet, Clock, AlertTriangle, CheckCircle, Mail, RefreshCw } from 'lucide-react';
 
 /* ──────────────────────────────────────────────────
-   Refund Policy Page — Mera Vakil
+   Refund Policy Page — MeraBakil
    Covers wallet refunds, consultation refunds,
    AI query refunds, and dispute resolution.
    ────────────────────────────────────────────────── */
@@ -37,7 +37,7 @@ const RefundPolicy = () => {
                 <div className={sectionClass}>
                     <h2 className={headingClass}>1. Overview</h2>
                     <p className={textClass}>
-                        Mera Vakil operates on a wallet-based credit system. Refund eligibility depends on the type
+                        MeraBakil operates on a wallet-based credit system. Refund eligibility depends on the type
                         of service consumed. This policy outlines how refunds are processed for each service type and
                         the timelines involved.
                     </p>
@@ -158,7 +158,7 @@ const RefundPolicy = () => {
                         If you believe you are entitled to a refund that has not been processed, you may raise a
                         dispute by contacting our support team. All disputes must be raised within 30 days of the
                         transaction date. Our team will review the dispute and respond within 5 business days.
-                        Decisions made by the Mera Vakil dispute resolution team are final.
+                        Decisions made by the MeraBakil dispute resolution team are final.
                     </p>
                 </div>
 
@@ -170,7 +170,7 @@ const RefundPolicy = () => {
                     </h2>
                     <p className={textClass}>
                         For refund requests or questions about this policy, contact us at{' '}
-                        <a href="mailto:support@meravakil.com" className="text-brand-500 hover:underline">support@meravakil.com</a>.
+                        <a href="mailto:support@merabakil.com" className="text-brand-500 hover:underline">support@merabakil.com</a>.
                     </p>
                 </div>
             </div>

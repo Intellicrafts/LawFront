@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { AlertTriangle, Bot, Scale, ShieldAlert, Mail } from 'lucide-react';
 
 /* ──────────────────────────────────────────────────
-   Legal Disclaimer Page — Mera Vakil
+   Legal Disclaimer Page — MeraBakil
    Clarifies that the platform is a technology
    marketplace, not a law firm, and that AI responses
    are informational only.
@@ -40,9 +40,9 @@ const LegalDisclaimer = () => {
                                 Important Notice
                             </h2>
                             <p className={textClass}>
-                                Mera Vakil is a <strong>technology platform and marketplace</strong> — it is not a law firm,
+                                MeraBakil is a <strong>technology platform and marketplace</strong> — it is not a law firm,
                                 does not practice law, and does not provide legal advice. Use of the platform does not create
-                                an attorney-client relationship between you and Mera Vakil.
+                                an attorney-client relationship between you and MeraBakil.
                             </p>
                         </div>
                     </div>
@@ -55,7 +55,7 @@ const LegalDisclaimer = () => {
                         AI Assistant Limitations
                     </h2>
                     <p className={`${textClass} mb-3`}>
-                        The AI legal assistant on Mera Vakil is designed to provide general informational guidance
+                        The AI legal assistant on MeraBakil is designed to provide general informational guidance
                         based on publicly available legal knowledge. Please understand:
                     </p>
                     <ul className={`list-disc list-inside space-y-2 text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -74,7 +74,7 @@ const LegalDisclaimer = () => {
                         Lawyer Services
                     </h2>
                     <p className={textClass}>
-                        Lawyers listed on Mera Vakil are independent legal professionals. Mera Vakil does not control,
+                        Lawyers listed on MeraBakil are independent legal professionals. MeraBakil does not control,
                         supervise, or direct the professional services they provide. We verify lawyer credentials through
                         Bar Council records but make no guarantees about the quality or outcome of their services.
                         The relationship between a client and a lawyer on the platform is governed by applicable
@@ -116,7 +116,7 @@ const LegalDisclaimer = () => {
                     </h2>
                     <p className={textClass}>
                         For legal concerns or compliance inquiries, contact us at{' '}
-                        <a href="mailto:legal@meravakil.com" className="text-brand-500 hover:underline">legal@meravakil.com</a>.
+                        <a href="mailto:legal@merabakil.com" className="text-brand-500 hover:underline">legal@merabakil.com</a>.
                     </p>
                 </div>
             </div>

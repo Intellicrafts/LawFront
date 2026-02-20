@@ -162,7 +162,7 @@ const OneTapPrompt = ({ onGoogleLogin, onDismiss, isDarkMode }) => {
             </div>
             <p className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'
               }`}>
-              Sign in to meravakil.com with google.com
+              Sign in to merabakil.com with google.com
             </p>
           </div>
 
@@ -264,6 +264,7 @@ const Navbar = ({ isLandingPage = false }) => {
   const { isOpen: sidebarOpen } = useSelector((state) => state.sidebar);
   const dispatch = useDispatch();
   const location = useLocation();
+  const isFindLawyer = location.pathname === '/legal-consoltation';
   const userDropdownRef = useRef(null);
   const notificationsDropdownRef = useRef(null);
 
@@ -299,18 +300,8 @@ const Navbar = ({ isLandingPage = false }) => {
   // Watch for user authentication changes to trigger tour
   useEffect(() => {
     if (isAuthenticated && user && user.id) {
-      // Only check tour for newly authenticated users (avoid multiple triggers)
-      const previousUserId = sessionStorage.getItem('currentUserId');
-      const currentUserId = user.id.toString();
-
-      if (previousUserId !== currentUserId) {
-        console.log('New user session detected, checking tour status');
-        sessionStorage.setItem('currentUserId', currentUserId);
-        checkAndStartTourForNewUser(user);
-      }
-    } else if (!isAuthenticated) {
-      // Clear session when user logs out
-      sessionStorage.removeItem('currentUserId');
+      // Only check tour for newly signed up users
+      checkAndStartTourForNewUser();
     }
   }, [isAuthenticated, user?.id]);
 
@@ -702,29 +693,8 @@ const Navbar = ({ isLandingPage = false }) => {
   // - Manual tour restart is always available via navbar button
   // ===============================
 
-  const getTourStorageKey = (userId) => {
-    return `hasSeenOnboardingTour_${userId || 'guest'}`;
-  };
-
-  const hasUserSeenTour = (userId) => {
-    const storageKey = getTourStorageKey(userId);
-    return localStorage.getItem(storageKey) === 'true';
-  };
-
-  const markTourAsCompleted = (userId) => {
-    const storageKey = getTourStorageKey(userId);
-    localStorage.setItem(storageKey, 'true');
-    // Also set generic flag for backward compatibility
-    localStorage.setItem('hasSeenOnboardingTour', 'true');
-  };
-
-  // Handle start tour
+  // Handle start tour manually via button
   const handleStartTour = () => {
-    // Clear any existing tour completion flag to allow restart
-    if (user?.id) {
-      localStorage.removeItem(getTourStorageKey(user.id));
-    }
-    localStorage.removeItem('hasSeenOnboardingTour');
     setShowOnboardingTour(true);
   };
 
@@ -735,99 +705,48 @@ const Navbar = ({ isLandingPage = false }) => {
 
   const handleTourComplete = () => {
     setShowOnboardingTour(false);
-    if (user?.id) {
-      markTourAsCompleted(user.id);
-      console.log('✅ Tour completed and marked for user:', user.id);
-    } else {
-      localStorage.setItem('hasSeenOnboardingTour', 'true');
-      console.log('✅ Tour completed (no user ID available)');
-    }
+    console.log('✅ Tour completed');
   };
 
-  // Auto-start tour for first-time users
-  const checkAndStartTourForNewUser = (userData) => {
-    if (!userData || !userData.id) {
-      console.log('No user data or user ID available for tour check');
-      return;
-    }
-
+  // Auto-start tour for new signups
+  const checkAndStartTourForNewUser = () => {
     // Don't start tour if it's already open
     if (showOnboardingTour) {
-      console.log('Tour is already open, skipping auto-start');
       return;
     }
 
-    // Check if this user has seen the tour before
-    const hasSeenTour = hasUserSeenTour(userData.id);
-    const storageKey = getTourStorageKey(userData.id);
+    // Check if this is a signup session
+    const isSignupSession = sessionStorage.getItem('isSignupSession');
 
-    console.log(`Tour check for user ${userData.id}:`, {
-      hasSeenTour,
-      storageKey,
-      storageValue: localStorage.getItem(storageKey)
-    });
+    // Start tour automatically ONLY after signup
+    if (isSignupSession === 'true') {
+      console.log('🎯 Starting tour for newly registered user');
+      // Remove flag so it doesn't show again on refresh or subsequent logins
+      sessionStorage.removeItem('isSignupSession');
 
-    // Check if this is a fresh login (no previous tour data for this user)
-    const isFirstTimeUser = !hasSeenTour;
-
-    // Start tour automatically for first-time users
-    if (isFirstTimeUser) {
-      console.log('🎯 Starting tour for first-time user:', userData.id);
       // Small delay to ensure UI is ready
       setTimeout(() => {
-        if (!showOnboardingTour) { // Double-check before starting
+        if (!showOnboardingTour) {
           setShowOnboardingTour(true);
         }
       }, 1500); // 1.5 second delay for smooth UX
-    } else {
-      console.log('✅ User has already seen tour:', userData.id);
     }
   };
 
-  // Debug function to reset tour for current user (for testing)
+  // Debug function to start tour for current user (for testing)
   const resetTourForCurrentUser = () => {
-    if (user?.id) {
-      const storageKey = getTourStorageKey(user.id);
-      localStorage.removeItem(storageKey);
-      localStorage.removeItem('hasSeenOnboardingTour');
-      console.log('🔄 Tour reset for user:', user.id);
-      setShowOnboardingTour(true);
-    }
+    console.log('🔄 Tour reset via debug');
+    setShowOnboardingTour(true);
   };
 
   // Add to window for debugging (development only)
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       window.resetTour = resetTourForCurrentUser;
-      window.checkTourStatus = () => {
-        if (user?.id) {
-          console.log('Tour status for user:', user.id, {
-            hasSeenTour: hasUserSeenTour(user.id),
-            storageKey: getTourStorageKey(user.id),
-            value: localStorage.getItem(getTourStorageKey(user.id))
-          });
-        } else {
-          console.log('No user logged in to check tour status');
-        }
-      };
-      window.simulateFirstLogin = () => {
-        if (user?.id) {
-          console.log('🧪 Simulating first login for user:', user.id);
-          sessionStorage.removeItem('currentUserId');
-          const storageKey = getTourStorageKey(user.id);
-          localStorage.removeItem(storageKey);
-          localStorage.removeItem('hasSeenOnboardingTour');
-          checkAndStartTourForNewUser(user);
-        } else {
-          console.log('❌ No user logged in to simulate first login');
-        }
-      };
 
       // Log available commands
       console.log('🛠️ Development tour debugging commands available:');
       console.log('  window.resetTour() - Reset and start tour for current user');
-      console.log('  window.checkTourStatus() - Check tour completion status');
-      console.log('  window.simulateFirstLogin() - Simulate first-time login');
     }
   }, [user?.id]);
 
@@ -974,7 +893,7 @@ const Navbar = ({ isLandingPage = false }) => {
 
             {/* Logo Section - Left Aligned */}
             <div className="flex-1 flex justify-start items-center gap-2">
-              {!isLandingPage && (
+              {!isLandingPage && !isFindLawyer && (
                 <button
                   onClick={() => dispatch(toggleSidebar())}
                   className={`p-1.5 rounded-lg transition-all duration-200 group flex items-center
@@ -987,7 +906,7 @@ const Navbar = ({ isLandingPage = false }) => {
 
               <Link to="/" className="flex items-center group">
                 <span className={`text-xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent group-hover:from-blue-500 group-hover:to-blue-300 transition-all duration-300`}>
-                  Mera Vakil
+                  MeraBakil
                 </span>
               </Link>
             </div>
@@ -1031,7 +950,7 @@ const Navbar = ({ isLandingPage = false }) => {
                           relative group"
                 onClick={handleStartTour}
                 aria-label="Start tour"
-                title="Take a tour of Mera Vakil"
+                title="Take a tour of MeraBakil"
               >
                 <Compass size={20} />
                 {/* Subtle glow effect */}

@@ -74,6 +74,7 @@ const AppLayout = ({ children }) => {
   const dispatch = useDispatch(); // Get dispatch
   const isLawyerAdmin = location.pathname.startsWith('/lawyer-admin');
   const isConsultation = location.pathname.startsWith('/consultation/');
+  const isFindLawyer = location.pathname === '/legal-consoltation';
   const isLandingPage = location.pathname === '/' || location.pathname === '/pricing' || location.pathname === '/contact' || location.pathname === '/terms-of-service' || location.pathname === '/privacy-policy' || location.pathname === '/refund-policy' || location.pathname === '/disclaimer';
   const isChatbotPage = location.pathname === '/chatbot';
   const { chatHistory } = useSelector((state) => state.chat);
@@ -100,7 +101,7 @@ const AppLayout = ({ children }) => {
       {!isLawyerAdmin && !isConsultation && <Navbar isLandingPage={isLandingPage} />}
       <ScrollToTop />
       <div className="flex flex-1 min-h-0">
-        {!isLawyerAdmin && !isLandingPage && !isConsultation && <Sidebar chatHistory={chatHistory} />}
+        {!isLawyerAdmin && !isLandingPage && !isConsultation && !isFindLawyer && <Sidebar chatHistory={chatHistory} />}
         <main className="flex-1 min-w-0 min-h-0 relative">
           {children}
         </main>

@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 /* ──────────────────────────────────────────────────
-   Landing Page — Mera Vakil
+   Landing Page — MeraBakil
    Sections: Hero, Core Services,
    Lawyer Verification, Trust Badges, Testimonials,
    Stats, Why Choose Us
@@ -506,7 +506,7 @@ const LandingPage = () => {
                                 Trusted by Thousands
                             </h2>
                             <p className={`mt-3 text-sm md:text-base ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                                Real stories from clients and lawyers on Mera Vakil.
+                                Real stories from clients and lawyers on MeraBakil.
                             </p>
                         </motion.div>
 
@@ -542,7 +542,7 @@ const LandingPage = () => {
                 </section>
 
                 {/* ═══════════════════════════════════════════
-              WHY CHOOSE MERA VAKIL
+              WHY CHOOSE MERABAKIL
               ═══════════════════════════════════════════ */}
                 <section className={`py-16 md:py-20 px-4 md:px-6 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
                     <div className="max-w-6xl mx-auto">
@@ -553,7 +553,7 @@ const LandingPage = () => {
                             className="text-center mb-12"
                         >
                             <h2 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-brand-900'}`}>
-                                Why Choose Mera Vakil?
+                                Why Choose MeraBakil?
                             </h2>
                             <p className={`mt-3 text-sm md:text-base max-w-xl mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                                 Built different — AI-first, wallet-based, no subscriptions.
@@ -604,7 +604,7 @@ const LandingPage = () => {
                                         For Legal Professionals
                                     </span>
                                     <h2 className={`text-2xl md:text-3xl font-bold mb-4 ${isDark ? 'text-white' : 'text-brand-900'}`}>
-                                        Grow Your Practice on Mera Vakil
+                                        Grow Your Practice on MeraBakil
                                     </h2>
                                     <p className={`text-sm md:text-base mb-6 leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                                         Join India's AI-powered legal marketplace. Get matched with clients
@@ -666,7 +666,7 @@ const LandingPage = () => {
                                     Ready to Get Started?
                                 </h2>
                                 <p className="text-sm md:text-base text-white/80 mb-8 max-w-lg mx-auto">
-                                    Join thousands of users who trust Mera Vakil for legal guidance.
+                                    Join thousands of users who trust MeraBakil for legal guidance.
                                     Top up your wallet and start using AI, verified lawyers, and more.
                                 </p>
                                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

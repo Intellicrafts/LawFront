@@ -139,7 +139,11 @@ const Sidebar = ({
             <Gavel size={14} className={isDark ? 'text-black' : 'text-white'} />
           </div>
           <span className={`text-[15px] font-black tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'} uppercase opacity-90 truncate`}>
-            Vakil <span className="text-slate-400">Admin</span>
+            {isLawyerAdmin ? (
+              <>Vakil <span className="text-slate-400">Admin</span></>
+            ) : (
+              <>Mera <span className="text-indigo-500">Vakil</span></>
+            )}
           </span>
         </Link>
 

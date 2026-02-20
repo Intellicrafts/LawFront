@@ -244,15 +244,6 @@ const LegalCosultation = () => {
   }, []);
   const [bookingComplete, setBookingComplete] = useState(false);
 
-  // Instant Call Feature States
-  const [onlineLawyers, setOnlineLawyers] = useState(new Set());
-  const [showOnlineOnly, setShowOnlineOnly] = useState(false);
-  const [callState, setCallState] = useState({
-    status: 'idle', // idle, dialing, connected, ended
-    lawyer: null,
-    duration: 0
-  });
-
   // Wallet State
   const [walletBalance, setWalletBalance] = useState(0);
   const [showRechargeModal, setShowRechargeModal] = useState(false);
@@ -276,114 +267,11 @@ const LegalCosultation = () => {
 
     fetchWalletBalance();
   }, []);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isOnSpeaker, setIsOnSpeaker] = useState(false);
 
-  // Initialize online status for lawyers
-  useEffect(() => {
-    if (lawyers.length > 0) {
-      const onlineSet = new Set();
-      lawyers.forEach(lawyer => {
-        // Randomly assign online status (approx 30%)
-        // Rodger Prosacco is ALWAYS online
-        if (lawyer.full_name === 'Rodger Prosacco' || Math.random() < 0.3) {
-          onlineSet.add(lawyer.id);
-        }
-      });
-
-      // Ensure we have at least a few online lawyers for demo
-      if (onlineSet.size < 3) {
-        lawyers.slice(0, 3).forEach(l => onlineSet.add(l.id));
-      }
-
-      setOnlineLawyers(onlineSet);
-    }
-  }, [lawyers]);
-
-  // Call Timer Effect
-  useEffect(() => {
-    let interval;
-    if (callState.status === 'connected') {
-      interval = setInterval(() => {
-        setCallState(prev => ({
-          ...prev,
-          duration: prev.duration + 1
-        }));
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [callState.status]);
-
-  const formatCallDuration = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const initiateCall = (lawyer) => {
-    // Check wallet balance
-    if (walletBalance < 500) {
-      showToastError('Insufficient wallet balance. Please recharge.');
-      setShowRechargeModal(true);
-      return;
-    }
-
-    setCallState({
-      status: 'dialing',
-      lawyer: lawyer,
-      duration: 0
-    });
-    setIsMuted(false);
-    setIsOnSpeaker(false);
-
-    // Simulate connection after 3 seconds
-    setTimeout(async () => {
-      setCallState(prev => ({
-        ...prev,
-        status: 'connected'
-      }));
-
-      // Deduct balance
-      try {
-        const userStr = localStorage.getItem('user');
-        const userId = userStr ? JSON.parse(userStr).id : '1';
-
-        await walletServices.processPayment({
-          payer_user_id: userId,
-          receiver_user_id: lawyer.id,
-          amount: 500,
-          description: "Quick Call Connection Fee",
-          category: "call"
-        });
-
-        setWalletBalance(prev => Math.max(0, prev - 500));
-        setWalletBalance(prev => Math.max(0, prev - 500));
-        showInfo('₹500 deducted for call connection');
-
-        apiServices.startCallSession(lawyer.id).catch(err => console.error('Call log error:', err));
-      } catch (err) {
-        console.error("Payment failed", err);
-      }
-    }, 3000);
-  };
-
-  const endCall = () => {
-    setCallState(prev => ({ ...prev, status: 'ended' }));
-    setTimeout(() => {
-      setCallState({
-        status: 'idle',
-        lawyer: null,
-        duration: 0
-      });
-    }, 2000);
-  };
-
-  // Function to handle booking with Rodger Prosacco
   const bookWithRodgerProsacco = () => {
     // Find Rodger Prosacco in the lawyers list
     const rodgerProsacco = lawyers.find(lawyer => lawyer.full_name === 'Rodger Prosacco');
 
-    // If not found in the current list, create a sample lawyer object
     const defaultRodgerProsacco = {
       id: 999, // Use a unique ID
       full_name: 'Rodger Prosacco',
@@ -1600,15 +1488,13 @@ const LegalCosultation = () => {
     }
 
     if (view === 'lawyers') {
-      const visibleLawyers = showOnlineOnly
-        ? lawyers.filter(l => onlineLawyers.has(l.id))
-        : lawyers;
+      const visibleLawyers = lawyers;
 
       return (
         <>
           {/* Premium Quick Action Cards */}
           <div className="pt-20 sm:pt-24 mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-3">
               {[
                 {
                   label: 'Nearby Experts',
@@ -1617,19 +1503,6 @@ const LegalCosultation = () => {
                   onClick: fetchNearbyLawyers,
                   loading: nearbyLoading,
                   color: 'text-blue-500'
-                },
-                {
-                  label: showOnlineOnly ? 'Close Quick Call' : 'Quick Call',
-                  desc: showOnlineOnly ? 'Showing Online' : 'Instant consultation',
-                  icon: showOnlineOnly ? X : Zap,
-                  onClick: () => {
-                    setShowOnlineOnly(!showOnlineOnly);
-                    if (!showOnlineOnly) {
-                      setSelectedCategory('All');
-                      setSearchQuery('');
-                    }
-                  },
-                  color: showOnlineOnly ? 'text-red-500' : 'text-violet-500'
                 }
               ].map((card, i) => (
                 <button
@@ -1934,12 +1807,6 @@ const LegalCosultation = () => {
                           }`}
                       >
                         <div className="p-4 relative">
-                          {onlineLawyers.has(lawyer.id) && (
-                            <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-full z-10">
-                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                              <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-wider">Online</span>
-                            </div>
-                          )}
                           {/* Header - Profile Picture & Info */}
                           <div className="flex gap-3 mb-3 items-start">
                             {/* Profile Picture */}
@@ -2015,22 +1882,13 @@ const LegalCosultation = () => {
                             >
                               Profile
                             </button>
-                            {onlineLawyers.has(lawyer.id) ? (
-                              <button
-                                onClick={() => initiateCall(lawyer)}
-                                className="flex-[2] py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2"
-                              >
-                                <Phone size={12} fill="currentColor" />
-                                Call Now
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => startBooking(lawyer)}
-                                className="flex-[2] py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-lg shadow-blue-600/20"
-                              >
-                                Book Now
-                              </button>
-                            )}
+                            <button
+                              onClick={() => startBooking(lawyer)}
+                              className="flex-[2] py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
+                            >
+                              <Calendar size={12} />
+                              Book Appointment
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -2430,66 +2288,6 @@ const LegalCosultation = () => {
       <div className="max-w-7xl mx-auto px-4 py-6" ref={contentRef}>
         {renderView()}
       </div>
-
-      {/* Call Connection Modal */}
-      {callState.status !== 'idle' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#1A1A1A] border border-[#2A2A2A] text-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center relative overflow-hidden animate-in fade-in zoom-in duration-300">
-            {/* Background Animation */}
-            <div className="absolute inset-0 overflow-hidden">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl animate-pulse" />
-            </div>
-
-            <div className="relative z-10 flex flex-col items-center">
-              {/* Lawyer Image */}
-              <div className="w-24 h-24 rounded-full border-4 border-[#2A2A2A] shadow-xl mb-6 relative">
-                <img
-                  src={callState.lawyer?.profile_picture_url || "https://t4.ftcdn.net/jpg/03/46/93/61/360_F_346936114_RaxE6OQogOtOt9Wgc91G1oST5p5huzJS.jpg"}
-                  alt={callState.lawyer?.full_name}
-                  className="w-full h-full rounded-full object-cover"
-                />
-                {callState.status === 'connected' && (
-                  <div className="absolute bottom-1 right-1 bg-emerald-500 w-5 h-5 rounded-full border-2 border-[#1A1A1A]" />
-                )}
-              </div>
-
-              <h3 className="text-xl font-bold mb-1">{callState.lawyer?.full_name}</h3>
-              <p className="text-sm text-gray-400 mb-8 font-medium">
-                {callState.status === 'dialing' ? 'Dialing...' : formatCallDuration(callState.duration)}
-              </p>
-
-              {/* Call Controls */}
-              <div className="flex items-center gap-6">
-                <button
-                  onClick={() => setIsMuted(!isMuted)}
-                  className={`p-4 rounded-full transition-all ${isMuted ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20 text-white'}`}
-                >
-                  {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
-                </button>
-
-                <button
-                  onClick={endCall}
-                  className="p-4 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30 transition-all transform hover:scale-105"
-                >
-                  <PhoneOff size={28} />
-                </button>
-
-                <button
-                  onClick={() => setIsOnSpeaker(!isOnSpeaker)}
-                  className={`p-4 rounded-full transition-all ${isOnSpeaker ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20 text-white'}`}
-                >
-                  <Headphones size={24} />
-                </button>
-              </div>
-
-              <div className="mt-8 flex items-center gap-2 text-xs text-emerald-500 font-bold uppercase tracking-wider bg-emerald-500/10 px-3 py-1.5 rounded-full">
-                <Shield size={12} />
-                Encrypted Audio Connection
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Recharge Modal */}
       {showRechargeModal && (
