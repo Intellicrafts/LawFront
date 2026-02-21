@@ -4,8 +4,9 @@ import {
     Shield, Clock, Send, Paperclip, Smile, X, Image as ImageIcon,
     File, Download, Check, CheckCheck, Wifi, WifiOff,
     Phone, MoreVertical, AlertTriangle, ArrowDown, Loader,
-    ChevronLeft, MessageCircle, Lock
+    ChevronLeft, MessageCircle, Lock, Mic, Square, Trash2
 } from 'lucide-react';
+import { deriveKey, encryptText, decryptText } from '../../utils/e2ee';
 
 const ConsultationChat = ({
     session,
@@ -28,11 +29,26 @@ const ConsultationChat = ({
     const [showTimeWarning, setShowTimeWarning] = useState(false);
     const [showAttachMenu, setShowAttachMenu] = useState(false);
 
+    // Voice notes and Emojis
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingTime, setRecordingTime] = useState(0);
+    const [audioBlob, setAudioBlob] = useState(null);
+    const [audioPreviewUrl, setAudioPreviewUrl] = useState(null);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+    // E2EE States
+    const [e2eKey, setE2eKey] = useState(null);
+    const [decryptedMessages, setDecryptedMessages] = useState([]);
+    const emojis = ['😀', '😂', '😍', '🙏', '👍', '😊', '🙌', '🔥', '🎉', '😢', '😡', '🤔'];
+
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
     const inputRef = useRef(null);
     const fileInputRef = useRef(null);
     const typingTimeoutRef = useRef(null);
+    const mediaRecorderRef = useRef(null);
+    const audioChunksRef = useRef([]);
+    const recordIntervalRef = useRef(null);
 
     const otherName = otherParticipant?.name || (userType === 'user' ? 'Lawyer' : 'Client');
     const otherInitials = otherName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -58,7 +74,37 @@ const ConsultationChat = ({
 
     useEffect(() => {
         scrollToBottom('instant');
-    }, [messages.length, scrollToBottom]);
+    }, [decryptedMessages.length, scrollToBottom]);
+
+    // Initialize E2EE Key
+    useEffect(() => {
+        const initKey = async () => {
+            if (session?.session_token) {
+                const key = await deriveKey(session.session_token, 'meravakil_secure_salt');
+                setE2eKey(key);
+            }
+        };
+        initKey();
+    }, [session?.session_token]);
+
+    // Decrypt messages as they come in
+    useEffect(() => {
+        const decryptAll = async () => {
+            if (!e2eKey || !messages) return;
+            const decrypted = await Promise.all(messages.map(async (msg) => {
+                if (msg.message_type === 'system' || msg.sender_type === 'system') return msg;
+                if (!msg.content) return msg;
+                try {
+                    const plainContent = await decryptText(msg.content, e2eKey);
+                    return { ...msg, content: plainContent };
+                } catch (e) {
+                    return msg;
+                }
+            }));
+            setDecryptedMessages(decrypted);
+        };
+        decryptAll();
+    }, [messages, e2eKey]);
 
     // Scroll observer for "scroll to bottom" button
     useEffect(() => {
@@ -111,15 +157,79 @@ const ConsultationChat = ({
             setIsTyping(false);
             onTyping(false);
 
-            await onSendMessage(content || (selectedFile ? selectedFile.name : ''), selectedFile);
+            let rawText = content || (selectedFile ? selectedFile.name : '');
+            let encryptedContent = null;
+
+            if (e2eKey) {
+                encryptedContent = await encryptText(rawText, e2eKey);
+            } else {
+                encryptedContent = rawText; // Fallback
+            }
+
+            // We pass selected file as-is (files are transferred securely via HTTPS, text is E2EE wrapped)
+            await onSendMessage(encryptedContent, selectedFile);
             setNewMessage('');
             setSelectedFile(null);
+            setAudioPreviewUrl(null);
+            setShowEmojiPicker(false);
             inputRef.current?.focus();
         } catch (err) {
             console.error('Failed to send message:', err);
         } finally {
             setSending(false);
         }
+    };
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+            audioChunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) audioChunksRef.current.push(event.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                const url = URL.createObjectURL(blob);
+                setAudioBlob(blob);
+                setAudioPreviewUrl(url);
+                const file = new File([blob], `voice_note_${new Date().getTime()}.webm`, { type: 'audio/webm' });
+                setSelectedFile(file);
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+            setRecordingTime(0);
+
+            recordIntervalRef.current = setInterval(() => {
+                setRecordingTime(prev => {
+                    if (prev >= 29) {
+                        stopRecording();
+                        return 30;
+                    }
+                    return prev + 1;
+                });
+            }, 1000);
+        } catch (err) {
+            console.error('Error starting recording:', err);
+            alert('Could not access microphone');
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            mediaRecorderRef.current.stop();
+        }
+        setIsRecording(false);
+        if (recordIntervalRef.current) clearInterval(recordIntervalRef.current);
+    };
+
+    const handleEmojiClick = (emoji) => {
+        setNewMessage(prev => prev + emoji);
     };
 
     // Handle Enter key
@@ -270,7 +380,7 @@ const ConsultationChat = ({
             {/* ============ MESSAGES AREA ============ */}
             <div
                 ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto relative"
+                className="flex-1 overflow-y-auto relative scrollbar-hide"
                 style={{ scrollBehavior: 'smooth' }}
             >
                 <div className="max-w-3xl mx-auto px-3 sm:px-4 py-6 space-y-1">
@@ -419,23 +529,73 @@ const ConsultationChat = ({
 
                     {/* Selected file preview */}
                     <AnimatePresence>
-                        {selectedFile && (
+                        {selectedFile && !audioPreviewUrl && (
                             <motion.div
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: 'auto', opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
-                                className="mb-2"
+                                className="mb-3"
                             >
-                                <div className={`flex items-center gap-2 px-3 py-2 rounded-xl ${isDarkMode ? 'bg-white/5 border border-white/5' : 'bg-slate-50 border border-slate-100'}`}>
-                                    <File size={14} className="text-blue-500 flex-shrink-0" />
-                                    <span className={`text-[11px] font-medium truncate flex-1 ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                                        {selectedFile.name}
-                                    </span>
-                                    <span className={`text-[9px] font-medium ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                                        {(selectedFile.size / 1024).toFixed(1)} KB
-                                    </span>
-                                    <button onClick={() => setSelectedFile(null)} className="p-1 hover:opacity-70">
-                                        <X size={12} className={isDarkMode ? 'text-slate-400' : 'text-slate-500'} />
+                                <div className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl w-max max-w-sm ${isDarkMode ? 'bg-[#151515] border border-white/10' : 'bg-white border border-slate-200 shadow-sm'}`}>
+                                    {selectedFile.type.startsWith('image/') ? (
+                                        <div className="relative w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-white/10">
+                                            <img src={URL.createObjectURL(selectedFile)} alt="preview" className="w-full h-full object-cover" />
+                                        </div>
+                                    ) : (
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDarkMode ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
+                                            <File size={16} className="text-blue-500" />
+                                        </div>
+                                    )}
+                                    <div className="flex-1 min-w-0 pr-4">
+                                        <div className={`text-[12px] font-bold truncate ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
+                                            {selectedFile.name}
+                                        </div>
+                                        <div className={`text-[10px] font-semibold mt-0.5 uppercase tracking-wider ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                                            {(selectedFile.size / 1024).toFixed(1)} KB
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setSelectedFile(null)} className={`p-1.5 rounded-lg transition-all ${isDarkMode ? 'hover:bg-white/10 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {audioPreviewUrl && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="mb-3"
+                            >
+                                <div className={`flex items-center gap-3 px-3 py-2 rounded-2xl w-max max-w-sm ${isDarkMode ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-indigo-50 border border-indigo-100 shadow-sm'}`}>
+                                    <div className="w-9 h-9 rounded-xl bg-indigo-500 flex items-center justify-center">
+                                        <Mic size={14} className="text-white" />
+                                    </div>
+                                    <audio src={audioPreviewUrl} controls className="flex-1 h-9 max-w-[200px] outline-none" />
+                                    <button onClick={() => { setAudioPreviewUrl(null); setSelectedFile(null); }} className="p-1.5 rounded-lg hover:bg-black/5 transition-colors ml-1">
+                                        <Trash2 size={16} className="text-rose-500" />
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {isRecording && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0, y: 10 }}
+                                animate={{ height: 'auto', opacity: 1, y: 0 }}
+                                exit={{ height: 0, opacity: 0, y: 10 }}
+                                className="mb-3"
+                            >
+                                <div className={`flex items-center justify-between px-5 py-3 rounded-2xl ${isDarkMode ? 'bg-rose-500/10 border border-rose-500/20' : 'bg-rose-50 border border-rose-200 shadow-sm'}`}>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-3 h-3 rounded-full bg-rose-500 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.5)]" />
+                                        <span className={`text-[13px] font-black tracking-wide ${isDarkMode ? 'text-rose-400' : 'text-rose-600'}`}>
+                                            Recording Note... 00:{String(recordingTime).padStart(2, '0')} / 00:30
+                                        </span>
+                                    </div>
+                                    <button onClick={stopRecording} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 text-white text-[11px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                                        <Square size={12} fill="currentColor" /> Stop
                                     </button>
                                 </div>
                             </motion.div>
@@ -443,17 +603,20 @@ const ConsultationChat = ({
                     </AnimatePresence>
 
                     {/* Input row */}
-                    <div className="flex items-end gap-2">
+                    <div className={`flex items-end gap-2 p-1.5 rounded-[24px] border transition-all ${isDarkMode
+                        ? 'bg-[#121212] border-white/10 shadow-inner'
+                        : 'bg-white border-slate-200 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] focus-within:border-blue-300 focus-within:shadow-[0_4px_20px_-4px_rgba(59,130,246,0.15)]'}`}>
+
                         {/* Attach button */}
                         <div className="relative">
                             <button
                                 onClick={() => setShowAttachMenu(!showAttachMenu)}
-                                className={`p-2.5 rounded-xl transition-all flex-shrink-0 ${isDarkMode
-                                    ? 'bg-white/5 hover:bg-white/10 text-slate-400'
-                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-500'
+                                className={`p-3 rounded-2xl transition-all flex-shrink-0 ${isDarkMode
+                                    ? 'hover:bg-white/5 text-slate-400'
+                                    : 'hover:bg-slate-50 text-slate-500'
                                     }`}
                             >
-                                <Paperclip size={16} />
+                                <Paperclip size={18} />
                             </button>
 
                             {/* Attach menu */}
@@ -463,7 +626,7 @@ const ConsultationChat = ({
                                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        className={`absolute bottom-12 left-0 p-2 rounded-2xl border shadow-xl z-50 min-w-[160px] ${isDarkMode
+                                        className={`absolute bottom-14 left-0 p-2 rounded-2xl border shadow-xl z-50 min-w-[160px] ${isDarkMode
                                             ? 'bg-[#1a1a1a] border-white/10'
                                             : 'bg-white border-slate-200'
                                             }`}
@@ -472,25 +635,25 @@ const ConsultationChat = ({
                                             onClick={() => {
                                                 fileInputRef.current?.click();
                                             }}
-                                            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-[11px] font-medium transition-all ${isDarkMode
+                                            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-[12px] font-bold transition-all ${isDarkMode
                                                 ? 'hover:bg-white/5 text-slate-300'
-                                                : 'hover:bg-slate-50 text-slate-600'
+                                                : 'hover:bg-slate-50 text-slate-700'
                                                 }`}
                                         >
-                                            <File size={14} className="text-blue-500" />
+                                            <File size={16} className="text-blue-500" />
                                             Document
                                         </button>
                                         <button
                                             onClick={() => {
                                                 fileInputRef.current?.click();
                                             }}
-                                            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-[11px] font-medium transition-all ${isDarkMode
+                                            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-[12px] font-bold transition-all ${isDarkMode
                                                 ? 'hover:bg-white/5 text-slate-300'
-                                                : 'hover:bg-slate-50 text-slate-600'
+                                                : 'hover:bg-slate-50 text-slate-700'
                                                 }`}
                                         >
-                                            <ImageIcon size={14} className="text-emerald-500" />
-                                            Image
+                                            <ImageIcon size={16} className="text-emerald-500" />
+                                            Photo / Image
                                         </button>
                                     </motion.div>
                                 )}
@@ -505,19 +668,49 @@ const ConsultationChat = ({
                             />
                         </div>
 
+                        {/* Emoji button */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                className={`p-3 rounded-2xl transition-all hidden sm:flex flex-shrink-0 ${isDarkMode ? 'hover:bg-white/5 text-slate-400' : 'hover:bg-slate-50 text-slate-500'}`}
+                            >
+                                <Smile size={18} />
+                            </button>
+
+                            <AnimatePresence>
+                                {showEmojiPicker && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        className={`absolute bottom-14 left-0 p-3 rounded-2xl border shadow-2xl z-50 w-64 ${isDarkMode ? 'bg-[#1a1a1a] border-white/10' : 'bg-white border-slate-200'}`}
+                                    >
+                                        <div className="grid grid-cols-4 gap-2">
+                                            {emojis.map((emoji, index) => (
+                                                <button
+                                                    key={index}
+                                                    onClick={() => { handleEmojiClick(emoji); setShowEmojiPicker(false); }}
+                                                    className="w-10 h-10 flex items-center justify-center text-xl rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                                                >
+                                                    {emoji}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
                         {/* Text input */}
-                        <div className={`flex-1 relative rounded-2xl border transition-all ${isDarkMode
-                            ? 'bg-white/[0.03] border-white/5 focus-within:border-blue-500/30 focus-within:bg-white/[0.05]'
-                            : 'bg-slate-50 border-slate-200 focus-within:border-blue-300 focus-within:bg-white focus-within:shadow-sm'
-                            }`}>
+                        <div className="flex-1 relative pb-1">
                             <textarea
                                 ref={inputRef}
                                 value={newMessage}
                                 onChange={handleInputChange}
                                 onKeyDown={handleKeyDown}
                                 rows={1}
-                                placeholder="Type your message..."
-                                className={`w-full px-4 py-3 bg-transparent border-none text-[13px] font-medium resize-none focus:ring-0 focus:outline-none max-h-32 ${isDarkMode
+                                placeholder="Message securely..."
+                                className={`w-full px-2 py-2.5 mb-1 bg-transparent border-none text-[14px] font-medium resize-none scrollbar-hide focus:ring-0 focus:outline-none max-h-32 ${isDarkMode
                                     ? 'text-slate-100 placeholder-slate-600'
                                     : 'text-slate-800 placeholder-slate-400'
                                     }`}
@@ -529,21 +722,24 @@ const ConsultationChat = ({
                             />
                         </div>
 
-                        {/* Send button */}
-                        <button
-                            onClick={handleSend}
-                            disabled={(!newMessage.trim() && !selectedFile) || sending}
-                            className={`p-3 rounded-xl transition-all flex-shrink-0 ${(!newMessage.trim() && !selectedFile) || sending
-                                ? isDarkMode ? 'bg-white/5 text-slate-600' : 'bg-slate-100 text-slate-400'
-                                : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 active:scale-95'
-                                }`}
-                        >
-                            {sending ? (
-                                <Loader size={16} className="animate-spin" />
-                            ) : (
-                                <Send size={16} />
-                            )}
-                        </button>
+                        {/* Mic or Send button */}
+                        {(!newMessage.trim() && !selectedFile) ? (
+                            <button
+                                onClick={startRecording}
+                                disabled={isRecording}
+                                className={`p-3.5 rounded-full transition-all flex-shrink-0 mr-1 mb-1 ${isRecording ? 'opacity-50' : isDarkMode ? 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}
+                            >
+                                <Mic size={18} />
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleSend}
+                                disabled={sending}
+                                className={`p-3.5 mr-1 mb-1 rounded-full transition-all flex-shrink-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_4px_15px_rgba(79,70,229,0.3)] hover:shadow-[0_4px_20px_rgba(79,70,229,0.4)] active:scale-95`}
+                            >
+                                {sending ? <Loader size={18} className="animate-spin" /> : <Send size={18} fill="currentColor" className="ml-0.5" />}
+                            </button>
+                        )}
                     </div>
 
                     {/* Security footer */}
