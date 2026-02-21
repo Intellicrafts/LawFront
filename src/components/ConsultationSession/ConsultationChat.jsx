@@ -380,10 +380,10 @@ const ConsultationChat = ({
             {/* ============ MESSAGES AREA ============ */}
             <div
                 ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto relative scrollbar-hide"
+                className="flex-1 overflow-y-auto relative scrollbar-hide pb-4"
                 style={{ scrollBehavior: 'smooth' }}
             >
-                <div className="max-w-3xl mx-auto px-3 sm:px-4 py-6 space-y-1">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-2">
 
                     {/* Security Notice at top */}
                     <div className="flex justify-center mb-6">
@@ -396,12 +396,12 @@ const ConsultationChat = ({
                     </div>
 
                     {/* Messages */}
-                    {messages.map((msg, index) => {
+                    {decryptedMessages.map((msg, index) => {
                         const isOwnMessage = (userType === 'user' && msg.sender_type === 'user') ||
                             (userType === 'lawyer' && msg.sender_type === 'lawyer');
                         const isSystem = msg.sender_type === 'system' || msg.message_type === 'system';
                         const showDateSep = index === 0 ||
-                            getMessageDate(msg.created_at) !== getMessageDate(messages[index - 1]?.created_at);
+                            getMessageDate(msg.created_at) !== getMessageDate(decryptedMessages[index - 1]?.created_at);
 
                         return (
                             <React.Fragment key={msg.id || index}>
@@ -524,8 +524,8 @@ const ConsultationChat = ({
             </div>
 
             {/* ============ INPUT AREA ============ */}
-            <div className={`sticky bottom-0 z-30 border-t ${isDarkMode ? 'bg-[#0c0c0c]/95 border-white/5' : 'bg-white/95 border-slate-200/60'} backdrop-blur-xl`}>
-                <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3">
+            <div className={`sticky bottom-0 z-30 pt-4 pb-5 ${isDarkMode ? 'bg-gradient-to-t from-[#080808] via-[#080808]' : 'bg-gradient-to-t from-slate-50 via-slate-50'}`}>
+                <div className="max-w-4xl mx-auto px-4 sm:px-6">
 
                     {/* Selected file preview */}
                     <AnimatePresence>
@@ -603,9 +603,9 @@ const ConsultationChat = ({
                     </AnimatePresence>
 
                     {/* Input row */}
-                    <div className={`flex items-end gap-2 p-1.5 rounded-[24px] border transition-all ${isDarkMode
-                        ? 'bg-[#121212] border-white/10 shadow-inner'
-                        : 'bg-white border-slate-200 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] focus-within:border-blue-300 focus-within:shadow-[0_4px_20px_-4px_rgba(59,130,246,0.15)]'}`}>
+                    <div className={`flex items-end gap-2 p-1.5 rounded-[26px] transition-all shadow-xl ${isDarkMode
+                        ? 'bg-[#151515] border border-white/[0.05] shadow-black/40'
+                        : 'bg-white border border-slate-200 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.06)] focus-within:shadow-[0_8px_30px_-4px_rgba(59,130,246,0.15)]'}`}>
 
                         {/* Attach button */}
                         <div className="relative">
