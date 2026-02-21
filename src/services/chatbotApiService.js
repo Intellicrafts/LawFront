@@ -14,7 +14,14 @@
 // Point 1: Using empty BASE_URL to utilize the 'proxy' in package.json
 // This bypasses CORS issues (405 Method Not Allowed on OPTIONS) during development
 const API_CONFIG = {
-    BASE_URL: process.env.REACT_APP_CHATBOT_API_URL ? process.env.REACT_APP_CHATBOT_API_URL.replace(/\/$/, '') : '',
+    BASE_URL: (() => {
+        const url = process.env.REACT_APP_CHATBOT_API_URL ? process.env.REACT_APP_CHATBOT_API_URL.replace(/\/$/, '') : '';
+        console.log(`[ChatbotAPI] Initializing with BASE_URL: "${url}"`);
+        if (!url) {
+            console.error('[ChatbotAPI] CRITICAL: REACT_APP_CHATBOT_API_URL is NOT defined in environment variables.');
+        }
+        return url;
+    })(),
     ENDPOINTS: {
         CHAT: '/unified_chat',
     },
@@ -288,16 +295,11 @@ class ChatbotApiService {
         const emitBufferedText = (force = false) => {
             if (!textBuffer) return;
 
-            // Only emit if we've buffered enough, or if it's been long enough, or forced
-            // We want to avoid splitting mid-markdown like `*` or `[`
             const timeSinceEmit = Date.now() - lastEmitTime;
-
-            // If forced, or if buffer is large enough, or if we waited > 100ms
             if (force || textBuffer.length > 15 || timeSinceEmit > 100) {
-                // Heuristic: try not to emit if we end in the middle of a markdown control char
                 const endsWithMarkdown = /[*_\[\]`#~]$/.test(textBuffer);
                 if (endsWithMarkdown && !force && textBuffer.length < 50) {
-                    return; // Hold a bit longer
+                    return;
                 }
 
                 if (onChunk) onChunk({ type: 'text', content: textBuffer });
@@ -309,6 +311,14 @@ class ChatbotApiService {
         try {
             await this.initializeBackendSession(appName, userId, sessionId);
 
+            if (!API_CONFIG.BASE_URL) {
+                console.error('[ChatbotAPI] Aborting sendMessage: No BASE_URL configured.');
+                throw new Error('CONFIG_ERROR: Chatbot API URL is not configured. Please check environment variables.');
+            }
+
+            console.log(`[ChatbotAPI] Sending message to: ${url}`);
+            console.log(`[ChatbotAPI] Payload user_id: ${userId}, session_id: ${sessionId}`);
+
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
@@ -318,6 +328,9 @@ class ChatbotApiService {
                 },
                 body: JSON.stringify(payload)
             });
+
+            console.log(`[ChatbotAPI] Response Status: ${response.status} ${response.statusText}`);
+            console.log(`[ChatbotAPI] Response Headers:`, Object.fromEntries(response.headers.entries()));
 
             if (!response.ok) {
                 const errorText = await response.text();
@@ -342,6 +355,8 @@ class ChatbotApiService {
                     for (const line of lines) {
                         const trimmedLine = line.trim();
                         if (!trimmedLine) continue;
+
+                        console.debug(`[ChatbotAPI] Raw Chunk: ${trimmedLine}`);
 
                         // Modern unified_chat uses NDJSON (raw JSON objects per line)
                         // Legacy endpoints use SSE (data: {JSON})

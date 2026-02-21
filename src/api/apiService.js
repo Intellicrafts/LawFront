@@ -68,6 +68,7 @@ apiClient.interceptors.response.use(
 export async function createSession(appName, userId) {
   try {
     const base = process.env.REACT_APP_CHATBOT_API_URL;
+    if (!base) console.error('[apiService] REACT_APP_CHATBOT_API_URL is NOT defined!');
     const host = base ? base.replace(/\/run$/, '') : ''; // strip trailing /run
     const url = `${host}/apps/${appName}/users/${userId}/sessions`;
     const resp = await fetch(url, {
@@ -103,6 +104,7 @@ export const chatbotAPI = {
       const apiUrl = process.env.REACT_APP_CHATBOT_API_URL;
 
       const baseUrl = process.env.REACT_APP_CHATBOT_API_URL || '';
+      console.log(`[apiService] getChatResponse using baseUrl: "${baseUrl}"`);
       const runUrl = `${baseUrl}/unified_chat`;
 
       // 1. Create/Ensure Session first
