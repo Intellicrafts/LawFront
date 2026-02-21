@@ -14,12 +14,7 @@
 // Point 1: Using empty BASE_URL to utilize the 'proxy' in package.json
 // This bypasses CORS issues (405 Method Not Allowed on OPTIONS) during development
 const API_CONFIG = {
-    // Dynamic BASE_URL:
-    // 1. On localhost: Use empty string (leverages package.json proxy) or .env if present
-    // 2. On Production (Netlify): Use '/chatbot-api' (leverages netlify.toml proxy)
-    BASE_URL: (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
-        ? (process.env.REACT_APP_CHATBOT_API_URL ? process.env.REACT_APP_CHATBOT_API_URL.replace(/\/$/, '') : '')
-        : '/chatbot-api',
+    BASE_URL: process.env.REACT_APP_CHATBOT_API_URL ? process.env.REACT_APP_CHATBOT_API_URL.replace(/\/$/, '') : '',
     ENDPOINTS: {
         CHAT: '/unified_chat',
     },

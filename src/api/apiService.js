@@ -67,8 +67,8 @@ apiClient.interceptors.response.use(
 // Helper: create a new session for a given app and user
 export async function createSession(appName, userId) {
   try {
-    const base = process.env.REACT_APP_CHATBOT_API_URL || 'http://bakilapp-alb-59756411.ap-south-1.elb.amazonaws.com';
-    const host = base.replace(/\/run$/, ''); // strip trailing /run
+    const base = process.env.REACT_APP_CHATBOT_API_URL;
+    const host = base ? base.replace(/\/run$/, '') : ''; // strip trailing /run
     const url = `${host}/apps/${appName}/users/${userId}/sessions`;
     const resp = await fetch(url, {
       method: 'POST',
@@ -100,10 +100,9 @@ export const chatbotAPI = {
    */
   getChatResponse: async (query, model = 'legal_counsel', sessionIdInput = 'session_123', userId = 'user_123') => {
     try {
-      const apiUrl = process.env.REACT_APP_CHATBOT_API_URL || 'http://bakilapp-alb-59756411.ap-south-1.elb.amazonaws.com';
+      const apiUrl = process.env.REACT_APP_CHATBOT_API_URL;
 
-      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const baseUrl = isLocalhost ? '' : 'http://bakilapp-alb-59756411.ap-south-1.elb.amazonaws.com';
+      const baseUrl = process.env.REACT_APP_CHATBOT_API_URL || '';
       const runUrl = `${baseUrl}/unified_chat`;
 
       // 1. Create/Ensure Session first
