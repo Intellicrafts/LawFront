@@ -76,7 +76,7 @@ const AppLayout = ({ children }) => {
   const isConsultation = location.pathname.startsWith('/consultation/');
   const isFindLawyer = location.pathname === '/legal-consoltation';
   const isLandingPage = location.pathname === '/' || location.pathname === '/pricing' || location.pathname === '/contact' || location.pathname === '/terms-of-service' || location.pathname === '/privacy-policy' || location.pathname === '/refund-policy' || location.pathname === '/disclaimer';
-  const isChatbotPage = location.pathname === '/chatbot';
+  const isChatbotPage = location.pathname.startsWith('/chatbot');
   const isWalletPage = location.pathname === '/wallet';
   const isAuthPage = location.pathname === '/auth' || location.pathname === '/signup';
   const { chatHistory } = useSelector((state) => state.chat);
@@ -229,8 +229,7 @@ const App = () => {
                     <Route path="/" element={<HomeRoute />} />
 
                     {/* AI Chatbot Route */}
-                    <Route path="/chatbot" element={<Hero />} />
-                    <Route path="/chatbot/:sessionId" element={<Hero />} />
+                    <Route path="/chatbot/:sessionId?" element={<Hero />} />
 
                     {/* Public Routes */}
                     <Route path="/contact" element={<Contact />} />

@@ -138,11 +138,11 @@ const Sidebar = ({
           <div className="w-7 h-7 rounded-lg bg-slate-900 dark:bg-white flex items-center justify-center shadow-lg">
             <Gavel size={14} className={isDark ? 'text-black' : 'text-white'} />
           </div>
-          <span className={`text-[15px] font-black tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'} uppercase opacity-90 truncate`}>
+          <span className={`text-[17px] font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'} truncate`}>
             {isLawyerAdmin ? (
-              <>Vakil <span className="text-slate-400">Admin</span></>
+              <>Bakil <span className="text-slate-400 font-normal">Admin</span></>
             ) : (
-              <>Mera <span className="text-indigo-500">Vakil</span></>
+              <>Mera<span className="text-indigo-500">Bakil</span></>
             )}
           </span>
         </Link>
@@ -168,11 +168,11 @@ const Sidebar = ({
             <button
               key={item.id}
               onClick={() => handleNavigate(item)}
-              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-150 group ${isActive
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-semibold tracking-wide capitalize transition-all duration-150 group ${isActive
                 ? isDark
-                  ? 'text-white bg-white/5 border border-white/5'
-                  : 'text-slate-900 bg-slate-100 border border-slate-200/50 shadow-sm'
-                : isDark ? 'hover:text-gray-200 hover:bg-white/5' : 'hover:text-slate-900 hover:bg-slate-50'
+                  ? 'text-white bg-white/5 border border-white/5 shadow-sm'
+                  : 'text-slate-900 bg-white border border-slate-200 shadow-sm'
+                : isDark ? 'text-gray-400 hover:text-gray-200 hover:bg-white/5' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
@@ -215,8 +215,8 @@ const Sidebar = ({
       )}
 
       {/* Live Consultations/Chats Header - Fixed */}
-      <div className="px-3 py-2 flex items-center justify-between flex-shrink-0">
-        <h3 className={`text-[10px] font-bold ${isDark ? 'text-gray-500' : 'text-gray-400'} uppercase tracking-widest`}>
+      <div className="px-3 py-2 mt-2 flex items-center justify-between flex-shrink-0">
+        <h3 className={`text-[11px] font-bold ${isDark ? 'text-gray-400' : 'text-slate-500'} uppercase tracking-wider`}>
           {isLawyerAdmin ? 'Consultation Registry' : 'Conversations'}
         </h3>
         <button className={`${isDark ? 'text-gray-600 hover:text-gray-400' : 'text-gray-400 hover:text-gray-600'} transition-colors`}>
@@ -301,22 +301,6 @@ const Sidebar = ({
           )
         )}
       </div>
-
-      {/* Promo Card - Fixed at Bottom */}
-      {!isLawyerAdmin && (
-        <div className="px-3 pb-3 flex-shrink-0">
-          <div className={`${isDark ? 'bg-gradient-to-br from-[#1A1A1A] to-[#111] border-[#222] hover:border-blue-500/30' : 'bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200 hover:border-blue-300'} border rounded-xl p-3 relative overflow-hidden group cursor-pointer transition-all`}>
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="flex items-center gap-2 mb-1.5 relative z-10">
-              <div className={`p-1 ${isDark ? 'bg-blue-500/10' : 'bg-blue-500/20'} rounded-md text-blue-500`}>
-                <Zap size={11} fill="currentColor" />
-              </div>
-              <span className={`text-[11px] font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>Upgrade to Pro</span>
-            </div>
-            <p className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-600'} leading-tight relative z-10`}>Unlock AI insights & unlimited history</p>
-          </div>
-        </div>
-      )}
 
     </div>
   );

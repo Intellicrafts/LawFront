@@ -393,7 +393,7 @@ const LawyerDashboard = ({ darkMode, userData, onNavigate, handleJoinSession, st
             <h1 className={`text-2xl sm:text-3xl font-black tracking-tighter mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
               Advancing Justice,<br />
               <span className="text-slate-900 dark:text-white underline decoration-slate-400/30 underline-offset-8">
-                Adv. {userData?.name || 'Vakil'}
+                Adv. {userData?.name || 'Bakil'}
               </span>
             </h1>
             <p className={`text-[12px] max-w-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'} leading-relaxed font-bold opacity-80`}>

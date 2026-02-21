@@ -12,7 +12,7 @@ import {
   Heart, Share2, Copy, Volume2, Download, CheckCircle,
   Loader2, Brain, BookOpen, PenTool, Zap, ThumbsUp, ThumbsDown, VolumeX,
   PanelLeftClose, PanelLeftOpen, ArrowRight, TrendingUp, Cpu, Target,
-  History, Archive, Star as StarIcon
+  History, Archive, Star as StarIcon, FileText
 } from 'lucide-react';
 import { chatbotService, CHAT_STATES, AI_MODELS } from '../../services/chatbotApiService';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -209,6 +209,89 @@ const AmbientWaitingState = ({ isDark }) => {
   );
 };
 
+// --- Skeleton Loader Component ---
+const SkeletonLoading = ({ isDark }) => {
+  const [phase, setPhase] = useState(0);
+  const loadingPhrases = [
+    "Analyzing Legal Query...",
+    "Reviewing Jurisprudence...",
+    "Cross-referencing Case Law...",
+    "Checking Citations...",
+    "Synthesizing Legal Framework...",
+    "Drafting Comprehensive Response..."
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setPhase((p) => (p + 1) % loadingPhrases.length);
+    }, 4000); // Change phrase every 4 seconds
+    return () => clearInterval(timer);
+  }, [loadingPhrases.length]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.3 }}
+      className="flex w-full mb-6"
+    >
+      <div className="flex-shrink-0 mr-4">
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center
+          ${isDark ? 'bg-[#1E1E1E]' : 'bg-gradient-to-br from-indigo-50 to-purple-50'}`}>
+          <Sparkles size={16} className={isDark ? "text-purple-400" : "text-purple-500"} />
+        </div>
+      </div>
+
+      <div className={`relative px-5 py-4 w-full max-w-2xl rounded-2xl rounded-tl-sm border
+        ${isDark ? 'bg-[#1A1A1A]/80 border-white/5' : 'bg-white border-slate-100 shadow-sm'}`}>
+
+        {/* Name and Loading status */}
+        <div className="flex items-center gap-2 pb-1">
+          <span className={`text-[12px] font-black tracking-widest flex items-center gap-2 ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>
+            AI ASSISTANT
+          </span>
+          <div className="flex gap-1 items-center ml-2">
+            <motion.div animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0 }} className={`w-1.5 h-1.5 rounded-full ${isDark ? 'bg-indigo-500' : 'bg-indigo-400'}`} />
+            <motion.div animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className={`w-1.5 h-1.5 rounded-full ${isDark ? 'bg-indigo-500' : 'bg-indigo-400'}`} />
+            <motion.div animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className={`w-1.5 h-1.5 rounded-full ${isDark ? 'bg-indigo-500' : 'bg-indigo-400'}`} />
+          </div>
+        </div>
+
+        {/* Dynamic Text Container */}
+        <div className="relative h-6 mb-3 overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={phase}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.4, ease: "easeInOut" }}
+              className={`absolute inset-0 text-[11px] font-bold tracking-wide italic ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}
+            >
+              {loadingPhrases[phase]}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+
+        {/* Skeleton Lines */}
+        <div className="space-y-3">
+          <div className={`h-2.5 rounded-full animate-pulse w-full max-w-[85%] ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
+          <div className={`h-2.5 rounded-full animate-pulse w-full max-w-[95%] ${isDark ? 'bg-white/10' : 'bg-slate-200/80'}`} />
+          <div className={`h-2.5 rounded-full animate-pulse w-full max-w-[70%] ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
+        </div>
+
+        {/* Polish shimmer */}
+        <motion.div
+          animate={{ x: ['-200%', '200%'] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 pointer-events-none"
+        />
+      </div>
+    </motion.div>
+  );
+};
+
 // Professional Typing Animation Component
 const StreamingText = ({ text, isDark }) => {
   // Handle auto-scroll with high sensitivity during generation
@@ -241,24 +324,24 @@ const FormattedResponse = ({ text, isDark, isStreaming = false, cursorAtEnd = fa
   if (!text) return null;
 
   return (
-    <div className={`prose max-w-none w-full space-y-2 animate-in fade-in duration-700 slide-in-from-bottom-2
+    <div className={`prose max-w-none w-full animate-in fade-in duration-700 slide-in-from-bottom-2
       ${isDark
         ? 'prose-invert prose-p:text-gray-300 prose-headings:text-white prose-strong:text-white prose-a:text-blue-400 marker:text-blue-500'
         : 'prose-p:text-slate-700/90 prose-headings:text-slate-900 prose-strong:text-slate-900 prose-a:text-blue-600 marker:text-blue-600'
       }
-      prose-h1:text-2xl prose-h1:font-black prose-h1:bg-gradient-to-r prose-h1:from-blue-600 prose-h1:to-indigo-600 prose-h1:bg-clip-text prose-h1:text-transparent
-      prose-h2:text-xl prose-h2:font-extrabold prose-h2:tracking-tight prose-h2:mt-8 prose-h2:mb-4
-      prose-h3:text-lg prose-h3:font-bold prose-h3:mt-6 prose-h3:mb-3
-      prose-p:leading-relaxed prose-p:text-[15.5px] prose-p:tracking-tight prose-p:my-3
-      prose-ul:my-4 prose-ul:list-disc prose-li:my-1 prose-li:leading-relaxed
-      prose-ol:my-4 prose-ol:list-decimal
-      prose-table:my-6 prose-table:w-full prose-table:rounded-xl prose-table:overflow-hidden prose-table:border prose-table:shadow-sm
-      ${isDark ? 'prose-table:border-white/10' : 'prose-table:border-slate-200'}
-      prose-th:bg-blue-500/10 prose-th:px-4 prose-th:py-3 prose-th:text-left prose-th:font-semibold prose-th:text-blue-600
-      prose-td:px-4 prose-td:py-3 prose-td:border-t prose-td:border-gray-500/10
-      prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-blue-500/5 prose-blockquote:py-2 prose-blockquote:px-5 prose-blockquote:rounded-r-lg prose-blockquote:italic prose-blockquote:my-6
+      prose-h1:text-2xl prose-h1:font-black prose-h1:bg-gradient-to-r prose-h1:from-blue-600 prose-h1:to-indigo-600 prose-h1:bg-clip-text prose-h1:text-transparent prose-h1:mb-6
+      prose-h2:text-xl prose-h2:font-extrabold prose-h2:tracking-tight prose-h2:mt-10 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b ${isDark ? 'prose-h2:border-white/5' : 'prose-h2:border-slate-100'}
+      prose-h3:text-lg prose-h3:font-bold prose-h3:mt-8 prose-h3:mb-3
+      prose-p:leading-[1.8] prose-p:text-[15px] prose-p:tracking-normal prose-p:my-4
+      prose-ul:my-6 prose-ul:list-disc prose-li:my-2 prose-li:leading-relaxed
+      prose-ol:my-6 prose-ol:list-decimal
+      prose-table:my-8 prose-table:w-full prose-table:rounded-2xl prose-table:overflow-hidden prose-table:border-separate prose-table:border-spacing-0 prose-table:border ${isDark ? 'prose-table:border-white/10 prose-table:bg-white/[0.02]' : 'prose-table:border-slate-200 prose-table:bg-slate-50/50'}
+      prose-th:bg-blue-600/10 prose-th:backdrop-blur-md prose-th:px-5 prose-th:py-4 prose-th:text-left prose-th:text-[13px] prose-th:font-black prose-th:uppercase prose-th:tracking-widest prose-th:text-blue-500 prose-th:border-b ${isDark ? 'prose-th:border-white/5' : 'prose-th:border-slate-200'}
+      prose-td:px-5 prose-td:py-4 prose-td:text-[14px] prose-td:leading-relaxed prose-td:border-b ${isDark ? 'prose-td:border-white/5 prose-td:text-slate-300' : 'prose-td:border-slate-100 prose-td:text-slate-700'}
+      prose-tr:last:prose-td:border-b-0
+      prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-blue-500/5 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-2xl prose-blockquote:italic prose-blockquote:my-8 prose-blockquote:shadow-sm
       prose-a:underline prose-a:decoration-blue-500/30 prose-a:underline-offset-4 hover:prose-a:text-blue-500 prose-a:transition-colors
-      prose-strong:font-bold prose-strong:drop-shadow-sm
+      prose-strong:font-bold prose-strong:text-blue-500/90
     `}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
@@ -562,9 +645,15 @@ const MessageBubble = ({ message, thought, isDark, isUser, isStreaming = false, 
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-6 sm:mb-8 group`}
+      initial={{ opacity: 0, y: 20, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{
+        type: 'spring',
+        stiffness: 260,
+        damping: 20,
+        opacity: { duration: 0.4 }
+      }}
+      className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-8 group`}
     >
       <div className={`flex items-start gap-2.5 sm:gap-4 max-w-[98%] sm:max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
         {!isUser && <TiaAvatar isStreaming={isStreaming} />}
@@ -914,6 +1003,12 @@ const Hero = () => {
   // Load session from URL
   useEffect(() => {
     const loadSession = async () => {
+      // If we are already on this session and have messages, don't reload
+      // This prevents the "flicker" and state loss on first interaction
+      if (routeSessionId && routeSessionId === sessionId && messages.length > 0) {
+        return;
+      }
+
       if (routeSessionId) {
         setSessionId(routeSessionId);
         setIsLoading(true);
@@ -1461,11 +1556,14 @@ const Hero = () => {
                   ))}
 
                   {isLoading && (
-                    <ChatStateIndicator
-                      chatState={chatState}
-                      stateMessage={stateMessage}
-                      isDark={isDark}
-                    />
+                    <div className="space-y-4">
+                      <ChatStateIndicator
+                        chatState={chatState}
+                        stateMessage={stateMessage}
+                        isDark={isDark}
+                      />
+                      <SkeletonLoading isDark={isDark} />
+                    </div>
                   )}
                 </div>
               )}
@@ -1475,277 +1573,159 @@ const Hero = () => {
           <motion.div
             layout
             transition={{ duration: 0.3, type: 'spring' }}
-            className={`transition-colors duration-300 px-3 sm:px-4 py-3 flex-shrink-0
-            ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
-
-            <motion.div
-              layout
-              className="max-w-2xl mx-auto space-y-2 relative">
-
-              {messages.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="px-1 py-1"
-                >
-                  <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-semibold backdrop-blur-sm border
-                    ${isDark
-                      ? 'bg-gray-600/20 border-gray-500/50 text-gray-300'
-                      : 'bg-gray-100 border-gray-300 text-gray-700'}`}
-                  >
-                    <div className={`w-3 h-3 flex items-center justify-center ${selectedModal === 'bakilat' ? 'text-violet-500' :
-                      selectedModal === 'nyaaya' ? 'text-emerald-500' :
-                        selectedModal === 'munshi' ? 'text-amber-500' :
-                          'text-indigo-500'
-                      }`}>
-                      {getModalIcon(selectedModal)}
-                    </div>
-                    <span>{modalOptions.find(opt => opt.id === selectedModal)?.label || 'Bakilat 2.0'}</span>
-                  </div>
-                </motion.div>
-              )}
-
-              {(uploadedFiles.length > 0 || pendingFiles.length > 0) && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`flex flex-wrap gap-1.5 px-1 py-1`}
-                >
-                  {uploadedFiles.map((file, idx) => (
-                    <motion.div
-                      key={`uploaded-${idx}`}
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px]
-                        ${isDark ? 'bg-gray-600/20 border border-gray-500/40' : 'bg-gray-50 border border-gray-200'}`}
-                    >
-                      <Upload size={11} className={isDark ? 'text-gray-400' : 'text-gray-600'} />
-                      <span className={`font-medium truncate max-w-20 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                        {file.name}
-                      </span>
-                      <button
-                        onClick={() => removeUploadedFile(idx)}
-                        className={`hover:opacity-70 transition-opacity`}
-                      >
-                        <X size={10} />
-                      </button>
-                    </motion.div>
-                  ))}
-                  {pendingFiles.map((file, idx) => (
-                    <motion.div
-                      key={`pending-${idx}`}
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px]
-                        ${isDark ? 'bg-green-600/20 border border-green-500/40' : 'bg-green-50 border border-green-200'}`}
-                    >
-                      <Upload size={11} className={isDark ? 'text-green-400' : 'text-green-600'} />
-                      <span className={`font-medium truncate max-w-20 ${isDark ? 'text-green-300' : 'text-green-700'}`}>
-                        {file.name}
-                      </span>
-                      <button
-                        onClick={() => removeUploadedFile(idx, true)}
-                        className={`hover:opacity-70 transition-opacity`}
-                      >
-                        <X size={10} />
-                      </button>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-
+            className={`px-4 pb-6 pt-2 flex-shrink-0 relative z-20 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}
+          >
+            <div className="max-w-3xl mx-auto">
               <motion.div
                 layout
-                transition={{ duration: 0.2 }}
-                className={`rounded-xl transition-all duration-300 overflow-visible backdrop-blur-md border shadow-sm mx-auto max-w-4xl
-                ${isDark
-                    ? 'bg-[#1e1e1e]/60 border-[#333] focus-within:bg-[#1e1e1e]/80 focus-within:border-gray-600 focus-within:ring-1 focus-within:ring-gray-700/50'
-                    : 'bg-white/80 border-gray-200 focus-within:bg-white focus-within:border-gray-300 focus-within:ring-1 focus-within:ring-blue-100'}`}>
+                className={`relative rounded-3xl border transition-all duration-500 overflow-hidden
+                  ${isDark
+                    ? 'bg-[#151515]/80 border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]'
+                    : 'bg-white border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.08)]'
+                  }
+                  ${query.trim() ? 'ring-1 ring-blue-500/20' : ''}`}
+              >
+                {/* Subtle top glare for glass effect */}
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
 
-                <div className="flex items-end gap-2 px-3 py-2">
-
-                  <div className="flex items-center gap-1 relative mb-0.5">
-                    <motion.button
-                      ref={dropdownRef}
-                      whileTap={{ scale: 0.9 }}
-                      whileHover={{ scale: 1.1, rotate: 10 }}
-                      onClick={() => setShowModalDropdown(!showModalDropdown)}
-                      className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 shadow-sm border relative
+                {/* Input Content */}
+                <div className="flex flex-col">
+                  {/* Action Bar (Top) */}
+                  <div className={`flex items-center justify-between px-4 py-2 border-b ${isDark ? 'border-white/5 bg-white/[0.02]' : 'border-slate-100 bg-slate-50/30'}`}>
+                    <div className="flex items-center gap-1.5">
+                      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest backdrop-blur-md
                         ${isDark
-                          ? 'bg-[#1e1e1e] border-white/10 hover:bg-white/10'
-                          : 'bg-white border-gray-100 hover:bg-gray-50 shadow-gray-200'}
-                        ${selectedModal === 'bakilat' ? 'text-violet-500' :
-                          selectedModal === 'nyaaya' ? 'text-emerald-500' :
-                            selectedModal === 'munshi' ? 'text-amber-500' :
-                              'text-indigo-500'}`}
-                    >
-                      <div className="scale-90">
-                        {getModalIcon(selectedModal)}
+                          ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
+                          : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                        <span>{selectedModal === 'legal_counsel' ? 'Bakilat 1.0' : modalOptions.find(o => o.id === selectedModal)?.label}</span>
                       </div>
 
-                      {/* Cute notification dot/sparkle */}
-                      <span className={`absolute top-0 right-0 w-2 h-2 rounded-full border-2 
-                        ${isDark ? 'border-[#1e1e1e]' : 'border-white'}
-                        ${selectedModal === 'bakilat' ? 'bg-violet-500' :
-                          selectedModal === 'nyaaya' ? 'bg-emerald-500' :
-                            selectedModal === 'munshi' ? 'bg-amber-500' :
-                              'bg-indigo-500'}`}
-                      />
-                    </motion.button>
-
-                    <AnimatePresence>
-                      {showModalDropdown && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.95, y: 8, filter: 'blur(8px)' }}
-                          animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
-                          exit={{ opacity: 0, scale: 0.95, y: 8, filter: 'blur(8px)' }}
-                          transition={{ duration: 0.15, ease: "easeOut" }}
-                          className={`absolute -left-2 bottom-full mb-5 w-52 rounded-xl shadow-2xl z-50 overflow-hidden border backdrop-blur-xl ring-1
-                            ${isDark
-                              ? 'bg-[#111111]/95 border-white/10 ring-white/5'
-                              : 'bg-white/95 border-gray-200/80 ring-gray-900/5'}`}
-                        >
-                          <div className={`px-2.5 py-1.5 border-b ${isDark ? 'border-white/5' : 'border-gray-100'}`}>
-                            <span className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Select Model</span>
-                          </div>
-                          <div className="p-1 space-y-0.5">
-                            {modalOptions.map((option, idx) => (
-                              <motion.button
-                                key={option.id}
-                                onClick={() => {
-                                  setSelectedModal(option.id);
-                                  setShowModalDropdown(false);
-                                }}
-                                className={`w-full px-2 py-1.5 text-left rounded-lg transition-all duration-200 group relative
-                                ${selectedModal === option.id
-                                    ? isDark
-                                      ? 'bg-white/10 text-white'
-                                      : 'bg-gray-100 text-gray-900'
-                                    : isDark
-                                      ? 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
-                                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <div className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors flex-shrink-0
-                                    ${selectedModal === option.id
-                                      ? option.color === 'violet' ? 'bg-violet-500 text-white shadow-md shadow-violet-500/20' :
-                                        option.color === 'emerald' ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' :
-                                          option.color === 'amber' ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' :
-                                            'bg-indigo-500 text-white shadow-md shadow-indigo-500/20'
-                                      : isDark ? 'bg-white/5 text-gray-500 group-hover:bg-white/10 group-hover:text-gray-300' : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200 group-hover:text-gray-700'
-                                    }`}>
-                                    <div className="scale-75 transform">
-                                      {getModalIcon(option.id)}
-                                    </div>
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between">
-                                      <span className="font-semibold text-[11px] leading-none">{option.label}</span>
-                                      {selectedModal === option.id && (
-                                        <motion.div layoutId="active-check">
-                                          <CheckCircle size={10} className={option.color === 'violet' ? 'text-violet-400' : option.color === 'emerald' ? 'text-emerald-400' : option.color === 'amber' ? 'text-amber-400' : 'text-indigo-400'} />
-                                        </motion.div>
-                                      )}
-                                    </div>
-                                    <p className={`text-[9px] mt-0.5 truncate opacity-70 font-medium`}>
-                                      {option.description}
-                                    </p>
-                                  </div>
-                                </div>
-                              </motion.button>
-                            ))}
-                          </div>
-                        </motion.div>
+                      {(uploadedFiles.length > 0 || pendingFiles.length > 0) && (
+                        <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-bold border
+                          ${isDark ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-100 text-emerald-600'}`}>
+                          <Upload size={10} strokeWidth={3} />
+                          <span>{uploadedFiles.length + pendingFiles.length} File(s)</span>
+                        </div>
                       )}
-                    </AnimatePresence>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => setShowModalDropdown(!showModalDropdown)}
+                        className={`p-1.5 rounded-lg transition-colors ${isDark ? 'text-slate-500 hover:text-slate-300 hover:bg-white/5' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
+                        title="Change model"
+                      >
+                        <Settings size={14} />
+                      </motion.button>
+                    </div>
                   </div>
 
-                  <textarea
-                    ref={inputRef}
-                    value={query}
-                    onChange={(e) => {
-                      setQuery(e.target.value);
-                      e.target.style.height = 'auto';
-                      e.target.style.height = Math.min(e.target.scrollHeight, 80) + 'px';
-                    }}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSubmit();
-                      }
-                    }}
-                    placeholder="Type your message..."
-                    style={isDark ? { backgroundColor: 'transparent' } : {}}
-                    className={`flex-1 outline-none border-none text-[13px] py-1.5 px-0 resize-none max-h-20 min-h-[24px] leading-relaxed tracking-normal break-words whitespace-pre-wrap
-                      ${isDark
-                        ? 'text-gray-200 placeholder-gray-500 caret-blue-500'
-                        : 'bg-transparent text-gray-800 placeholder-gray-400 caret-blue-600'}`}
-                    rows={1}
-                  />
+                  {/* Main Input Field */}
+                  <div className="flex items-end gap-3 p-4">
+                    <div className="flex-1 min-w-0">
+                      <textarea
+                        ref={inputRef}
+                        value={query}
+                        onChange={(e) => {
+                          setQuery(e.target.value);
+                          e.target.style.height = 'auto';
+                          e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                        }}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSubmit();
+                          }
+                        }}
+                        placeholder="Describe your legal situation..."
+                        className={`w-full bg-transparent !bg-transparent outline-none border-none text-[15px] font-medium leading-relaxed resize-none p-0 max-h-32 min-h-[24px] focus:ring-0
+                          ${isDark ? 'text-white placeholder-slate-500/60 caret-blue-500' : 'text-slate-900 placeholder-slate-400 caret-blue-600'}`}
+                        rows={1}
+                        spellCheck="false"
+                      />
+                    </div>
 
-                  <div className="flex items-center gap-1 pb-0.5">
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      whileHover={{ scale: 1.05 }}
-                      onClick={() => document.getElementById('file-input').click()}
-                      title="Upload file"
-                      className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all duration-200
-                        ${isDark
-                          ? 'hover:bg-white/10 text-gray-400 hover:text-gray-200'
-                          : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'}`}
-                    >
-                      <Upload size={16} strokeWidth={1.5} />
-                    </motion.button>
+                    {/* Bottom Utility Bar */}
+                    <div className="flex items-center gap-2 pb-0.5">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => document.getElementById('file-input').click()}
+                        className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all
+                          ${isDark
+                            ? 'bg-slate-800/50 border-white/5 text-slate-400 hover:text-white hover:bg-slate-700'
+                            : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+                      >
+                        <Upload size={18} />
+                      </motion.button>
 
-                    <input
-                      id="file-input"
-                      type="file"
-                      multiple
-                      accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
-                      onChange={(e) => handleFileUpload(e.target.files)}
-                      className="hidden"
-                    />
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleVoiceToggle}
+                        className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all
+                          ${isVoiceActive || showVoiceModal
+                            ? 'bg-red-500 text-white border-red-500 animate-pulse shadow-lg shadow-red-500/20'
+                            : isDark
+                              ? 'bg-slate-800/50 border-white/5 text-slate-400 hover:text-white hover:bg-slate-700'
+                              : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+                      >
+                        <Mic size={18} />
+                      </motion.button>
 
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      whileHover={isVoiceActive || showVoiceModal ? {} : { scale: 1.05 }}
-                      onClick={handleVoiceToggle}
-                      title="Voice input"
-                      className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all duration-200
-                        ${isVoiceActive || showVoiceModal
-                          ? isDark
-                            ? 'bg-red-500/20 text-red-400 animate-pulse'
-                            : 'bg-red-50 text-red-500 animate-pulse'
-                          : isDark
-                            ? 'hover:bg-white/10 text-gray-400 hover:text-gray-200'
-                            : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'}`}
-                    >
-                      <Mic size={16} strokeWidth={1.5} />
-                    </motion.button>
-
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      whileHover={!query.trim() && uploadedFiles.length === 0 && pendingFiles.length === 0 ? {} : { scale: 1.05 }}
-                      onClick={handleSubmit}
-                      disabled={!query.trim() && uploadedFiles.length === 0 && pendingFiles.length === 0}
-                      className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all duration-200 ml-1
-                        ${!query.trim() && uploadedFiles.length === 0 && pendingFiles.length === 0
-                          ? isDark
-                            ? 'text-gray-600 cursor-not-allowed'
-                            : 'text-gray-300 cursor-not-allowed'
-                          : isDark
-                            ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/20'
-                            : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20'}`}
-                    >
-                      <SendHorizontal size={14} strokeWidth={2} className={!query.trim() ? "ml-0.5" : ""} />
-                    </motion.button>
+                      <motion.button
+                        disabled={!query.trim() && uploadedFiles.length === 0 && pendingFiles.length === 0}
+                        onClick={handleSubmit}
+                        whileHover={query.trim() ? { scale: 1.05, x: 2 } : {}}
+                        whileTap={query.trim() ? { scale: 0.95 } : {}}
+                        className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300
+                          ${!query.trim() && uploadedFiles.length === 0 && pendingFiles.length === 0
+                            ? isDark ? 'text-slate-700 bg-slate-900/50 border border-white/5' : 'text-slate-200 bg-slate-50 border border-slate-100'
+                            : 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40'}`}
+                      >
+                        <SendHorizontal size={20} strokeWidth={2.5} />
+                      </motion.button>
+                    </div>
                   </div>
                 </div>
+
+                {/* File list (horizontal scroll if many) */}
+                <AnimatePresence>
+                  {(uploadedFiles.length > 0 || pendingFiles.length > 0) && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className={`px-4 pb-4 flex flex-wrap gap-2 pt-2 border-t ${isDark ? 'border-white/5' : 'border-slate-100'}`}
+                    >
+                      {[...uploadedFiles, ...pendingFiles].map((file, idx) => (
+                        <motion.div
+                          key={idx}
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-[11px] font-bold
+                            ${isDark ? 'bg-white/5 border-white/5 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
+                        >
+                          <FileText size={12} className="text-blue-500" />
+                          <span className="max-w-[120px] truncate">{file.name}</span>
+                          <button onClick={() => removeUploadedFile(idx)} className="hover:text-red-500 transition-colors">
+                            <X size={12} />
+                          </button>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
-            </motion.div>
+
+              <div className="mt-3 flex items-center justify-center gap-4">
+                <p className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-slate-700' : 'text-slate-400'}`}>
+                  MeraBakil provides AI-driven legal guidance. Verify all critical steps with a registered lawyer.
+                </p>
+              </div>
+            </div>
           </motion.div>
         </main>
       </div>
