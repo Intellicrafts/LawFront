@@ -44,6 +44,7 @@ jobs:
         env:
           REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
           REACT_APP_WALLET_API_URL: ${{ secrets.REACT_APP_WALLET_API_URL }}
+          REACT_APP_CHATBOT_API_URL: ${{ secrets.REACT_APP_CHATBOT_API_URL }}
           REACT_APP_VERIFICATION_API_URL: 'https://wgywp2sazh56bc7zg7ydni2uv40xfzji.lambda-url.ap-south-1.on.aws'
           REACT_APP_GOOGLE_CLIENT_ID: ${{ secrets.REACT_APP_GOOGLE_CLIENT_ID }}
           CI: false  # Prevents treating warnings as errors
