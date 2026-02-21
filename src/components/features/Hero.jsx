@@ -1094,16 +1094,17 @@ const Hero = () => {
   // Intelligent Auto-scroll for streaming chats
   useEffect(() => {
     if (chatContainerRef.current) {
-      const isAtBottom = chatContainerRef.current.scrollHeight - chatContainerRef.current.scrollTop - chatContainerRef.current.clientHeight < 100;
+      const isAtBottom = chatContainerRef.current.scrollHeight - chatContainerRef.current.scrollTop - chatContainerRef.current.clientHeight < 150;
 
-      if (isAtBottom || isLoading) {
+      // Only auto-scroll if the user hasn't manually scrolled up to read history
+      if (isAtBottom) {
         chatContainerRef.current.scrollTo({
           top: chatContainerRef.current.scrollHeight,
           behavior: 'smooth'
         });
       }
     }
-  }, [messages, isLoading]);
+  }, [messages]);
 
   useEffect(() => {
     localStorage.setItem('sidebarOpen', JSON.stringify(sidebarOpen));
@@ -1327,10 +1328,13 @@ const Hero = () => {
             return { ...msg, content: newContent };
           }));
 
-          // Force auto-scroll to bottom as chunks arrive
+          // Smart auto-scroll: only force scroll to bottom if user hasn't scrolled up
           const container = document.getElementById('chat-scroll-container');
           if (container) {
-            container.scrollTo({ top: container.scrollHeight, behavior: 'auto' });
+            const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+            if (isAtBottom) {
+              container.scrollTo({ top: container.scrollHeight, behavior: 'auto' });
+            }
           }
         }
       );
