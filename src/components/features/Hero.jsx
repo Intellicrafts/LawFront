@@ -640,7 +640,7 @@ const MessageActions = ({ text, isDark }) => {
 // ThoughtAccordion removed in favor of IntelligenceLog
 
 const MessageBubble = ({ message, thought, isDark, isUser, isStreaming = false, chatState, modelId = 'legal_counsel' }) => {
-  const [showLog, setShowLog] = useState(isStreaming);
+  const [showLog, setShowLog] = useState(false);
   const agentName = modalOptions.find(opt => opt.id === modelId)?.label || 'LAWYER TIA';
 
   return (
@@ -699,7 +699,7 @@ const MessageBubble = ({ message, thought, isDark, isUser, isStreaming = false, 
 
           {/* The Intelligence Log (Shown only when toggled) */}
           <AnimatePresence>
-            {!isUser && (showLog || isStreaming) && (thought || isStreaming) && (
+            {!isUser && showLog && (thought || isStreaming) && (
               <IntelligenceLog thought={thought} isStreaming={isStreaming} isDark={isDark} />
             )}
           </AnimatePresence>
@@ -1094,16 +1094,17 @@ const Hero = () => {
   // Intelligent Auto-scroll for streaming chats
   useEffect(() => {
     if (chatContainerRef.current) {
-      const isAtBottom = chatContainerRef.current.scrollHeight - chatContainerRef.current.scrollTop - chatContainerRef.current.clientHeight < 100;
+      const isAtBottom = chatContainerRef.current.scrollHeight - chatContainerRef.current.scrollTop - chatContainerRef.current.clientHeight < 150;
 
-      if (isAtBottom || isLoading) {
+      // Only auto-scroll if the user hasn't manually scrolled up to read history
+      if (isAtBottom) {
         chatContainerRef.current.scrollTo({
           top: chatContainerRef.current.scrollHeight,
           behavior: 'smooth'
         });
       }
     }
-  }, [messages, isLoading]);
+  }, [messages]);
 
   useEffect(() => {
     localStorage.setItem('sidebarOpen', JSON.stringify(sidebarOpen));
@@ -1327,10 +1328,13 @@ const Hero = () => {
             return { ...msg, content: newContent };
           }));
 
-          // Force auto-scroll to bottom as chunks arrive
+          // Smart auto-scroll: only force scroll to bottom if user hasn't scrolled up
           const container = document.getElementById('chat-scroll-container');
           if (container) {
-            container.scrollTo({ top: container.scrollHeight, behavior: 'auto' });
+            const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+            if (isAtBottom) {
+              container.scrollTo({ top: container.scrollHeight, behavior: 'auto' });
+            }
           }
         }
       );
@@ -1555,7 +1559,12 @@ const Hero = () => {
                     />
                   ))}
 
-                  {isLoading && (
+                  {/* 
+                      Only show skeleton loader if:
+                      1. We are in the "loading" state
+                      2. AND the currently streaming real-time message doesn't have any actual response text yet
+                  */}
+                  {isLoading && !messages.some(m => m.isRealTime && m.content.length > 0) && (
                     <div className="space-y-4">
                       <ChatStateIndicator
                         chatState={chatState}

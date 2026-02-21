@@ -9,20 +9,20 @@
   --blur-sm: blur(10px);
   --blur-md: blur(15px);
   --blur-lg: blur(20px);
-  
+
   /* Professional color schemes */
   --light-bg: #f8fafc;
   --light-bg-secondary: #f1f5f9;
   --light-text: #1e293b;
   --light-text-secondary: #64748b;
   --light-border: #e2e8f0;
-  
+
   --dark-bg: #0f172a;
   --dark-bg-secondary: #1e293b;
   --dark-text: #f8fafc;
   --dark-text-secondary: #cbd5e1;
   --dark-border: #334155;
-  
+
   /* Hero section inspired gradients */
   --gradient-hero-light: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   --gradient-hero-dark: linear-gradient(135deg, #1e3a8a 0%, #5b21b6 100%);
@@ -31,7 +31,7 @@
 /* Smooth Map Container */
 .leaflet-container {
   background: transparent !important;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-family: 'Inter' !important;
   -webkit-tap-highlight-color: transparent !important;
   -webkit-touch-callout: none !important;
   -webkit-user-select: none !important;
@@ -87,10 +87,13 @@
 }
 
 @keyframes pulse-online {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
     box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
   }
+
   50% {
     opacity: 0.8;
     box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
@@ -98,10 +101,13 @@
 }
 
 @keyframes pulse-location {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
   }
+
   50% {
     transform: scale(1.3);
     opacity: 0.3;
@@ -129,7 +135,7 @@
   margin: 0 !important;
   padding: 0 !important;
   line-height: 1.6 !important;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-family: 'Inter' !important;
   font-size: 14px !important;
   width: auto !important;
 }
@@ -244,15 +250,20 @@
 
 /* Card Animations & Effects */
 @keyframes blob {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
+
   25% {
     transform: translate(20px, -50px) scale(1.1);
   }
+
   50% {
     transform: translate(-20px, 20px) scale(0.9);
   }
+
   75% {
     transform: translate(50px, 50px) scale(1.05);
   }
@@ -305,7 +316,7 @@
   border-radius: 16px;
 }
 
-.gradient-border > div {
+.gradient-border>div {
   background: inherit;
   border-radius: 15px;
 }
@@ -346,12 +357,10 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent);
   transition: left 0.5s;
 }
 
@@ -380,12 +389,16 @@
 }
 
 @keyframes loading-dots {
-  0%, 20% {
+
+  0%,
+  20% {
     color: transparent;
   }
+
   40% {
     color: currentColor;
   }
+
   100% {
     color: transparent;
   }
@@ -401,6 +414,7 @@
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
@@ -421,10 +435,13 @@
 }
 
 @keyframes pulse-green {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
   }
+
   50% {
     transform: scale(1.2);
     opacity: 0.7;
@@ -432,10 +449,13 @@
 }
 
 @keyframes pulse-red {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
   }
+
   50% {
     transform: scale(1.1);
     opacity: 0.8;
@@ -483,7 +503,7 @@
     -ms-touch-action: pan-x pan-y;
     touch-action: pan-x pan-y;
   }
-  
+
   .custom-zoom-controls button {
     padding: 0.75rem !important;
     min-height: 44px;
@@ -498,38 +518,45 @@
     line-height: 44px !important;
     font-size: 1.2em !important;
   }
-  
+
   .zoom-btn {
     width: 48px;
     height: 48px;
     border-radius: 12px;
     font-size: 1.1em;
   }
-  
+
   .zoom-btn:hover {
     transform: scale(1.08);
   }
-  
+
   .zoom-btn[title="Locate Me"]:hover {
     animation: float-up-mobile 2s ease-in-out infinite;
   }
 
   @keyframes float-up-mobile {
-    0%, 100% { transform: scale(1.08) translateY(0); }
-    50% { transform: scale(1.08) translateY(-2px); }
+
+    0%,
+    100% {
+      transform: scale(1.08) translateY(0);
+    }
+
+    50% {
+      transform: scale(1.08) translateY(-2px);
+    }
   }
-  
+
   .modal-scroll {
     max-height: 60vh;
   }
-  
+
   /* Mobile Right Sidebar */
   .fixed.right-4.top-16 {
     right: 8px !important;
     top: 20px !important;
     gap: 8px !important;
   }
-  
+
   .fixed.right-4.top-16 button {
     padding: 10px 12px !important;
     font-size: 11px !important;
@@ -543,20 +570,20 @@
     height: 40px !important;
     line-height: 40px !important;
   }
-  
+
   .zoom-btn {
     width: 44px;
     height: 44px;
     border-radius: 10px;
     font-size: 1em;
   }
-  
+
   .fixed.right-4.top-16 button {
     padding: 8px 10px !important;
     font-size: 10px !important;
     gap: 4px !important;
   }
-  
+
   .fixed.right-4.top-16 button span {
     font-size: 16px !important;
   }
@@ -564,6 +591,7 @@
 
 /* Accessibility Improvements */
 @media (prefers-reduced-motion: reduce) {
+
   .leaflet-zoom-anim .leaflet-zoom-animated,
   .leaflet-fade-anim .leaflet-tile,
   .professional-lawyer-marker,
@@ -574,7 +602,7 @@
     animation: none !important;
     transition: none !important;
   }
-  
+
   .status-online,
   .status-busy {
     animation: none !important;
@@ -593,6 +621,7 @@
 
 /* Print Styles */
 @media print {
+
   .leaflet-control-zoom,
   .custom-zoom-controls {
     display: none !important;
@@ -601,7 +630,7 @@
 
 /* Professional Typography */
 .text-legal {
-  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Inter';
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
@@ -791,8 +820,15 @@
 }
 
 @keyframes float-up {
-  0%, 100% { transform: scale(1.12) translateY(0); }
-  50% { transform: scale(1.12) translateY(-4px); }
+
+  0%,
+  100% {
+    transform: scale(1.12) translateY(0);
+  }
+
+  50% {
+    transform: scale(1.12) translateY(-4px);
+  }
 }
 
 
@@ -847,6 +883,7 @@
 
 /* Responsive adjustments */
 @media (max-width: 1024px) {
+
   .fixed.right-6.top-20,
   .fixed.left-6.top-20 {
     right: 16px;
@@ -860,7 +897,7 @@
     height: 40px;
     font-size: 1em;
   }
-  
+
   .fixed.right-6.top-20,
   .fixed.left-6.top-20 {
     right: 12px;
@@ -876,7 +913,7 @@
     border-radius: 10px;
     font-size: 0.9em;
   }
-  
+
   .fixed.right-6.top-20,
   .fixed.left-6.top-20 {
     right: 8px;
@@ -914,8 +951,13 @@
    ============================================ */
 
 @keyframes animation-delay-2000 {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 .animation-delay-2000 {
@@ -989,11 +1031,16 @@
 }
 
 @keyframes shimmer-circle {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
-.professional-section-circular > * {
+.professional-section-circular>* {
   position: relative;
   z-index: 2;
 }
@@ -1136,7 +1183,7 @@
   .leaflet-container {
     background: var(--dark-bg) !important;
   }
-  
+
   .leaflet-tile {
     filter: brightness(0.9) contrast(1.15) saturate(0.85);
   }
@@ -1146,7 +1193,7 @@
   .leaflet-container {
     background: var(--light-bg) !important;
   }
-  
+
   .leaflet-tile {
     filter: brightness(1) contrast(1) saturate(1);
   }
@@ -1183,7 +1230,7 @@
 .glass-input-light:focus {
   background: rgba(255, 255, 255, 0.95);
   border-color: rgba(59, 130, 246, 0.6);
-  box-shadow: 
+  box-shadow:
     0 0 0 3px rgba(59, 130, 246, 0.1),
     0 8px 16px rgba(59, 130, 246, 0.15),
     inset 0 1px 2px rgba(255, 255, 255, 0.5);
@@ -1209,7 +1256,7 @@
 .glass-input-dark:focus {
   background: rgba(30, 41, 59, 0.8);
   border-color: rgba(139, 92, 246, 0.7);
-  box-shadow: 
+  box-shadow:
     0 0 0 3px rgba(139, 92, 246, 0.15),
     0 8px 16px rgba(139, 92, 246, 0.2),
     inset 0 1px 2px rgba(255, 255, 255, 0.1);
@@ -1294,8 +1341,8 @@
   outline: none;
   cursor: pointer;
   appearance: none;
-  background-image: 
-    linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 100%),
+  background-image:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.2) 100%),
     url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
   background-position: right 12px center;
@@ -1313,7 +1360,7 @@
 .glass-select-light:focus {
   background-color: rgba(255, 255, 255, 0.95);
   border-color: rgba(59, 130, 246, 0.6);
-  box-shadow: 
+  box-shadow:
     0 0 0 3px rgba(59, 130, 246, 0.1),
     0 8px 16px rgba(59, 130, 246, 0.15),
     inset 0 1px 2px rgba(255, 255, 255, 0.5);
@@ -1340,7 +1387,7 @@
 .glass-select-dark:focus {
   background-color: rgba(30, 41, 59, 0.8);
   border-color: rgba(139, 92, 246, 0.7);
-  box-shadow: 
+  box-shadow:
     0 0 0 3px rgba(139, 92, 246, 0.15),
     0 8px 16px rgba(139, 92, 246, 0.2),
     inset 0 1px 2px rgba(255, 255, 255, 0.1);
@@ -1375,14 +1422,14 @@
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.85), rgba(99, 102, 241, 0.85));
   color: white;
   border: 1px solid rgba(59, 130, 246, 0.5);
-  box-shadow: 
+  box-shadow:
     0 8px 16px rgba(59, 130, 246, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .glass-button-light:hover {
   background: linear-gradient(135deg, rgba(59, 130, 246, 1), rgba(99, 102, 241, 1));
-  box-shadow: 
+  box-shadow:
     0 12px 24px rgba(59, 130, 246, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   transform: translateY(-2px);
@@ -1390,7 +1437,7 @@
 
 .glass-button-light:active {
   transform: translateY(0);
-  box-shadow: 
+  box-shadow:
     0 4px 8px rgba(59, 130, 246, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
@@ -1400,14 +1447,14 @@
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.9), rgba(139, 92, 246, 0.9));
   color: white;
   border: 1px solid rgba(139, 92, 246, 0.6);
-  box-shadow: 
+  box-shadow:
     0 8px 16px rgba(139, 92, 246, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .glass-button-dark:hover {
   background: linear-gradient(135deg, rgba(99, 102, 241, 1), rgba(139, 92, 246, 1));
-  box-shadow: 
+  box-shadow:
     0 12px 24px rgba(139, 92, 246, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
@@ -1415,7 +1462,7 @@
 
 .glass-button-dark:active {
   transform: translateY(0);
-  box-shadow: 
+  box-shadow:
     0 4px 8px rgba(139, 92, 246, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }

@@ -403,7 +403,9 @@ class ChatbotApiService {
                                             }
                                             break;
                                         case 'error':
-                                            throw new Error(`Stream Error: ${parsed.content}`);
+                                            // Provide a nicely formatted error instead of crashing the parser and dumping raw JSON
+                                            contentObj.text = `\n\n**⚠️ Error:** ${parsed.content}\n`;
+                                            break;
                                         default:
                                             // Fallback for unknown types
                                             if (parsed.content) {
@@ -430,8 +432,8 @@ class ChatbotApiService {
                             }
                         } catch (e) {
                             console.warn('[ChatbotAPI] Chunk parse error:', e);
-                            // Fallback for non-JSON chunks or errors during parsing
-                            if (data) {
+                            // Only fallback to raw data if it doesn't look like a JSON object we failed to process
+                            if (data && !data.trim().startsWith('{') && !data.trim().startsWith('[')) {
                                 fullResponseText += data;
                                 textBuffer += data;
                                 emitBufferedText();
