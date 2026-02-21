@@ -281,7 +281,7 @@ const LegalCosultation = () => {
       consultation_fee: 3000,
       phone_number: '+91 98765 43210',
       email: 'rodger.prosacco@example.com',
-      license_number: 'BCI/100999/2015',
+      enrollment_no: 'BCI/100999/2015',
       is_verified: true,
       profile_picture_url: null,
       reviews_count: 25,
@@ -2002,7 +2002,7 @@ const LegalCosultation = () => {
                   {[
                     { label: 'Experience', value: selectedLawyer.years_of_experience ? `${selectedLawyer.years_of_experience}Y` : 'New', icon: Briefcase },
                     { label: 'Consultation', value: parseFloat(selectedLawyer.consultation_fee) > 0 ? `₹${Number(selectedLawyer.consultation_fee).toLocaleString('en-IN')}` : 'Free', icon: Award },
-                    { label: 'License', value: selectedLawyer.license_number || '—', icon: Shield }
+                    { label: 'License', value: selectedLawyer.enrollment_no || '—', icon: Shield }
                   ].map((stat, i) => (
                     <div key={i} className={`p-3 rounded-xl border text-center ${isDarkMode ? 'bg-white/[0.02] border-[#2A2A2A]' : 'bg-gray-50 border-gray-100'}`}>
                       <stat.icon size={12} className="mx-auto mb-1 text-blue-500" />
