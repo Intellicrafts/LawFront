@@ -12,7 +12,7 @@
 
   /* Apply Inter font globally — loaded from Google Fonts in index.html */
   html {
-    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-family: 'Inter';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }

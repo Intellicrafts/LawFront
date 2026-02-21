@@ -11,7 +11,7 @@ module.exports = {
     extend: {
       /* ── Typography ─────────────────────────────────── */
       fontFamily: {
-        sans: ['Inter', ...defaultTheme.fontFamily.sans],
+        sans: ['Inter'],
       },
       animation: {
         'fade-in-right': 'fadeInRight 0.3s ease-out',
