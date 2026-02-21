@@ -74,16 +74,19 @@ const AppLayout = ({ children }) => {
   const dispatch = useDispatch(); // Get dispatch
   const isLawyerAdmin = location.pathname.startsWith('/lawyer-admin');
   const isConsultation = location.pathname.startsWith('/consultation/');
+  const isFindLawyer = location.pathname === '/legal-consoltation';
   const isLandingPage = location.pathname === '/' || location.pathname === '/pricing' || location.pathname === '/contact' || location.pathname === '/terms-of-service' || location.pathname === '/privacy-policy' || location.pathname === '/refund-policy' || location.pathname === '/disclaimer';
-  const isChatbotPage = location.pathname === '/chatbot';
+  const isChatbotPage = location.pathname.startsWith('/chatbot');
+  const isWalletPage = location.pathname === '/wallet';
+  const isAuthPage = location.pathname === '/auth' || location.pathname === '/signup';
   const { chatHistory } = useSelector((state) => state.chat);
 
   // Fetch chat sessions when layout mounts (or when user logs in theoretically)
   useEffect(() => {
-    if (!isLawyerAdmin && !isLandingPage) {
+    if (!isLawyerAdmin && !isLandingPage && !isWalletPage) {
       dispatch(fetchChatSessions());
     }
-  }, [dispatch, isLawyerAdmin, isLandingPage]);
+  }, [dispatch, isLawyerAdmin, isLandingPage, isWalletPage]);
 
   // Manage chatbot-mode class on body for fixed height stability on mobile
   useEffect(() => {
@@ -100,7 +103,7 @@ const AppLayout = ({ children }) => {
       {!isLawyerAdmin && !isConsultation && <Navbar isLandingPage={isLandingPage} />}
       <ScrollToTop />
       <div className="flex flex-1 min-h-0">
-        {!isLawyerAdmin && !isLandingPage && !isConsultation && <Sidebar chatHistory={chatHistory} />}
+        {!isLawyerAdmin && !isLandingPage && !isConsultation && !isFindLawyer && !isWalletPage && !isAuthPage && <Sidebar chatHistory={chatHistory} />}
         <main className="flex-1 min-w-0 min-h-0 relative">
           {children}
         </main>
@@ -226,8 +229,7 @@ const App = () => {
                     <Route path="/" element={<HomeRoute />} />
 
                     {/* AI Chatbot Route */}
-                    <Route path="/chatbot" element={<Hero />} />
-                    <Route path="/chatbot/:sessionId" element={<Hero />} />
+                    <Route path="/chatbot/:sessionId?" element={<Hero />} />
 
                     {/* Public Routes */}
                     <Route path="/contact" element={<Contact />} />

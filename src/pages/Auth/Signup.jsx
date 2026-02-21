@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
   Scale, Check, User as UserIcon, Briefcase as BriefcaseIcon, Shield, Mail, Lock,
@@ -7,7 +8,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
-import { authAPI, tokenManager } from '../../api/apiService';
+import { authAPI, tokenManager, walletAPI } from '../../api/apiService';
 import { useToast } from '../../context/ToastContext';
 
 // Configure axios defaults
@@ -42,7 +43,7 @@ const Logo = () => {
     <div className="flex justify-center mb-4">
       <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${isDarkMode ? 'bg-brand-500/10' : 'bg-brand-50'}`}>
         <Scale size={22} className="text-brand-500" strokeWidth={2.5} />
-        <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-brand-900'}`}>Mera Vakil</span>
+        <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-brand-900'}`}>MeraBakil</span>
       </div>
     </div>
   );
@@ -475,28 +476,23 @@ export const Signup = ({ onSignupSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const { showSuccess, showError, showInfo, showWarning } = useToast();
+  const navigate = useNavigate();
 
   // Lawyer-specific fields
   const [enrollmentNo, setEnrollmentNo] = useState('');
-  const [copCertificate, setCopCertificate] = useState(null);
-  const [enrollmentCertificate, setEnrollmentCertificate] = useState(null);
-  const [addressProof, setAddressProof] = useState(null);
 
   // Reset lawyer-specific fields when account type changes
   useEffect(() => {
     if (accountType === 'personal') {
       setEnrollmentNo('');
-      setCopCertificate(null);
-      setEnrollmentCertificate(null);
-      setAddressProof(null);
     }
   }, [accountType]);
 
   useEffect(() => {
     if (tokenManager.isAuthenticated()) {
-      window.location.href = '/';
+      navigate('/', { replace: true });
     }
-  }, []);
+  }, [navigate]);
 
   // Email validation helper
   const isValidEmail = (email) => {
@@ -560,16 +556,6 @@ export const Signup = ({ onSignupSuccess }) => {
         showError('Please enter your Enrollment Number');
         return;
       }
-
-      if (!enrollmentCertificate) {
-        showError('Please upload your Certificate of Enrollment');
-        return;
-      }
-
-      if (!copCertificate) {
-        showError('Please upload your Certificate of Practice (CoP)');
-        return;
-      }
     }
 
     setLoading(true);
@@ -594,26 +580,6 @@ export const Signup = ({ onSignupSuccess }) => {
       formData.append('password_confirmation', confirmPassword);
       formData.append('account_type', accountType);
 
-      // Add lawyer-specific fields if account type is business
-      if (accountType === 'business') {
-        // Use a local variable instead of modifying the state directly
-        const accountTypeValue = 2;
-        formData.append('account_type', accountTypeValue);
-        formData.append('enrollment_no', enrollmentNo.trim());
-
-        if (enrollmentCertificate) {
-          formData.append('enrollment_certificate', enrollmentCertificate);
-        }
-
-        if (copCertificate) {
-          formData.append('cop_certificate', copCertificate);
-        }
-
-        if (addressProof) {
-          formData.append('address_proof', addressProof);
-        }
-      }
-
       // Convert to regular object for API that doesn't handle FormData
       const registrationData = {
         name: `${firstName.trim()} ${lastName.trim()}`,
@@ -626,104 +592,101 @@ export const Signup = ({ onSignupSuccess }) => {
       // Add lawyer-specific fields to the regular object
       if (accountType === 'business') {
         registrationData.enrollment_no = enrollmentNo.trim();
-        // Note: Files will be handled by FormData, not included in this object
       }
-
 
       // Step 3: Send registration request using centralized API
       let response;
 
-      // Use FormData for lawyer registration (with file uploads)
-      if (accountType === 'business' && (enrollmentCertificate || copCertificate || addressProof)) {
-        // Create a custom axios request with FormData
-        const config = {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-          },
-          withCredentials: true
-        };
-
-        try {
-          response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/register`, formData, config);
-          console.log('FormData registration response:', response);
-        } catch (formDataError) {
-          console.error('FormData registration error:', formDataError);
-          throw formDataError;
-        }
-      } else {
-        // Use regular JSON request for standard registration
-        try {
-          response = await authAPI.register(registrationData);
-          console.log('JSON registration response:', response);
-        } catch (jsonError) {
-          console.error('JSON registration error:', jsonError);
-          throw jsonError;
-        }
+      // Use regular JSON request for standard registration
+      try {
+        response = await authAPI.register(registrationData);
+        console.log('JSON registration response:', response);
+      } catch (jsonError) {
+        console.error('JSON registration error:', jsonError);
+        throw jsonError;
       }
 
       console.log('Registration response:', response.data);
 
       // Step 4: Handle successful registration
       if (response.data && (response.data.access_token || response.data.token)) {
-        // Use token manager to store authentication data
+
+        // === START: Auto-create Wallet ===
+        try {
+          if (response.data.user && response.data.user.id) {
+            const userTypeStr = accountType === 'business' ? 'LAWYER' : 'CUSTOMER';
+            const walletPayload = {
+              user_id: response.data.user.id.toString(),
+              user_type: userTypeStr,
+              currency: 'INR'
+            };
+            await walletAPI.createWallet(walletPayload);
+            // showSuccess('Wallet initialized successfully'); // Hiding to avoid double-toasts
+          }
+        } catch (walletError) {
+          console.error('Error auto-creating wallet:', walletError.message);
+          let errorMsg = 'Failed to initialize wallet.';
+          if (walletError.response && walletError.response.data) {
+            errorMsg = `Wallet Error: ${walletError.response.data.detail || JSON.stringify(walletError.response.data)}`;
+          }
+          // Hard fail - disrupt the signup flow BEFORE setting tokens
+          throw new Error(errorMsg);
+        }
+        // === END: Auto-create Wallet ===
+
+        // Store tokens silently first so they are ready
         const token = response.data.access_token || response.data.token;
         tokenManager.setToken(token);
-
         if (response.data.user) {
           tokenManager.setUser(response.data.user);
         }
 
-        // Dispatch event to notify other components of authentication change
-        window.dispatchEvent(new CustomEvent('auth-status-changed', {
-          detail: { authenticated: true, user: response.data.user }
-        }));
+        // Set flag to trigger onboarding tour for new signups
+        sessionStorage.setItem('isSignupSession', 'true');
 
         showSuccess('Registration successful! Welcome to MeraBakil!');
 
-        // Conditional redirect based on user_type
+        // Wait for the user to see the success message before doing ANY state changes
+        // that would unmount the signup component and cause flickering
         setTimeout(() => {
+          // Dispatch event to notify other components of authentication change
+          // Doing this inside the timeout prevents the Navbar/Router from instantly
+          // jerking the user away while the toast is still trying to render
+          window.dispatchEvent(new CustomEvent('auth-status-changed', {
+            detail: { authenticated: true, user: response.data.user }
+          }));
+
           const user = response?.data?.user;
           const userType = user?.user_type;
           const role = user?.role?.toLowerCase();
 
           // If a redirect URL is explicitly provided in query string, use that
           const urlRedirectParam = new URLSearchParams(window.location.search).get('redirect');
-
           let redirectUrl = '/';
 
           if (urlRedirectParam) {
             redirectUrl = urlRedirectParam;
           } else if (userType === 2 || userType === 'business' || userType === 'lawyer' || role === 'lawyer') {
-            // Lawyer / Business account - redirect to Lawyer Admin Dashboard
             redirectUrl = '/lawyer-admin';
           } else if (userType === 1 || userType === 'personal' || userType === 'user' || role === 'user' || role === 'client') {
-            // Normal user / Client - redirect to homepage
             redirectUrl = '/';
           } else if (userType === null || userType === undefined || userType === 0) {
-            // User has no user_type set (null, undefined, or 0), redirect to profile type selection
             redirectUrl = '/profile-setup/type-selection';
-          } else {
-            // Default fallback
-            redirectUrl = '/';
           }
 
           console.log(`Signup - Redirecting user (type: ${userType}, role: ${role}) to: ${redirectUrl}`);
-          window.location.href = redirectUrl;
-        }, 2000);
 
-
-        // Call parent callback if provided
-        if (onSignupSuccess) {
-          setTimeout(() => {
+          if (onSignupSuccess) {
             onSignupSuccess(response.data);
-          }, 1500);
-        }
+          }
+
+          navigate(redirectUrl, { replace: true });
+        }, 1500);
+
       } else {
         showWarning('Registration completed but authentication failed. Please try logging in.');
         setTimeout(() => {
-          window.location.href = '/auth';
+          navigate('/auth');
         }, 2000);
       }
 
@@ -850,12 +813,14 @@ export const Signup = ({ onSignupSuccess }) => {
           }
 
           console.log(`Google Signup - Redirecting user (type: ${userType}, role: ${role}) to: ${redirectUrl}`);
-          window.location.href = redirectUrl;
-        }, 1500);
+          navigate(redirectUrl, { replace: true });
+        }, 2000); // Wait 2 seconds before redirecting so user can see Toasts
 
       } else {
-        showWarning('Google signup completed but authentication token was not received. Please try again.');
+        // Unexpected response format without token
+        throw new Error('Registration failed. Please try again.');
       }
+
 
     } catch (error) {
       console.error('Google signup error:', error);
@@ -922,7 +887,7 @@ export const Signup = ({ onSignupSuccess }) => {
               <Logo />
             </motion.div>
             <h2 className={`text-2xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-1`}>Create Account</h2>
-            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Join Mera Vakil's professional legal network</p>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Join MeraBakil's professional legal network</p>
           </div>
 
           <div className="flex items-center justify-center mb-8 gap-4">
@@ -974,7 +939,7 @@ export const Signup = ({ onSignupSuccess }) => {
                         name="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="lawyer@meravakil.com"
+                        placeholder="lawyer@merabakil.com"
                         icon={<Mail size={16} />}
                       />
                     </div>
@@ -1065,10 +1030,6 @@ export const Signup = ({ onSignupSuccess }) => {
                       <div className="space-y-1.5">
                         <label className="text-xs font-bold uppercase text-gray-500 tracking-wider">Bar Council Enrollment No.</label>
                         <InputField type="text" id="enrollmentNo" name="enrollmentNo" value={enrollmentNo} onChange={(e) => setEnrollmentNo(e.target.value)} icon={<Scale size={16} />} />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FileUploadField id="enrollmentCert" label="Enrollment Cert." onChange={setEnrollmentCertificate} required />
-                        <FileUploadField id="copCert" label="CoP Certificate" onChange={setCopCertificate} required />
                       </div>
                     </motion.div>
                   )}

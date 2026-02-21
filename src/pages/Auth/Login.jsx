@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Mail, Lock, Eye, EyeOff, Scale, Check, AlertCircle, CheckCircle, Smartphone, Globe, Shield } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -31,7 +32,7 @@ const Logo = () => {
     <div className="flex justify-center mb-4">
       <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${isDarkMode ? 'bg-brand-500/10' : 'bg-brand-50'}`}>
         <Scale size={22} className="text-brand-500" strokeWidth={2.5} />
-        <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-brand-900'}`}>Mera Vakil</span>
+        <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-brand-900'}`}>MeraBakil</span>
       </div>
     </div>
   );
@@ -257,6 +258,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
   // Get theme from Redux
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -273,9 +275,9 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
   useEffect(() => {
     // Check if user is already authenticated
     if (tokenManager.isAuthenticated()) {
-      window.location.href = '/';
+      navigate('/', { replace: true });
     }
-  }, []);
+  }, [navigate]);
 
   // Input validation functions
   const validateEmail = (email) => {
@@ -456,7 +458,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
           }
 
           console.log(`Redirecting user (type: ${userType}, role: ${role}) to: ${redirectUrl}`);
-          window.location.href = redirectUrl;
+          navigate(redirectUrl, { replace: true });
         }, 1500);
 
       } else {
@@ -557,7 +559,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
           }
 
           console.log(`Google Login - Redirecting user (type: ${userType}, role: ${role}) to: ${redirectUrl}`);
-          window.location.href = redirectUrl;
+          navigate(redirectUrl, { replace: true });
         }, 1500);
 
       } else {
@@ -579,7 +581,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     if (onSwitchToRegister) {
       onSwitchToRegister();
     } else {
-      window.location.href = '/register';
+      navigate('/register');
     }
   };
 
@@ -631,7 +633,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
               Welcome Back
             </h1>
             <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              Sign in to your Mera Vakil account
+              Sign in to your MeraBakil account
             </p>
           </div>
 
@@ -747,7 +749,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
 
             <div className="pt-6 border-t border-gray-100 dark:border-gray-800 text-center">
               <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                New to Mera Vakil?{' '}
+                New to MeraBakil?{' '}
                 <button
                   type="button"
                   onClick={handleSwitchToRegister}

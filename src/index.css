@@ -3,12 +3,13 @@
 @tailwind utilities;
 
 /* ══════════════════════════════════════════════════
-   DESIGN SYSTEM — Mera Vakil Brand Styles
+   DESIGN SYSTEM — MeraBakil Brand Styles
    Colors, typography, and utilities defined in tailwind.config.js
    This file handles base overrides and reusable component classes
    ══════════════════════════════════════════════════ */
 
 @layer base {
+
   /* Apply Inter font globally — loaded from Google Fonts in index.html */
   html {
     font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -18,6 +19,7 @@
 }
 
 @layer components {
+
   /* Trust / verification badge — use on verified lawyer cards */
   .badge-verified {
     @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-verified-50 text-verified-700 border border-verified-200;
@@ -312,7 +314,7 @@ html {
     color-scheme: dark;
   }
 
-  /* Smooth transitions for theme changes */
+  /* Smooth transitions for theme changes but not scrolling */
   *,
   *::before,
   *::after {
@@ -334,11 +336,11 @@ html {
     @apply text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300;
   }
 
-  /* Form elements */
+  /* Form elements - Minimal defaults to avoid layout shifts */
   input,
   textarea,
   select {
-    @apply bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400;
+    @apply bg-transparent border-none text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none;
   }
 
   /* Buttons */

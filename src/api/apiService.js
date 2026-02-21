@@ -67,8 +67,9 @@ apiClient.interceptors.response.use(
 // Helper: create a new session for a given app and user
 export async function createSession(appName, userId) {
   try {
-    const base = process.env.REACT_APP_CHATBOT_API_URL || 'http://bakilapp-alb-59756411.ap-south-1.elb.amazonaws.com';
-    const host = base.replace(/\/run$/, ''); // strip trailing /run
+    const base = process.env.REACT_APP_CHATBOT_API_URL;
+    if (!base) console.error('[apiService] REACT_APP_CHATBOT_API_URL is NOT defined!');
+    const host = base ? base.replace(/\/run$/, '') : ''; // strip trailing /run
     const url = `${host}/apps/${appName}/users/${userId}/sessions`;
     const resp = await fetch(url, {
       method: 'POST',
@@ -100,10 +101,10 @@ export const chatbotAPI = {
    */
   getChatResponse: async (query, model = 'legal_counsel', sessionIdInput = 'session_123', userId = 'user_123') => {
     try {
-      const apiUrl = process.env.REACT_APP_CHATBOT_API_URL || 'http://bakilapp-alb-59756411.ap-south-1.elb.amazonaws.com';
+      const apiUrl = process.env.REACT_APP_CHATBOT_API_URL;
 
-      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const baseUrl = isLocalhost ? '' : 'http://bakilapp-alb-59756411.ap-south-1.elb.amazonaws.com';
+      const baseUrl = process.env.REACT_APP_CHATBOT_API_URL || '';
+      console.log(`[apiService] getChatResponse using baseUrl: "${baseUrl}"`);
       const runUrl = `${baseUrl}/unified_chat`;
 
       // 1. Create/Ensure Session first
@@ -2179,67 +2180,84 @@ export const lawyerVerificationAPI = {
       console.error('Error fetching my verification application:', error.response || error);
       throw error;
     }
+  } // Removed ending comma, as this is the last item
+}; // END OF apiServices
+
+/**
+ * Wallet API integrations
+ */
+export const walletAPI = {
+  /**
+   * Create a new wallet
+   */
+  createWallet: async (walletData) => {
+    // Expected payload: { user_id, user_type, currency }
+    try {
+      if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
+        return { status: "success", wallet_id: "mock_wallet_" + Date.now() };
+      }
+      const response = await axios.post(`${config.WALLET_API_URL}${config.WALLET.CREATE}`, walletData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating wallet:', error);
+      throw error;
+    }
   },
 
   /**
-   * Wallet API integrations
+   * Get user wallet balance and details
    */
-  walletAPI: {
-    /**
-     * Get user wallet balance and details
-     */
-    getBalance: async (userId) => {
-      try {
-        if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
-          // Mock response
-          return {
-            user_id: userId,
-            balance: 2500.00,
-            currency: "INR",
-            status: "active"
-          };
-        }
-        const response = await apiClient.get(config.WALLET.GET_BALANCE(userId));
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching wallet balance:', error);
-        // Fallback for demo if API fails
-        return { balance: 0, currency: "INR" };
+  getBalance: async (userId) => {
+    try {
+      if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
+        // Mock response
+        return {
+          user_id: userId,
+          balance: 2500.00,
+          currency: "INR",
+          status: "active"
+        };
       }
-    },
+      const response = await apiClient.get(config.WALLET.GET_BALANCE(userId));
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching wallet balance:', error);
+      // Fallback for demo if API fails
+      return { balance: 0, currency: "INR" };
+    }
+  },
 
-    /**
-     * Process service payment
-     */
-    processPayment: async (paymentData) => {
-      // Expected payload: { payer_user_id, receiver_user_id, amount, description, category }
-      try {
-        if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
-          return { status: "success", transaction_id: "mock_tx_" + Date.now() };
-        }
-        const response = await apiClient.post(config.WALLET.PAY, paymentData);
-        return response.data;
-      } catch (error) {
-        console.error('Error processing wallet payment:', error);
-        throw error;
+  /**
+   * Process service payment
+   */
+  processPayment: async (paymentData) => {
+    // Expected payload: { payer_user_id, receiver_user_id, amount, description, category }
+    try {
+      if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
+        return { status: "success", transaction_id: "mock_tx_" + Date.now() };
       }
-    },
+      const response = await apiClient.post(config.WALLET.PAY, paymentData);
+      return response.data;
+    } catch (error) {
+      console.error('Error processing wallet payment:', error);
+      throw error;
+    }
+  },
 
-    /**
-     * Recharge wallet
-     */
-    recharge: async (rechargeData) => {
-      // Expected payload: { user_id, amount, description }
-      try {
-        if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
-          return { status: "success", new_balance: 5000 };
-        }
-        const response = await apiClient.post(config.WALLET.RECHARGE, rechargeData);
-        return response.data;
-      } catch (error) {
-        console.error('Error recharging wallet:', error);
-        throw error;
+  /**
+   * Recharge wallet
+   */
+  recharge: async (rechargeData) => {
+    // Expected payload: { user_id, amount, description }
+    try {
+      if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
+        return { status: "success", new_balance: 5000 };
       }
+      const response = await apiClient.post(config.WALLET.RECHARGE, rechargeData);
+      return response.data;
+    } catch (error) {
+      console.error('Error recharging wallet:', error);
+      throw error;
     }
   }
 };
@@ -2456,5 +2474,5 @@ export const lawyerAdminAPI = {
 };
 
 export default apiClient;
-// Export wallet and other services
-export { apiServices as walletServices };
+// Export wallet and other services safely
+export const { walletAPI: walletServices } = apiServices;

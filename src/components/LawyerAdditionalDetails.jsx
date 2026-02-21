@@ -77,8 +77,8 @@ const Toast = ({ message, type = 'success', onClose }) => {
           setTimeout(onClose, 300);
         }}
         className={`ml-auto -mx-1.5 -my-1.5 ${isDarkMode
-            ? 'bg-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-700'
-            : 'bg-white text-gray-400 hover:text-gray-900 hover:bg-gray-100'
+          ? 'bg-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-700'
+          : 'bg-white text-gray-400 hover:text-gray-900 hover:bg-gray-100'
           } rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 inline-flex items-center justify-center h-8 w-8`}
       >
         <span className="sr-only">Close</span>
@@ -159,12 +159,12 @@ const FileUploadField = ({ id, name, label, icon, onChange, required = false, ac
       <div
         onClick={triggerFileInput}
         className={`relative border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 ${hasFile
-            ? isDarkMode
-              ? 'border-green-600 bg-green-900 bg-opacity-20'
-              : 'border-green-300 bg-green-50'
-            : isDarkMode
-              ? 'border-gray-600 hover:border-blue-600 hover:bg-blue-900 hover:bg-opacity-20'
-              : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+          ? isDarkMode
+            ? 'border-green-600 bg-green-900 bg-opacity-20'
+            : 'border-green-300 bg-green-50'
+          : isDarkMode
+            ? 'border-gray-600 hover:border-blue-600 hover:bg-blue-900 hover:bg-opacity-20'
+            : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
           }`}
       >
         <input
@@ -207,8 +207,8 @@ const InputField = ({ type, id, name, value, onChange, placeholder, icon, requir
   return (
     <div className="relative group">
       <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${isDarkMode
-          ? 'text-gray-500 group-focus-within:text-blue-400'
-          : 'text-gray-400 group-focus-within:text-blue-500'
+        ? 'text-gray-500 group-focus-within:text-blue-400'
+        : 'text-gray-400 group-focus-within:text-blue-500'
         } transition-colors duration-200`}>
         {icon}
       </div>
@@ -219,8 +219,8 @@ const InputField = ({ type, id, name, value, onChange, placeholder, icon, requir
         value={value}
         onChange={onChange}
         className={`block w-full pl-10 pr-4 py-3.5 rounded-lg shadow-sm transition-all duration-300 ${isDarkMode
-            ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
-            : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
+          ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
+          : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
           }`}
         placeholder={placeholder}
         required={required}
@@ -243,8 +243,8 @@ const TextareaField = ({ id, name, value, onChange, placeholder, rows = 4, requi
       onChange={onChange}
       rows={rows}
       className={`block w-full px-4 py-3.5 rounded-lg shadow-sm transition-all duration-300 resize-none ${isDarkMode
-          ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
-          : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
+        ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
+        : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
         }`}
       placeholder={placeholder}
       required={required}
@@ -278,8 +278,8 @@ const MultiSelectField = ({ id, name, label, options, selectedValues, onChange, 
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           className={`w-full px-4 py-3.5 text-left rounded-lg shadow-sm transition-all duration-300 ${isDarkMode
-              ? 'border border-gray-600 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
-              : 'border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
+            ? 'border border-gray-600 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
+            : 'border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
             }`}
         >
           <span className={selectedValues.length === 0 ? 'text-gray-400' : ''}>
@@ -303,12 +303,12 @@ const MultiSelectField = ({ id, name, label, options, selectedValues, onChange, 
                   type="button"
                   onClick={() => handleOptionToggle(option)}
                   className={`w-full text-left px-3 py-2 rounded-md transition-colors duration-200 ${selectedValues.includes(option)
-                      ? isDarkMode
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-blue-100 text-blue-900'
-                      : isDarkMode
-                        ? 'hover:bg-gray-600 text-gray-300'
-                        : 'hover:bg-gray-50 text-gray-700'
+                    ? isDarkMode
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-blue-100 text-blue-900'
+                    : isDarkMode
+                      ? 'hover:bg-gray-600 text-gray-300'
+                      : 'hover:bg-gray-50 text-gray-700'
                     }`}
                 >
                   <div className="flex items-center">
@@ -333,8 +333,8 @@ const MultiSelectField = ({ id, name, label, options, selectedValues, onChange, 
             <span
               key={value}
               className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${isDarkMode
-                  ? 'bg-blue-900 text-blue-300 border border-blue-700'
-                  : 'bg-blue-100 text-blue-800 border border-blue-200'
+                ? 'bg-blue-900 text-blue-300 border border-blue-700'
+                : 'bg-blue-100 text-blue-800 border border-blue-200'
                 }`}
             >
               {value}
@@ -458,16 +458,6 @@ const LawyerAdditionalDetails = () => {
       return;
     }
 
-    if (!enrollmentCertificate) {
-      showError('Please upload your Certificate of Enrollment', 'error');
-      return;
-    }
-
-    if (!copCertificate) {
-      showError('Please upload your Certificate of Practice (CoP)', 'error');
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -540,8 +530,8 @@ const LawyerAdditionalDetails = () => {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode
-        ? 'bg-gray-900 text-gray-100'
-        : 'bg-gradient-to-br from-blue-50 via-white to-indigo-50'
+      ? 'bg-gray-900 text-gray-100'
+      : 'bg-gradient-to-br from-blue-50 via-white to-indigo-50'
       }`}>
       {/* Legal strip */}
       <LegalStrip />
@@ -554,14 +544,14 @@ const LawyerAdditionalDetails = () => {
 
           {/* Card container */}
           <div className={`rounded-2xl shadow-2xl overflow-hidden ${isDarkMode
-              ? 'bg-gray-800 border border-gray-700'
-              : 'bg-white'
+            ? 'bg-gray-800 border border-gray-700'
+            : 'bg-white'
             }`}>
 
             {/* Header */}
             <div className={`px-8 pt-8 pb-6 ${isDarkMode
-                ? 'bg-gray-800'
-                : 'bg-white'
+              ? 'bg-gray-800'
+              : 'bg-white'
               }`}>
               <Logo />
 
@@ -734,7 +724,7 @@ const LawyerAdditionalDetails = () => {
                       label="Certificate of Enrollment"
                       icon={<FaFileAlt />}
                       onChange={setEnrollmentCertificate}
-                      required
+                      required={false}
                       accept="application/pdf,image/*"
                     />
                   </div>
@@ -747,7 +737,7 @@ const LawyerAdditionalDetails = () => {
                       label="Certificate of Practice (CoP)"
                       icon={<FaFileAlt />}
                       onChange={setCopCertificate}
-                      required
+                      required={false}
                       accept="application/pdf,image/*"
                     />
                   </div>

@@ -16,6 +16,7 @@ const config = {
     // Wallet Service Endpoints (Kuberdhan)
     WALLET: {
         BASE: '/api/v1/wallets',
+        CREATE: '/api/v1/wallets/',
         GET_BALANCE: (userId) => `/api/v1/wallets/${userId}`,
         RECHARGE: '/api/v1/wallets/recharge',
         PAY: '/api/v1/wallets/pay',

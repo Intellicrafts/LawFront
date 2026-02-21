@@ -12,13 +12,14 @@ import {
   Heart, Share2, Copy, Volume2, Download, CheckCircle,
   Loader2, Brain, BookOpen, PenTool, Zap, ThumbsUp, ThumbsDown, VolumeX,
   PanelLeftClose, PanelLeftOpen, ArrowRight, TrendingUp, Cpu, Target,
-  History, Archive, Star as StarIcon
+  History, Archive, Star as StarIcon, FileText
 } from 'lucide-react';
 import { chatbotService, CHAT_STATES, AI_MODELS } from '../../services/chatbotApiService';
 import { useParams, useNavigate } from 'react-router-dom';
 import { chatbotAPI } from '../../api/apiService';
 import { fetchChatSessions } from '../../redux/chatSlice';
-
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 // Custom Lawyer Tia Avatar Component
 const TiaAvatar = ({ isStreaming }) => (
   <div className="relative group">
@@ -46,43 +47,246 @@ const TiaAvatar = ({ isStreaming }) => (
   </div>
 );
 
-// High-Tech Intelligence Log Box
+// High-Tech Intelligence Log Box - Redesigned for Customer Centricity
 const IntelligenceLog = ({ thought, isStreaming, isDark }) => {
   if (!thought && !isStreaming) return null;
+
+  // We parse the raw backend string into UI steps
+  // Example thought: "[STATUS] Analyzing query... \n [CLASSIFICATION] other \n [CACHE_MISS] No relevant cache found"
+  const rawText = thought || '';
+
+  const steps = [];
+  if (rawText.includes('[STATUS]')) steps.push({ label: 'Analyzing Legal Query', active: true, done: rawText.includes('[CLASSIFICATION]') });
+  if (rawText.includes('[CLASSIFICATION]')) {
+    const match = rawText.match(/\[CLASSIFICATION\]\s*([^\n]+)/i);
+    const intent = match ? match[1].trim() : 'Legal Matter';
+    steps.push({ label: `Identified Intent: ${intent}`, active: true, done: rawText.includes('[CACHE') || rawText.includes('keep-alive') });
+  }
+  if (rawText.includes('[CACHE_HIT]')) steps.push({ label: 'Retrieving Prior Legal Precedents...', active: true, done: true });
+  if (rawText.includes('[CACHE_MISS]')) steps.push({ label: 'Consulting Knowledge Base...', active: true, done: true });
+
+  const fallBackSteps = [{ label: 'Initializing Neural Engine...', active: true, done: false }];
+  const displaySteps = steps.length > 0 ? steps : fallBackSteps;
 
   return (
     <motion.div
       initial={{ height: 0, opacity: 0 }}
       animate={{ height: 'auto', opacity: 1 }}
       exit={{ height: 0, opacity: 0 }}
-      className={`mb-4 w-full rounded-2xl border overflow-hidden backdrop-blur-xl transition-all duration-500
-        ${isDark ? 'bg-[#0A0A0A]/40 border-white/5' : 'bg-slate-50/50 border-slate-200'}`}
+      className={`mb-6 w-full max-w-sm rounded-2xl overflow-hidden p-[1px] transition-all duration-700 shadow-2xl
+        ${isDark ? 'bg-gradient-to-br from-emerald-500/20 via-blue-500/10 to-transparent' : 'bg-gradient-to-br from-emerald-400/30 via-blue-400/20 to-transparent'}`}
     >
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-white/5">
-        <div className="flex items-center gap-2">
-          <Cpu size={14} className="text-blue-500" />
-          <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Intelligence Process Log</span>
+      <div className={`relative px-5 py-4 w-full h-full backdrop-blur-2xl rounded-2xl ${isDark ? 'bg-[#0A0A0E]/95' : 'bg-white/95'}`}>
+
+        {/* Header */}
+        <div className={`flex items-center justify-between pb-3 mb-3 border-b ${isDark ? 'border-white/5' : 'border-slate-200'}`}>
+          <div className="flex items-center gap-2.5">
+            <Cpu className={isStreaming ? "text-emerald-400 animate-pulse" : "text-emerald-500"} size={14} />
+            <span className={`text-[10px] font-black uppercase tracking-[0.15em] ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+              Intelligence Pipeline
+            </span>
+          </div>
+          {isStreaming && (
+            <div className="flex gap-[3px]">
+              {[1, 2, 3].map(i => (
+                <motion.div
+                  key={i}
+                  animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
+                  transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.2 }}
+                  className="w-1 h-1 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                />
+              ))}
+            </div>
+          )}
         </div>
-        {isStreaming && (
-          <div className="flex gap-1">
-            {[1, 2, 3].map(i => (
-              <motion.div
-                key={i}
-                animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
-                transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.2 }}
-                className="w-1 h-1 rounded-full bg-blue-500"
-              />
-            ))}
-          </div>
-        )}
+
+        {/* Steps */}
+        <div className="flex flex-col gap-3">
+          {displaySteps.map((step, idx) => (
+            <div key={idx} className="flex items-start gap-4">
+              <div className="relative flex flex-col items-center mt-0.5">
+                {/* Step Circle */}
+                <div className={`w-4 h-4 rounded-full flex items-center justify-center z-10 shadow-sm transition-all duration-500
+                  ${step.done ? 'bg-gradient-to-tr from-emerald-500 to-emerald-400 shadow-emerald-500/30'
+                    : 'bg-[#1a1a1a] border border-blue-500/50'}`}>
+                  {step.done ? (
+                    <CheckCircle size={10} className="text-white drop-shadow-md" />
+                  ) : (
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                  )}
+                </div>
+                {/* Connecting Line */}
+                {idx !== displaySteps.length - 1 && (
+                  <div className={`absolute top-4 bottom-[-16px] w-[1px] ${step.done ? 'bg-gradient-to-b from-emerald-500/50 to-transparent' : 'bg-gray-300/30 dark:bg-gray-700/50'}`} />
+                )}
+              </div>
+
+              <div className={`text-[12px] font-semibold pt-0.5 tracking-wide transition-colors duration-500 ${step.done ? (isDark ? 'text-gray-200' : 'text-slate-700') : (isDark ? 'text-blue-400' : 'text-blue-600')}`}>
+                {step.label}
+                {!step.done && isStreaming && (
+                  <span className="inline-block ml-1 opacity-70 animate-pulse">...</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
       </div>
-      <div className="p-4 text-[12px] font-mono leading-relaxed max-h-[160px] overflow-y-auto custom-scrollbar">
-        <FormattedResponse text={thought || 'Initializing neural channels...'} isDark={isDark} />
-        {isStreaming && (
-          <div className="mt-2 text-blue-500/60 lowercase italic animate-pulse">
-            &gt; processing metadata streams...
+    </motion.div>
+  );
+};
+
+const AmbientWaitingState = ({ isDark }) => {
+  const [phase, setPhase] = useState(0);
+  const phrases = [
+    "Structuring legal framework...",
+    "Reviewing statutory compiliances...",
+    "Cross-referencing judicial precedents...",
+    "Synthesizing final counsel..."
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPhase((prev) => (prev + 1) % phrases.length);
+    }, 2800); // Slightly faster rotation
+    return () => clearInterval(interval);
+  }, [phrases.length]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`relative w-full max-w-sm rounded-2xl overflow-hidden p-[1px] mb-6 ${isDark ? 'bg-gradient-to-b from-blue-500/30 to-purple-500/10' : 'bg-gradient-to-b from-blue-400/30 to-indigo-400/10'}`}
+    >
+      <div className={`relative px-5 py-4 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-xl ${isDark ? 'bg-[#0f0f13]/90' : 'bg-white/95'}`}>
+
+        {/* Animated Background Scanline */}
+        <motion.div
+          animate={{ y: ['-100%', '200%'] }}
+          transition={{ repeat: Infinity, duration: 3, ease: 'linear' }}
+          className="absolute inset-0 w-full h-1/2 bg-gradient-to-b from-transparent via-blue-500/10 to-transparent pointer-events-none"
+        />
+
+        <div className="flex items-center gap-4 relative z-10">
+          {/* Breathing Neural Core */}
+          <div className="relative flex items-center justify-center w-8 h-8">
+            <motion.div
+              animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.8, 0.4] }}
+              transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+              className={`absolute inset-0 rounded-full blur-md ${isDark ? 'bg-blue-500' : 'bg-blue-600'}`}
+            />
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
+              className="absolute inset-0 rounded-full border border-blue-400/30 border-t-blue-400"
+            />
+            <div className={`w-3 h-3 rounded-full shadow-[0_0_12px_rgba(59,130,246,0.9)] ${isDark ? 'bg-white' : 'bg-blue-50'}`} />
           </div>
-        )}
+
+          <div className="flex flex-col justify-center flex-1 h-10 overflow-hidden">
+            <span className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-1 ${isDark ? 'text-blue-400/80' : 'text-blue-600/80'}`}>
+              Neural Engine Active
+            </span>
+            <div className="relative h-5">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={phase}
+                  initial={{ y: 20, opacity: 0, filter: 'blur(4px)' }}
+                  animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ y: -20, opacity: 0, filter: 'blur(4px)' }}
+                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} // Spring-like easing
+                  className={`absolute inset-0 text-[14px] font-semibold tracking-wide flex items-center ${isDark ? 'text-gray-100' : 'text-slate-800'}`}
+                >
+                  {phrases[phase]}
+                </motion.span>
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </motion.div>
+  );
+};
+
+// --- Skeleton Loader Component ---
+const SkeletonLoading = ({ isDark }) => {
+  const [phase, setPhase] = useState(0);
+  const loadingPhrases = [
+    "Analyzing Legal Query...",
+    "Reviewing Jurisprudence...",
+    "Cross-referencing Case Law...",
+    "Checking Citations...",
+    "Synthesizing Legal Framework...",
+    "Drafting Comprehensive Response..."
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setPhase((p) => (p + 1) % loadingPhrases.length);
+    }, 4000); // Change phrase every 4 seconds
+    return () => clearInterval(timer);
+  }, [loadingPhrases.length]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.3 }}
+      className="flex w-full mb-6"
+    >
+      <div className="flex-shrink-0 mr-4">
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center
+          ${isDark ? 'bg-[#1E1E1E]' : 'bg-gradient-to-br from-indigo-50 to-purple-50'}`}>
+          <Sparkles size={16} className={isDark ? "text-purple-400" : "text-purple-500"} />
+        </div>
+      </div>
+
+      <div className={`relative px-5 py-4 w-full max-w-2xl rounded-2xl rounded-tl-sm border
+        ${isDark ? 'bg-[#1A1A1A]/80 border-white/5' : 'bg-white border-slate-100 shadow-sm'}`}>
+
+        {/* Name and Loading status */}
+        <div className="flex items-center gap-2 pb-1">
+          <span className={`text-[12px] font-black tracking-widest flex items-center gap-2 ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>
+            AI ASSISTANT
+          </span>
+          <div className="flex gap-1 items-center ml-2">
+            <motion.div animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0 }} className={`w-1.5 h-1.5 rounded-full ${isDark ? 'bg-indigo-500' : 'bg-indigo-400'}`} />
+            <motion.div animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className={`w-1.5 h-1.5 rounded-full ${isDark ? 'bg-indigo-500' : 'bg-indigo-400'}`} />
+            <motion.div animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className={`w-1.5 h-1.5 rounded-full ${isDark ? 'bg-indigo-500' : 'bg-indigo-400'}`} />
+          </div>
+        </div>
+
+        {/* Dynamic Text Container */}
+        <div className="relative h-6 mb-3 overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={phase}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.4, ease: "easeInOut" }}
+              className={`absolute inset-0 text-[11px] font-bold tracking-wide italic ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}
+            >
+              {loadingPhrases[phase]}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+
+        {/* Skeleton Lines */}
+        <div className="space-y-3">
+          <div className={`h-2.5 rounded-full animate-pulse w-full max-w-[85%] ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
+          <div className={`h-2.5 rounded-full animate-pulse w-full max-w-[95%] ${isDark ? 'bg-white/10' : 'bg-slate-200/80'}`} />
+          <div className={`h-2.5 rounded-full animate-pulse w-full max-w-[70%] ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
+        </div>
+
+        {/* Polish shimmer */}
+        <motion.div
+          animate={{ x: ['-200%', '200%'] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 pointer-events-none"
+        />
       </div>
     </motion.div>
   );
@@ -101,6 +305,10 @@ const StreamingText = ({ text, isDark }) => {
     }
   }, [text]);
 
+  if (!text) {
+    return <AmbientWaitingState isDark={isDark} />;
+  }
+
   return (
     <div className={`relative ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
       <FormattedResponse text={text} isDark={isDark} isStreaming={true} cursorAtEnd={true} />
@@ -115,215 +323,68 @@ const StreamingText = ({ text, isDark }) => {
 const FormattedResponse = ({ text, isDark, isStreaming = false, cursorAtEnd = false }) => {
   if (!text) return null;
 
-  // New Heuristic: Ensure points and numbers start on new lines for better readability
-  const optimizedText = (text || '')
-    .replace(/(\d+\.\s+[A-Z\u0900-\u097F])/g, '\n$1') // New line before numbered points (Eng/Hindi)
-    .replace(/([•\*\-])\s+/g, '\n$1 ')                 // New line before bullet points
-    .replace(/(\n{3,})/g, '\n\n')                      // Collapse excessive newlines
-    .trim();
-
-  // Professional Syntax Highlighter (Lightweight)
-  const highlightLegalCode = (code) => {
-    if (!code) return '';
-    const keywords = /\b(SECTION|ARTICLE|CLAUSE|PURSUANT|PROVIDED|WHEREAS|THEREFORE|NOTWITHSTANDING|AGREEMENT|PARTY|CONTRACT|LIABILITY|WARRANTY|INDEMNITY)\b/g;
-    const values = /\b(true|false|null|\d+)\b/g;
-    const strings = /(['"])(?:(?=(\\?))\2.)*?\1/g;
-
-    return code
-      .replace(strings, m => `<span class="text-emerald-400 font-medium">${m}</span>`)
-      .replace(keywords, m => `<span class="text-blue-400 font-black">${m}</span>`)
-      .replace(values, m => `<span class="text-amber-400 font-medium">${m}</span>`);
-  };
-
-  // Process sections of the text (Code blocks, tables, etc.)
-  const parseContent = (content) => {
-    const sections = (content || '').split(/(```[\s\S]*?```)/g);
-
-    return sections.map((section, sIdx) => {
-      if (section.startsWith('```')) {
-        const match = section.match(/```(\w+)?\n([\s\S]*?)\n?```/);
-        const language = match?.[1] || 'Draft';
-        const code = match?.[2] || '';
-
-        return (
-          <div key={sIdx} className={`my-6 rounded-2xl border overflow-hidden font-mono text-[13.5px] leading-relaxed shadow-xl ${isDark ? 'bg-[#0A0A0A] border-white/10' : 'bg-slate-900 text-slate-100 border-slate-800'
-            }`}>
-            <div className="px-5 py-2.5 border-b border-white/5 flex justify-between items-center bg-white/5 backdrop-blur-md">
-              <div className="flex items-center gap-3">
-                <div className="flex gap-1.5 leading-none">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F56] shadow-sm" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E] shadow-sm" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#27C93F] shadow-sm" />
-                </div>
-                <span className="opacity-60 uppercase tracking-[0.25em] text-[10px] font-black">{language}</span>
-              </div>
-              <button
-                onClick={() => navigator.clipboard.writeText(code)}
-                className="p-1 hover:text-blue-400 transition-all active:scale-90"
-                title="Copy Code"
-              >
-                <Copy size={14} />
-              </button>
-            </div>
-            <pre className="p-5 overflow-x-auto selection:bg-blue-500/30 custom-scrollbar">
-              <code dangerouslySetInnerHTML={{ __html: highlightLegalCode(code) }} />
-            </pre>
-          </div>
-        );
+  return (
+    <div className={`prose max-w-none w-full animate-in fade-in duration-700 slide-in-from-bottom-2
+      ${isDark
+        ? 'prose-invert prose-p:text-gray-300 prose-headings:text-white prose-strong:text-white prose-a:text-blue-400 marker:text-blue-500'
+        : 'prose-p:text-slate-700/90 prose-headings:text-slate-900 prose-strong:text-slate-900 prose-a:text-blue-600 marker:text-blue-600'
       }
-
-      const lines = section.split('\n');
-      return (
-        <div key={sIdx} className="space-y-4">
-          {lines.map((line, lIdx) => {
-            const trimmed = line.trim();
-            if (!trimmed) return <div key={lIdx} className="h-1" />;
-
-            // Table Detection
-            if (trimmed.startsWith('|')) {
-              if (trimmed.includes('---')) return null;
-              const cells = trimmed.split('|').map(c => c.trim()).filter(c => c !== '');
+      prose-h1:text-2xl prose-h1:font-black prose-h1:bg-gradient-to-r prose-h1:from-blue-600 prose-h1:to-indigo-600 prose-h1:bg-clip-text prose-h1:text-transparent prose-h1:mb-6
+      prose-h2:text-xl prose-h2:font-extrabold prose-h2:tracking-tight prose-h2:mt-10 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b ${isDark ? 'prose-h2:border-white/5' : 'prose-h2:border-slate-100'}
+      prose-h3:text-lg prose-h3:font-bold prose-h3:mt-8 prose-h3:mb-3
+      prose-p:leading-[1.8] prose-p:text-[15px] prose-p:tracking-normal prose-p:my-4
+      prose-ul:my-6 prose-ul:list-disc prose-li:my-2 prose-li:leading-relaxed
+      prose-ol:my-6 prose-ol:list-decimal
+      prose-table:my-8 prose-table:w-full prose-table:rounded-2xl prose-table:overflow-hidden prose-table:border-separate prose-table:border-spacing-0 prose-table:border ${isDark ? 'prose-table:border-white/10 prose-table:bg-white/[0.02]' : 'prose-table:border-slate-200 prose-table:bg-slate-50/50'}
+      prose-th:bg-blue-600/10 prose-th:backdrop-blur-md prose-th:px-5 prose-th:py-4 prose-th:text-left prose-th:text-[13px] prose-th:font-black prose-th:uppercase prose-th:tracking-widest prose-th:text-blue-500 prose-th:border-b ${isDark ? 'prose-th:border-white/5' : 'prose-th:border-slate-200'}
+      prose-td:px-5 prose-td:py-4 prose-td:text-[14px] prose-td:leading-relaxed prose-td:border-b ${isDark ? 'prose-td:border-white/5 prose-td:text-slate-300' : 'prose-td:border-slate-100 prose-td:text-slate-700'}
+      prose-tr:last:prose-td:border-b-0
+      prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-blue-500/5 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-2xl prose-blockquote:italic prose-blockquote:my-8 prose-blockquote:shadow-sm
+      prose-a:underline prose-a:decoration-blue-500/30 prose-a:underline-offset-4 hover:prose-a:text-blue-500 prose-a:transition-colors
+      prose-strong:font-bold prose-strong:text-blue-500/90
+    `}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          code: ({ node, inline, className, children, ...props }) => {
+            const match = /language-(\w+)/.exec(className || '');
+            const language = match ? match[1] : 'text';
+            if (!inline) {
               return (
-                <div key={lIdx} className={`overflow-hidden my-6 rounded-2xl border shadow-lg ${isDark ? 'border-white/10 bg-white/5 backdrop-blur-sm' : 'border-slate-200 bg-white'}`}>
-                  <table className="min-w-full divide-y divide-gray-500/10">
-                    <tbody className="divide-y divide-gray-500/10">
-                      <tr className="transition-colors hover:bg-blue-500/5">
-                        {cells.map((cell, cIdx) => (
-                          <td key={cIdx} className={`px-5 py-4 text-[14px] border-x border-gray-500/5 ${cIdx === 0 ? 'font-black text-blue-500 bg-blue-500/10' : ''}`}>
-                            {parseInline(cell, isDark)}
-                          </td>
-                        ))}
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              );
-            }
-
-            // Heading Detection
-            const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)/);
-            if (headingMatch) {
-              const level = headingMatch[1].length;
-              const content = headingMatch[2];
-              return (
-                <div key={lIdx} className={`${level === 1 ? 'pt-10 pb-4 border-b border-gray-500/10 mb-6' : 'pt-7 pb-3'} group first:pt-0`}>
-                  <h4 className={`font-black tracking-tight flex items-center gap-4 ${isDark ? 'text-white' : 'text-slate-900 font-extrabold'
-                    } ${level === 1 ? 'text-2xl' : level === 2 ? 'text-xl' : 'text-lg'}`}>
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-blue-500 blur-[10px] opacity-40 rounded-full" />
-                      <span className="relative w-1.5 h-6 rounded-full bg-gradient-to-b from-blue-400 to-indigo-600 block shadow-lg" />
+                <div className={`not-prose my-6 rounded-2xl border overflow-hidden font-mono text-[13.5px] leading-relaxed shadow-xl ${isDark ? 'bg-[#0A0A0A] border-white/10' : 'bg-slate-900 border-slate-800 text-slate-100'}`}>
+                  <div className="px-5 py-2.5 border-b border-white/5 flex justify-between items-center bg-white/5 backdrop-blur-md">
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-1.5 leading-none">
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F56] shadow-sm" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E] shadow-sm" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#27C93F] shadow-sm" />
+                      </div>
+                      <span className="opacity-70 uppercase tracking-[0.2em] text-[10.5px] font-black text-blue-400">{language}</span>
                     </div>
-                    {parseInline(content, isDark)}
-                  </h4>
+                    <button onClick={() => navigator.clipboard.writeText(String(children))} className="hover:text-blue-400 transition-colors active:scale-95 p-1" title="Copy Code">
+                      <Copy size={14} />
+                    </button>
+                  </div>
+                  <pre className="p-5 overflow-x-auto selection:bg-blue-500/30 custom-scrollbar">
+                    <code className={className} {...props}>{children}</code>
+                  </pre>
                 </div>
               );
             }
-
-            // List Detection
-            const listMatch = trimmed.match(/^(\d+\.|[\*\-\•])\s+(.*)/);
-            if (listMatch) {
-              const content = listMatch[2];
-              const isNumber = /\d+\./.test(listMatch[1]);
-              return (
-                <div key={lIdx} className="flex gap-5 pl-2 items-start group py-1">
-                  <div className={`mt-[6px] shrink-0 flex items-center justify-center w-7 h-7 rounded-xl text-[12px] font-black shadow-xl transition-all group-hover:scale-110 group-hover:rotate-6 ${isDark ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-blue-500/10' : 'bg-white text-blue-600 border border-blue-100 shadow-blue-100'
-                    }`}>
-                    {isNumber ? listMatch[1].replace('.', '') : '§'}
-                  </div>
-                  <div className={`flex-1 text-[16px] leading-[1.6] py-0.5 tracking-tight ${isDark ? 'text-gray-200' : 'text-slate-700 font-medium'}`}>
-                    {parseInline(content, isDark)}
-                  </div>
-                </div>
-              );
-            }
-
-            // Paragraph
-            return (
-              <p key={lIdx} className={`leading-relaxed text-[15.5px] tracking-tight ${isDark ? 'text-gray-300' : 'text-slate-700/90 font-medium'
-                }`}>
-                {parseInline(trimmed, isDark)}
-                {isStreaming && cursorAtEnd && lIdx === lines.length - 1 && section === sections[sections.length - 1] && (
-                  <span className="relative inline-block ml-2 top-[3px]">
-                    <span className="absolute inset-0 bg-blue-500/60 blur-[8px] rounded-full animate-pulse" />
-                    <span className="relative block w-2 h-4 bg-blue-600 rounded-sm animate-[pulse_0.8s_infinite] shadow-[0_0_12px_rgba(37,99,235,0.6)]" />
-                  </span>
-                )}
-              </p>
-            );
-          })}
-        </div>
-      );
-    });
-  };
-
-  return <div className="space-y-6 animate-in fade-in duration-1000 slide-in-from-bottom-2">{parseContent(optimizedText)}</div>;
-};
-
-/**
- * High-Speed Inline Parser
- * Handles Bold, Italic, Links, and Highlighting
- */
-const parseInline = (text, isDark) => {
-  if (typeof text !== 'string') return text;
-
-  // Process segments for Markdown features
-  // 1. Links: [text](url)
-  // 2. Bold: **text**
-  // 3. Italic: *text* or _text_
-  // 4. Highlight: ==text==
-
-  const segments = text.split(/(\[.*?\]\(.*?\))|(\*\*.*?\*\*)|(\*.*?\*)|(__.*?__)|(==.*?==)/g);
-
-  return segments.map((seg, i) => {
-    if (!seg) return null;
-
-    // Link: [text](url)
-    if (seg.startsWith('[') && seg.includes('](')) {
-      const match = seg.match(/\[(.*?)\]\((.*?)\)/);
-      if (match) {
-        return (
-          <a
-            key={i}
-            href={match[2]}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 hover:text-blue-600 underline decoration-blue-500/30 underline-offset-4 transition-all"
-          >
-            {match[1]}
-          </a>
-        );
-      }
-    }
-
-    // Bold: **text**
-    if (seg.startsWith('**') && seg.endsWith('**')) {
-      return (
-        <strong key={i} className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'} drop-shadow-sm`}>
-          {seg.slice(2, -2)}
-        </strong>
-      );
-    }
-
-    // Italic: *text* or _text_
-    if ((seg.startsWith('*') && seg.endsWith('*')) || (seg.startsWith('_') && seg.endsWith('_'))) {
-      return (
-        <em key={i} className="italic opacity-90">
-          {seg.slice(1, -1)}
-        </em>
-      );
-    }
-
-    // Highlight: ==text==
-    if (seg.startsWith('==') && seg.endsWith('==')) {
-      return (
-        <mark key={i} className={`px-1 rounded-sm ${isDark ? 'bg-blue-500/30 text-blue-200' : 'bg-blue-100 text-blue-900'} font-medium`}>
-          {seg.slice(2, -2)}
-        </mark>
-      );
-    }
-
-    return seg;
-  });
+            return <code className={`px-1.5 py-0.5 rounded-md text-[13px] font-mono ${isDark ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-50 text-blue-700'}`} {...props}>{children}</code>;
+          },
+        }}
+      >
+        {text}
+      </ReactMarkdown>
+      {isStreaming && cursorAtEnd && (
+        <span className="relative inline-block ml-2 top-[2px]">
+          <span className="absolute inset-0 bg-blue-500/60 blur-[8px] rounded-full animate-pulse" />
+          <span className="relative block w-2 h-4 bg-blue-600 rounded-sm animate-[pulse_0.8s_infinite] shadow-[0_0_12px_rgba(37,99,235,0.6)]" />
+        </span>
+      )}
+    </div>
+  );
 };
 
 /**
@@ -584,9 +645,15 @@ const MessageBubble = ({ message, thought, isDark, isUser, isStreaming = false, 
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-6 sm:mb-8 group`}
+      initial={{ opacity: 0, y: 20, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{
+        type: 'spring',
+        stiffness: 260,
+        damping: 20,
+        opacity: { duration: 0.4 }
+      }}
+      className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-8 group`}
     >
       <div className={`flex items-start gap-2.5 sm:gap-4 max-w-[98%] sm:max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
         {!isUser && <TiaAvatar isStreaming={isStreaming} />}
@@ -936,6 +1003,12 @@ const Hero = () => {
   // Load session from URL
   useEffect(() => {
     const loadSession = async () => {
+      // If we are already on this session and have messages, don't reload
+      // This prevents the "flicker" and state loss on first interaction
+      if (routeSessionId && routeSessionId === sessionId && messages.length > 0) {
+        return;
+      }
+
       if (routeSessionId) {
         setSessionId(routeSessionId);
         setIsLoading(true);
@@ -1454,7 +1527,7 @@ const Hero = () => {
                       transition={{ delay: 0.3, duration: 0.5 }}
                       className={`text-xl sm:text-2xl font-bold mb-2 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent`}
                     >
-                      Welcome to Mera Vakil
+                      Welcome to MeraBakil
                     </motion.h2>
 
                     <motion.p
@@ -1483,11 +1556,14 @@ const Hero = () => {
                   ))}
 
                   {isLoading && (
-                    <ChatStateIndicator
-                      chatState={chatState}
-                      stateMessage={stateMessage}
-                      isDark={isDark}
-                    />
+                    <div className="space-y-4">
+                      <ChatStateIndicator
+                        chatState={chatState}
+                        stateMessage={stateMessage}
+                        isDark={isDark}
+                      />
+                      <SkeletonLoading isDark={isDark} />
+                    </div>
                   )}
                 </div>
               )}
@@ -1497,277 +1573,159 @@ const Hero = () => {
           <motion.div
             layout
             transition={{ duration: 0.3, type: 'spring' }}
-            className={`transition-colors duration-300 px-3 sm:px-4 py-3 flex-shrink-0
-            ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
-
-            <motion.div
-              layout
-              className="max-w-2xl mx-auto space-y-2 relative">
-
-              {messages.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="px-1 py-1"
-                >
-                  <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-semibold backdrop-blur-sm border
-                    ${isDark
-                      ? 'bg-gray-600/20 border-gray-500/50 text-gray-300'
-                      : 'bg-gray-100 border-gray-300 text-gray-700'}`}
-                  >
-                    <div className={`w-3 h-3 flex items-center justify-center ${selectedModal === 'bakilat' ? 'text-violet-500' :
-                      selectedModal === 'nyaaya' ? 'text-emerald-500' :
-                        selectedModal === 'munshi' ? 'text-amber-500' :
-                          'text-indigo-500'
-                      }`}>
-                      {getModalIcon(selectedModal)}
-                    </div>
-                    <span>{modalOptions.find(opt => opt.id === selectedModal)?.label || 'Bakilat 2.0'}</span>
-                  </div>
-                </motion.div>
-              )}
-
-              {(uploadedFiles.length > 0 || pendingFiles.length > 0) && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`flex flex-wrap gap-1.5 px-1 py-1`}
-                >
-                  {uploadedFiles.map((file, idx) => (
-                    <motion.div
-                      key={`uploaded-${idx}`}
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px]
-                        ${isDark ? 'bg-gray-600/20 border border-gray-500/40' : 'bg-gray-50 border border-gray-200'}`}
-                    >
-                      <Upload size={11} className={isDark ? 'text-gray-400' : 'text-gray-600'} />
-                      <span className={`font-medium truncate max-w-20 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                        {file.name}
-                      </span>
-                      <button
-                        onClick={() => removeUploadedFile(idx)}
-                        className={`hover:opacity-70 transition-opacity`}
-                      >
-                        <X size={10} />
-                      </button>
-                    </motion.div>
-                  ))}
-                  {pendingFiles.map((file, idx) => (
-                    <motion.div
-                      key={`pending-${idx}`}
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px]
-                        ${isDark ? 'bg-green-600/20 border border-green-500/40' : 'bg-green-50 border border-green-200'}`}
-                    >
-                      <Upload size={11} className={isDark ? 'text-green-400' : 'text-green-600'} />
-                      <span className={`font-medium truncate max-w-20 ${isDark ? 'text-green-300' : 'text-green-700'}`}>
-                        {file.name}
-                      </span>
-                      <button
-                        onClick={() => removeUploadedFile(idx, true)}
-                        className={`hover:opacity-70 transition-opacity`}
-                      >
-                        <X size={10} />
-                      </button>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-
+            className={`px-4 pb-6 pt-2 flex-shrink-0 relative z-20 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}
+          >
+            <div className="max-w-3xl mx-auto">
               <motion.div
                 layout
-                transition={{ duration: 0.2 }}
-                className={`rounded-xl transition-all duration-300 overflow-visible backdrop-blur-md border shadow-sm mx-auto max-w-4xl
-                ${isDark
-                    ? 'bg-[#1e1e1e]/60 border-[#333] focus-within:bg-[#1e1e1e]/80 focus-within:border-gray-600 focus-within:ring-1 focus-within:ring-gray-700/50'
-                    : 'bg-white/80 border-gray-200 focus-within:bg-white focus-within:border-gray-300 focus-within:ring-1 focus-within:ring-blue-100'}`}>
+                className={`relative rounded-3xl border transition-all duration-500 overflow-hidden
+                  ${isDark
+                    ? 'bg-[#151515]/80 border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]'
+                    : 'bg-white border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.08)]'
+                  }
+                  ${query.trim() ? 'ring-1 ring-blue-500/20' : ''}`}
+              >
+                {/* Subtle top glare for glass effect */}
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
 
-                <div className="flex items-end gap-2 px-3 py-2">
-
-                  <div className="flex items-center gap-1 relative mb-0.5">
-                    <motion.button
-                      ref={dropdownRef}
-                      whileTap={{ scale: 0.9 }}
-                      whileHover={{ scale: 1.1, rotate: 10 }}
-                      onClick={() => setShowModalDropdown(!showModalDropdown)}
-                      className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300 shadow-sm border relative
+                {/* Input Content */}
+                <div className="flex flex-col">
+                  {/* Action Bar (Top) */}
+                  <div className={`flex items-center justify-between px-4 py-2 border-b ${isDark ? 'border-white/5 bg-white/[0.02]' : 'border-slate-100 bg-slate-50/30'}`}>
+                    <div className="flex items-center gap-1.5">
+                      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest backdrop-blur-md
                         ${isDark
-                          ? 'bg-[#1e1e1e] border-white/10 hover:bg-white/10'
-                          : 'bg-white border-gray-100 hover:bg-gray-50 shadow-gray-200'}
-                        ${selectedModal === 'bakilat' ? 'text-violet-500' :
-                          selectedModal === 'nyaaya' ? 'text-emerald-500' :
-                            selectedModal === 'munshi' ? 'text-amber-500' :
-                              'text-indigo-500'}`}
-                    >
-                      <div className="scale-90">
-                        {getModalIcon(selectedModal)}
+                          ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
+                          : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                        <span>{selectedModal === 'legal_counsel' ? 'Bakilat 1.0' : modalOptions.find(o => o.id === selectedModal)?.label}</span>
                       </div>
 
-                      {/* Cute notification dot/sparkle */}
-                      <span className={`absolute top-0 right-0 w-2 h-2 rounded-full border-2 
-                        ${isDark ? 'border-[#1e1e1e]' : 'border-white'}
-                        ${selectedModal === 'bakilat' ? 'bg-violet-500' :
-                          selectedModal === 'nyaaya' ? 'bg-emerald-500' :
-                            selectedModal === 'munshi' ? 'bg-amber-500' :
-                              'bg-indigo-500'}`}
-                      />
-                    </motion.button>
-
-                    <AnimatePresence>
-                      {showModalDropdown && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.95, y: 8, filter: 'blur(8px)' }}
-                          animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
-                          exit={{ opacity: 0, scale: 0.95, y: 8, filter: 'blur(8px)' }}
-                          transition={{ duration: 0.15, ease: "easeOut" }}
-                          className={`absolute -left-2 bottom-full mb-5 w-52 rounded-xl shadow-2xl z-50 overflow-hidden border backdrop-blur-xl ring-1
-                            ${isDark
-                              ? 'bg-[#111111]/95 border-white/10 ring-white/5'
-                              : 'bg-white/95 border-gray-200/80 ring-gray-900/5'}`}
-                        >
-                          <div className={`px-2.5 py-1.5 border-b ${isDark ? 'border-white/5' : 'border-gray-100'}`}>
-                            <span className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Select Model</span>
-                          </div>
-                          <div className="p-1 space-y-0.5">
-                            {modalOptions.map((option, idx) => (
-                              <motion.button
-                                key={option.id}
-                                onClick={() => {
-                                  setSelectedModal(option.id);
-                                  setShowModalDropdown(false);
-                                }}
-                                className={`w-full px-2 py-1.5 text-left rounded-lg transition-all duration-200 group relative
-                                ${selectedModal === option.id
-                                    ? isDark
-                                      ? 'bg-white/10 text-white'
-                                      : 'bg-gray-100 text-gray-900'
-                                    : isDark
-                                      ? 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
-                                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <div className={`w-6 h-6 rounded-md flex items-center justify-center transition-colors flex-shrink-0
-                                    ${selectedModal === option.id
-                                      ? option.color === 'violet' ? 'bg-violet-500 text-white shadow-md shadow-violet-500/20' :
-                                        option.color === 'emerald' ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' :
-                                          option.color === 'amber' ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' :
-                                            'bg-indigo-500 text-white shadow-md shadow-indigo-500/20'
-                                      : isDark ? 'bg-white/5 text-gray-500 group-hover:bg-white/10 group-hover:text-gray-300' : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200 group-hover:text-gray-700'
-                                    }`}>
-                                    <div className="scale-75 transform">
-                                      {getModalIcon(option.id)}
-                                    </div>
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between">
-                                      <span className="font-semibold text-[11px] leading-none">{option.label}</span>
-                                      {selectedModal === option.id && (
-                                        <motion.div layoutId="active-check">
-                                          <CheckCircle size={10} className={option.color === 'violet' ? 'text-violet-400' : option.color === 'emerald' ? 'text-emerald-400' : option.color === 'amber' ? 'text-amber-400' : 'text-indigo-400'} />
-                                        </motion.div>
-                                      )}
-                                    </div>
-                                    <p className={`text-[9px] mt-0.5 truncate opacity-70 font-medium`}>
-                                      {option.description}
-                                    </p>
-                                  </div>
-                                </div>
-                              </motion.button>
-                            ))}
-                          </div>
-                        </motion.div>
+                      {(uploadedFiles.length > 0 || pendingFiles.length > 0) && (
+                        <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-bold border
+                          ${isDark ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-100 text-emerald-600'}`}>
+                          <Upload size={10} strokeWidth={3} />
+                          <span>{uploadedFiles.length + pendingFiles.length} File(s)</span>
+                        </div>
                       )}
-                    </AnimatePresence>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => setShowModalDropdown(!showModalDropdown)}
+                        className={`p-1.5 rounded-lg transition-colors ${isDark ? 'text-slate-500 hover:text-slate-300 hover:bg-white/5' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
+                        title="Change model"
+                      >
+                        <Settings size={14} />
+                      </motion.button>
+                    </div>
                   </div>
 
-                  <textarea
-                    ref={inputRef}
-                    value={query}
-                    onChange={(e) => {
-                      setQuery(e.target.value);
-                      e.target.style.height = 'auto';
-                      e.target.style.height = Math.min(e.target.scrollHeight, 80) + 'px';
-                    }}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSubmit();
-                      }
-                    }}
-                    placeholder="Type your message..."
-                    style={isDark ? { backgroundColor: 'transparent' } : {}}
-                    className={`flex-1 outline-none border-none text-[13px] py-1.5 px-0 resize-none max-h-20 min-h-[24px] leading-relaxed tracking-normal break-words whitespace-pre-wrap
-                      ${isDark
-                        ? 'text-gray-200 placeholder-gray-500 caret-blue-500'
-                        : 'bg-transparent text-gray-800 placeholder-gray-400 caret-blue-600'}`}
-                    rows={1}
-                  />
+                  {/* Main Input Field */}
+                  <div className="flex items-end gap-3 p-4">
+                    <div className="flex-1 min-w-0">
+                      <textarea
+                        ref={inputRef}
+                        value={query}
+                        onChange={(e) => {
+                          setQuery(e.target.value);
+                          e.target.style.height = 'auto';
+                          e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                        }}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSubmit();
+                          }
+                        }}
+                        placeholder="Describe your legal situation..."
+                        className={`w-full bg-transparent !bg-transparent outline-none border-none text-[15px] font-medium leading-relaxed resize-none p-0 max-h-32 min-h-[24px] focus:ring-0
+                          ${isDark ? 'text-white placeholder-slate-500/60 caret-blue-500' : 'text-slate-900 placeholder-slate-400 caret-blue-600'}`}
+                        rows={1}
+                        spellCheck="false"
+                      />
+                    </div>
 
-                  <div className="flex items-center gap-1 pb-0.5">
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      whileHover={{ scale: 1.05 }}
-                      onClick={() => document.getElementById('file-input').click()}
-                      title="Upload file"
-                      className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all duration-200
-                        ${isDark
-                          ? 'hover:bg-white/10 text-gray-400 hover:text-gray-200'
-                          : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'}`}
-                    >
-                      <Upload size={16} strokeWidth={1.5} />
-                    </motion.button>
+                    {/* Bottom Utility Bar */}
+                    <div className="flex items-center gap-2 pb-0.5">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => document.getElementById('file-input').click()}
+                        className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all
+                          ${isDark
+                            ? 'bg-slate-800/50 border-white/5 text-slate-400 hover:text-white hover:bg-slate-700'
+                            : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+                      >
+                        <Upload size={18} />
+                      </motion.button>
 
-                    <input
-                      id="file-input"
-                      type="file"
-                      multiple
-                      accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
-                      onChange={(e) => handleFileUpload(e.target.files)}
-                      className="hidden"
-                    />
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleVoiceToggle}
+                        className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all
+                          ${isVoiceActive || showVoiceModal
+                            ? 'bg-red-500 text-white border-red-500 animate-pulse shadow-lg shadow-red-500/20'
+                            : isDark
+                              ? 'bg-slate-800/50 border-white/5 text-slate-400 hover:text-white hover:bg-slate-700'
+                              : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+                      >
+                        <Mic size={18} />
+                      </motion.button>
 
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      whileHover={isVoiceActive || showVoiceModal ? {} : { scale: 1.05 }}
-                      onClick={handleVoiceToggle}
-                      title="Voice input"
-                      className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all duration-200
-                        ${isVoiceActive || showVoiceModal
-                          ? isDark
-                            ? 'bg-red-500/20 text-red-400 animate-pulse'
-                            : 'bg-red-50 text-red-500 animate-pulse'
-                          : isDark
-                            ? 'hover:bg-white/10 text-gray-400 hover:text-gray-200'
-                            : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'}`}
-                    >
-                      <Mic size={16} strokeWidth={1.5} />
-                    </motion.button>
-
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      whileHover={!query.trim() && uploadedFiles.length === 0 && pendingFiles.length === 0 ? {} : { scale: 1.05 }}
-                      onClick={handleSubmit}
-                      disabled={!query.trim() && uploadedFiles.length === 0 && pendingFiles.length === 0}
-                      className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all duration-200 ml-1
-                        ${!query.trim() && uploadedFiles.length === 0 && pendingFiles.length === 0
-                          ? isDark
-                            ? 'text-gray-600 cursor-not-allowed'
-                            : 'text-gray-300 cursor-not-allowed'
-                          : isDark
-                            ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/20'
-                            : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20'}`}
-                    >
-                      <SendHorizontal size={14} strokeWidth={2} className={!query.trim() ? "ml-0.5" : ""} />
-                    </motion.button>
+                      <motion.button
+                        disabled={!query.trim() && uploadedFiles.length === 0 && pendingFiles.length === 0}
+                        onClick={handleSubmit}
+                        whileHover={query.trim() ? { scale: 1.05, x: 2 } : {}}
+                        whileTap={query.trim() ? { scale: 0.95 } : {}}
+                        className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300
+                          ${!query.trim() && uploadedFiles.length === 0 && pendingFiles.length === 0
+                            ? isDark ? 'text-slate-700 bg-slate-900/50 border border-white/5' : 'text-slate-200 bg-slate-50 border border-slate-100'
+                            : 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40'}`}
+                      >
+                        <SendHorizontal size={20} strokeWidth={2.5} />
+                      </motion.button>
+                    </div>
                   </div>
                 </div>
+
+                {/* File list (horizontal scroll if many) */}
+                <AnimatePresence>
+                  {(uploadedFiles.length > 0 || pendingFiles.length > 0) && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className={`px-4 pb-4 flex flex-wrap gap-2 pt-2 border-t ${isDark ? 'border-white/5' : 'border-slate-100'}`}
+                    >
+                      {[...uploadedFiles, ...pendingFiles].map((file, idx) => (
+                        <motion.div
+                          key={idx}
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-[11px] font-bold
+                            ${isDark ? 'bg-white/5 border-white/5 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
+                        >
+                          <FileText size={12} className="text-blue-500" />
+                          <span className="max-w-[120px] truncate">{file.name}</span>
+                          <button onClick={() => removeUploadedFile(idx)} className="hover:text-red-500 transition-colors">
+                            <X size={12} />
+                          </button>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
-            </motion.div>
+
+              <div className="mt-3 flex items-center justify-center gap-4">
+                <p className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-slate-700' : 'text-slate-400'}`}>
+                  MeraBakil provides AI-driven legal guidance. Verify all critical steps with a registered lawyer.
+                </p>
+              </div>
+            </div>
           </motion.div>
         </main>
       </div>

@@ -14,12 +14,14 @@
 // Point 1: Using empty BASE_URL to utilize the 'proxy' in package.json
 // This bypasses CORS issues (405 Method Not Allowed on OPTIONS) during development
 const API_CONFIG = {
-    // Dynamic BASE_URL:
-    // 1. On localhost: Use empty string (leverages package.json proxy) or .env if present
-    // 2. On Production (Netlify): Use '/chatbot-api' (leverages netlify.toml proxy)
-    BASE_URL: (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
-        ? (process.env.REACT_APP_CHATBOT_API_URL ? process.env.REACT_APP_CHATBOT_API_URL.replace(/\/$/, '') : '')
-        : '/chatbot-api',
+    BASE_URL: (() => {
+        const url = process.env.REACT_APP_CHATBOT_API_URL ? process.env.REACT_APP_CHATBOT_API_URL.replace(/\/$/, '') : '';
+        console.log(`[ChatbotAPI] Initializing with BASE_URL: "${url}"`);
+        if (!url) {
+            console.error('[ChatbotAPI] CRITICAL: REACT_APP_CHATBOT_API_URL is NOT defined in environment variables.');
+        }
+        return url;
+    })(),
     ENDPOINTS: {
         CHAT: '/unified_chat',
     },
@@ -237,7 +239,10 @@ class ChatbotApiService {
             const url = `${baseUrl}/apps/${appName}/users/${userId}/sessions`;
             const response = await fetch(url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                },
                 body: JSON.stringify({
                     session_id: sessionId,
                     state: {}
@@ -284,17 +289,48 @@ class ChatbotApiService {
 
         onStateChange(CHAT_STATES.CONNECTING, STATE_MESSAGES[CHAT_STATES.CONNECTING]);
 
+        // Helper for smart chunk buffering to prevent markdown flickering
+        let textBuffer = '';
+        let lastEmitTime = Date.now();
+        const emitBufferedText = (force = false) => {
+            if (!textBuffer) return;
+
+            const timeSinceEmit = Date.now() - lastEmitTime;
+            if (force || textBuffer.length > 15 || timeSinceEmit > 100) {
+                const endsWithMarkdown = /[*_\[\]`#~]$/.test(textBuffer);
+                if (endsWithMarkdown && !force && textBuffer.length < 50) {
+                    return;
+                }
+
+                if (onChunk) onChunk({ type: 'text', content: textBuffer });
+                textBuffer = '';
+                lastEmitTime = Date.now();
+            }
+        };
+
         try {
             await this.initializeBackendSession(appName, userId, sessionId);
+
+            if (!API_CONFIG.BASE_URL) {
+                console.error('[ChatbotAPI] Aborting sendMessage: No BASE_URL configured.');
+                throw new Error('CONFIG_ERROR: Chatbot API URL is not configured. Please check environment variables.');
+            }
+
+            console.log(`[ChatbotAPI] Sending message to: ${url}`);
+            console.log(`[ChatbotAPI] Payload user_id: ${userId}, session_id: ${sessionId}`);
 
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'text/event-stream'
+                    'Accept': 'text/event-stream',
+                    'ngrok-skip-browser-warning': 'true'
                 },
                 body: JSON.stringify(payload)
             });
+
+            console.log(`[ChatbotAPI] Response Status: ${response.status} ${response.statusText}`);
+            console.log(`[ChatbotAPI] Response Headers:`, Object.fromEntries(response.headers.entries()));
 
             if (!response.ok) {
                 const errorText = await response.text();
@@ -320,6 +356,8 @@ class ChatbotApiService {
                         const trimmedLine = line.trim();
                         if (!trimmedLine) continue;
 
+                        console.debug(`[ChatbotAPI] Raw Chunk: ${trimmedLine}`);
+
                         // Modern unified_chat uses NDJSON (raw JSON objects per line)
                         // Legacy endpoints use SSE (data: {JSON})
                         // We handle both by stripping 'data:' only if it exists
@@ -328,13 +366,55 @@ class ChatbotApiService {
                             data = trimmedLine.replace('data:', '').trim();
                         }
 
-                        if (data === '[DONE]') continue;
+                        // Remove keep-alive entirely from raw data string before parsing so it's not rendered
+                        data = data.replace(/(:\s*keep-alive)+/g, '').trim();
+
+                        if (!data || data === '[DONE]') continue;
 
                         try {
                             let contentObj = { text: '', thought: '' };
                             if (data.startsWith('{') || data.startsWith('[')) {
                                 const parsed = JSON.parse(data);
-                                contentObj = this.extractContentFromObject(parsed);
+
+                                // Handle the structured events from the new unified_chat endpoint
+                                if (parsed.type) {
+                                    switch (parsed.type) {
+                                        case 'agent_event':
+                                            if (parsed.payload) {
+                                                // Keep token streaming for better UX, but ignore the final complete block to avoid duplication
+                                                if (parsed.payload.is_final_complete === true) {
+                                                    break;
+                                                }
+                                                contentObj = this.extractContentFromObject(parsed.payload);
+                                            }
+                                            break;
+                                        case 'message_chunk':
+                                            if (parsed.content) {
+                                                contentObj.text = parsed.content;
+                                            }
+                                            break;
+                                        case 'status':
+                                        case 'classification':
+                                        case 'cache_hit':
+                                        case 'cache_miss':
+                                            // Provide these as thought/status updates instead of main text
+                                            if (parsed.content) {
+                                                contentObj.thought = `[${parsed.type.toUpperCase()}] ${parsed.content}\n`;
+                                            }
+                                            break;
+                                        case 'error':
+                                            throw new Error(`Stream Error: ${parsed.content}`);
+                                        default:
+                                            // Fallback for unknown types
+                                            if (parsed.content) {
+                                                contentObj.text = parsed.content;
+                                            }
+                                            break;
+                                    }
+                                } else {
+                                    // Handle legacy / raw object fallback
+                                    contentObj = this.extractContentFromObject(parsed);
+                                }
                             } else {
                                 // If it's not JSON but was prefixed with data:, it's raw text
                                 contentObj.text = data;
@@ -345,19 +425,22 @@ class ChatbotApiService {
                             }
                             if (contentObj.text) {
                                 fullResponseText += contentObj.text;
-                                if (onChunk) onChunk({ type: 'text', content: contentObj.text });
+                                textBuffer += contentObj.text;
+                                emitBufferedText();
                             }
                         } catch (e) {
                             console.warn('[ChatbotAPI] Chunk parse error:', e);
-                            // Fallback for non-JSON chunks
+                            // Fallback for non-JSON chunks or errors during parsing
                             if (data) {
                                 fullResponseText += data;
-                                if (onChunk) onChunk({ type: 'text', content: data });
+                                textBuffer += data;
+                                emitBufferedText();
                             }
                         }
                     }
                 }
             } finally {
+                emitBufferedText(true); // Force flush any remaining buffer
                 reader.releaseLock();
             }
 
@@ -390,25 +473,7 @@ class ChatbotApiService {
             return result;
         }
 
-        if (Array.isArray(obj)) {
-            obj.forEach(item => {
-                const nested = this.extractContentFromObject(item);
-                result.text += nested.text;
-                result.thought += nested.thought;
-            });
-            return result;
-        }
-
-        // 1. Check for standard nested content (legal_counsel format)
-        if (obj.content?.parts) {
-            obj.content.parts.forEach(p => {
-                if (p.thought) result.thought += p.text || p.thought;
-                else result.text += p.text || '';
-            });
-            return result;
-        }
-
-        // 2. Check for root level parts (alternate formats)
+        // Direct handling for ADK structures (to avoid arbitrary recursive duplication)
         if (obj.parts && Array.isArray(obj.parts)) {
             obj.parts.forEach(p => {
                 if (p.thought) result.thought += p.text || p.thought;
@@ -417,38 +482,43 @@ class ChatbotApiService {
             return result;
         }
 
-        // 3. Exhaustive property search
-        const commonFields = ['delta', 'content', 'text', 'response', 'answer', 'message', 'result', 'data'];
+        if (obj.content?.parts && Array.isArray(obj.content.parts)) {
+            obj.content.parts.forEach(p => {
+                if (p.thought) result.thought += p.text || p.thought;
+                else result.text += p.text || '';
+            });
+            return result;
+        }
+
+        // Handle specific string fields directly without recursion
+        const commonFields = ['text', 'content', 'response', 'message', 'answer', 'result', 'data'];
         for (const field of commonFields) {
-            if (obj[field]) {
-                if (typeof obj[field] === 'string') {
-                    result.text = obj[field];
-                    return result;
-                }
-                const nested = this.extractContentFromObject(obj[field]);
-                result.text += nested.text;
-                result.thought += nested.thought;
-                if (result.text || result.thought) return result;
+            if (obj[field] && typeof obj[field] === 'string') {
+                result.text = obj[field];
+                return result; // return early to prevent double extraction
             }
         }
 
-        // 4. Handle Google Candidates format
-        if (obj.candidates?.[0]?.content?.parts) {
+        // Handle Google Candidates format specifically
+        if (obj.candidates?.[0]?.content?.parts && Array.isArray(obj.candidates[0].content.parts)) {
             obj.candidates[0].content.parts.forEach(p => {
                 if (p.thought) result.thought += p.text || p.thought;
                 else result.text += p.text || '';
             });
+            return result;
         }
 
-        if (!result.text && !result.thought && typeof obj === 'object') {
-            // Unrecognized structure - silent fallback
+        // Only fall back to recursive search for arrays or strictly unknown objects
+        if (Array.isArray(obj)) {
+            obj.forEach(item => {
+                const nested = this.extractContentFromObject(item);
+                result.text += nested.text;
+                result.thought += nested.thought;
+            });
         }
 
         // --- Post-processing: Handle meta-events mixed with text ---
-        // Forcefully extract known technical prefixes (Analyzing query..., greeting, etc.)
         if (result.text) {
-            // Surgical regex: Targets technical blocks at the very beginning
-            // Catch: "Analyzing query...", "Found in Semantic Cache", or machine tags like "greeting", "cache_hit"
             const technicalRegex = /^(?:Analyzing query\.{1,}|Found in Semantic Cache|Generating response|[a-z_]{2,}(?:\.{1,}|[:\s!]|(?=[A-Z\s!])))/i;
 
             let currentText = result.text.trim();

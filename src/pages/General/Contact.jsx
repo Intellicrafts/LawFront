@@ -215,7 +215,7 @@ const Contact = () => {
               {[
                 { icon: MapPin, title: 'Visit Us', value: 'Greater Noida, India', sub: 'Main Office Branch', color: 'blue' },
                 { icon: Phone, title: 'Call Support', value: '+91 7017858269', sub: 'Mon-Sat, 9AM-6PM', color: 'purple' },
-                { icon: Mail, title: 'Email Address', value: 'info@meravakil.com', sub: 'We reply in 24h', color: 'pink' }
+                { icon: Mail, title: 'Email Address', value: 'info@merabakil.com', sub: 'We reply in 24h', color: 'pink' }
               ].map((item, i) => (
                 <motion.div
                   key={i}
@@ -244,7 +244,7 @@ const Contact = () => {
                 </div>
                 <div className="relative space-y-6">
                   <div className="space-y-1">
-                    <h3 className="text-xl font-bold">Why Mera Vakil?</h3>
+                    <h3 className="text-xl font-bold">Why MeraBakil?</h3>
                     <p className="text-blue-100 text-sm">Join 50,000+ satisfied clients today.</p>
                   </div>
                   <div className="space-y-4">
