@@ -49,6 +49,7 @@ const ConsultationChat = ({
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
     const recordIntervalRef = useRef(null);
+    const autoSendRef = useRef(false);
 
     const otherName = otherParticipant?.name || (userType === 'user' ? 'Lawyer' : 'Client');
     const otherInitials = otherName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -157,7 +158,7 @@ const ConsultationChat = ({
             setIsTyping(false);
             onTyping(false);
 
-            let rawText = content || (selectedFile ? selectedFile.name : '');
+            let rawText = content || (audioBlob ? 'Voice audio message' : (selectedFile ? selectedFile.name : ''));
             let encryptedContent = null;
 
             if (e2eKey) {
@@ -171,6 +172,7 @@ const ConsultationChat = ({
             setNewMessage('');
             setSelectedFile(null);
             setAudioPreviewUrl(null);
+            setAudioBlob(null);
             setShowEmojiPicker(false);
             inputRef.current?.focus();
         } catch (err) {
@@ -199,6 +201,14 @@ const ConsultationChat = ({
                 const file = new File([blob], `voice_note_${new Date().getTime()}.webm`, { type: 'audio/webm' });
                 setSelectedFile(file);
                 stream.getTracks().forEach(track => track.stop());
+
+                if (autoSendRef.current) {
+                    autoSendRef.current = false;
+                    setTimeout(() => {
+                        const evt = { preventDefault: () => { } };
+                        document.getElementById('hidden_send_btn')?.click();
+                    }, 100);
+                }
             };
 
             mediaRecorder.start();
@@ -236,7 +246,12 @@ const ConsultationChat = ({
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            handleSend();
+            if (isRecording) {
+                autoSendRef.current = true;
+                stopRecording();
+            } else {
+                handleSend();
+            }
         }
     };
 
@@ -385,16 +400,6 @@ const ConsultationChat = ({
             >
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-2">
 
-                    {/* Security Notice at top */}
-                    <div className="flex justify-center mb-6">
-                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${isDarkMode ? 'bg-white/[0.03] border border-white/5' : 'bg-white border border-slate-100 shadow-sm'}`}>
-                            <Lock size={10} className={isDarkMode ? 'text-amber-400/60' : 'text-amber-500/60'} />
-                            <span className={`text-[9px] font-semibold uppercase tracking-[0.15em] ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                                Messages are encrypted & stored securely
-                            </span>
-                        </div>
-                    </div>
-
                     {/* Messages */}
                     {decryptedMessages.map((msg, index) => {
                         const isOwnMessage = (userType === 'user' && msg.sender_type === 'user') ||
@@ -448,48 +453,65 @@ const ConsultationChat = ({
                                                     ? 'bg-[#1a1a1a] text-slate-200 border border-white/5 rounded-bl-md'
                                                     : 'bg-white text-slate-800 border border-slate-100 shadow-sm rounded-bl-md'
                                                 }`}>
-                                                {/* File attachment */}
+                                                {/* File/Audio attachment */}
                                                 {msg.message_type === 'file' && msg.file_name && (
-                                                    <div className={`flex items-center gap-2 mb-2 p-2 rounded-xl ${isOwnMessage ? 'bg-white/10' : isDarkMode ? 'bg-white/5' : 'bg-slate-50'
-                                                        }`}>
-                                                        <File size={14} className={isOwnMessage ? 'text-white/60' : 'text-blue-500'} />
-                                                        <span className={`text-[10px] font-medium truncate flex-1 ${isOwnMessage ? 'text-white/80' : ''}`}>
-                                                            {msg.file_name}
-                                                        </span>
-                                                        <a
-                                                            href={msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`}
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            className="flex-shrink-0 p-1 hover:bg-black/5 rounded-md transition-colors"
-                                                            download={msg.file_name}
-                                                        >
-                                                            <Download size={12} className={isOwnMessage ? 'text-white/60' : 'text-blue-500'} />
-                                                        </a>
-                                                    </div>
+                                                    ['.webm', '.mp3', '.m4a', '.wav', '.ogg'].some(ext => msg.file_name.toLowerCase().endsWith(ext)) || msg.file_type?.startsWith('audio/') ? (
+                                                        <div className={`mt-0.5 rounded-2xl overflow-hidden ${isOwnMessage ? 'bg-white/10' : isDarkMode ? 'bg-[#222]' : 'bg-slate-50'}`}>
+                                                            <div className="flex items-center gap-2 px-3 py-2">
+                                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isOwnMessage ? 'bg-white/20' : 'bg-indigo-500/10'}`}>
+                                                                    <Mic size={14} className={isOwnMessage ? 'text-white' : 'text-indigo-600'} />
+                                                                </div>
+                                                                <audio src={msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`} controls className="h-8 w-[200px] outline-none" style={{ filter: isDarkMode ? 'contrast(0.9) brightness(1.2)' : 'none' }} />
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className={`flex items-center gap-3 mb-2 p-2.5 rounded-xl ${isOwnMessage ? 'bg-white/10' : isDarkMode ? 'bg-white/5' : 'bg-slate-50'
+                                                            }`}>
+                                                            <div className={`p-2 rounded-lg ${isOwnMessage ? 'bg-white/20' : 'bg-blue-500/10'}`}>
+                                                                <File size={16} className={isOwnMessage ? 'text-white' : 'text-blue-600'} />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className={`text-[11px] font-bold truncate ${isOwnMessage ? 'text-white' : isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
+                                                                    {msg.file_name}
+                                                                </div>
+                                                                <div className={`text-[9px] font-bold tracking-wider uppercase mt-0.5 ${isOwnMessage ? 'text-white/60' : isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                                                                    ATTACHMENT
+                                                                </div>
+                                                            </div>
+                                                            <a
+                                                                href={msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className={`flex-shrink-0 p-2 rounded-lg transition-colors ${isOwnMessage ? 'hover:bg-white/20 text-white' : 'hover:bg-slate-200 text-blue-600'}`}
+                                                                download={msg.file_name}
+                                                            >
+                                                                <Download size={14} />
+                                                            </a>
+                                                        </div>
+                                                    )
                                                 )}
 
                                                 {/* Text content */}
                                                 {msg.content && msg.message_type !== 'file' && (
-                                                    <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">
+                                                    <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">
                                                         {msg.content}
                                                     </p>
                                                 )}
-                                                {msg.content && msg.message_type === 'file' && !msg.content.startsWith('Sent a file:') && (
-                                                    <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words">
+                                                {msg.content && msg.message_type === 'file' && !msg.content.startsWith('Sent a file:') && !msg.content.includes('.webm') && (
+                                                    <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words mt-1">
                                                         {msg.content}
                                                     </p>
                                                 )}
 
                                                 {/* Time & read status */}
-                                                <div className={`flex items-center gap-1.5 mt-1 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-                                                    <span className={`text-[9px] font-medium ${isOwnMessage ? 'text-white/50' : isDarkMode ? 'text-slate-500' : 'text-slate-400'
-                                                        }`}>
+                                                <div className={`flex items-center gap-1.5 mt-1.5 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+                                                    <span className={`text-[9px] font-semibold tracking-wide ${isOwnMessage ? 'text-white/60' : isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
                                                         {formatMessageTime(msg.created_at)}
                                                     </span>
                                                     {isOwnMessage && (
                                                         msg.is_read
-                                                            ? <CheckCheck size={10} className="text-white/50" />
-                                                            : <Check size={10} className="text-white/30" />
+                                                            ? <CheckCheck size={13} className={isDarkMode ? "text-cyan-400" : "text-blue-300"} />
+                                                            : (msg.id ? <CheckCheck size={13} className="text-white/50" /> : <Check size={11} className="text-white/40" />)
                                                     )}
                                                 </div>
                                             </div>
@@ -603,17 +625,17 @@ const ConsultationChat = ({
                     </AnimatePresence>
 
                     {/* Input row */}
-                    <div className={`flex items-end gap-2 p-1.5 rounded-[26px] transition-all shadow-xl ${isDarkMode
-                        ? 'bg-[#151515] border border-white/[0.05] shadow-black/40'
-                        : 'bg-white border border-slate-200 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.06)] focus-within:shadow-[0_8px_30px_-4px_rgba(59,130,246,0.15)]'}`}>
+                    <div className={`flex items-end gap-1 p-1 rounded-3xl transition-all duration-300 shadow-xl ${isDarkMode
+                        ? 'bg-[#18181b] border border-white/5 shadow-black/50 focus-within:border-white/10 focus-within:bg-[#1f1f23]'
+                        : 'bg-white border border-slate-200 shadow-slate-200/50 focus-within:border-blue-400/50 focus-within:shadow-blue-500/10'}`}>
 
                         {/* Attach button */}
                         <div className="relative">
                             <button
                                 onClick={() => setShowAttachMenu(!showAttachMenu)}
-                                className={`p-3 rounded-2xl transition-all flex-shrink-0 ${isDarkMode
-                                    ? 'hover:bg-white/5 text-slate-400'
-                                    : 'hover:bg-slate-50 text-slate-500'
+                                className={`p-2.5 rounded-full transition-all flex-shrink-0 ${isDarkMode
+                                    ? 'hover:bg-white/10 text-slate-400 hover:text-white'
+                                    : 'hover:bg-slate-100 text-slate-500 hover:text-blue-600'
                                     }`}
                             >
                                 <Paperclip size={18} />
@@ -672,7 +694,9 @@ const ConsultationChat = ({
                         <div className="relative">
                             <button
                                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                className={`p-3 rounded-2xl transition-all hidden sm:flex flex-shrink-0 ${isDarkMode ? 'hover:bg-white/5 text-slate-400' : 'hover:bg-slate-50 text-slate-500'}`}
+                                className={`p-2.5 rounded-full transition-all hidden sm:flex flex-shrink-0 ${isDarkMode
+                                    ? 'hover:bg-white/10 text-slate-400 hover:text-white'
+                                    : 'hover:bg-slate-100 text-slate-500 hover:text-yellow-500'}`}
                             >
                                 <Smile size={18} />
                             </button>
@@ -702,7 +726,7 @@ const ConsultationChat = ({
                         </div>
 
                         {/* Text input */}
-                        <div className="flex-1 relative pb-1">
+                        <div className="flex-1 relative">
                             <textarea
                                 ref={inputRef}
                                 value={newMessage}
@@ -710,7 +734,7 @@ const ConsultationChat = ({
                                 onKeyDown={handleKeyDown}
                                 rows={1}
                                 placeholder="Message securely..."
-                                className={`w-full px-2 py-2.5 mb-1 bg-transparent border-none text-[14px] font-medium resize-none scrollbar-hide focus:ring-0 focus:outline-none max-h-32 ${isDarkMode
+                                className={`w-full px-2 py-3 bg-transparent !border-none text-[14px] leading-tight font-medium resize-none scrollbar-hide !focus:ring-0 !focus:outline-none max-h-32 ${isDarkMode
                                     ? 'text-slate-100 placeholder-slate-600'
                                     : 'text-slate-800 placeholder-slate-400'
                                     }`}
@@ -727,15 +751,16 @@ const ConsultationChat = ({
                             <button
                                 onClick={startRecording}
                                 disabled={isRecording}
-                                className={`p-3.5 rounded-full transition-all flex-shrink-0 mr-1 mb-1 ${isRecording ? 'opacity-50' : isDarkMode ? 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}
+                                className={`p-3 rounded-full transition-all flex-shrink-0 mr-1 mb-0.5 ${isRecording ? 'opacity-50' : isDarkMode ? 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}
                             >
                                 <Mic size={18} />
                             </button>
                         ) : (
                             <button
+                                id="hidden_send_btn"
                                 onClick={handleSend}
                                 disabled={sending}
-                                className={`p-3.5 mr-1 mb-1 rounded-full transition-all flex-shrink-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_4px_15px_rgba(79,70,229,0.3)] hover:shadow-[0_4px_20px_rgba(79,70,229,0.4)] active:scale-95`}
+                                className={`p-3 mr-1 mb-0.5 rounded-full transition-all flex-shrink-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_4px_15px_rgba(79,70,229,0.3)] hover:shadow-[0_4px_20px_rgba(79,70,229,0.4)] active:scale-95`}
                             >
                                 {sending ? <Loader size={18} className="animate-spin" /> : <Send size={18} fill="currentColor" className="ml-0.5" />}
                             </button>
