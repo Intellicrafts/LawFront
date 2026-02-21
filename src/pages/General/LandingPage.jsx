@@ -150,10 +150,10 @@ const LandingPage = () => {
                     }`}
             >
                 {/* Ambient background glows */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className={`absolute top-20 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full blur-[120px] ${isDark ? 'bg-brand-500/8' : 'bg-brand-200/40'}`} />
-                    <div className={`absolute bottom-20 right-10 w-[500px] h-[500px] rounded-full blur-[100px] ${isDark ? 'bg-accent-500/5' : 'bg-accent-200/20'}`} />
-                    <div className={`absolute top-40 left-10 w-[300px] h-[300px] rounded-full blur-[80px] ${isDark ? 'bg-verified-500/5' : 'bg-verified-200/20'}`} />
+                <div className="absolute inset-0 overflow-hidden pointer-events-none style={{ willChange: 'transform' }}">
+                    <div className={`absolute top-20 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full blur-[120px] ${isDark ? 'bg-brand-500/8' : 'bg-brand-200/40'}`} style={{ willChange: 'transform' }} />
+                    <div className={`absolute bottom-20 right-10 w-[500px] h-[500px] rounded-full blur-[100px] ${isDark ? 'bg-accent-500/5' : 'bg-accent-200/20'}`} style={{ willChange: 'transform' }} />
+                    <div className={`absolute top-40 left-10 w-[300px] h-[300px] rounded-full blur-[80px] ${isDark ? 'bg-verified-500/5' : 'bg-verified-200/20'}`} style={{ willChange: 'transform' }} />
                 </div>
 
                 <div className="relative max-w-6xl mx-auto text-center">
@@ -340,12 +340,10 @@ const LandingPage = () => {
                             return (
                                 <motion.div
                                     key={i}
-                                    initial={{ opacity: 0, y: 30 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: i * 0.15 }}
+                                    whileHover={{ scale: 1.02 }}
                                     onClick={() => navigate(service.route)}
-                                    className={`group cursor-pointer p-7 rounded-2xl border transition-all duration-300 hover:scale-[1.02] hover:shadow-xl
+                                    style={{ WebkitTransform: 'translateZ(0)' }}
+                                    className={`group cursor-pointer p-7 rounded-2xl border transition-all duration-300 hover:shadow-xl
                         ${isDark
                                             ? `bg-[#111111]/80 backdrop-blur-sm ${colors.border} ${colors.hoverBorder}`
                                             : `bg-white border-gray-200 hover:shadow-xl ${colors.hoverBorder}`}`}
@@ -466,11 +464,9 @@ const LandingPage = () => {
                         {stats.map((stat, i) => (
                             <motion.div
                                 key={i}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                whileInView={{ opacity: 1, scale: 1 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.1 }}
-                                className={`text-center p-5 rounded-2xl transition-all duration-300 hover:scale-105 ${isDark
+                                whileHover={{ scale: 1.05 }}
+                                style={{ WebkitTransform: 'translateZ(0)' }}
+                                className={`text-center p-5 rounded-2xl transition-all duration-300 ${isDark
                                     ? 'bg-[#111111]/60 border border-gray-800/50'
                                     : 'bg-gray-50/80 border border-gray-100'
                                     }`}
@@ -511,11 +507,9 @@ const LandingPage = () => {
                         {testimonials.map((t, i) => (
                             <motion.div
                                 key={i}
-                                initial={{ opacity: 0, y: 30 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.15 }}
-                                className={`p-6 rounded-2xl border transition-all duration-300 hover:scale-[1.02] ${isDark
+                                whileHover={{ scale: 1.02 }}
+                                style={{ WebkitTransform: 'translateZ(0)' }}
+                                className={`p-6 rounded-2xl border transition-all duration-300 ${isDark
                                     ? 'bg-[#0A0A0A]/80 border-gray-800 backdrop-blur-sm'
                                     : 'bg-white border-gray-200 hover:shadow-lg'
                                     }`}
@@ -561,11 +555,9 @@ const LandingPage = () => {
                         {whyFeatures.map((feature, i) => (
                             <motion.div
                                 key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.1 }}
-                                className={`p-5 rounded-xl border transition-all duration-300 hover:scale-[1.02]
+                                whileHover={{ scale: 1.02 }}
+                                style={{ WebkitTransform: 'translateZ(0)' }}
+                                className={`p-5 rounded-xl border transition-all duration-300
                       ${isDark
                                         ? 'bg-[#111111]/60 border-gray-800/50 hover:border-brand-500/30'
                                         : 'bg-white border-gray-200 hover:shadow-md hover:border-brand-200'}`}
