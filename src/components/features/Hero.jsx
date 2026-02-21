@@ -640,7 +640,7 @@ const MessageActions = ({ text, isDark }) => {
 // ThoughtAccordion removed in favor of IntelligenceLog
 
 const MessageBubble = ({ message, thought, isDark, isUser, isStreaming = false, chatState, modelId = 'legal_counsel' }) => {
-  const [showLog, setShowLog] = useState(isStreaming);
+  const [showLog, setShowLog] = useState(false);
   const agentName = modalOptions.find(opt => opt.id === modelId)?.label || 'LAWYER TIA';
 
   return (
@@ -699,7 +699,7 @@ const MessageBubble = ({ message, thought, isDark, isUser, isStreaming = false, 
 
           {/* The Intelligence Log (Shown only when toggled) */}
           <AnimatePresence>
-            {!isUser && (showLog || isStreaming) && (thought || isStreaming) && (
+            {!isUser && showLog && (thought || isStreaming) && (
               <IntelligenceLog thought={thought} isStreaming={isStreaming} isDark={isDark} />
             )}
           </AnimatePresence>
@@ -1555,7 +1555,12 @@ const Hero = () => {
                     />
                   ))}
 
-                  {isLoading && (
+                  {/* 
+                      Only show skeleton loader if:
+                      1. We are in the "loading" state
+                      2. AND the currently streaming real-time message doesn't have any actual response text yet
+                  */}
+                  {isLoading && !messages.some(m => m.isRealTime && m.content.length > 0) && (
                     <div className="space-y-4">
                       <ChatStateIndicator
                         chatState={chatState}
