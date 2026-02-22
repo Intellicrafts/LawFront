@@ -12,14 +12,16 @@ import {
   Shield,
   ArrowRight,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const Footer = () => {
+  const { t } = useTranslation();
   const { mode } = useSelector((state) => state.theme);
   const isDark = mode === 'dark';
 
   const currentYear = new Date().getFullYear();
 
-  const practiceAreas = [
+  const practiceAreas = t('footer.practiceAreas', { returnObjects: true }) || [
     'Criminal Law',
     'Family Law',
     'Corporate Law',
@@ -29,16 +31,16 @@ const Footer = () => {
   ];
 
   const quickLinks = [
-    { label: 'AI Assistant', to: '/chatbot', icon: Bot },
-    { label: 'Find Lawyers', to: '/legal-consoltation', icon: Scale },
-    { label: 'Verify Lawyer', to: '/verify-lawyer', icon: BadgeCheck },
-    { label: 'Documents', to: '/legal-documents-review', icon: FileText },
+    { label: t('nav.aiAssistant'), to: '/chatbot', icon: Bot },
+    { label: t('nav.findLawyer'), to: '/legal-consoltation', icon: Scale },
+    { label: t('verification.cta'), to: '/verify-lawyer', icon: BadgeCheck },
+    { label: t('nav.documents'), to: '/legal-documents-review', icon: FileText },
   ];
 
   const legalLinks = [
-    { label: 'Terms of Service', to: '/terms-of-service' },
-    { label: 'Privacy Policy', to: '/privacy-policy' },
-    { label: 'Refund Policy', to: '/refund-policy' },
+    { label: t('footer.terms'), to: '/terms-of-service' },
+    { label: t('footer.privacy'), to: '/privacy-policy' },
+    { label: t('footer.refund'), to: '/refund-policy' },
   ];
 
   return (
@@ -59,7 +61,7 @@ const Footer = () => {
               </span>
             </Link>
             <p className={`text-xs leading-relaxed mb-4 max-w-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-              India's AI-powered legal marketplace. Get instant legal guidance, connect with verified lawyers, and manage legal documents — all from one platform.
+              {t('footer.tagline')}
             </p>
             <div className="space-y-1.5">
               <a href="mailto:info@merabakil.com" className={`flex items-center gap-2 text-xs transition-colors ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}>
@@ -80,7 +82,7 @@ const Footer = () => {
           {/* Practice Areas */}
           <div>
             <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? 'text-gray-400' : 'text-gray-700'}`}>
-              Practice Areas
+              {t('footer.headers.practice')}
             </h4>
             <ul className="space-y-1.5">
               {practiceAreas.map((area, i) => (
@@ -96,7 +98,7 @@ const Footer = () => {
           {/* Quick Links */}
           <div>
             <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? 'text-gray-400' : 'text-gray-700'}`}>
-              Quick Links
+              {t('footer.headers.quick')}
             </h4>
             <ul className="space-y-1.5">
               {quickLinks.map((link, i) => (
@@ -120,7 +122,7 @@ const Footer = () => {
           {/* Legal */}
           <div>
             <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? 'text-gray-400' : 'text-gray-700'}`}>
-              Legal
+              {t('footer.headers.legal')}
             </h4>
             <ul className="space-y-1.5">
               {legalLinks.map((link, i) => (
@@ -145,20 +147,20 @@ const Footer = () => {
       <div className={`border-t ${isDark ? 'border-gray-800/60' : 'border-gray-100'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className={`text-[11px] font-medium ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
-            © {currentYear} MeraBakil. All rights reserved.
+            © {currentYear} MeraBakil. {t('footer.rights')}
           </p>
           <div className="flex items-center gap-3">
             <span className={`flex items-center gap-1 text-[10px] font-medium ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
               <Shield className="h-2.5 w-2.5" />
-              256-bit SSL
+              {t('footer.security.ssl')}
             </span>
             <span className={`flex items-center gap-1 text-[10px] font-medium ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
               <BadgeCheck className="h-2.5 w-2.5" />
-              Verified Lawyers
+              {t('footer.security.verified')}
             </span>
             <span className={`flex items-center gap-1 text-[10px] font-medium ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
               <Bot className="h-2.5 w-2.5" />
-              AI-Powered
+              {t('footer.security.ai')}
             </span>
           </div>
         </div>

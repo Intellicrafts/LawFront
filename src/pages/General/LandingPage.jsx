@@ -1,318 +1,608 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useSelector } from 'react-redux';
 import { tokenManager } from '../../api/apiService';
 import {
     Bot, Scale, FileText, Shield, CheckCircle, ArrowRight,
-    Wallet, Phone, Search, Star, Users, Clock, Lock,
+    Phone, Search, Star, Users, Clock, Lock,
     Sparkles, BadgeCheck, Briefcase,
-    IndianRupee, Banknote
+    IndianRupee, Banknote, Send, ChevronRight, Wallet, MessageSquare, CalendarCheck
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 /* ──────────────────────────────────────────────────
    Landing Page — MeraBakil
-   Sections: Hero, Core Services,
-   Lawyer Verification, Trust Badges, Testimonials,
-   Stats, Why Choose Us
+   Design System: Deep Teal + Institutional Gold
+   Trust-First Verified Legal Marketplace
    ────────────────────────────────────────────────── */
 
 const LandingPage = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { mode } = useSelector((state) => state.theme);
     const isDark = mode === 'dark';
     const heroRef = useRef(null);
+    const [intakeQuery, setIntakeQuery] = useState('');
+    const [walletBalance, setWalletBalance] = useState(null);
+
+    // Fetch wallet balance for logged-in customer
+    React.useEffect(() => {
+        if (tokenManager.isAuthenticated()) {
+            try {
+                const userStr = localStorage.getItem('user');
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+                    if (user.wallet_balance !== undefined) setWalletBalance(user.wallet_balance);
+                }
+            } catch { /* silent */ }
+        }
+    }, []);
 
     const { scrollYProgress } = useScroll({
         target: heroRef,
         offset: ["start start", "end start"]
     });
-    const heroOpacity = useTransform(scrollYProgress, [0, 1], [1, 0.4]);
+    const heroOpacity = useTransform(scrollYProgress, [0, 1], [1, 0.5]);
 
     /* ── Data ──────────────────────────────────── */
 
-    // Core services offered
     const coreServices = [
         {
             icon: Bot,
-            title: 'AI Legal Assistant',
-            description: 'Get instant, practical answers to legal queries. Our AI understands Indian law and guides you step-by-step.',
+            title: t('services.aiCounsel.title'),
+            description: t('services.aiCounsel.desc'),
             color: 'brand',
-            creditCost: 'From ₹2/query',
+            meta: t('services.aiCounsel.meta'),
             route: '/chatbot',
         },
         {
             icon: Phone,
-            title: 'Expert Consultation',
-            description: 'Talk to verified lawyers via audio or internet call. Per-minute billing — pay only for the time you use.',
+            title: t('services.lawyerNetwork.title'),
+            description: t('services.lawyerNetwork.desc'),
             color: 'verified',
-            creditCost: 'Per-minute billing',
+            meta: t('services.lawyerNetwork.meta'),
             route: '/legal-consoltation',
         },
         {
             icon: FileText,
-            title: 'Document Drafting',
-            description: 'AI-powered legal document templates. Generate contracts, agreements, and legal notices in minutes.',
+            title: t('services.contractDraft.title'),
+            description: t('services.contractDraft.desc'),
             color: 'accent',
-            creditCost: 'From ₹50/document',
+            meta: t('services.contractDraft.meta'),
             route: '/legal-documents-review',
         },
     ];
 
-    // Trust badges
-    const trustBadges = [
-        { icon: BadgeCheck, label: 'Bar Council Verified Lawyers', color: 'text-verified-500' },
-        { icon: Lock, label: '256-bit Encrypted', color: 'text-brand-500' },
-        { icon: Sparkles, label: 'AI-Powered Platform', color: 'text-accent-500' },
+    const howItWorks = [
+        {
+            step: '01',
+            title: t('howItWorks.steps.step1.title'),
+            desc: t('howItWorks.steps.step1.desc'),
+        },
+        {
+            step: '02',
+            title: t('howItWorks.steps.step2.title'),
+            desc: t('howItWorks.steps.step2.desc'),
+        },
+        {
+            step: '03',
+            title: t('howItWorks.steps.step3.title'),
+            desc: t('howItWorks.steps.step3.desc'),
+        },
+        {
+            step: '04',
+            title: t('howItWorks.steps.step4.title'),
+            desc: t('howItWorks.steps.step4.desc'),
+        },
     ];
 
-    // Stats
     const stats = [
-        { value: '500+', label: 'Verified Lawyers', icon: Users },
-        { value: '10K+', label: 'Legal Queries Resolved', icon: Bot },
-        { value: '<2min', label: 'Average Response Time', icon: Clock },
-        { value: '4.8★', label: 'User Rating', icon: Star },
+        { value: '500+', label: t('stats.lawyers'), icon: Users },
+        { value: '10K+', label: t('stats.cases'), icon: Bot },
+        { value: '<2min', label: t('stats.response'), icon: Clock },
+        { value: '4.8★', label: t('stats.satisfaction'), icon: Star },
     ];
 
-    // Testimonials
     const testimonials = [
         {
-            name: 'Priya Sharma',
-            role: 'Small Business Owner',
-            text: 'The AI assistant helped me understand my lease agreement in 5 minutes. When I needed a lawyer, I found one within seconds and paid only for a 10-minute call.',
+            name: t('testimonials.list.t1.name'),
+            role: t('testimonials.list.t1.title'),
+            city: 'Delhi',
+            area: t('footer.practiceAreas.3'), // Property Law
+            text: t('testimonials.list.t1.content'),
             rating: 5,
         },
         {
-            name: 'Rajesh Patel',
-            role: 'Startup Founder',
-            text: 'The wallet system is brilliant — no subscriptions, no hidden fees. I topped up ₹500 and got AI guidance, a verified lawyer consultation, and a drafted NDA.',
+            name: t('testimonials.list.t2.name'),
+            role: t('testimonials.list.t2.title'),
+            city: 'Mumbai',
+            area: t('footer.practiceAreas.2'), // Corporate Law
+            text: t('testimonials.list.t2.content'),
             rating: 5,
         },
         {
-            name: 'Adv. Meera Iyer',
-            role: 'Family Law Specialist',
-            text: 'As a lawyer on the platform, I love the per-minute billing. I get paid fairly, clients get transparency, and the research tools help me serve better.',
+            name: t('testimonials.list.t3.name'),
+            role: t('testimonials.list.t3.title'),
+            city: 'Bengaluru',
+            area: t('nav.findLawyer'),
+            text: t('testimonials.list.t3.content'),
             rating: 5,
         },
     ];
 
-    // Why Choose Us features
     const whyFeatures = [
         {
             icon: Bot,
-            title: 'AI That Understands Indian Law',
-            description: 'Not a generic chatbot — our AI is trained on Indian legal codes, precedents, and practical guidance.',
+            title: t('whyChooseUs.feature1.title'),
+            description: t('whyChooseUs.feature1.desc'),
         },
         {
             icon: BadgeCheck,
-            title: 'Verify Any Lawyer',
-            description: 'Use our verification service to check any lawyer\'s Bar Council credentials before you engage them.',
+            title: t('whyChooseUs.feature2.title'),
+            description: t('whyChooseUs.feature2.desc'),
         },
         {
-            icon: Wallet,
-            title: 'No Subscriptions, No Lock-in',
-            description: 'Wallet credits never expire. Recharge when you need, withdraw earned balance anytime.',
+            icon: Lock,
+            title: t('whyChooseUs.feature3.title'),
+            description: t('whyChooseUs.feature3.desc'),
         },
         {
             icon: Phone,
-            title: 'Per-Minute Consultations',
-            description: 'Talk to lawyers and pay by the minute. No flat fees for 5 minutes when you only needed 2.',
+            title: t('whyChooseUs.feature4.title'),
+            description: t('whyChooseUs.feature4.desc'),
         },
         {
             icon: Search,
-            title: 'Case Status Checking',
-            description: 'Track your court case status directly from the platform. Stay updated without visiting courts.',
+            title: t('whyChooseUs.feature5.title'),
+            description: t('whyChooseUs.feature5.desc'),
         },
         {
             icon: Shield,
-            title: 'End-to-End Encrypted',
-            description: 'All communications, documents, and payment data are encrypted with bank-grade security.',
+            title: t('whyChooseUs.feature6.title'),
+            description: t('whyChooseUs.feature6.desc'),
         },
     ];
+
+    /* ── Shared class builders ── */
+
+    const primaryBtn = `group inline-flex items-center gap-2 px-6 py-3 rounded-md font-semibold text-sm text-white
+      bg-brand-500 hover:bg-brand-600 active:bg-brand-700
+      transition-all duration-200 shadow-teal-glow hover:shadow-teal-glow-lg hover:-translate-y-0.5 active:translate-y-0`;
+
+    const outlineBtn = `group inline-flex items-center gap-2 px-6 py-3 rounded-md font-semibold text-sm
+      border-2 border-brand-300 text-brand-700 hover:border-brand-500 hover:bg-brand-50
+      dark:border-brand-700 dark:text-brand-300 dark:hover:border-brand-400 dark:hover:bg-brand-900/20
+      transition-all duration-200`;
+
+    const handleIntakeSubmit = (e) => {
+        e.preventDefault();
+        if (intakeQuery.trim()) {
+            navigate(`/chatbot?q=${encodeURIComponent(intakeQuery.trim())}`);
+        } else {
+            navigate('/chatbot');
+        }
+    };
 
     /* ── Render ────────────────────────────────── */
 
     return (
         <div className={`w-full min-h-0 overflow-x-hidden transition-colors duration-500 ${isDark
-            ? 'bg-[#0A0A0A]'
-            : 'bg-white'
+            ? 'bg-dark-bg'
+            : 'bg-[hsl(40,20%,97%)]'
             }`}
         >
             {/* ═══════════════════════════════════════════
-              HERO SECTION — Matching Navbar Theme
+              HERO SECTION
               ═══════════════════════════════════════════ */}
             <motion.section
                 ref={heroRef}
                 style={{ opacity: heroOpacity }}
-                className={`relative pt-24 md:pt-32 pb-16 md:pb-20 px-4 md:px-6 flex items-center ${isDark
-                    ? 'bg-gradient-to-b from-[#0A0A0A] via-[#0d1117] to-[#0A0A0A]'
-                    : 'bg-gradient-to-b from-white via-brand-50/30 to-white'
+                className={`relative pt-24 md:pt-36 pb-12 md:pb-16 px-4 md:px-6 ${isDark
+                    ? 'bg-dark-bg'
+                    : 'bg-[hsl(40,20%,97%)]'
                     }`}
             >
-                {/* Ambient background glows */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none style={{ willChange: 'transform' }}">
-                    <div className={`absolute top-20 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full blur-[120px] ${isDark ? 'bg-brand-500/8' : 'bg-brand-200/40'}`} style={{ willChange: 'transform' }} />
-                    <div className={`absolute bottom-20 right-10 w-[500px] h-[500px] rounded-full blur-[100px] ${isDark ? 'bg-accent-500/5' : 'bg-accent-200/20'}`} style={{ willChange: 'transform' }} />
-                    <div className={`absolute top-40 left-10 w-[300px] h-[300px] rounded-full blur-[80px] ${isDark ? 'bg-verified-500/5' : 'bg-verified-200/20'}`} style={{ willChange: 'transform' }} />
-                </div>
+                {/* Subtle top border line */}
+                <div className={`absolute top-0 left-0 right-0 h-px ${isDark ? 'bg-brand-900/60' : 'bg-brand-100'}`} />
 
-                <div className="relative max-w-6xl mx-auto text-center">
-                    {/* Badge */}
+                <div className="relative max-w-4xl mx-auto text-center">
+                    {/* Eyebrow badge */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
+                        transition={{ duration: 0.4 }}
                         className="mb-6"
                     >
-                        <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase
-                  ${isDark
-                                ? 'bg-brand-500/10 text-brand-400 border border-brand-500/20 backdrop-blur-sm'
-                                : 'bg-brand-50 text-brand-600 border border-brand-200'}`}
+                        <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest uppercase
+              ${isDark
+                                ? 'bg-brand-900/50 text-brand-300 border border-brand-800'
+                                : 'bg-brand-50 text-brand-700 border border-brand-200'}`}
                         >
-                            <Sparkles className="h-3.5 w-3.5" />
-                            India's AI-Powered Legal Marketplace
+                            <BadgeCheck className="h-3.5 w-3.5 text-accent-500" />
+                            {t('hero.badge')}
                         </span>
                     </motion.div>
 
-                    {/* Headline — role-based */}
+                    {/* Headline — serif for authority */}
                     <motion.h1
-                        initial={{ opacity: 0, y: 30 }}
+                        initial={{ opacity: 0, y: 24 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.1 }}
-                        className={`text-4xl md:text-6xl lg:text-7xl font-extrabold leading-tight mb-6
-                  ${isDark ? 'text-white' : 'text-brand-900'}`}
+                        transition={{ duration: 0.55, delay: 0.1 }}
+                        className={`text-4xl md:text-6xl lg:text-[68px] font-bold leading-[1.12] tracking-tight mb-5
+              ${isDark ? 'text-dark-text' : 'text-brand-900'}`}
                     >
                         {(() => {
                             const user = tokenManager.getUser();
                             if (!tokenManager.isAuthenticated()) return (
                                 <>
-                                    Your AI Legal Partner
-                                    <br />
-                                    <span className="bg-gradient-to-r from-brand-500 via-brand-400 to-brand-600 bg-clip-text text-transparent">
-                                        Describe. Match. Resolve.
-                                    </span>
+                                    {t('hero.headlineGuest1') || 'Your Legal Problem,'}{' '}
+                                    <span className="text-brand-600 italic">{t('hero.headlineGuest2') || 'In Safe Hands.'}</span>
                                 </>
                             );
                             if (user?.user_type === 2) return (
                                 <>
-                                    Welcome Back, Advocate
-                                    <br />
-                                    <span className="bg-gradient-to-r from-brand-500 via-brand-400 to-brand-600 bg-clip-text text-transparent">
-                                        Your Practice Hub
-                                    </span>
+                                    {t('hero.headlineLawyer1') || 'Welcome Back,'}{' '}
+                                    <span className="text-brand-600 italic">{t('hero.headlineLawyer2') || 'Advocate.'}</span>
                                 </>
                             );
                             return (
                                 <>
-                                    Welcome Back!
-                                    <br />
-                                    <span className="bg-gradient-to-r from-brand-500 via-brand-400 to-brand-600 bg-clip-text text-transparent">
-                                        What can we help with?
-                                    </span>
+                                    {t('hero.headline1')}{' '}
+                                    <span className="text-brand-600 italic">{t('hero.headline2')}</span>
                                 </>
                             );
                         })()}
                     </motion.h1>
 
-                    {/* Subtitle — role-based */}
+                    {/* Subtitle */}
                     <motion.p
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                        className={`text-base md:text-lg max-w-2xl mx-auto mb-10 leading-relaxed
-                  ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
+                        transition={{ duration: 0.5, delay: 0.2 }}
+                        className={`text-base md:text-lg max-w-xl mx-auto mb-10 leading-relaxed
+              ${isDark ? 'text-dark-text-tertiary' : 'text-gray-600'}`}
                     >
                         {(() => {
                             const user = tokenManager.getUser();
                             if (!tokenManager.isAuthenticated())
-                                return 'Describe your legal situation to our AI — it analyzes your case and recommends the right verified lawyer. Book instantly, consult per-minute, or browse lawyers directly. Pay only for what you use.';
+                                return t('hero.subheadlineGuestLanding') || 'Get clear on your rights. A verified lawyer takes it from there.';
                             if (user?.user_type === 2)
-                                return 'Manage your appointments, track earnings, and connect with clients who need your expertise.';
-                            return 'Continue where you left off — chat with AI, connect with lawyers, or manage your wallet.';
+                                return t('hero.subheadlineLawyer') || 'Manage appointments, track earnings, and connect with matched clients.';
+                            return t('hero.subheadline');
                         })()}
                     </motion.p>
 
-                    {/* CTAs — role-based */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.3 }}
-                        className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12"
-                    >
-                        {(() => {
-                            const user = tokenManager.getUser();
-                            const outlineBtnClass = `group flex items-center gap-2 px-7 py-3 rounded-xl font-semibold text-base transition-all duration-300 border-2 ${isDark ? 'border-gray-700/60 text-white hover:bg-white/5 hover:border-gray-600' : 'border-gray-300 text-brand-900 hover:bg-gray-50 hover:border-brand-300'}`;
-                            const primaryBtnClass = "group flex items-center gap-2 px-7 py-3 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white rounded-xl font-semibold text-base transition-all duration-300 shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 hover:scale-[1.02] active:scale-[0.98]";
+                    {/* AI Intake Widget — the hero IS the product */}
+                    {!tokenManager.isAuthenticated() && (
+                        <>
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.55, delay: 0.25 }}
+                                className="mb-6 max-w-2xl mx-auto"
+                            >
+                                <form onSubmit={handleIntakeSubmit}>
+                                    <div className={`relative rounded-lg border-2 transition-all duration-200
+                      ${isDark
+                                            ? 'bg-dark-bg-secondary border-dark-border focus-within:border-brand-600'
+                                            : 'bg-white border-brand-200 focus-within:border-brand-500 shadow-card hover:shadow-card-hover'}`}
+                                    >
+                                        <textarea
+                                            value={intakeQuery}
+                                            onChange={(e) => setIntakeQuery(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                    e.preventDefault();
+                                                    handleIntakeSubmit(e);
+                                                }
+                                            }}
+                                            rows={3}
+                                            placeholder={t('hero.chatPlaceholder')}
+                                            className={`w-full px-5 pt-4 pb-3 text-sm leading-relaxed resize-none rounded-t-lg
+                          bg-transparent border-none
+                          ${isDark ? 'text-dark-text placeholder-dark-text-muted' : 'text-gray-800 placeholder-gray-400'}
+                          focus:ring-0 focus:outline-none`}
+                                        />
+                                        <div className={`flex items-center justify-between px-4 py-2.5 border-t
+                        ${isDark ? 'border-dark-border' : 'border-brand-100'}`}
+                                        >
+                                            <p className={`text-xs flex items-center gap-1.5 ${isDark ? 'text-dark-text-muted' : 'text-gray-400'}`}>
+                                                <Lock className="h-3 w-3" />
+                                                {t('hero.chatPrivate')}
+                                            </p>
+                                            <button
+                                                type="submit"
+                                                className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-md text-xs font-semibold
+                            text-white bg-brand-500 hover:bg-brand-600 transition-colors duration-150`}
+                                            >
+                                                <Send className="h-3.5 w-3.5" />
+                                                {t('hero.getAiGuidance')}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                                <p className={`mt-2.5 text-center text-[11px] ${isDark ? 'text-dark-text-muted' : 'text-gray-400'}`}>
+                                    {t('hero.guestDisclaimer')}
+                                </p>
+                            </motion.div>
 
-                            // Lawyer experience
-                            if (tokenManager.isAuthenticated() && user?.user_type === 2) return (
-                                <>
-                                    <button onClick={() => navigate('/lawyer-admin')} className={primaryBtnClass}>
-                                        <Briefcase className="h-5 w-5" />
-                                        Dashboard
-                                        <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                                    </button>
-                                    <button onClick={() => navigate('/profile')} className={outlineBtnClass}>
-                                        <Users className="h-5 w-5" />
-                                        My Profile
-                                    </button>
-                                </>
-                            );
+                            {/* Guest secondary CTA — Browse lawyers */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.45, delay: 0.35 }}
+                                className="flex items-center gap-4 max-w-sm mx-auto mb-4"
+                            >
+                                <div className={`flex-1 h-px ${isDark ? 'bg-dark-border' : 'bg-gray-200'}`} />
+                                <span className={`text-[11px] font-medium ${isDark ? 'text-dark-text-muted' : 'text-gray-400'}`}>{t('hero.orDivider')}</span>
+                                <div className={`flex-1 h-px ${isDark ? 'bg-dark-border' : 'bg-gray-200'}`} />
+                            </motion.div>
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.45, delay: 0.4 }}
+                                className="flex justify-center mb-10"
+                            >
+                                <button
+                                    onClick={() => tokenManager.isAuthenticated() ? navigate('/legal-consoltation') : navigate('/auth')}
+                                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-md text-sm font-semibold border transition-all duration-200 group ${isDark
+                                        ? 'border-dark-border text-dark-text-secondary hover:border-brand-500 hover:text-brand-400'
+                                        : 'border-gray-200 text-gray-600 hover:border-brand-400 hover:text-brand-600'
+                                        }`}
+                                >
+                                    <Scale className="h-4 w-4" />
+                                    {t('hero.findLawyer')}
+                                    <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                                </button>
+                            </motion.div>
+                        </>
+                    )}
 
-                            // Client experience
-                            if (tokenManager.isAuthenticated()) return (
-                                <>
-                                    <button onClick={() => navigate('/chatbot')} className={primaryBtnClass}>
-                                        <Bot className="h-5 w-5" />
-                                        AI Assistant
-                                        <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                                    </button>
-                                    <button onClick={() => navigate('/legal-consoltation')} className={outlineBtnClass}>
-                                        <Scale className="h-5 w-5" />
-                                        Find a Lawyer
-                                    </button>
-                                </>
-                            );
+                    {/* Dashboard strip — authenticated customer */}
+                    {tokenManager.isAuthenticated() && (() => {
+                        const user = tokenManager.getUser();
+                        if (user?.user_type === 2) return (
+                            // Lawyer — just two buttons
+                            <motion.div
+                                initial={{ opacity: 0, y: 16 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.25 }}
+                                className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10"
+                            >
+                                <button onClick={() => navigate('/lawyer-admin')} className={primaryBtn}>
+                                    <Briefcase className="h-4 w-4" />
+                                    {t('nav.dashboard')}
+                                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                                </button>
+                                <button onClick={() => navigate('/profile')} className={outlineBtn}>
+                                    <Users className="h-4 w-4" />
+                                    {t('nav.profile')}
+                                </button>
+                            </motion.div>
+                        );
 
-                            // Visitor experience
-                            return (
-                                <>
-                                    <button onClick={() => navigate('/chatbot')} className={primaryBtnClass}>
-                                        <Bot className="h-5 w-5" />
-                                        Talk to AI Assistant
-                                        <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                                    </button>
-                                    <button onClick={() => navigate('/legal-consoltation')} className={outlineBtnClass}>
-                                        <Scale className="h-5 w-5" />
-                                        Find a Lawyer
-                                        <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                                    </button>
-                                </>
-                            );
-                        })()}
-                    </motion.div>
+                        // Client — rich quick-action strip
+                        const firstName = user?.name?.split(' ')[0] || user?.full_name?.split(' ')[0] || 'there';
+                        return (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.2 }}
+                                className="w-full max-w-2xl mx-auto mb-10"
+                            >
+                                {/* Wallet balance pill */}
+                                {walletBalance !== null && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: 0.3 }}
+                                        className="flex justify-center mb-5"
+                                    >
+                                        <button
+                                            onClick={() => navigate('/wallet')}
+                                            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 hover:-translate-y-0.5 ${isDark
+                                                ? 'bg-accent-900/20 border-accent-700/30 text-accent-400 hover:bg-accent-900/30'
+                                                : 'bg-accent-50 border-accent-200 text-accent-700 hover:bg-accent-100'
+                                                }`}
+                                        >
+                                            <Wallet className="h-3 w-3" />
+                                            {t('hero.walletBalance')}: ₹{walletBalance}
+                                            <ChevronRight className="h-3 w-3" />
+                                        </button>
+                                    </motion.div>
+                                )}
 
-                    {/* Trust badges strip */}
+                                {/* ── Inline AI Chat Widget ── */}
+                                <motion.form
+                                    initial={{ opacity: 0, y: 12 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.3 }}
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        const q = intakeQuery.trim();
+                                        navigate('/chatbot', { state: { prefillQuery: q } });
+                                    }}
+                                    className={`relative w-full rounded-2xl border shadow-md transition-all duration-200 focus-within:shadow-lg ${isDark
+                                        ? 'bg-dark-surface border-dark-border focus-within:border-brand-500/50'
+                                        : 'bg-white border-gray-200 focus-within:border-brand-400'
+                                        }`}
+                                >
+                                    <textarea
+                                        autoFocus
+                                        rows={2}
+                                        value={intakeQuery}
+                                        onChange={(e) => setIntakeQuery(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                navigate('/chatbot', { state: { prefillQuery: intakeQuery.trim() } });
+                                            }
+                                        }}
+                                        placeholder={t('hero.chatPlaceholder')}
+                                        className={`w-full resize-none bg-transparent px-4 pt-4 pb-2 text-sm leading-relaxed outline-none placeholder:text-sm ${isDark
+                                            ? 'text-dark-text placeholder:text-dark-text-muted'
+                                            : 'text-gray-800 placeholder:text-gray-400'
+                                            }`}
+                                    />
+                                    <div className={`flex items-center justify-between px-3 pb-3 pt-1 border-t ${isDark ? 'border-white/5' : 'border-gray-100'}`}>
+                                        <span className={`text-[10px] font-medium ${isDark ? 'text-dark-text-muted' : 'text-gray-400'}`}>
+                                            {t('hero.chatHint')}
+                                        </span>
+                                        <motion.button
+                                            type="submit"
+                                            whileTap={{ scale: 0.95 }}
+                                            whileHover={{ scale: 1.04 }}
+                                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold transition-colors duration-150 shadow-sm"
+                                        >
+                                            <Send className="h-3 w-3" />
+                                            {t('hero.askTia')}
+                                        </motion.button>
+                                    </div>
+                                </motion.form>
+
+                                {/* ── Secondary quick-action pills ── */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.4 }}
+                                    className="flex items-center justify-center gap-3 mt-4"
+                                >
+                                    <button
+                                        onClick={() => navigate('/legal-consoltation')}
+                                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150 hover:-translate-y-0.5 ${isDark
+                                            ? 'border-dark-border text-dark-text-secondary hover:border-brand-500/50 hover:text-brand-400'
+                                            : 'border-gray-200 text-gray-600 hover:border-brand-300 hover:text-brand-600 bg-white shadow-sm'
+                                            }`}
+                                    >
+                                        <Scale className="h-3 w-3" />
+                                        {t('hero.findLawyer')}
+                                    </button>
+                                    <button
+                                        onClick={() => navigate('/legal-consoltation?view=appointments')}
+                                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150 hover:-translate-y-0.5 ${isDark
+                                            ? 'border-dark-border text-dark-text-secondary hover:border-accent-500/50 hover:text-accent-400'
+                                            : 'border-gray-200 text-gray-600 hover:border-accent-300 hover:text-accent-600 bg-white shadow-sm'
+                                            }`}
+                                    >
+                                        <CalendarCheck className="h-3 w-3" />
+                                        {t('hero.myAppointments')}
+                                    </button>
+                                </motion.div>
+                            </motion.div>
+                        );
+                    })()}
+
+                    {/* Trust strip */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ duration: 0.8, delay: 0.5 }}
-                        className="flex flex-wrap items-center justify-center gap-6"
+                        transition={{ duration: 0.6, delay: 0.45 }}
+                        className={`flex flex-wrap items-center justify-center gap-x-8 gap-y-3 pt-4 border-t
+              ${isDark ? 'border-dark-border' : 'border-brand-100'}`}
                     >
-                        {trustBadges.map((badge, i) => (
-                            <div key={i} className={`flex items-center gap-2 text-xs font-medium ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                        {[
+                            { icon: BadgeCheck, label: t('trust.barCouncil'), color: 'text-brand-500' },
+                            { icon: Lock, label: t('trust.encrypted'), color: 'text-brand-500' },
+                            { icon: Sparkles, label: t('trust.aiAssisted'), color: 'text-accent-500' },
+                        ].map((badge, i) => (
+                            <div key={i} className={`flex items-center gap-2 text-xs font-medium ${isDark ? 'text-dark-text-tertiary' : 'text-gray-500'}`}>
                                 <badge.icon className={`h-3.5 w-3.5 ${badge.color}`} />
                                 <span>{badge.label}</span>
                             </div>
                         ))}
                     </motion.div>
+
+                    {/* Lawyer entry point */}
+                    {!tokenManager.isAuthenticated() && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.5, delay: 0.6 }}
+                            className="flex justify-center pt-4"
+                        >
+                            <button
+                                onClick={() => document.getElementById('for-lawyers')?.scrollIntoView({ behavior: 'smooth' })}
+                                className={`inline-flex items-center gap-1.5 text-xs font-medium transition-colors duration-150
+                                    ${isDark ? 'text-dark-text-muted hover:text-accent-400' : 'text-gray-400 hover:text-brand-600'}`}
+                            >
+                                <Briefcase className="h-3.5 w-3.5" />
+                                {t('hero.lawyerQuestion')}
+                                <span className={`underline underline-offset-2 ${isDark ? 'text-accent-400' : 'text-brand-600'}`}>
+                                    {t('hero.joinPlatform')}
+                                </span>
+                            </button>
+                        </motion.div>
+                    )}
                 </div>
             </motion.section>
 
             {/* ═══════════════════════════════════════════
+              HOW IT WORKS — 4-step linear flow
+              ═══════════════════════════════════════════ */}
+            <section className={`py-16 md:py-20 px-4 md:px-6 border-t
+              ${isDark ? 'border-dark-border bg-dark-bg-secondary' : 'border-brand-100 bg-white'}`}
+            >
+                <div className="max-w-6xl mx-auto">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="text-center mb-14"
+                    >
+                        <p className={`text-xs font-semibold tracking-widest uppercase mb-3 ${isDark ? 'text-brand-400' : 'text-brand-600'}`}>
+                            {t('howItWorks.badge')}
+                        </p>
+                        <h2 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-dark-text' : 'text-brand-900'}`}>
+                            {t('howItWorks.title')}
+                        </h2>
+                    </motion.div>
+
+                    {/* Steps — connected, linear */}
+                    <div className="relative">
+                        {/* Connector line (desktop) */}
+                        <div className={`hidden md:block absolute top-8 left-[12.5%] right-[12.5%] h-px
+                          ${isDark ? 'bg-brand-800' : 'bg-brand-200'}`}
+                        />
+
+                        <div className="grid md:grid-cols-4 gap-8 md:gap-6 relative">
+                            {howItWorks.map((step, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, y: 24 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className="flex flex-col items-center text-center"
+                                >
+                                    {/* Step number bubble */}
+                                    <div className={`relative z-10 w-16 h-16 rounded-full flex items-center justify-center mb-5 font-bold text-lg
+                      border-2 transition-all duration-300
+                      ${isDark
+                                            ? 'bg-dark-bg-secondary border-brand-700 text-brand-400'
+                                            : 'bg-brand-500 border-brand-500 text-white shadow-teal-glow'}`}
+                                    >
+                                        {step.step}
+                                    </div>
+                                    <h3 className={`text-sm font-semibold mb-2 ${isDark ? 'text-dark-text' : 'text-brand-900'}`}>
+                                        {step.title}
+                                    </h3>
+                                    <p className={`text-xs leading-relaxed max-w-[200px] ${isDark ? 'text-dark-text-tertiary' : 'text-gray-500'}`}>
+                                        {step.desc}
+                                    </p>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ═══════════════════════════════════════════
               CORE SERVICES
               ═══════════════════════════════════════════ */}
-            <section className={`py-16 md:py-20 px-4 md:px-6 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
+            <section className={`py-16 md:py-20 px-4 md:px-6 border-t
+              ${isDark ? 'border-dark-border bg-dark-bg' : 'border-brand-100 bg-[hsl(40,20%,97%)]'}`}
+            >
                 <div className="max-w-6xl mx-auto">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -320,48 +610,66 @@ const LandingPage = () => {
                         viewport={{ once: true }}
                         className="text-center mb-12"
                     >
-                        <h2 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-brand-900'}`}>
-                            Everything You Need, One Platform
+                        <p className={`text-xs font-semibold tracking-widest uppercase mb-3 ${isDark ? 'text-brand-400' : 'text-brand-600'}`}>
+                            {t('services.badge')}
+                        </p>
+                        <h2 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-dark-text' : 'text-brand-900'}`}>
+                            {t('services.title')}
                         </h2>
-                        <p className={`mt-3 text-sm md:text-base max-w-xl mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                            AI guidance, expert consultations, and legal documents — all pay-per-use.
+                        <p className={`mt-3 text-sm max-w-lg mx-auto ${isDark ? 'text-dark-text-tertiary' : 'text-gray-500'}`}>
+                            {t('services.subtitle')}
                         </p>
                     </motion.div>
 
                     <div className="grid md:grid-cols-3 gap-6">
                         {coreServices.map((service, i) => {
                             const colorMap = {
-                                brand: { bg: 'bg-brand-500/10', text: 'text-brand-500', border: 'border-brand-500/20', hoverBorder: 'hover:border-brand-500/40', glow: 'group-hover:shadow-brand-500/10' },
-                                verified: { bg: 'bg-verified-500/10', text: 'text-verified-500', border: 'border-verified-500/20', hoverBorder: 'hover:border-verified-500/40', glow: 'group-hover:shadow-verified-500/10' },
-                                accent: { bg: 'bg-accent-500/10', text: 'text-accent-500', border: 'border-accent-500/20', hoverBorder: 'hover:border-accent-500/40', glow: 'group-hover:shadow-accent-500/10' },
+                                brand: {
+                                    iconBg: isDark ? 'bg-brand-900/50' : 'bg-brand-50',
+                                    icon: isDark ? 'text-brand-400' : 'text-brand-600',
+                                    border: isDark ? 'border-dark-border hover:border-brand-700' : 'border-gray-200 hover:border-brand-300',
+                                    meta: isDark ? 'text-brand-400' : 'text-brand-600',
+                                },
+                                verified: {
+                                    iconBg: isDark ? 'bg-verified-900/30' : 'bg-verified-50',
+                                    icon: isDark ? 'text-verified-400' : 'text-verified-600',
+                                    border: isDark ? 'border-dark-border hover:border-verified-800' : 'border-gray-200 hover:border-verified-300',
+                                    meta: isDark ? 'text-verified-400' : 'text-verified-600',
+                                },
+                                accent: {
+                                    iconBg: isDark ? 'bg-accent-900/30' : 'bg-accent-50',
+                                    icon: isDark ? 'text-accent-400' : 'text-accent-600',
+                                    border: isDark ? 'border-dark-border hover:border-accent-800' : 'border-gray-200 hover:border-accent-300',
+                                    meta: isDark ? 'text-accent-400' : 'text-accent-600',
+                                },
                             };
-                            const colors = colorMap[service.color];
+                            const c = colorMap[service.color];
 
                             return (
                                 <motion.div
                                     key={i}
-                                    whileHover={{ scale: 1.02 }}
+                                    whileHover={{ y: -4 }}
                                     onClick={() => navigate(service.route)}
-                                    style={{ WebkitTransform: 'translateZ(0)' }}
-                                    className={`group cursor-pointer p-7 rounded-2xl border transition-all duration-300 hover:shadow-xl
-                        ${isDark
-                                            ? `bg-[#111111]/80 backdrop-blur-sm ${colors.border} ${colors.hoverBorder}`
-                                            : `bg-white border-gray-200 hover:shadow-xl ${colors.hoverBorder}`}`}
+                                    className={`group cursor-pointer p-7 rounded-md border transition-all duration-200 hover:shadow-card-hover
+                      ${isDark ? `bg-dark-bg-secondary ${c.border}` : `bg-white ${c.border} shadow-card`}`}
                                 >
-                                    <div className={`p-2.5 rounded-xl ${colors.bg} w-fit mb-4`}>
-                                        <service.icon className={`h-6 w-6 ${colors.text}`} />
+                                    <div className={`p-2.5 rounded-md ${c.iconBg} w-fit mb-5`}>
+                                        <service.icon className={`h-5 w-5 ${c.icon}`} />
                                     </div>
-                                    <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                    <h3 className={`text-base font-semibold mb-2 ${isDark ? 'text-dark-text' : 'text-gray-900'}`}>
                                         {service.title}
                                     </h3>
-                                    <p className={`text-sm mb-4 leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    <p className={`text-sm mb-5 leading-relaxed ${isDark ? 'text-dark-text-tertiary' : 'text-gray-500'}`}>
                                         {service.description}
                                     </p>
                                     <div className="flex items-center justify-between">
-                                        <span className={`text-xs font-semibold ${colors.text}`}>
-                                            {service.creditCost}
+                                        <span className={`text-xs font-semibold ${c.meta}`}>
+                                            {service.meta}
                                         </span>
-                                        <ArrowRight className={`h-4 w-4 ${colors.text} group-hover:translate-x-1 transition-transform`} />
+                                        <span className={`flex items-center gap-1 text-xs font-medium ${c.meta}`}>
+                                            {t('services.learnMore')}
+                                            <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                                        </span>
                                     </div>
                                 </motion.div>
                             );
@@ -371,82 +679,84 @@ const LandingPage = () => {
             </section>
 
             {/* ═══════════════════════════════════════════
-              LAWYER VERIFICATION — standalone paid feature
+              LAWYER VERIFICATION
               ═══════════════════════════════════════════ */}
-            <section className={`py-16 md:py-20 px-4 md:px-6 ${isDark
-                ? 'bg-[#111111]'
-                : 'bg-gradient-to-br from-verified-50/40 via-white to-brand-50/30'
-                }`}>
+            <section className={`py-16 md:py-20 px-4 md:px-6 border-t
+              ${isDark ? 'border-dark-border bg-dark-bg-secondary' : 'border-brand-100 bg-white'}`}
+            >
                 <div className="max-w-6xl mx-auto">
                     <div className="grid md:grid-cols-2 gap-12 items-center">
                         <motion.div
-                            initial={{ opacity: 0, x: -30 }}
+                            initial={{ opacity: 0, x: -24 }}
                             whileInView={{ opacity: 1, x: 0 }}
                             viewport={{ once: true }}
                         >
-                            <span className="badge-verified mb-4 inline-flex">
-                                <BadgeCheck className="h-3 w-3" /> Free Verification Service
+                            <span className="badge-verified mb-5 inline-flex animate-badge-pulse">
+                                <BadgeCheck className="h-3.5 w-3.5" />
+                                {t('verification.badge')}
                             </span>
-                            <h2 className={`text-2xl md:text-3xl font-bold mb-4 ${isDark ? 'text-white' : 'text-brand-900'}`}>
-                                Verify Any Lawyer's Credentials
+                            <h2 className={`text-2xl md:text-3xl font-bold mb-4 ${isDark ? 'text-dark-text' : 'text-brand-900'}`}>
+                                {t('verification.title')}
                             </h2>
-                            <p className={`text-sm md:text-base mb-6 leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                                Before you hire, verify. Our platform checks a lawyer's Bar Council enrollment number,
-                                practice areas, and standing — giving you confidence in your legal representation.
+                            <p className={`text-sm md:text-base mb-6 leading-relaxed ${isDark ? 'text-dark-text-tertiary' : 'text-gray-600'}`}>
+                                {t('verification.desc')}
                             </p>
-                            <ul className="space-y-2.5">
+                            <ul className="space-y-3 mb-8">
                                 {[
-                                    'Cross-reference Bar Council of India records',
-                                    'Verify enrollment number & practice status',
-                                    'Check years of experience & specializations',
-                                    'Instant results — completely free',
+                                    t('verification.feature1'),
+                                    t('verification.feature2'),
+                                    t('verification.feature3'),
+                                    t('verification.feature4'),
                                 ].map((item, i) => (
-                                    <li key={i} className={`flex items-center gap-3 text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                                        <CheckCircle className="h-4 w-4 text-verified-500 flex-shrink-0" />
+                                    <li key={i} className={`flex items-center gap-3 text-sm ${isDark ? 'text-dark-text-secondary' : 'text-gray-700'}`}>
+                                        <CheckCircle className="h-4 w-4 text-brand-500 flex-shrink-0" />
                                         {item}
                                     </li>
                                 ))}
                             </ul>
                             <button
                                 onClick={() => navigate('/verify-lawyer')}
-                                className="mt-8 inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-verified-500 to-verified-600 hover:from-verified-600 hover:to-verified-700 text-white rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-verified-500/20 hover:shadow-verified-500/30 hover:scale-[1.02] active:scale-[0.98]"
+                                className={primaryBtn}
                             >
-                                <BadgeCheck className="h-5 w-5" />
-                                Verify a Lawyer
-                                <ArrowRight className="h-4 w-4" />
+                                <BadgeCheck className="h-4 w-4" />
+                                {t('verification.cta')}
+                                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                             </button>
                         </motion.div>
 
+                        {/* Mock verification result */}
                         <motion.div
-                            initial={{ opacity: 0, x: 30 }}
+                            initial={{ opacity: 0, x: 24 }}
                             whileInView={{ opacity: 1, x: 0 }}
                             viewport={{ once: true }}
-                            className={`p-7 rounded-2xl border ${isDark
-                                ? 'bg-[#0A0A0A]/80 border-gray-800 backdrop-blur-sm'
-                                : 'bg-white/90 border-gray-200 shadow-xl backdrop-blur-sm'
-                                }`}
+                            className={`p-7 rounded-md border shadow-card
+                ${isDark ? 'bg-dark-bg border-dark-border' : 'bg-[hsl(40,20%,97%)] border-brand-100'}`}
                         >
-                            {/* Mock verification result card */}
-                            <div className="space-y-3.5">
-                                <div className="flex items-center gap-3 pb-3.5 border-b border-gray-200 dark:border-gray-700">
-                                    <div className="p-2 rounded-full bg-verified-100 dark:bg-verified-500/20">
-                                        <BadgeCheck className="h-5 w-5 text-verified-500" />
+                            <div className="space-y-4">
+                                <div className={`flex items-center gap-3 pb-4 border-b ${isDark ? 'border-dark-border' : 'border-brand-100'}`}>
+                                    <div className={`p-2.5 rounded-md ${isDark ? 'bg-brand-900/50' : 'bg-brand-50'}`}>
+                                        <BadgeCheck className="h-5 w-5 text-brand-500" />
                                     </div>
                                     <div>
-                                        <p className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>Verification Result</p>
-                                        <p className="text-xs text-verified-500 font-medium">✓ Verified & Active</p>
+                                        <p className={`font-semibold text-sm ${isDark ? 'text-dark-text' : 'text-gray-900'}`}>
+                                            {t('verification.mock.title')}
+                                        </p>
+                                        <p className={`text-xs font-semibold text-brand-600 flex items-center gap-1`}>
+                                            <CheckCircle className="h-3 w-3" /> {t('verification.mock.status')}
+                                        </p>
                                     </div>
                                 </div>
                                 {[
-                                    { label: 'Name', value: 'Adv. Sanjay Kumar Mishra' },
-                                    { label: 'Bar Council', value: 'UP/1234/2015' },
-                                    { label: 'Status', value: 'Active' },
-                                    { label: 'Practice Areas', value: 'Criminal, Family, Civil' },
-                                    { label: 'Experience', value: '11 Years' },
+                                    { label: t('verification.mock.name'), value: 'Adv. Sanjay Kumar Mishra' },
+                                    { label: t('verification.mock.barNo'), value: 'UP/1234/2015' },
+                                    { label: t('verification.mock.state'), value: 'Active' },
+                                    { label: t('verification.mock.areas'), value: 'Criminal, Family, Civil' },
+                                    { label: t('verification.mock.exp'), value: '11 Years' },
+                                    { label: t('verification.mock.loc'), value: 'Lucknow, UP' },
                                 ].map((row, i) => (
-                                    <div key={i} className="flex justify-between items-center py-1.5">
-                                        <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{row.label}</span>
-                                        <span className={`text-xs font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{row.value}</span>
+                                    <div key={i} className="flex justify-between items-center">
+                                        <span className={`text-xs ${isDark ? 'text-dark-text-muted' : 'text-gray-400'}`}>{row.label}</span>
+                                        <span className={`text-xs font-medium ${isDark ? 'text-dark-text' : 'text-gray-900'}`}>{row.value}</span>
                                     </div>
                                 ))}
                             </div>
@@ -458,24 +768,27 @@ const LandingPage = () => {
             {/* ═══════════════════════════════════════════
               STATS STRIP
               ═══════════════════════════════════════════ */}
-            <section className={`py-14 px-4 md:px-6 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
-                <div className="max-w-6xl mx-auto">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <section className={`py-14 px-4 md:px-6 border-t
+              ${isDark ? 'border-dark-border bg-dark-bg' : 'border-brand-100 bg-[hsl(40,20%,97%)]'}`}
+            >
+                <div className="max-w-5xl mx-auto">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
                         {stats.map((stat, i) => (
                             <motion.div
                                 key={i}
-                                whileHover={{ scale: 1.05 }}
-                                style={{ WebkitTransform: 'translateZ(0)' }}
-                                className={`text-center p-5 rounded-2xl transition-all duration-300 ${isDark
-                                    ? 'bg-[#111111]/60 border border-gray-800/50'
-                                    : 'bg-gray-50/80 border border-gray-100'
-                                    }`}
+                                initial={{ opacity: 0, y: 16 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: i * 0.08 }}
+                                className="text-center"
                             >
-                                <stat.icon className={`h-5 w-5 mx-auto mb-2 ${isDark ? 'text-brand-400' : 'text-brand-500'}`} />
-                                <div className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-brand-900'}`}>
+                                <stat.icon className={`h-4 w-4 mx-auto mb-2 ${isDark ? 'text-brand-500' : 'text-brand-400'}`} />
+                                <div className={`text-3xl md:text-4xl font-bold mb-1
+                  ${isDark ? 'text-accent-400' : 'text-accent-600'}`}
+                                >
                                     {stat.value}
                                 </div>
-                                <div className={`text-xs mt-1 font-medium ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>
+                                <div className={`text-xs font-medium ${isDark ? 'text-dark-text-muted' : 'text-gray-500'}`}>
                                     {stat.label}
                                 </div>
                             </motion.div>
@@ -487,7 +800,9 @@ const LandingPage = () => {
             {/* ═══════════════════════════════════════════
               TESTIMONIALS
               ═══════════════════════════════════════════ */}
-            <section className={`py-16 md:py-20 px-4 md:px-6 ${isDark ? 'bg-[#111111]' : 'bg-gray-50/80'}`}>
+            <section className={`py-16 md:py-20 px-4 md:px-6 border-t
+              ${isDark ? 'border-dark-border bg-dark-bg-secondary' : 'border-brand-100 bg-white'}`}
+            >
                 <div className="max-w-6xl mx-auto">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -495,11 +810,14 @@ const LandingPage = () => {
                         viewport={{ once: true }}
                         className="text-center mb-12"
                     >
-                        <h2 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-brand-900'}`}>
-                            Trusted by Thousands
+                        <p className={`text-xs font-semibold tracking-widest uppercase mb-3 ${isDark ? 'text-brand-400' : 'text-brand-600'}`}>
+                            {t('testimonials.badge')}
+                        </p>
+                        <h2 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-dark-text' : 'text-brand-900'}`}>
+                            {t('testimonials.title')}
                         </h2>
-                        <p className={`mt-3 text-sm md:text-base ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                            Real stories from clients and lawyers on MeraBakil.
+                        <p className={`mt-3 text-sm ${isDark ? 'text-dark-text-tertiary' : 'text-gray-500'}`}>
+                            {t('testimonials.subtitle')}
                         </p>
                     </motion.div>
 
@@ -507,24 +825,34 @@ const LandingPage = () => {
                         {testimonials.map((t, i) => (
                             <motion.div
                                 key={i}
-                                whileHover={{ scale: 1.02 }}
-                                style={{ WebkitTransform: 'translateZ(0)' }}
-                                className={`p-6 rounded-2xl border transition-all duration-300 ${isDark
-                                    ? 'bg-[#0A0A0A]/80 border-gray-800 backdrop-blur-sm'
-                                    : 'bg-white border-gray-200 hover:shadow-lg'
-                                    }`}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: i * 0.1 }}
+                                className={`p-6 rounded-md border transition-all duration-200 hover:shadow-card-hover
+                  ${isDark
+                                        ? 'bg-dark-bg border-dark-border'
+                                        : 'bg-[hsl(40,20%,97%)] border-brand-100 shadow-card'}`}
                             >
                                 <div className="flex gap-0.5 mb-3">
                                     {Array(t.rating).fill(0).map((_, j) => (
-                                        <Star key={j} className="h-3.5 w-3.5 fill-accent-400 text-accent-400" />
+                                        <Star key={j} className="h-3.5 w-3.5 fill-accent-500 text-accent-500" />
                                     ))}
                                 </div>
-                                <p className={`text-sm mb-4 leading-relaxed italic ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                                <p className={`text-sm mb-5 leading-relaxed ${isDark ? 'text-dark-text-secondary' : 'text-gray-600'}`}>
                                     "{t.text}"
                                 </p>
-                                <div>
-                                    <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t.name}</p>
-                                    <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{t.role}</p>
+                                <div className="flex items-end justify-between">
+                                    <div>
+                                        <p className={`text-sm font-semibold ${isDark ? 'text-dark-text' : 'text-gray-900'}`}>
+                                            {t.name}
+                                        </p>
+                                        <p className={`text-xs ${isDark ? 'text-dark-text-muted' : 'text-gray-400'}`}>{t.role}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className={`text-[11px] font-medium ${isDark ? 'text-brand-400' : 'text-brand-600'}`}>{t.area}</p>
+                                        <p className={`text-[11px] ${isDark ? 'text-dark-text-muted' : 'text-gray-400'}`}>{t.city}</p>
+                                    </div>
                                 </div>
                             </motion.div>
                         ))}
@@ -535,7 +863,9 @@ const LandingPage = () => {
             {/* ═══════════════════════════════════════════
               WHY CHOOSE MERABAKIL
               ═══════════════════════════════════════════ */}
-            <section className={`py-16 md:py-20 px-4 md:px-6 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}>
+            <section className={`py-16 md:py-20 px-4 md:px-6 border-t
+              ${isDark ? 'border-dark-border bg-dark-bg' : 'border-brand-100 bg-[hsl(40,20%,97%)]'}`}
+            >
                 <div className="max-w-6xl mx-auto">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -543,11 +873,14 @@ const LandingPage = () => {
                         viewport={{ once: true }}
                         className="text-center mb-12"
                     >
-                        <h2 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-brand-900'}`}>
-                            Why Choose MeraBakil?
+                        <p className={`text-xs font-semibold tracking-widest uppercase mb-3 ${isDark ? 'text-brand-400' : 'text-brand-600'}`}>
+                            {t('hero.tryFree')}
+                        </p>
+                        <h2 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-dark-text' : 'text-brand-900'}`}>
+                            {t('whyChooseUs.title')}
                         </h2>
-                        <p className={`mt-3 text-sm md:text-base max-w-xl mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                            Built different — AI-first, wallet-based, no subscriptions.
+                        <p className={`mt-3 text-sm max-w-md mx-auto ${isDark ? 'text-dark-text-tertiary' : 'text-gray-500'}`}>
+                            {t('whyChooseUs.subtitle')}
                         </p>
                     </motion.div>
 
@@ -555,18 +888,24 @@ const LandingPage = () => {
                         {whyFeatures.map((feature, i) => (
                             <motion.div
                                 key={i}
-                                whileHover={{ scale: 1.02 }}
-                                style={{ WebkitTransform: 'translateZ(0)' }}
-                                className={`p-5 rounded-xl border transition-all duration-300
-                      ${isDark
-                                        ? 'bg-[#111111]/60 border-gray-800/50 hover:border-brand-500/30'
-                                        : 'bg-white border-gray-200 hover:shadow-md hover:border-brand-200'}`}
+                                initial={{ opacity: 0, y: 16 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: i * 0.07 }}
+                                className={`p-6 rounded-md border transition-all duration-200 hover:shadow-card-hover group
+                  ${isDark
+                                        ? 'bg-dark-bg-secondary border-dark-border hover:border-brand-800'
+                                        : 'bg-white border-gray-200 hover:border-brand-200 shadow-card'}`}
                             >
-                                <feature.icon className={`h-5 w-5 mb-3 ${isDark ? 'text-brand-400' : 'text-brand-500'}`} />
-                                <h3 className={`text-sm font-semibold mb-1.5 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                                <div className={`p-2 rounded-md w-fit mb-4 transition-colors duration-200
+                  ${isDark ? 'bg-brand-900/50 group-hover:bg-brand-800/50' : 'bg-brand-50 group-hover:bg-brand-100'}`}
+                                >
+                                    <feature.icon className={`h-4 w-4 ${isDark ? 'text-brand-400' : 'text-brand-600'}`} />
+                                </div>
+                                <h3 className={`text-sm font-semibold mb-2 ${isDark ? 'text-dark-text' : 'text-gray-900'}`}>
                                     {feature.title}
                                 </h3>
-                                <p className={`text-xs leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                <p className={`text-xs leading-relaxed ${isDark ? 'text-dark-text-tertiary' : 'text-gray-500'}`}>
                                     {feature.description}
                                 </p>
                             </motion.div>
@@ -576,59 +915,65 @@ const LandingPage = () => {
             </section>
 
             {/* ═══════════════════════════════════════════
-              FOR LAWYERS — only visible to visitors and lawyers
+              FOR LAWYERS
               ═══════════════════════════════════════════ */}
             {(!tokenManager.isAuthenticated() || tokenManager.getUser()?.user_type === 2) && (
-                <section className={`py-16 md:py-20 px-4 md:px-6 ${isDark ? 'bg-[#111111]' : 'bg-brand-50/30'}`}>
+                <section id="for-lawyers" className={`py-16 md:py-20 px-4 md:px-6 border-t
+                  ${isDark ? 'border-dark-border bg-dark-bg-secondary' : 'border-brand-100 bg-brand-900'}`}
+                >
                     <div className="max-w-6xl mx-auto">
                         <div className="grid md:grid-cols-2 gap-12 items-center">
                             <motion.div
-                                initial={{ opacity: 0, x: -30 }}
+                                initial={{ opacity: 0, x: -24 }}
                                 whileInView={{ opacity: 1, x: 0 }}
                                 viewport={{ once: true }}
                             >
-                                <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-4
-                                  ${isDark ? 'bg-accent-500/10 text-accent-400 border border-accent-500/20' : 'bg-accent-50 text-accent-600 border border-accent-200'}`}>
-                                    <Briefcase className="h-3 w-3" />
-                                    For Legal Professionals
+                                <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-5 animate-badge-pulse
+                  ${isDark
+                                        ? 'bg-accent-900/30 text-accent-400 border border-accent-800'
+                                        : 'bg-accent-500/20 text-accent-200 border border-accent-500/30'}`}
+                                >
+                                    <Briefcase className="h-3.5 w-3.5" />
+                                    {t('forLawyers.badge')}
                                 </span>
-                                <h2 className={`text-2xl md:text-3xl font-bold mb-4 ${isDark ? 'text-white' : 'text-brand-900'}`}>
-                                    Grow Your Practice on MeraBakil
+                                <h2 className={`text-2xl md:text-3xl font-bold mb-4 ${isDark ? 'text-dark-text' : 'text-white'}`}>
+                                    {t('forLawyers.title')}
                                 </h2>
-                                <p className={`text-sm md:text-base mb-6 leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                                    Join India's AI-powered legal marketplace. Get matched with clients
-                                    who need your exact expertise, earn per-minute, and withdraw your
-                                    earnings anytime.
+                                <p className={`text-sm md:text-base mb-6 leading-relaxed ${isDark ? 'text-dark-text-tertiary' : 'text-brand-100'}`}>
+                                    {t('forLawyers.desc1')} {t('forLawyers.desc2')}
                                 </p>
                                 <button
                                     onClick={() => navigate('/signup')}
-                                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-accent-500/20 hover:scale-[1.02] active:scale-[0.98]"
+                                    className="inline-flex items-center gap-2 px-6 py-3 rounded-md font-semibold text-sm
+                    bg-accent-500 hover:bg-accent-600 text-white shadow-gold-glow
+                    transition-all duration-200 hover:-translate-y-0.5"
                                 >
-                                    <Briefcase className="h-5 w-5" />
-                                    Register as a Lawyer
+                                    <Briefcase className="h-4 w-4" />
+                                    {t('forLawyers.cta')}
                                     <ArrowRight className="h-4 w-4" />
                                 </button>
                             </motion.div>
 
                             <motion.div
-                                initial={{ opacity: 0, x: 30 }}
+                                initial={{ opacity: 0, x: 24 }}
                                 whileInView={{ opacity: 1, x: 0 }}
                                 viewport={{ once: true }}
-                                className="grid grid-cols-2 gap-3"
+                                className="grid grid-cols-2 gap-4"
                             >
                                 {[
-                                    { icon: Users, title: 'Get Matched', desc: 'AI matches clients to your expertise — no cold outreach needed.' },
-                                    { icon: IndianRupee, title: 'Per-Minute Earnings', desc: 'Earn for every minute of consultation. Fair, transparent billing.' },
-                                    { icon: Banknote, title: 'Withdraw Anytime', desc: 'Your earnings go to your wallet. Withdraw to your bank whenever you want.' },
-                                    { icon: Bot, title: 'AI Research Tools', desc: 'Use our AI to research cases, find precedents, and serve clients faster.' },
+                                    { icon: Users, title: t('lawyerFeatures.f1.title'), desc: t('lawyerFeatures.f1.desc') },
+                                    { icon: IndianRupee, title: t('lawyerFeatures.f2.title'), desc: t('lawyerFeatures.f2.desc') },
+                                    { icon: Banknote, title: t('lawyerFeatures.f3.title'), desc: t('lawyerFeatures.f3.desc') },
+                                    { icon: Bot, title: t('lawyerFeatures.f4.title'), desc: t('lawyerFeatures.f4.desc') },
                                 ].map((item, i) => (
-                                    <div key={i} className={`p-4 rounded-xl border transition-all duration-300 hover:scale-[1.02] ${isDark
-                                        ? 'bg-[#0A0A0A]/80 border-gray-800'
-                                        : 'bg-white border-gray-200 hover:shadow-md'
-                                        }`}>
-                                        <item.icon className={`h-5 w-5 mb-2 ${isDark ? 'text-accent-400' : 'text-accent-500'}`} />
-                                        <h3 className={`text-xs font-semibold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.title}</h3>
-                                        <p className={`text-[11px] leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{item.desc}</p>
+                                    <div key={i} className={`p-4 rounded-md border transition-all duration-200
+                      ${isDark
+                                            ? 'bg-dark-bg border-dark-border'
+                                            : 'bg-white/10 border-white/20 hover:bg-white/15'}`}
+                                    >
+                                        <item.icon className={`h-4 w-4 mb-3 ${isDark ? 'text-accent-400' : 'text-accent-300'}`} />
+                                        <h3 className={`text-xs font-semibold mb-1.5 ${isDark ? 'text-dark-text' : 'text-white'}`}>{item.title}</h3>
+                                        <p className={`text-[11px] leading-relaxed ${isDark ? 'text-dark-text-tertiary' : 'text-brand-200'}`}>{item.desc}</p>
                                     </div>
                                 ))}
                             </motion.div>
@@ -638,45 +983,53 @@ const LandingPage = () => {
             )}
 
             {/* ═══════════════════════════════════════════
-              FINAL CTA — only for visitors
+              FINAL CTA — visitors only
               ═══════════════════════════════════════════ */}
             {!tokenManager.isAuthenticated() && (
-                <section className={`py-16 md:py-20 px-4 md:px-6 ${isDark
-                    ? 'bg-gradient-to-r from-brand-900 via-brand-800 to-brand-900'
-                    : 'bg-gradient-to-r from-brand-500 via-brand-600 to-brand-500'
-                    }`}>
+                <section className={`py-16 md:py-20 px-4 md:px-6 border-t
+                  ${isDark ? 'border-dark-border bg-dark-bg' : 'border-t-0 bg-brand-600'}`}
+                >
                     <div className="max-w-3xl mx-auto text-center">
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                         >
-                            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
-                                Ready to Get Started?
+                            <h2 className={`text-2xl md:text-3xl font-bold mb-4 ${isDark ? 'text-dark-text' : 'text-white'}`}>
+                                {t('finalCta.title')}
                             </h2>
-                            <p className="text-sm md:text-base text-white/80 mb-8 max-w-lg mx-auto">
-                                Join thousands of users who trust MeraBakil for legal guidance.
-                                Top up your wallet and start using AI, verified lawyers, and more.
+                            <p className={`text-sm md:text-base mb-10 max-w-lg mx-auto leading-relaxed
+                ${isDark ? 'text-dark-text-tertiary' : 'text-brand-100'}`}
+                            >
+                                {t('finalCta.subtitle')}
                             </p>
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                                 <button
                                     onClick={() => navigate('/signup')}
-                                    className="px-7 py-3 bg-white text-brand-600 rounded-xl font-semibold text-base hover:bg-gray-100 transition-all duration-300 shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+                                    className={`px-7 py-3 rounded-md font-semibold text-sm transition-all duration-200 hover:-translate-y-0.5
+                    ${isDark
+                                            ? 'bg-brand-500 text-white hover:bg-brand-600 shadow-teal-glow'
+                                            : 'bg-white text-brand-700 hover:bg-brand-50 shadow-lg'}`}
                                 >
-                                    Create Free Account
+                                    {t('finalCta.cta')}
                                 </button>
                                 <button
                                     onClick={() => navigate('/chatbot')}
-                                    className="px-7 py-3 border-2 border-white/30 text-white rounded-xl font-semibold text-base hover:bg-white/10 transition-all duration-300"
+                                    className={`px-7 py-3 border-2 rounded-md font-semibold text-sm transition-all duration-200
+                    ${isDark
+                                            ? 'border-brand-700 text-brand-300 hover:bg-brand-900/30'
+                                            : 'border-white/30 text-white hover:bg-white/10'}`}
                                 >
-                                    Try AI Assistant
+                                    {t('finalCta.ctaLawyer')}
                                 </button>
                             </div>
+                            <p className={`mt-6 text-xs ${isDark ? 'text-dark-text-muted' : 'text-brand-200'}`}>
+                                {t('whyChooseUs.feature6.desc')}
+                            </p>
                         </motion.div>
                     </div>
                 </section>
             )}
-
         </div>
     );
 };

@@ -12,14 +12,15 @@ import {
   Heart, Share2, Copy, Volume2, Download, CheckCircle,
   Loader2, Brain, BookOpen, PenTool, Zap, ThumbsUp, ThumbsDown, VolumeX,
   PanelLeftClose, PanelLeftOpen, ArrowRight, TrendingUp, Cpu, Target,
-  History, Archive, Star as StarIcon, FileText
+  History, Archive, Star as StarIcon, FileText, Lock
 } from 'lucide-react';
 import { chatbotService, CHAT_STATES, AI_MODELS } from '../../services/chatbotApiService';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { chatbotAPI } from '../../api/apiService';
 import { fetchChatSessions } from '../../redux/chatSlice';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useTranslation } from 'react-i18next';
 // Custom Lawyer Tia Avatar Component
 const TiaAvatar = ({ isStreaming }) => (
   <div className="relative group">
@@ -49,6 +50,7 @@ const TiaAvatar = ({ isStreaming }) => (
 
 // High-Tech Intelligence Log Box - Redesigned for Customer Centricity
 const IntelligenceLog = ({ thought, isStreaming, isDark }) => {
+  const { t } = useTranslation();
   if (!thought && !isStreaming) return null;
 
   // We parse the raw backend string into UI steps
@@ -56,16 +58,16 @@ const IntelligenceLog = ({ thought, isStreaming, isDark }) => {
   const rawText = thought || '';
 
   const steps = [];
-  if (rawText.includes('[STATUS]')) steps.push({ label: 'Analyzing Legal Query', active: true, done: rawText.includes('[CLASSIFICATION]') });
+  if (rawText.includes('[STATUS]')) steps.push({ label: t('ai.analyzing'), active: true, done: rawText.includes('[CLASSIFICATION]') });
   if (rawText.includes('[CLASSIFICATION]')) {
     const match = rawText.match(/\[CLASSIFICATION\]\s*([^\n]+)/i);
     const intent = match ? match[1].trim() : 'Legal Matter';
-    steps.push({ label: `Identified Intent: ${intent}`, active: true, done: rawText.includes('[CACHE') || rawText.includes('keep-alive') });
+    steps.push({ label: t('ai.intent', { intent }), active: true, done: rawText.includes('[CACHE') || rawText.includes('keep-alive') });
   }
-  if (rawText.includes('[CACHE_HIT]')) steps.push({ label: 'Retrieving Prior Legal Precedents...', active: true, done: true });
-  if (rawText.includes('[CACHE_MISS]')) steps.push({ label: 'Consulting Knowledge Base...', active: true, done: true });
+  if (rawText.includes('[CACHE_HIT]')) steps.push({ label: t('ai.retrieving'), active: true, done: true });
+  if (rawText.includes('[CACHE_MISS]')) steps.push({ label: t('ai.consulting'), active: true, done: true });
 
-  const fallBackSteps = [{ label: 'Initializing Neural Engine...', active: true, done: false }];
+  const fallBackSteps = [{ label: t('ai.initializing'), active: true, done: false }];
   const displaySteps = steps.length > 0 ? steps : fallBackSteps;
 
   return (
@@ -83,7 +85,7 @@ const IntelligenceLog = ({ thought, isStreaming, isDark }) => {
           <div className="flex items-center gap-2.5">
             <Cpu className={isStreaming ? "text-emerald-400 animate-pulse" : "text-emerald-500"} size={14} />
             <span className={`text-[10px] font-black uppercase tracking-[0.15em] ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
-              Intelligence Pipeline
+              {t('ai.pipeline')}
             </span>
           </div>
           {isStreaming && (
@@ -137,12 +139,13 @@ const IntelligenceLog = ({ thought, isStreaming, isDark }) => {
 };
 
 const AmbientWaitingState = ({ isDark }) => {
+  const { t } = useTranslation();
   const [phase, setPhase] = useState(0);
   const phrases = [
-    "Structuring legal framework...",
-    "Reviewing statutory compiliances...",
-    "Cross-referencing judicial precedents...",
-    "Synthesizing final counsel..."
+    t('ai.waiting.structuring'),
+    t('ai.waiting.statutory'),
+    t('ai.waiting.precedents'),
+    t('ai.waiting.synthesizing')
   ];
 
   useEffect(() => {
@@ -185,7 +188,7 @@ const AmbientWaitingState = ({ isDark }) => {
 
           <div className="flex flex-col justify-center flex-1 h-10 overflow-hidden">
             <span className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-1 ${isDark ? 'text-blue-400/80' : 'text-blue-600/80'}`}>
-              Neural Engine Active
+              {t('ai.neuralActive')}
             </span>
             <div className="relative h-5">
               <AnimatePresence mode="wait">
@@ -211,14 +214,15 @@ const AmbientWaitingState = ({ isDark }) => {
 
 // --- Skeleton Loader Component ---
 const SkeletonLoading = ({ isDark }) => {
+  const { t } = useTranslation();
   const [phase, setPhase] = useState(0);
   const loadingPhrases = [
-    "Analyzing Legal Query...",
-    "Reviewing Jurisprudence...",
-    "Cross-referencing Case Law...",
-    "Checking Citations...",
-    "Synthesizing Legal Framework...",
-    "Drafting Comprehensive Response..."
+    t('ai.skeleton.analyzing'),
+    t('ai.skeleton.jurisprudence'),
+    t('ai.skeleton.caseLaw'),
+    t('ai.skeleton.citations'),
+    t('ai.skeleton.framework'),
+    t('ai.skeleton.response')
   ];
 
   useEffect(() => {
@@ -249,7 +253,7 @@ const SkeletonLoading = ({ isDark }) => {
         {/* Name and Loading status */}
         <div className="flex items-center gap-2 pb-1">
           <span className={`text-[12px] font-black tracking-widest flex items-center gap-2 ${isDark ? 'text-gray-400' : 'text-slate-600'}`}>
-            AI ASSISTANT
+            {t('nav.aiAssistant').toUpperCase()}
           </span>
           <div className="flex gap-1 items-center ml-2">
             <motion.div animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0 }} className={`w-1.5 h-1.5 rounded-full ${isDark ? 'bg-indigo-500' : 'bg-indigo-400'}`} />
@@ -974,7 +978,117 @@ const AIAssistantDropdown = ({ selectedModal, setSelectedModal, showDropdown, se
   );
 };
 
+// ─── Guest Query Limit ───────────────────────────────────────────────────────
+const GUEST_LIMIT = 5;
+const GUEST_KEY = 'mera_guest_queries';
+
+function useGuestQueryLimit() {
+  const getTodayKey = () => new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+
+  const getCount = () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(GUEST_KEY) || '{}');
+      return stored.date === getTodayKey() ? (stored.count || 0) : 0;
+    } catch { return 0; }
+  };
+
+  const increment = () => {
+    const today = getTodayKey();
+    const count = getCount() + 1;
+    localStorage.setItem(GUEST_KEY, JSON.stringify({ date: today, count }));
+    return count;
+  };
+
+  const remaining = () => Math.max(0, GUEST_LIMIT - getCount());
+
+  return { getCount, increment, remaining };
+}
+
+// Guest signup prompt shown when the daily limit is hit
+const GuestLimitModal = ({ isDark, onClose, isAuthenticated }) => {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+          onClick={(e) => e.stopPropagation()}
+          className={`relative w-full max-w-md rounded-2xl overflow-hidden shadow-2xl border ${isDark
+            ? 'bg-[#171717] border-white/10'
+            : 'bg-white border-gray-200'
+            }`}
+        >
+          {/* Teal gradient header */}
+          <div className="relative h-28 bg-gradient-to-br from-brand-700 to-brand-500 flex items-center justify-center">
+            <div className="absolute inset-0 opacity-20"
+              style={{ backgroundImage: 'radial-gradient(circle at 70% 30%, white 1px, transparent 1px)', backgroundSize: '20px 20px' }}
+            />
+            <div className="relative flex flex-col items-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ring-2 ring-white/30">
+                <Lock size={22} className="text-white" />
+              </div>
+              <span className="text-white text-xs font-bold tracking-widest uppercase opacity-80">{t('hero.dailyLimitReached')}</span>
+            </div>
+          </div>
+
+          <div className="p-6 text-center">
+            <h2 className={`text-xl font-bold font-display mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {t('guestModal.title')}
+            </h2>
+            <p className={`text-sm leading-relaxed mb-6 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              {t('guestModal.desc')}
+            </p>
+
+            {!isAuthenticated && (
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => navigate('/signup')}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 text-white font-semibold text-sm hover:from-brand-700 hover:to-brand-600 transition-all duration-200 shadow-lg shadow-brand-500/25"
+                >
+                  {t('guestModal.createAccount')}
+                </button>
+                <button
+                  onClick={() => navigate('/auth')}
+                  className={`w-full py-3 rounded-xl font-semibold text-sm border transition-all duration-200 ${isDark
+                    ? 'border-white/10 text-gray-300 hover:bg-white/5'
+                    : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                >
+                  {t('guestModal.signIn')}
+                </button>
+              </div>
+            )}
+
+            <p className={`mt-4 text-xs ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
+              {t('guestModal.resetNote')}
+            </p>
+          </div>
+
+          <button
+            onClick={onClose}
+            className={`absolute top-3 right-3 p-1.5 rounded-full transition-colors ${isDark ? 'text-white/50 hover:bg-white/10' : 'text-white/70 hover:bg-white/20'
+              }`}
+          >
+            <X size={14} />
+          </button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
 const Hero = () => {
+  const { t } = useTranslation();
   const { mode } = useSelector((state) => state.theme);
   const { isOpen: sidebarOpen } = useSelector((state) => state.sidebar);
   const dispatch = useDispatch();
@@ -982,6 +1096,7 @@ const Hero = () => {
   const { isAuthenticated } = useAuth();
   const { sessionId: routeSessionId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [query, setQuery] = useState('');
   const [messages, setMessages] = useState([]);
@@ -999,6 +1114,34 @@ const Hero = () => {
   const [sessionId, setSessionId] = useState(null);
   const [chatState, setChatState] = useState(CHAT_STATES.IDLE);
   const [stateMessage, setStateMessage] = useState('');
+
+  // Pre-fill query from landing page intake widget navigation state
+  useEffect(() => {
+    if (location.state?.prefillQuery) {
+      const q = location.state.prefillQuery;
+      setQuery(q);
+      // Clear state so back-navigation doesn't re-trigger
+      navigate(location.pathname, { replace: true, state: {} });
+      // Auto-submit after a short tick so the UI has rendered
+      setTimeout(() => {
+        const syntheticEvent = { preventDefault: () => { } };
+        handleSubmit(syntheticEvent, q);
+      }, 80);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Guest query limit (5/day for unauthenticated users)
+  const guestLimit = useGuestQueryLimit();
+  const [showGuestLimitModal, setShowGuestLimitModal] = useState(false);
+  const [guestQueriesRemaining, setGuestQueriesRemaining] = useState(() => guestLimit.remaining());
+
+  // Auto-close guest limit modal if user authenticates
+  useEffect(() => {
+    if (isAuthenticated && showGuestLimitModal) {
+      setShowGuestLimitModal(false);
+    }
+  }, [isAuthenticated, showGuestLimitModal]);
 
   // Load session from URL
   useEffect(() => {
@@ -1206,13 +1349,26 @@ const Hero = () => {
    * Main submission handler for the chatbot.
    * Features: Multi-agent validation, intelligent auto-scroll, and error recovery.
    */
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, overrideQuery) => {
     e?.preventDefault();
-    const userQuery = query.trim();
+    const userQuery = (overrideQuery ?? query).trim();
     const allFiles = [...uploadedFiles, ...pendingFiles];
 
     // Prevent submission if no input
     if (!userQuery && allFiles.length === 0) return;
+
+    // ── Guest daily query limit check ──────────────────────────────────────
+    if (!isAuthenticated) {
+      const count = guestLimit.getCount();
+      if (count >= GUEST_LIMIT) {
+        setShowGuestLimitModal(true);
+        return;
+      }
+      // Increment BEFORE the API call so a failed call still counts
+      const newCount = guestLimit.increment();
+      setGuestQueriesRemaining(Math.max(0, GUEST_LIMIT - newCount));
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     if (inputRef.current) {
       inputRef.current.style.height = 'auto';
@@ -1244,7 +1400,7 @@ const Hero = () => {
         const warningMessage = {
           id: Date.now().toString(),
           role: 'assistant',
-          content: `The **${modalOptions.find(o => o.id === selectedModal)?.label}** agent is currently in **tuning & training mode** for advanced legal datasets.\n\nFor the best experience with everyday legal tasks and research, please use our flagship **BAKILAT 1.0** agent which is fully optimized and available for production.`
+          content: t('chat.agentWarning', { agent: modalOptions.find(o => o.id === selectedModal)?.label })
         };
         setMessages(prev => [...prev, warningMessage]);
         setIsLoading(false);
@@ -1370,7 +1526,7 @@ const Hero = () => {
         }
       }
     } catch (error) {
-      handleStateChange(CHAT_STATES.ERROR, 'An unexpected error occurred. Please try again.');
+      handleStateChange(CHAT_STATES.ERROR, t('chat.error'));
     } finally {
       setIsLoading(false);
     }
@@ -1473,19 +1629,19 @@ const Hero = () => {
                 whileHover={{ x: 4, backgroundColor: isDark ? '#2C2C2C' : '#F3F4F6' }}
                 className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 transition-all font-medium
                         ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                <User size={16} strokeWidth={1.5} /> Profile
+                <User size={16} strokeWidth={1.5} /> {t('nav.profile')}
               </motion.button>
               <motion.button
                 whileHover={{ x: 4, backgroundColor: isDark ? '#2C2C2C' : '#F3F4F6' }}
                 className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 transition-all font-medium
                         ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                <Settings size={16} strokeWidth={1.5} /> Settings
+                <Settings size={16} strokeWidth={1.5} /> {t('nav.settings')}
               </motion.button>
               <div className={`my-1 ${isDark ? 'border-[#3A3A3A]' : 'border-gray-200'} border-t`}></div>
               <motion.button
                 whileHover={{ x: 4, backgroundColor: isDark ? '#3A1F1F' : '#FEE2E2' }}
                 className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 transition-all font-medium text-red-500 hover:text-red-600`}>
-                <LogOut size={16} strokeWidth={1.5} /> Logout
+                <LogOut size={16} strokeWidth={1.5} /> {t('nav.logout')}
               </motion.button>
             </motion.div>
           )}
@@ -1531,7 +1687,7 @@ const Hero = () => {
                       transition={{ delay: 0.3, duration: 0.5 }}
                       className={`text-xl sm:text-2xl font-bold mb-2 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent`}
                     >
-                      Welcome to MeraBakil
+                      {t('chat.welcome')}
                     </motion.h2>
 
                     <motion.p
@@ -1540,7 +1696,7 @@ const Hero = () => {
                       transition={{ delay: 0.4, duration: 0.5 }}
                       className={`text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
                     >
-                      Your Intelligent Legal Assistant
+                      {t('chat.tagline')}
                     </motion.p>
                   </motion.div>
                 </div>
@@ -1614,7 +1770,7 @@ const Hero = () => {
                         <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-bold border
                           ${isDark ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-100 text-emerald-600'}`}>
                           <Upload size={10} strokeWidth={3} />
-                          <span>{uploadedFiles.length + pendingFiles.length} File(s)</span>
+                          <span>{t('chat.files', { count: uploadedFiles.length + pendingFiles.length })}</span>
                         </div>
                       )}
                     </div>
@@ -1624,7 +1780,7 @@ const Hero = () => {
                         whileTap={{ scale: 0.9 }}
                         onClick={() => setShowModalDropdown(!showModalDropdown)}
                         className={`p-1.5 rounded-lg transition-colors ${isDark ? 'text-slate-500 hover:text-slate-300 hover:bg-white/5' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
-                        title="Change model"
+                        title={t('chat.changeModel')}
                       >
                         <Settings size={14} />
                       </motion.button>
@@ -1648,7 +1804,7 @@ const Hero = () => {
                             handleSubmit();
                           }
                         }}
-                        placeholder="Describe your legal situation..."
+                        placeholder={t('hero.chatPlaceholder')}
                         className={`w-full bg-transparent !bg-transparent outline-none border-none text-[15px] font-medium leading-relaxed resize-none p-0 max-h-32 min-h-[24px] focus:ring-0
                           ${isDark ? 'text-white placeholder-slate-500/60 caret-blue-500' : 'text-slate-900 placeholder-slate-400 caret-blue-600'}`}
                         rows={1}
@@ -1731,13 +1887,48 @@ const Hero = () => {
 
               <div className="mt-3 flex items-center justify-center gap-4">
                 <p className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-slate-700' : 'text-slate-400'}`}>
-                  MeraBakil provides AI-driven legal guidance. Verify all critical steps with a registered lawyer.
+                  {t('hero.disclaimer')}
                 </p>
               </div>
+
+              {/* Guest query counter */}
+              {!isAuthenticated && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 flex items-center justify-center gap-2"
+                >
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold border ${guestQueriesRemaining <= 1
+                    ? isDark ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-700'
+                    : isDark ? 'bg-white/5 border-white/10 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-500'
+                    }`}>
+                    <Lock size={9} />
+                    {guestQueriesRemaining > 0
+                      ? t('hero.guestQueriesLeft', { count: guestQueriesRemaining })
+                      : t('hero.dailyLimitReached')}
+                  </span>
+                  <button
+                    onClick={() => navigate('/signup')}
+                    className={`text-[10px] font-semibold underline underline-offset-2 ${isDark ? 'text-brand-400 hover:text-brand-300' : 'text-brand-600 hover:text-brand-700'
+                      }`}
+                  >
+                    {t('hero.signupUnlimited')}
+                  </button>
+                </motion.div>
+              )}
             </div>
           </motion.div>
         </main>
       </div>
+
+      {/* Guest limit modal */}
+      {showGuestLimitModal && (
+        <GuestLimitModal
+          isDark={isDark}
+          onClose={() => setShowGuestLimitModal(false)}
+          isAuthenticated={isAuthenticated}
+        />
+      )}
 
       <VoiceModal
         isOpen={showVoiceModal}

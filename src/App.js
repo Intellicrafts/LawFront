@@ -236,11 +236,7 @@ const App = () => {
 
                     {/* User Specific Protected Routes */}
                     <Route path="/verify-lawyer" element={<VerifyLawyer />} />
-                    <Route path="/legal-consoltation" element={
-                      <ProtectedRoute allowedRoles={['user', 'client']}>
-                        <LegalCosultation />
-                      </ProtectedRoute>
-                    } />
+                    <Route path="/legal-consoltation" element={<LegalCosultation />} />
                     <Route path="/task-automation" element={
                       <ProtectedRoute allowedRoles={['user', 'client']}>
                         <TaskAutomation />

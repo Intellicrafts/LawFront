@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 import config from '../../config';
 import {
@@ -133,6 +134,7 @@ const LegalCosultation = () => {
   // Get dark mode state from Redux
   const { mode } = useSelector((state) => state.theme);
   const { showError: showToastError, showInfo } = useToast();
+  const navigate = useNavigate();
   const isDarkMode = mode === 'dark';
   const currentTheme = isDarkMode ? colors.dark : colors.light;
 
@@ -1336,6 +1338,12 @@ const LegalCosultation = () => {
 
   // Function to start booking process
   const startBooking = (lawyer) => {
+    // Gate: require login before booking
+    if (!isAuthenticated) {
+      navigate('/auth', { state: { from: '/legal-consoltation', message: 'Please sign in to book a consultation with a verified lawyer.' } });
+      return;
+    }
+
     setSelectedLawyer(lawyer);
 
     // Ensure background image is loaded for this lawyer

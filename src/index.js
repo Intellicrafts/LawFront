@@ -8,6 +8,7 @@ import store from './redux/store';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { initializeTheme } from './utils/theme';
+import './i18n';
 
 // Initialize theme before rendering
 if (typeof window !== 'undefined') {

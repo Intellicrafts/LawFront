@@ -10,29 +10,54 @@
 
 @layer base {
 
-  /* Apply Inter font globally — loaded from Google Fonts in index.html */
+  /* Apply DM Sans globally — display headings use Lora via font-display class */
   html {
-    font-family: 'Inter';
+    font-family: 'DM Sans', 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Lora serif for major headings — editorial authority */
+  h1,
+  h2 {
+    font-family: 'Lora', 'Playfair Display', Georgia, serif;
   }
 }
 
 @layer components {
 
-  /* Trust / verification badge — use on verified lawyer cards */
+  /* Trust / verification badge — Deep Teal + gold for verified lawyers */
   .badge-verified {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-verified-50 text-verified-700 border border-verified-200;
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold tracking-wide rounded-full bg-brand-50 text-brand-700 border border-brand-200;
   }
 
-  /* Wallet credit badge — use for pricing & balance display */
+  /* Wallet credit badge — gold for pricing & balance display */
   .badge-credit {
     @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-accent-50 text-accent-700 border border-accent-200;
   }
 
-  /* AI disclaimer banner — use at top of chatbot */
+  /* AI disclaimer banner — use at top of chatbot / intake forms */
   .ai-disclaimer {
-    @apply w-full px-4 py-2 text-xs text-center bg-accent-50 text-accent-700 border-b border-accent-200 dark:bg-accent-700/10 dark:text-accent-300 dark:border-accent-700/30;
+    @apply w-full px-4 py-2 text-xs text-center bg-brand-50 text-brand-700 border-b border-brand-100 dark:bg-brand-900/20 dark:text-brand-300 dark:border-brand-900/30;
+  }
+
+  /* Trust strip — horizontal bar of trust signals */
+  .trust-strip {
+    @apply flex flex-wrap items-center justify-center gap-6 py-4 text-xs font-medium text-gray-500 dark:text-dark-text-muted;
+  }
+
+  .trust-strip-item {
+    @apply flex items-center gap-2;
+  }
+
+  /* Canonical primary CTA button */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-6 py-3 rounded-md font-semibold text-sm text-white bg-brand-500 hover:bg-brand-600 active:bg-brand-700 transition-all duration-200 shadow-teal-glow hover:shadow-teal-glow-lg hover:-translate-y-0.5 active:translate-y-0;
+  }
+
+  /* Canonical outline CTA button */
+  .btn-outline {
+    @apply inline-flex items-center gap-2 px-6 py-3 rounded-md font-semibold text-sm text-brand-700 border-2 border-brand-300 hover:border-brand-500 hover:bg-brand-50 dark:text-brand-300 dark:border-brand-700 dark:hover:border-brand-500 dark:hover:bg-brand-900/20 transition-all duration-200;
   }
 }
 
@@ -333,7 +358,7 @@ html {
 
   /* Links */
   a {
-    @apply text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300;
+    @apply text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300;
   }
 
   /* Form elements - Minimal defaults to avoid layout shifts */
@@ -401,11 +426,11 @@ html {
 
 /* Dark mode selection styles */
 .dark ::selection {
-  @apply bg-blue-700 text-white;
+  @apply bg-brand-700 text-white;
 }
 
 ::selection {
-  @apply bg-blue-200 text-blue-900;
+  @apply bg-brand-100 text-brand-900;
 }
 
 /* Optimized chat typing animations */
@@ -571,10 +596,10 @@ button:focus {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(59, 130, 246, 0.2);
+  background: rgba(26, 158, 153, 0.2);
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(59, 130, 246, 0.4);
+  background: rgba(26, 158, 153, 0.4);
 }
