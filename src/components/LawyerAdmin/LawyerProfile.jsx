@@ -57,7 +57,7 @@ const VerificationStatusCard = ({ userData, lawyerStatus, darkMode, onVerificati
 
     // Level from the 3-state status string
     const statusToLevel = (s) =>
-        s === 'Admin Verified' ? 2 : s === 'Bar Council Verified' ? 1 : 0;
+        (s === 'Bar Council Verified' || s === "1" || s === 1) ? 1 : (s === 'Admin Verified' || s === "2" || s === 2) ? 2 : 0;
 
     const [localLevel, setLocalLevel] = useState(statusToLevel(lawyerStatus));
 
@@ -72,7 +72,8 @@ const VerificationStatusCard = ({ userData, lawyerStatus, darkMode, onVerificati
 
     // Auto-trigger Satyapan on mount whenever enrollment exists and status is pending
     useEffect(() => {
-        if (!enrollmentNo || lawyerStatus === 'Bar Council Verified' || hasTriggeredRef.current) return;
+        const currentLevel = statusToLevel(lawyerStatus);
+        if (!enrollmentNo || currentLevel >= 1 || hasTriggeredRef.current) return;
 
         const run = async () => {
             hasTriggeredRef.current = true;
@@ -85,7 +86,7 @@ const VerificationStatusCard = ({ userData, lawyerStatus, darkMode, onVerificati
                 setLocalLevel(1);
 
                 // ✅ Sync status to backend
-                await authAPI.updateLawyerStatus('Bar Council Verified', result);
+                await authAPI.updateLawyerStatus(userData.id, 'Bar Council Verified', result);
                 if (onVerificationSuccess) onVerificationSuccess();
             } catch (err) {
                 console.warn('[ProfileVerification] Auto-verification could not complete:', err.message);
@@ -107,7 +108,7 @@ const VerificationStatusCard = ({ userData, lawyerStatus, darkMode, onVerificati
             const result = await verificationService.verifyLawyer(num, stateVal);
             setVerifyResult(result);
             setLocalLevel(1);
-            await authAPI.updateLawyerStatus('Bar Council Verified', result);
+            await authAPI.updateLawyerStatus(userData.id, 'Bar Council Verified', result);
             if (onVerificationSuccess) onVerificationSuccess();
         } catch (err) {
             setError(err.message || 'Verification failed. Please check your details.');
@@ -274,8 +275,8 @@ const LawyerProfile = ({ darkMode }) => {
     const totalReviews = ld.total_reviews || 0;
     const consultationFee = ld.consultation_fee ? `₹${ld.consultation_fee}` : null;
     const specializations = ld.specialization ? [ld.specialization] : [];
-    const lawyerStatus = ld.status || 'pending'; // 'pending' | 'Bar Council Verified' | 'Admin Verified'
-    const verificationLevel = lawyerStatus === 'Admin Verified' ? 2 : lawyerStatus === 'Bar Council Verified' ? 1 : 0;
+    const lawyerStatus = ld.status || 'pending'; // 'pending' | 'Bar Council Verified' | 'Admin Verified' | "1" | "0"
+    const verificationLevel = (lawyerStatus === 'Admin Verified' || lawyerStatus === "2" || lawyerStatus === 2) ? 2 : (lawyerStatus === 'Bar Council Verified' || lawyerStatus === "1" || lawyerStatus === 1) ? 1 : 0;
 
     return (
         <div className="p-4 sm:p-5 space-y-5 max-w-[1200px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
