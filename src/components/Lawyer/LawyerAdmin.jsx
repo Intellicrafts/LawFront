@@ -11,6 +11,7 @@ import LawyerDocuments from '../LawyerAdmin/LawyerDocuments';
 import LawyerProfile from '../LawyerAdmin/LawyerProfile';
 import LawyerSettings from '../LawyerAdmin/LawyerSettings';
 import Sidebar from '../layout/Sidebar';
+import { verificationService } from '../../services/verificationService';
 import {
   Home,
   Calendar,
@@ -54,10 +55,14 @@ import {
   Bot,
   Video,
   CheckCircle2,
+  CheckCircle,
   Clock3,
   ExternalLink,
   ChevronLeft,
-  Scale
+  Scale,
+  Check,
+  AlertCircle,
+  ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -84,6 +89,8 @@ const COLORS = {
 const CHartColors = [COLORS.primary, COLORS.secondary, '#3B82F6', '#F59E0B'];
 
 // --- Helper Components ---
+
+
 
 const GlassCard = ({ children, className = "", darkMode, hover = true }) => (
   <motion.div
@@ -237,7 +244,14 @@ const TopNavbar = ({
             />
             <div className="hidden sm:block text-left">
               <p className="text-[10px] font-black leading-none uppercase tracking-widest">{userData?.name?.split(' ')[0] || 'Advocate'}</p>
-              <p className="text-[8px] text-slate-500 font-bold uppercase mt-1 opacity-70 tracking-tighter">Council Verified</p>
+              {(() => {
+                const s = userData?.lawyer_data?.status;
+                if (s === 'Admin Verified')
+                  return <p className="text-[8px] text-blue-500 font-bold uppercase mt-1 tracking-tighter">Admin Verified</p>;
+                if (s === 'Bar Council Verified')
+                  return <p className="text-[8px] text-green-500 font-bold uppercase mt-1 tracking-tighter">Council Verified</p>;
+                return <p className="text-[8px] text-amber-500 font-bold uppercase mt-1 tracking-tighter animate-pulse">Pending Review</p>;
+              })()}
             </div>
           </button>
 
@@ -363,7 +377,7 @@ const StatCardPremium = ({ title, value, change, trend, icon: Icon, color, darkM
   </GlassCard>
 );
 
-const LawyerDashboard = ({ darkMode, userData, onNavigate, handleJoinSession, statsData, appointmentData, activeSession }) => {
+const LawyerDashboard = ({ darkMode, userData, onNavigate, handleJoinSession, statsData, appointmentData, activeSession, onVerified }) => {
   const stats = useMemo(() => [
     { title: 'Case Volume', value: statsData?.total_cases || '42', change: '+12%', icon: FileText, gradient: 'from-blue-500 to-blue-600' },
     { title: 'Appointments', value: statsData?.appointments || '8', change: '+5%', icon: Calendar, gradient: 'from-green-500 to-green-600' },
@@ -382,78 +396,80 @@ const LawyerDashboard = ({ darkMode, userData, onNavigate, handleJoinSession, st
   ];
 
   return (
-    <div className="p-4 sm:p-5 space-y-5 max-w-[1600px] mx-auto overflow-hidden">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
-        <GlassCard darkMode={darkMode} className="lg:col-span-2 p-6 flex flex-col justify-between relative overflow-hidden group">
-          <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 transition-colors ${darkMode ? 'bg-white/5 group-hover:bg-white/10' : 'bg-slate-900/5 group-hover:bg-slate-900/10'}`} />
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <PremiumBadge text="Professional Dashboard" />
-            </div>
-            <h1 className={`text-2xl sm:text-3xl font-black tracking-tighter mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-              Advancing Justice,<br />
-              <span className="text-slate-900 dark:text-white underline decoration-slate-400/30 underline-offset-8">
-                Adv. {userData?.name || 'Bakil'}
-              </span>
-            </h1>
-            <p className={`text-[12px] max-w-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'} leading-relaxed font-bold opacity-80`}>
-              Current roster: <span className="text-slate-900 dark:text-slate-300">{appointmentData?.length || 0} active sessions</span>.
-            </p>
-          </div>
-        </GlassCard>
-
-        <GlassCard darkMode={darkMode} className="p-6 relative">
-          <h3 className="text-lg font-black">AI Insights</h3>
-          <p className="text-sm opacity-70">Strategy shift recommended for case #29-B.</p>
-        </GlassCard>
-      </div>
-
-      <AnimatePresence>
-        {activeSession && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-          >
-            <LiveSessionCard appointment={activeSession} darkMode={darkMode} onJoin={handleJoinSession} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {stats.map((stat, i) => (
-          <StatCardPremium key={i} {...stat} darkMode={darkMode} />
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <GlassCard darkMode={darkMode} className="xl:col-span-2 p-5 h-[340px] flex flex-col">
-          <h3 className="font-bold mb-4">Performance Analytics</h3>
-          <div className="flex-1">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={performanceTrend}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" />
-                <YAxis hide />
-                <Tooltip />
-                <Area type="monotone" dataKey="value" stroke="#3b82f6" fillOpacity={0.3} fill="#3b82f6" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </GlassCard>
-
-        <GlassCard darkMode={darkMode} className="p-5">
-          <h3 className="font-bold mb-4">Active Sessions</h3>
-          <div className="space-y-3">
-            {appointmentData?.slice(0, 3).map((apt, i) => (
-              <div key={i} className="flex justify-between items-center">
-                <span className="text-sm font-medium">{apt.client_name || 'Client'}</span>
-                <span className="text-[10px] opacity-50">{apt.case_type}</span>
+    <div className="space-y-0 max-w-[1600px] mx-auto overflow-hidden">
+      <div className="p-4 sm:p-5 space-y-5">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
+          <GlassCard darkMode={darkMode} className="lg:col-span-2 p-6 flex flex-col justify-between relative overflow-hidden group">
+            <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 transition-colors ${darkMode ? 'bg-white/5 group-hover:bg-white/10' : 'bg-slate-900/5 group-hover:bg-slate-900/10'}`} />
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-2">
+                <PremiumBadge text="Professional Dashboard" />
               </div>
-            ))}
-          </div>
-        </GlassCard>
-      </div>
+              <h1 className={`text-2xl sm:text-3xl font-black tracking-tighter mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                Advancing Justice,<br />
+                <span className="text-slate-900 dark:text-white underline decoration-slate-400/30 underline-offset-8">
+                  Adv. {userData?.name || 'Bakil'}
+                </span>
+              </h1>
+              <p className={`text-[12px] max-w-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'} leading-relaxed font-bold opacity-80`}>
+                Current roster: <span className="text-slate-900 dark:text-slate-300">{appointmentData?.length || 0} active sessions</span>.
+              </p>
+            </div>
+          </GlassCard>
+
+          <GlassCard darkMode={darkMode} className="p-6 relative">
+            <h3 className="text-lg font-black">AI Insights</h3>
+            <p className="text-sm opacity-70">Strategy shift recommended for case #29-B.</p>
+          </GlassCard>
+        </div>
+
+        <AnimatePresence>
+          {activeSession && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+            >
+              <LiveSessionCard appointment={activeSession} darkMode={darkMode} onJoin={handleJoinSession} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {stats.map((stat, i) => (
+            <StatCardPremium key={i} {...stat} darkMode={darkMode} />
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <GlassCard darkMode={darkMode} className="xl:col-span-2 p-5 h-[340px] flex flex-col">
+            <h3 className="font-bold mb-4">Performance Analytics</h3>
+            <div className="flex-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={performanceTrend}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="name" />
+                  <YAxis hide />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="value" stroke="#3b82f6" fillOpacity={0.3} fill="#3b82f6" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </GlassCard>
+
+          <GlassCard darkMode={darkMode} className="p-5">
+            <h3 className="font-bold mb-4">Active Sessions</h3>
+            <div className="space-y-3">
+              {appointmentData?.slice(0, 3).map((apt, i) => (
+                <div key={i} className="flex justify-between items-center">
+                  <span className="text-sm font-medium">{apt.client_name || 'Client'}</span>
+                  <span className="text-[10px] opacity-50">{apt.case_type}</span>
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+        </div>
+      </div> {/* close inner p-4 div */}
     </div>
   );
 };
@@ -605,44 +621,47 @@ const LawyerAdmin = () => {
     }
   }, []); // REMOVED userData dependency to kill the loop
 
+  const initData = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await authAPI.getUserProfile();
+      // Extract the actual profile data from the Axios response
+      const profile = response.data?.data || response.data;
+      setUserData(profile);
+
+      // IMMEDIATE DATA PRE-WARMING
+      // Inject consultations from profile activity instantly before dashboard API cycle
+      if (profile?.recent_activity?.appointments) {
+        console.log(`Pre-warming dashboard with ${profile.recent_activity.appointments.length} consultations from profile`);
+        setAppointmentData(profile.recent_activity.appointments);
+
+        // Also set active session if any are live in the pre-warmed data
+        const liveApt = profile.recent_activity.appointments.find(apt =>
+          apt.consultation_status === 'in_progress'
+        );
+        if (liveApt) setActiveSession(liveApt);
+      }
+
+      setLoading(false);
+      if (profile?.id) {
+        // Trigger deep background fetch for professional metrics
+        await fetchData(profile.id, profile);
+        fetchUserNotifications(profile.id);
+      }
+    } catch (error) {
+      console.error('Error initializing lawyer admin:', error);
+      setLoading(false); // Safety fallback
+    }
+  }, [fetchData]);
+
   useEffect(() => {
     // If sidebar preference isn't set, default to open for lawyer admin
     if (localStorage.getItem('sidebarOpen') === null) {
       dispatch(setSidebarOpen(true));
     }
 
-    const initData = async () => {
-      setLoading(true);
-      try {
-        const profile = await authAPI.getUserProfile();
-        setUserData(profile);
-
-        // IMMEDIATE DATA PRE-WARMING
-        // Inject consultations from profile activity instantly before dashboard API cycle
-        if (profile?.recent_activity?.appointments) {
-          console.log(`Pre-warming dashboard with ${profile.recent_activity.appointments.length} consultations from profile`);
-          setAppointmentData(profile.recent_activity.appointments);
-
-          // Also set active session if any are live in the pre-warmed data
-          const liveApt = profile.recent_activity.appointments.find(apt =>
-            apt.consultation_status === 'in_progress'
-          );
-          if (liveApt) setActiveSession(liveApt);
-        }
-
-        setLoading(false);
-        if (profile?.id) {
-          // Trigger deep background fetch for professional metrics
-          await fetchData(profile.id, profile);
-          fetchUserNotifications(profile.id);
-        }
-      } catch (error) {
-        console.error('Error initializing lawyer admin:', error);
-        setLoading(false); // Safety fallback
-      }
-    };
     initData();
-  }, [dispatch, fetchData]);
+  }, [dispatch, fetchData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Real-time synchronization polling (every 30 seconds)
   useEffect(() => {
@@ -839,6 +858,7 @@ const LawyerAdmin = () => {
                   statsData={statsData}
                   appointmentData={appointmentData}
                   activeSession={activeSession}
+                  onVerified={initData}
                 />
               )}
               {activeTab === 'appointments' && (

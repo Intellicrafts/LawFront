@@ -644,6 +644,13 @@ export const Signup = ({ onSignupSuccess }) => {
         // Set flag to trigger onboarding tour for new signups
         sessionStorage.setItem('isSignupSession', 'true');
 
+        // For lawyer signups, store enrollment number so the verification
+        // banner can auto-trigger Satyapan API even if the profile endpoint
+        // doesn't return enrollment_no in the response object
+        if (accountType === 'business' && enrollmentNo.trim()) {
+          sessionStorage.setItem('lawyerEnrollmentNo', enrollmentNo.trim());
+        }
+
         showSuccess('Registration successful! Welcome to MeraBakil!');
 
         // Wait for the user to see the success message before doing ANY state changes

@@ -507,6 +507,48 @@ export const authAPI = {
   // Get user profile (specific endpoint)
   getUserProfile: () => apiClient.get('/user/profile'),
 
+  // Update lawyer verification status after Satyapan API confirms enrollment
+  // Accepts Satyapan result data to enrich the profile (name, bar_association, etc.)
+  updateLawyerStatus: async (status, satyapanData = {}) => {
+    try {
+      const payload = {
+        lawyer_data: {
+          status,
+          ...(satyapanData.name && { bar_association: satyapanData.bar_council || satyapanData.bar_association }),
+        }
+      };
+      const response = await apiClient.put('/user/profile', payload);
+      const updatedData = response.data?.data || response.data;
+
+      // Sync to localStorage so all components stay consistent
+      if (updatedData) {
+        localStorage.setItem('user_profile', JSON.stringify(updatedData));
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          try {
+            const parsedUser = JSON.parse(storedUser);
+            // Deep merge lawyer_data to avoid losing other fields (bio, etc.)
+            const updatedUser = {
+              ...parsedUser,
+              lawyer_data: {
+                ...(parsedUser.lawyer_data || {}),
+                ...(updatedData.lawyer_data || {})
+              }
+            };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+          } catch (e) {
+            console.error('Error syncing localStorage in updateLawyerStatus:', e);
+          }
+        }
+      }
+
+      return updatedData;
+    } catch (error) {
+      console.error('updateLawyerStatus error:', error.response || error);
+      return null;
+    }
+  },
+
   // Refresh token (if your API supports it)
   refreshToken: () => apiClient.post('/refresh'),
 
