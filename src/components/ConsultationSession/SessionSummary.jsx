@@ -73,15 +73,15 @@ const SessionSummary = ({
             icon: Clock,
             label: 'Duration',
             value: `${durationMinutes} min`,
-            color: 'text-blue-500',
-            bg: isDarkMode ? 'bg-blue-500/10' : 'bg-blue-50',
+            color: 'text-slate-500',
+            bg: isDarkMode ? 'bg-slate-500/10' : 'bg-slate-50',
         },
         {
             icon: MessageCircle,
             label: 'Messages',
             value: totalMessages,
-            color: 'text-indigo-500',
-            bg: isDarkMode ? 'bg-indigo-500/10' : 'bg-indigo-50',
+            color: 'text-slate-500',
+            bg: isDarkMode ? 'bg-slate-500/10' : 'bg-slate-50',
         },
         {
             icon: User,
@@ -100,10 +100,10 @@ const SessionSummary = ({
     ];
 
     return (
-        <div className={`min-h-screen ${isDarkMode ? 'bg-[#080808]' : 'bg-slate-50/50'}`}>
+        <div className={`min-h-screen ${isDarkMode ? 'bg-dark-bg' : 'bg-slate-50/50'}`}>
 
             {/* Header */}
-            <div className={`sticky top-0 z-40 backdrop-blur-xl border-b ${isDarkMode ? 'bg-[#080808]/80 border-white/5' : 'bg-white/80 border-slate-200/60'}`}>
+            <div className={`sticky top-0 z-40 backdrop-blur-xl border-b ${isDarkMode ? 'bg-dark-bg/80 border-white/5' : 'bg-white/80 border-slate-200/60'}`}>
                 <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-4">
                     <button
                         onClick={onBack}
@@ -164,8 +164,8 @@ const SessionSummary = ({
                     {/* Participant */}
                     <div className="flex items-center gap-4 mb-5">
                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-base font-bold ${isDarkMode
-                            ? 'bg-gradient-to-br from-blue-500/20 to-indigo-500/20 text-blue-400 border border-blue-500/20'
-                            : 'bg-gradient-to-br from-blue-50 to-indigo-50 text-blue-600 border border-blue-200/50'
+                            ? 'bg-gradient-to-br from-slate-500/20 to-slate-400/20 text-slate-400 border border-slate-500/20'
+                            : 'bg-gradient-to-br from-slate-50 to-slate-100 text-slate-600 border border-slate-200/50'
                             }`}>
                             {otherInitials}
                         </div>
@@ -181,14 +181,14 @@ const SessionSummary = ({
 
                     {/* Date & Time */}
                     <div className={`grid grid-cols-2 gap-px rounded-2xl overflow-hidden border ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-slate-100/50 border-slate-100'}`}>
-                        <div className={`flex flex-col items-center py-4 gap-2 ${isDarkMode ? 'bg-[#151515]' : 'bg-white'}`}>
+                        <div className={`flex flex-col items-center py-4 gap-2 ${isDarkMode ? 'bg-dark-bg-secondary' : 'bg-white'}`}>
                             <Calendar size={14} className="opacity-30" />
                             <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Date</span>
                             <span className={`text-[11px] font-bold tracking-tight text-center ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
                                 {formatDate(startTime).split(',').slice(0, 2).join(',')}
                             </span>
                         </div>
-                        <div className={`flex flex-col items-center py-4 gap-2 ${isDarkMode ? 'bg-[#151515]' : 'bg-white'}`}>
+                        <div className={`flex flex-col items-center py-4 gap-2 ${isDarkMode ? 'bg-dark-bg-secondary' : 'bg-white'}`}>
                             <Clock size={14} className="opacity-30" />
                             <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Time</span>
                             <span className={`text-[11px] font-bold tracking-tight ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
@@ -248,7 +248,7 @@ const SessionSummary = ({
                     {/* Back to Appointments */}
                     <button
                         onClick={onBack}
-                        className="flex items-center justify-center gap-3 flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-[11px] font-bold uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-[0.98] transition-all"
+                        className="flex items-center justify-center gap-3 flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-slate-600 to-slate-500 hover:from-slate-700 hover:to-slate-600 text-white text-[11px] font-bold uppercase tracking-widest shadow-xl shadow-slate-500/20 active:scale-[0.98] transition-all"
                     >
                         <ArrowLeft size={14} />
                         Back to Consultations

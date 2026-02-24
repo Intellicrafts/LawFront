@@ -219,25 +219,43 @@ const ConsultationSession = () => {
     // Loading state
     if (loading) {
         return (
-            <div className={`min-h-screen flex flex-col items-center justify-center ${isDarkMode ? 'bg-[#080808]' : 'bg-slate-50/50'}`}>
+            <div className={`min-h-screen flex flex-col items-center justify-center font-sans ${isDarkMode ? 'bg-dark-bg' : 'bg-[#f4f7fb]'}`}>
+                {/* Background Ambient Orbs */}
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-slate-600/10 rounded-full blur-[120px] pointer-events-none" />
+                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-slate-600/10 rounded-full blur-[120px] pointer-events-none" />
+
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col items-center gap-6"
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                    className="flex flex-col items-center gap-8 relative z-10"
                 >
                     <div className="relative">
-                        <div className="w-16 h-16 rounded-full border-2 border-blue-500/20 border-t-blue-500 animate-spin" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <Shield size={20} className="text-blue-500/60" />
+                        {/* Pulse rings */}
+                        <motion.div
+                            animate={{ scale: [1, 1.5], opacity: [0.3, 0] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
+                            className={`absolute inset-0 rounded-full ${isDarkMode ? 'bg-slate-500' : 'bg-slate-400'}`}
+                        />
+                        <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center shadow-2xl relative z-10 ${isDarkMode ? 'bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] border border-slate-500/30' : 'bg-gradient-to-br from-white to-slate-100 border border-slate-200'}`}>
+                            <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                                className="absolute inset-0 rounded-[2rem] border-[3px] border-b-blue-500 border-r-indigo-500 border-t-transparent border-l-transparent"
+                            />
+                            <Shield size={28} className="text-slate-500" />
                         </div>
                     </div>
-                    <div className="text-center space-y-2">
-                        <p className={`text-sm font-bold tracking-tight ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
+                    <div className="text-center space-y-3">
+                        <p className={`text-lg md:text-xl font-extrabold tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
                             Establishing Secure Connection
                         </p>
-                        <p className={`text-[10px] font-semibold uppercase tracking-[0.2em] ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                            Initializing consultation session...
-                        </p>
+                        <div className="flex items-center justify-center gap-2">
+                            <Loader size={14} className={`animate-spin ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`} />
+                            <p className={`text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] ${isDarkMode ? 'text-slate-400/80' : 'text-slate-600/80'}`}>
+                                Initializing consultation session...
+                            </p>
+                        </div>
                     </div>
                 </motion.div>
             </div>
@@ -247,30 +265,36 @@ const ConsultationSession = () => {
     // Error state
     if (error) {
         return (
-            <div className={`min-h-screen flex flex-col items-center justify-center px-4 ${isDarkMode ? 'bg-[#080808]' : 'bg-slate-50/50'}`}>
+            <div className={`min-h-screen flex flex-col items-center justify-center px-4 font-sans ${isDarkMode ? 'bg-dark-bg' : 'bg-[#f4f7fb]'}`}>
+                {/* Background Ambient Orbs */}
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-rose-600/10 rounded-full blur-[120px] pointer-events-none" />
+
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`max-w-md w-full p-8 rounded-[28px] border text-center ${isDarkMode
-                        ? 'bg-[#121212] border-white/5'
-                        : 'bg-white border-slate-200/60 shadow-xl shadow-slate-200/40'
+                    className={`max-w-md w-full p-8 md:p-10 rounded-[2.5rem] border text-center shadow-2xl relative z-10 ${isDarkMode
+                        ? 'bg-dark-bg-tertiary border-white/5 shadow-black/50'
+                        : 'bg-white border-slate-200/50 shadow-slate-200/50'
                         }`}
                 >
-                    <div className={`w-16 h-16 mx-auto mb-6 rounded-3xl flex items-center justify-center ${isDarkMode ? 'bg-rose-500/10' : 'bg-rose-50'}`}>
-                        <AlertTriangle size={28} className="text-rose-500" />
+                    <div className={`w-20 h-20 mx-auto mb-8 rounded-[2rem] flex items-center justify-center shadow-inner ${isDarkMode ? 'bg-gradient-to-br from-rose-500/20 to-red-500/10' : 'bg-gradient-to-br from-rose-50 to-red-50 border border-rose-100'}`}>
+                        <AlertTriangle size={32} className="text-rose-500" />
                     </div>
-                    <h2 className={`text-lg font-bold tracking-tight mb-2 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                    <h2 className={`text-2xl font-extrabold tracking-tight mb-3 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
                         Access Denied
                     </h2>
-                    <p className={`text-xs font-medium mb-8 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <p className={`text-sm font-medium leading-relaxed mb-10 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                         {error}
                     </p>
                     <button
                         onClick={() => navigate(-1)}
-                        className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[11px] font-bold uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:from-blue-700 hover:to-indigo-700 active:scale-[0.98] transition-all"
+                        className={`flex items-center justify-center gap-2 w-full py-4 rounded-2xl text-[11px] sm:text-xs font-bold uppercase tracking-widest shadow-lg transition-all ${isDarkMode
+                            ? 'bg-gradient-to-r from-slate-600 to-slate-500 text-white shadow-slate-900/40 hover:from-slate-500 hover:to-slate-400'
+                            : 'bg-gradient-to-r from-slate-600 to-slate-500 text-white shadow-slate-500/20 hover:from-slate-700 hover:to-slate-600'
+                            }`}
                     >
-                        <ArrowLeft size={14} />
-                        Go Back
+                        <ArrowLeft size={16} />
+                        Return Safely
                     </button>
                 </motion.div>
             </div>

@@ -8,6 +8,82 @@ import {
 } from 'lucide-react';
 import { deriveKey, encryptText, decryptText } from '../../utils/e2ee';
 
+const CustomAudioPlayer = ({ src, isDarkMode, isOwnMessage }) => {
+    const [isPlaying, setIsPlaying] = React.useState(false);
+    const [progress, setProgress] = React.useState(0);
+    const [duration, setDuration] = React.useState(0);
+    const audioRef = React.useRef(null);
+
+    React.useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        const updateProgress = () => {
+            if (audio.duration && isFinite(audio.duration)) {
+                setProgress((audio.currentTime / audio.duration) * 100);
+            }
+        };
+        const onLoadedMetadata = () => {
+            if (audio.duration && isFinite(audio.duration)) {
+                setDuration(audio.duration);
+            }
+        };
+        const onEnded = () => { setIsPlaying(false); setProgress(0); };
+
+        audio.addEventListener('timeupdate', updateProgress);
+        audio.addEventListener('loadedmetadata', onLoadedMetadata);
+        audio.addEventListener('ended', onEnded);
+
+        return () => {
+            audio.removeEventListener('timeupdate', updateProgress);
+            audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+            audio.removeEventListener('ended', onEnded);
+        };
+    }, []);
+
+    const togglePlay = (e) => {
+        e.stopPropagation();
+        if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); }
+        else { audioRef.current.play(); setIsPlaying(true); }
+    };
+
+    const handleSeek = (e) => {
+        e.stopPropagation();
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        if (audioRef.current && audioRef.current.duration) {
+            const newTime = (x / rect.width) * audioRef.current.duration;
+            audioRef.current.currentTime = newTime;
+            setProgress((newTime / audioRef.current.duration) * 100);
+        }
+    };
+
+    const formatDur = (secs) => {
+        if (!secs || isNaN(secs)) return '0:00';
+        const m = Math.floor(secs / 60);
+        const s = Math.floor(secs % 60);
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
+    };
+
+    return (
+        <div className="flex items-center gap-2 w-full min-w-[140px] max-w-[200px] py-0.5">
+            <button onClick={togglePlay} className={`w-8 h-8 flex-shrink-0 rounded-full flex items-center justify-center transition-all ${isOwnMessage ? 'bg-white text-pink-500 shadow-sm' : 'bg-slate-200 text-slate-700 dark:bg-slate-600 dark:text-white'}`}>
+                {isPlaying ? <Square size={10} fill="currentColor" /> : <div className="ml-0.5"><div className="w-0 h-0 border-t-[5px] border-t-transparent border-l-[6px] border-l-current border-b-[5px] border-b-transparent"></div></div>}
+            </button>
+            <div className="flex-1 flex flex-col justify-center">
+                <div className="h-[3px] rounded-full bg-black/10 dark:bg-white/10 relative cursor-pointer" onClick={handleSeek}>
+                    <div className={`absolute top-0 left-0 h-full rounded-full transition-all ${isOwnMessage ? 'bg-white' : 'bg-slate-500 dark:bg-slate-400'}`} style={{ width: `${progress}%` }} />
+                    <div className={`absolute top-1/2 -mt-[4px] w-2 h-2 rounded-full shadow-sm transition-transform ${isOwnMessage ? 'bg-white' : 'bg-slate-500 dark:bg-slate-400'}`} style={{ left: `calc(${progress}% - 4px)` }} />
+                </div>
+                <div className={`text-[9px] font-bold tracking-wide mt-1.5 ${isOwnMessage ? 'text-white/80' : isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                    {formatDur(duration)}
+                </div>
+            </div>
+            <audio ref={audioRef} src={src} className="hidden" preload="metadata" />
+        </div>
+    );
+};
+
 const ConsultationChat = ({
     session,
     messages,
@@ -40,6 +116,26 @@ const ConsultationChat = ({
     const [e2eKey, setE2eKey] = useState(null);
     const [decryptedMessages, setDecryptedMessages] = useState([]);
     const emojis = ['😀', '😂', '😍', '🙏', '👍', '😊', '🙌', '🔥', '🎉', '😢', '😡', '🤔'];
+
+    // Message Expressions Local State
+    const [reactions, setReactions] = useState({});
+    const [activeReactionMessageId, setActiveReactionMessageId] = useState(null);
+    const QUICK_EMOJIS = ['👍', '❤️', '😂', '😯', '🙏', '👎'];
+
+    const handleAddReaction = (msgId, emoji, e) => {
+        if (e) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
+        setReactions(prev => {
+            const msgReactions = prev[msgId] || [];
+            if (msgReactions.includes(emoji)) {
+                return { ...prev, [msgId]: msgReactions.filter(r => r !== emoji) };
+            }
+            return { ...prev, [msgId]: [...msgReactions, emoji] };
+        });
+        setActiveReactionMessageId(null);
+    };
 
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
@@ -198,7 +294,8 @@ const ConsultationChat = ({
                 const url = URL.createObjectURL(blob);
                 setAudioBlob(blob);
                 setAudioPreviewUrl(url);
-                const file = new File([blob], `voice_note_${new Date().getTime()}.webm`, { type: 'audio/webm' });
+                // Fix: explicit window.File to prevent 'ucide-react' File component name collision
+                const file = new window.File([blob], `voice_note_${new Date().getTime()}.webm`, { type: 'audio/webm' });
                 setSelectedFile(file);
                 stream.getTracks().forEach(track => track.stop());
 
@@ -277,11 +374,14 @@ const ConsultationChat = ({
     };
 
     return (
-        <div className={`h-screen flex flex-col ${isDarkMode ? 'bg-[#080808]' : 'bg-slate-50/50'}`}>
+        <div className={`h-screen flex flex-col font-sans selection:bg-slate-500/30 overflow-hidden ${isDarkMode ? 'bg-dark-bg text-slate-200' : 'bg-[#f4f7fb] text-slate-800'}`}>
+            {/* Background Ambient Orbs */}
+            <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-slate-600/10 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-slate-600/10 rounded-full blur-[120px] pointer-events-none" />
 
             {/* ============ HEADER ============ */}
-            <div className={`sticky top-0 z-40 backdrop-blur-xl border-b ${isDarkMode ? 'bg-[#080808]/90 border-white/5' : 'bg-white/90 border-slate-200/60'}`}>
-                <div className="max-w-4xl mx-auto px-3 sm:px-4">
+            <div className={`sticky top-0 z-40 backdrop-blur-2xl border-b shadow-sm ${isDarkMode ? 'bg-dark-bg/70 border-white/5' : 'bg-white/70 border-slate-200/60'}`}>
+                <div className="max-w-[98%] lg:max-w-6xl mx-auto px-4 sm:px-6">
                     <div className="flex items-center justify-between py-3">
 
                         {/* Left: Participant Info */}
@@ -297,13 +397,13 @@ const ConsultationChat = ({
                             {/* Avatar */}
                             <div className="relative flex-shrink-0">
                                 <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-bold ${isDarkMode
-                                    ? 'bg-gradient-to-br from-blue-500/20 to-indigo-500/20 text-blue-400 border border-blue-500/20'
-                                    : 'bg-gradient-to-br from-blue-50 to-indigo-50 text-blue-600 border border-blue-200/50'
+                                    ? 'bg-gradient-to-br from-slate-500/20 to-slate-400/20 text-slate-400 border border-slate-500/20'
+                                    : 'bg-gradient-to-br from-slate-50 to-slate-100 text-slate-600 border border-slate-200/50'
                                     }`}>
                                     {otherInitials}
                                 </div>
                                 {/* Online dot */}
-                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-blue-500 border-2 border-white dark:border-[#080808]" />
+                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-slate-500 border-2 border-white dark:border-[#080808]" />
                             </div>
 
                             {/* Name & Status */}
@@ -312,8 +412,8 @@ const ConsultationChat = ({
                                     {otherName}
                                 </h3>
                                 <div className="flex items-center gap-1.5">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                                    <span className={`text-[9px] font-semibold uppercase tracking-[0.15em] ${isDarkMode ? 'text-blue-400/70' : 'text-blue-600/70'}`}>
+                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-pulse" />
+                                    <span className={`text-[9px] font-semibold uppercase tracking-[0.15em] ${isDarkMode ? 'text-slate-400/70' : 'text-slate-600/70'}`}>
                                         Online • In Session
                                     </span>
                                 </div>
@@ -324,7 +424,7 @@ const ConsultationChat = ({
                         <div className="flex items-center gap-2">
                             {/* Connection Status */}
                             <div className={`hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${connectionStatus === 'connected'
-                                ? isDarkMode ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'
+                                ? isDarkMode ? 'bg-slate-500/10 text-slate-400' : 'bg-slate-50 text-slate-600'
                                 : isDarkMode ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600'
                                 }`}>
                                 {connectionStatus === 'connected' ? <Wifi size={9} /> : <WifiOff size={9} />}
@@ -377,7 +477,7 @@ const ConsultationChat = ({
                         exit={{ height: 0, opacity: 0 }}
                         className={`border-b ${isDarkMode ? 'bg-amber-500/5 border-amber-500/10' : 'bg-amber-50 border-amber-100'}`}
                     >
-                        <div className="max-w-4xl mx-auto px-4 py-2 flex items-center justify-between">
+                        <div className="max-w-[98%] lg:max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <AlertTriangle size={12} className="text-amber-500" />
                                 <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-amber-400' : 'text-amber-600'}`}>
@@ -395,10 +495,10 @@ const ConsultationChat = ({
             {/* ============ MESSAGES AREA ============ */}
             <div
                 ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto relative scrollbar-hide pb-4"
+                className="flex-1 overflow-y-auto relative scrollbar-hide pb-4 z-10"
                 style={{ scrollBehavior: 'smooth' }}
             >
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-2">
+                <div className="max-w-[95%] lg:max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-4">
 
                     {/* Messages */}
                     {decryptedMessages.map((msg, index) => {
@@ -432,89 +532,150 @@ const ConsultationChat = ({
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ duration: 0.2 }}
-                                        className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} py-0.5`}
+                                        className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} py-1`}
                                     >
-                                        <div className={`flex items-end gap-2 max-w-[80%] sm:max-w-[70%] ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+                                        <div className={`flex items-end gap-2 max-w-[85%] sm:max-w-[70%]`}>
 
                                             {/* Avatar (other user only) */}
                                             {!isOwnMessage && (
-                                                <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[9px] font-bold mb-1 ${isDarkMode
-                                                    ? 'bg-gradient-to-br from-indigo-500/20 to-purple-500/20 text-indigo-400 border border-indigo-500/20'
-                                                    : 'bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-600 border border-indigo-200/50'
+                                                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold mt-auto shadow-sm ${isDarkMode
+                                                    ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'
+                                                    : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'
                                                     }`}>
                                                     {otherInitials}
                                                 </div>
                                             )}
 
                                             {/* Message bubble */}
-                                            <div className={`group relative rounded-2xl px-4 py-2.5 ${isOwnMessage
-                                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-br-md'
-                                                : isDarkMode
-                                                    ? 'bg-[#1a1a1a] text-slate-200 border border-white/5 rounded-bl-md'
-                                                    : 'bg-white text-slate-800 border border-slate-100 shadow-sm rounded-bl-md'
-                                                }`}>
-                                                {/* File/Audio attachment */}
-                                                {msg.message_type === 'file' && msg.file_name && (
-                                                    ['.webm', '.mp3', '.m4a', '.wav', '.ogg'].some(ext => msg.file_name.toLowerCase().endsWith(ext)) || msg.file_type?.startsWith('audio/') ? (
-                                                        <div className={`mt-0.5 rounded-2xl overflow-hidden ${isOwnMessage ? 'bg-white/10' : isDarkMode ? 'bg-[#222]' : 'bg-slate-50'}`}>
-                                                            <div className="flex items-center gap-2 px-3 py-2">
-                                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isOwnMessage ? 'bg-white/20' : 'bg-indigo-500/10'}`}>
-                                                                    <Mic size={14} className={isOwnMessage ? 'text-white' : 'text-indigo-600'} />
+                                            {(() => {
+                                                const isImage = ['.png', '.jpg', '.jpeg', '.gif', '.webp'].some(ext => msg.file_name?.toLowerCase().endsWith(ext)) || msg.file_type?.startsWith('image/');
+                                                const isOnlyAttachment = msg.message_type === 'file' && (!msg.content || msg.content.startsWith('Sent a file:') || msg.content.includes('.webm') || msg.content.trim() === '');
+                                                return (
+                                                    <div className={`group relative ${isOnlyAttachment && isImage ? 'p-0' : isOnlyAttachment ? 'p-0.5' : 'px-4 py-2.5 shadow-md'} ${isOwnMessage
+                                                        ? (isOnlyAttachment && isImage ? '' : isOnlyAttachment ? 'bg-gradient-to-r from-[#ff007f] to-[#ff4d4d]' : 'bg-gradient-to-r from-[#ff007f] to-[#ff4d4d] text-white rounded-[2rem] rounded-br-[6px] shadow-pink-500/20')
+                                                        : (isOnlyAttachment && isImage ? '' : isOnlyAttachment ? isDarkMode ? 'bg-[#2a2a2a]' : 'bg-white' : isDarkMode
+                                                            ? 'bg-[#2a2a2a] text-slate-200 rounded-[2rem] rounded-bl-[6px] shadow-black/20'
+                                                            : 'bg-white text-slate-800 shadow-slate-200/50 rounded-[2rem] rounded-bl-[6px]')
+                                                        } ${isOnlyAttachment && !isImage ? 'rounded-full' : ''}`}>
+                                                        {/* File/Audio attachment */}
+                                                        {msg.message_type === 'file' && msg.file_name && (
+                                                            ['.webm', '.mp3', '.m4a', '.wav', '.ogg'].some(ext => msg.file_name.toLowerCase().endsWith(ext)) || msg.file_type?.startsWith('audio/') ? (
+                                                                <div className={`mt-0.5 px-3 py-1.5 ${(!isOnlyAttachment) ? (isOwnMessage ? 'bg-white/20 rounded-full' : isDarkMode ? 'bg-white/5 rounded-full' : 'bg-slate-100 rounded-full') : ''}`}>
+                                                                    <CustomAudioPlayer src={msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`} isDarkMode={isDarkMode} isOwnMessage={isOwnMessage} />
                                                                 </div>
-                                                                <audio src={msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`} controls className="h-8 w-[200px] outline-none" style={{ filter: isDarkMode ? 'contrast(0.9) brightness(1.2)' : 'none' }} />
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <div className={`flex items-center gap-3 mb-2 p-2.5 rounded-xl ${isOwnMessage ? 'bg-white/10' : isDarkMode ? 'bg-white/5' : 'bg-slate-50'
-                                                            }`}>
-                                                            <div className={`p-2 rounded-lg ${isOwnMessage ? 'bg-white/20' : 'bg-blue-500/10'}`}>
-                                                                <File size={16} className={isOwnMessage ? 'text-white' : 'text-blue-600'} />
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className={`text-[11px] font-bold truncate ${isOwnMessage ? 'text-white' : isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
-                                                                    {msg.file_name}
+                                                            ) : isImage ? (
+                                                                <div className={`relative overflow-hidden group/img ${isOwnMessage ? 'rounded-[2rem] rounded-br-[6px]' : 'rounded-[2rem] rounded-bl-[6px]'} bg-slate-100 dark:bg-slate-800`}>
+                                                                    <img src={msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`} alt="attachment" className="max-w-[220px] max-h-[220px] w-auto h-auto object-cover" />
+                                                                    <a href={msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`} target="_blank" rel="noreferrer" download={msg.file_name} className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                                                        <Download className="text-white w-8 h-8" />
+                                                                    </a>
                                                                 </div>
-                                                                <div className={`text-[9px] font-bold tracking-wider uppercase mt-0.5 ${isOwnMessage ? 'text-white/60' : isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                                                                    ATTACHMENT
+                                                            ) : (
+                                                                <div className={`flex items-center gap-2.5 rounded-[1.5rem] px-4 py-2.5 shadow-sm ${(!isOnlyAttachment) ? (isOwnMessage ? 'bg-white/20' : isDarkMode ? 'bg-white/5' : 'bg-slate-100') : ''}`}>
+                                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isOwnMessage ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-400'}`}>
+                                                                        <File size={14} />
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0 pr-2">
+                                                                        <div className={`text-[12px] font-semibold truncate ${isOwnMessage ? 'text-white' : isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
+                                                                            {msg.file_name}
+                                                                        </div>
+                                                                        <div className={`text-[9px] uppercase tracking-widest mt-0.5 ${isOwnMessage ? 'text-white/80' : isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                                                                            FILE
+                                                                        </div>
+                                                                    </div>
+                                                                    <a
+                                                                        href={msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`}
+                                                                        target="_blank"
+                                                                        rel="noreferrer"
+                                                                        className={`flex-shrink-0 p-1.5 rounded-full transition-colors ${isOwnMessage ? 'hover:bg-white/20 text-white' : 'hover:bg-slate-200 text-slate-600 dark:hover:bg-white/10'}`}
+                                                                        download={msg.file_name}
+                                                                    >
+                                                                        <Download size={14} />
+                                                                    </a>
                                                                 </div>
-                                                            </div>
-                                                            <a
-                                                                href={msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`}
-                                                                target="_blank"
-                                                                rel="noreferrer"
-                                                                className={`flex-shrink-0 p-2 rounded-lg transition-colors ${isOwnMessage ? 'hover:bg-white/20 text-white' : 'hover:bg-slate-200 text-blue-600'}`}
-                                                                download={msg.file_name}
+                                                            )
+                                                        )}
+
+                                                        {/* Text content */}
+                                                        {msg.content && msg.message_type !== 'file' && (
+                                                            <p className="text-[14px] sm:text-[13px] leading-relaxed whitespace-pre-wrap break-words">
+                                                                {msg.content}
+                                                            </p>
+                                                        )}
+                                                        {msg.content && msg.message_type === 'file' && !msg.content.startsWith('Sent a file:') && !msg.content.includes('.webm') && (
+                                                            <p className="text-[14px] sm:text-[13px] leading-relaxed whitespace-pre-wrap break-words mt-1">
+                                                                {msg.content}
+                                                            </p>
+                                                        )}
+
+                                                        {/* Reactions & Info */}
+                                                        <div className={`flex items-center gap-1.5 ${isOnlyAttachment ? 'absolute -bottom-5 right-2' : 'relative mt-2'} ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+
+                                                            {/* Reaction Button Hover */}
+                                                            <button
+                                                                onClick={() => setActiveReactionMessageId(activeReactionMessageId === msg.id ? null : msg.id)}
+                                                                className={`absolute ${isOwnMessage ? '-left-8' : '-right-8'} top-1/2 -translate-y-1/2 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-md shadow-sm border z-10 ${isDarkMode ? 'bg-[#2a2a2a]/80 border-white/10 hover:bg-[#333]' : 'bg-white/80 border-slate-200 hover:bg-slate-50'}`}
                                                             >
-                                                                <Download size={14} />
-                                                            </a>
+                                                                <Smile size={16} className={isDarkMode ? 'text-slate-300' : 'text-slate-500'} />
+                                                            </button>
+
+                                                            {/* Reaction Picker */}
+                                                            <AnimatePresence>
+                                                                {activeReactionMessageId === msg.id && (
+                                                                    <motion.div
+                                                                        initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                        exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                                                                        className={`absolute bottom-[110%] mb-1 ${isOwnMessage ? 'right-0' : 'left-0'} z-50 flex gap-1 p-1.5 rounded-full shadow-2xl border ${isDarkMode ? 'bg-[#1e1e1e] border-white/10' : 'bg-white border-slate-200'}`}
+                                                                    >
+                                                                        {QUICK_EMOJIS.map(emoji => (
+                                                                            <button
+                                                                                key={emoji}
+                                                                                onClick={(e) => handleAddReaction(msg.id, emoji, e)}
+                                                                                className="w-8 h-8 flex items-center justify-center text-lg rounded-full hover:bg-slate-500/20 hover:scale-110 active:scale-95 transition-all"
+                                                                            >
+                                                                                {emoji}
+                                                                            </button>
+                                                                        ))}
+                                                                    </motion.div>
+                                                                )}
+                                                            </AnimatePresence>
+
+                                                            {/* Active Reactions */}
+                                                            {(reactions[msg.id] && reactions[msg.id].length > 0) && (
+                                                                <div className={`absolute ${isOnlyAttachment ? 'bottom-0' : '-bottom-6'} ${isOwnMessage ? 'right-4' : 'left-4'} flex -space-x-1 p-0.5 rounded-full shadow-sm border backdrop-blur-xl z-20 ${isDarkMode ? 'bg-[#1a1a1a] border-white/10' : 'bg-white border-slate-200'}`}>
+                                                                    {reactions[msg.id].map(emoji => (
+                                                                        <div key={emoji} onClick={(e) => handleAddReaction(msg.id, emoji, e)} className="w-5 h-5 flex items-center justify-center text-[10px] rounded-full bg-slate-500/10 cursor-pointer hover:bg-slate-500/30 transition-colors">
+                                                                            {emoji}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                            {!isOnlyAttachment && (
+                                                                <>
+                                                                    <span className={`text-[10px] font-semibold tracking-wide ${isOwnMessage ? 'text-white/70' : isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                                                                        {formatMessageTime(msg.created_at)}
+                                                                    </span>
+                                                                    {isOwnMessage && (
+                                                                        msg.is_read
+                                                                            ? <CheckCheck size={14} className="text-emerald-400 drop-shadow-[0_0_2px_rgba(52,211,153,0.5)]" />
+                                                                            : (msg.id ? <CheckCheck size={14} className="text-white/60" /> : <Check size={12} className="text-white/40" />)
+                                                                    )}
+                                                                </>
+                                                            )}
                                                         </div>
-                                                    )
-                                                )}
+                                                    </div>
+                                                );
+                                            })()}
 
-                                                {/* Text content */}
-                                                {msg.content && msg.message_type !== 'file' && (
-                                                    <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">
-                                                        {msg.content}
-                                                    </p>
-                                                )}
-                                                {msg.content && msg.message_type === 'file' && !msg.content.startsWith('Sent a file:') && !msg.content.includes('.webm') && (
-                                                    <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words mt-1">
-                                                        {msg.content}
-                                                    </p>
-                                                )}
-
-                                                {/* Time & read status */}
-                                                <div className={`flex items-center gap-1.5 mt-1.5 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-                                                    <span className={`text-[9px] font-semibold tracking-wide ${isOwnMessage ? 'text-white/60' : isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                                                        {formatMessageTime(msg.created_at)}
-                                                    </span>
-                                                    {isOwnMessage && (
-                                                        msg.is_read
-                                                            ? <CheckCheck size={13} className={isDarkMode ? "text-cyan-400" : "text-blue-300"} />
-                                                            : (msg.id ? <CheckCheck size={13} className="text-white/50" /> : <Check size={11} className="text-white/40" />)
-                                                    )}
+                                            {/* Own Avatar */}
+                                            {isOwnMessage && (
+                                                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold mt-auto shadow-sm shadow-pink-500/20 text-white bg-gradient-to-br from-[#ff007f] to-[#ff4d4d]`}>
+                                                    {userType === 'user' ? 'U' : 'L'}
                                                 </div>
-                                            </div>
+                                            )}
+
                                         </div>
                                     </motion.div>
                                 )}
@@ -546,8 +707,8 @@ const ConsultationChat = ({
             </div>
 
             {/* ============ INPUT AREA ============ */}
-            <div className={`sticky bottom-0 z-30 pt-4 pb-5 ${isDarkMode ? 'bg-gradient-to-t from-[#080808] via-[#080808]' : 'bg-gradient-to-t from-slate-50 via-slate-50'}`}>
-                <div className="max-w-4xl mx-auto px-4 sm:px-6">
+            <div className="sticky bottom-0 z-30 pb-4 pt-1 bg-transparent">
+                <div className="max-w-3xl mx-auto px-2 sm:px-4">
 
                     {/* Selected file preview */}
                     <AnimatePresence>
@@ -558,14 +719,14 @@ const ConsultationChat = ({
                                 exit={{ height: 0, opacity: 0 }}
                                 className="mb-3"
                             >
-                                <div className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl w-max max-w-sm ${isDarkMode ? 'bg-[#151515] border border-white/10' : 'bg-white border border-slate-200 shadow-sm'}`}>
+                                <div className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl w-max max-w-sm ${isDarkMode ? 'bg-dark-bg-secondary border border-white/10' : 'bg-white border border-slate-200 shadow-sm'}`}>
                                     {selectedFile.type.startsWith('image/') ? (
                                         <div className="relative w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-white/10">
                                             <img src={URL.createObjectURL(selectedFile)} alt="preview" className="w-full h-full object-cover" />
                                         </div>
                                     ) : (
-                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDarkMode ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
-                                            <File size={16} className="text-blue-500" />
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDarkMode ? 'bg-slate-500/10' : 'bg-slate-50'}`}>
+                                            <File size={16} className="text-slate-500" />
                                         </div>
                                     )}
                                     <div className="flex-1 min-w-0 pr-4">
@@ -590,12 +751,9 @@ const ConsultationChat = ({
                                 exit={{ height: 0, opacity: 0 }}
                                 className="mb-3"
                             >
-                                <div className={`flex items-center gap-3 px-3 py-2 rounded-2xl w-max max-w-sm ${isDarkMode ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-indigo-50 border border-indigo-100 shadow-sm'}`}>
-                                    <div className="w-9 h-9 rounded-xl bg-indigo-500 flex items-center justify-center">
-                                        <Mic size={14} className="text-white" />
-                                    </div>
-                                    <audio src={audioPreviewUrl} controls className="flex-1 h-9 max-w-[200px] outline-none" />
-                                    <button onClick={() => { setAudioPreviewUrl(null); setSelectedFile(null); }} className="p-1.5 rounded-lg hover:bg-black/5 transition-colors ml-1">
+                                <div className={`flex items-center gap-3 px-3 py-2 rounded-[1.2rem] w-max max-w-sm ${isDarkMode ? 'bg-[#2a2a2a] shadow-sm' : 'bg-slate-100 shadow-sm'}`}>
+                                    <CustomAudioPlayer src={audioPreviewUrl} isDarkMode={isDarkMode} isOwnMessage={false} />
+                                    <button onClick={() => { setAudioPreviewUrl(null); setSelectedFile(null); }} className="p-1.5 rounded-full hover:bg-rose-500/10 transition-colors">
                                         <Trash2 size={16} className="text-rose-500" />
                                     </button>
                                 </div>
@@ -609,15 +767,18 @@ const ConsultationChat = ({
                                 exit={{ height: 0, opacity: 0, y: 10 }}
                                 className="mb-3"
                             >
-                                <div className={`flex items-center justify-between px-5 py-3 rounded-2xl ${isDarkMode ? 'bg-rose-500/10 border border-rose-500/20' : 'bg-rose-50 border border-rose-200 shadow-sm'}`}>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-3 h-3 rounded-full bg-rose-500 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.5)]" />
-                                        <span className={`text-[13px] font-black tracking-wide ${isDarkMode ? 'text-rose-400' : 'text-rose-600'}`}>
-                                            Recording Note... 00:{String(recordingTime).padStart(2, '0')} / 00:30
+                                <div className={`flex items-center justify-between px-4 py-2 rounded-[1.5rem] ${isDarkMode ? 'bg-[#1e1e1e] shadow-lg border border-white/5' : 'bg-white shadow-lg border border-slate-100'}`}>
+                                    <button onClick={() => { stopRecording(); setAudioPreviewUrl(null); setSelectedFile(null); }} className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-full transition-colors flex items-center gap-2">
+                                        <Trash2 size={18} />
+                                    </button>
+                                    <div className="flex items-center gap-2.5 animate-pulse">
+                                        <div className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
+                                        <span className={`text-[13px] font-mono tracking-wide ${isDarkMode ? 'text-rose-400' : 'text-rose-600'}`}>
+                                            00:{String(recordingTime).padStart(2, '0')}
                                         </span>
                                     </div>
-                                    <button onClick={stopRecording} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 text-white text-[11px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
-                                        <Square size={12} fill="currentColor" /> Stop
+                                    <button onClick={() => { autoSendRef.current = true; stopRecording(); }} className="w-9 h-9 flex items-center justify-center bg-emerald-500 text-white rounded-full shadow-md hover:bg-emerald-600 hover:scale-105 active:scale-95 transition-all">
+                                        <Send size={14} className="translate-x-[1px]" fill="currentColor" />
                                     </button>
                                 </div>
                             </motion.div>
@@ -625,9 +786,9 @@ const ConsultationChat = ({
                     </AnimatePresence>
 
                     {/* Input row */}
-                    <div className={`flex items-end gap-1 p-1 rounded-3xl transition-all duration-300 shadow-xl ${isDarkMode
-                        ? 'bg-[#18181b] border border-white/5 shadow-black/50 focus-within:border-white/10 focus-within:bg-[#1f1f23]'
-                        : 'bg-white border border-slate-200 shadow-slate-200/50 focus-within:border-blue-400/50 focus-within:shadow-blue-500/10'}`}>
+                    <div className={`flex items-end gap-1 p-1 rounded-[1.5rem] transition-all duration-300 ${isDarkMode
+                        ? 'bg-[#1e1e24] shadow-lg'
+                        : 'bg-[#f0f2f5] shadow-sm'}`}>
 
                         {/* Attach button */}
                         <div className="relative">
@@ -635,7 +796,7 @@ const ConsultationChat = ({
                                 onClick={() => setShowAttachMenu(!showAttachMenu)}
                                 className={`p-2.5 rounded-full transition-all flex-shrink-0 ${isDarkMode
                                     ? 'hover:bg-white/10 text-slate-400 hover:text-white'
-                                    : 'hover:bg-slate-100 text-slate-500 hover:text-blue-600'
+                                    : 'hover:bg-slate-200 text-slate-500 hover:text-slate-700'
                                     }`}
                             >
                                 <Paperclip size={18} />
@@ -649,7 +810,7 @@ const ConsultationChat = ({
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                                         className={`absolute bottom-14 left-0 p-2 rounded-2xl border shadow-xl z-50 min-w-[160px] ${isDarkMode
-                                            ? 'bg-[#1a1a1a] border-white/10'
+                                            ? 'bg-dark-bg-secondary border-white/10'
                                             : 'bg-white border-slate-200'
                                             }`}
                                     >
@@ -662,7 +823,7 @@ const ConsultationChat = ({
                                                 : 'hover:bg-slate-50 text-slate-700'
                                                 }`}
                                         >
-                                            <File size={16} className="text-blue-500" />
+                                            <File size={16} className="text-slate-500" />
                                             Document
                                         </button>
                                         <button
@@ -696,7 +857,7 @@ const ConsultationChat = ({
                                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                                 className={`p-2.5 rounded-full transition-all hidden sm:flex flex-shrink-0 ${isDarkMode
                                     ? 'hover:bg-white/10 text-slate-400 hover:text-white'
-                                    : 'hover:bg-slate-100 text-slate-500 hover:text-yellow-500'}`}
+                                    : 'hover:bg-slate-200 text-slate-500 hover:text-slate-700'}`}
                             >
                                 <Smile size={18} />
                             </button>
@@ -707,7 +868,7 @@ const ConsultationChat = ({
                                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        className={`absolute bottom-14 left-0 p-3 rounded-2xl border shadow-2xl z-50 w-64 ${isDarkMode ? 'bg-[#1a1a1a] border-white/10' : 'bg-white border-slate-200'}`}
+                                        className={`absolute bottom-14 left-0 p-3 rounded-2xl border shadow-2xl z-50 w-64 ${isDarkMode ? 'bg-dark-bg-secondary border-white/10' : 'bg-white border-slate-200'}`}
                                     >
                                         <div className="grid grid-cols-4 gap-2">
                                             {emojis.map((emoji, index) => (
@@ -734,9 +895,9 @@ const ConsultationChat = ({
                                 onKeyDown={handleKeyDown}
                                 rows={1}
                                 placeholder="Message securely..."
-                                className={`w-full px-2 py-3 bg-transparent !border-none text-[14px] leading-tight font-medium resize-none scrollbar-hide !focus:ring-0 !focus:outline-none max-h-32 ${isDarkMode
-                                    ? 'text-slate-100 placeholder-slate-600'
-                                    : 'text-slate-800 placeholder-slate-400'
+                                className={`w-full px-2 py-3 bg-transparent !border-none text-[15px] leading-tight font-normal resize-none scrollbar-hide !focus:ring-0 !focus:outline-none max-h-32 ${isDarkMode
+                                    ? 'text-slate-200 placeholder-slate-500'
+                                    : 'text-slate-800 placeholder-slate-500'
                                     }`}
                                 style={{ minHeight: '44px' }}
                                 onInput={(e) => {
@@ -751,16 +912,16 @@ const ConsultationChat = ({
                             <button
                                 onClick={startRecording}
                                 disabled={isRecording}
-                                className={`p-3 rounded-full transition-all flex-shrink-0 mr-1 mb-0.5 ${isRecording ? 'opacity-50' : isDarkMode ? 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'}`}
+                                className={`p-2.5 rounded-full transition-all flex-shrink-0 mr-1 mb-0.5 ${isRecording ? 'opacity-50' : isDarkMode ? 'text-slate-400 hover:bg-white/5 hover:text-slate-200' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-700'}`}
                             >
-                                <Mic size={18} />
+                                <Mic size={20} />
                             </button>
                         ) : (
                             <button
                                 id="hidden_send_btn"
                                 onClick={handleSend}
                                 disabled={sending}
-                                className={`p-3 mr-1 mb-0.5 rounded-full transition-all flex-shrink-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_4px_15px_rgba(79,70,229,0.3)] hover:shadow-[0_4px_20px_rgba(79,70,229,0.4)] active:scale-95`}
+                                className={`p-2.5 mr-1 mb-0.5 rounded-full transition-all flex-shrink-0 bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 active:scale-95`}
                             >
                                 {sending ? <Loader size={18} className="animate-spin" /> : <Send size={18} fill="currentColor" className="ml-0.5" />}
                             </button>
@@ -793,7 +954,7 @@ const ConsultationChat = ({
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             onClick={(e) => e.stopPropagation()}
                             className={`w-full max-w-sm p-6 rounded-[24px] border ${isDarkMode
-                                ? 'bg-[#151515] border-white/10'
+                                ? 'bg-dark-bg-secondary border-white/10'
                                 : 'bg-white border-slate-200 shadow-2xl'
                                 }`}
                         >
@@ -833,7 +994,7 @@ const ConsultationChat = ({
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 };
 

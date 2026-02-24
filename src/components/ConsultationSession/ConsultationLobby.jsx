@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Shield, Clock, User, Phone, LogOut, Wifi, WifiOff, Loader } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Shield, Clock, User, LogOut, Wifi, WifiOff, FileText, Lock, MessageSquare, Award, Briefcase, Info, CheckCircle2 } from 'lucide-react';
 
 const ConsultationLobby = ({
     session,
@@ -17,7 +17,7 @@ const ConsultationLobby = ({
     useEffect(() => {
         const interval = setInterval(() => {
             setDots(prev => prev.length >= 3 ? '' : prev + '.');
-        }, 600);
+        }, 500);
         return () => clearInterval(interval);
     }, []);
 
@@ -28,45 +28,73 @@ const ConsultationLobby = ({
         return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     };
 
-    const otherRole = userType === 'user' ? 'Lawyer' : 'Client';
-    const otherName = otherParticipant?.name || otherRole;
+    const isUser = userType === 'user';
+    const otherRole = isUser ? 'Legal Expert' : 'Client';
+    const otherName = otherParticipant?.name || (isUser ? 'Assigned Lawyer' : 'Your Client');
     const initials = otherName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
-    return (
-        <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-[#080808]' : 'bg-slate-50/50'}`}>
+    // Container Variants
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: { staggerChildren: 0.15, delayChildren: 0.1 }
+        }
+    };
 
-            {/* Top Status Bar */}
-            <div className={`sticky top-0 z-40 backdrop-blur-xl border-b ${isDarkMode ? 'bg-[#080808]/80 border-white/5' : 'bg-white/80 border-slate-200/60'}`}>
-                <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-2xl ${isDarkMode ? 'bg-white/5' : 'bg-slate-100'}`}>
-                            <Shield size={14} className="text-blue-500" />
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 15 } }
+    };
+
+    return (
+        <div className={`min-h-screen flex flex-col font-sans selection:bg-slate-500/30 ${isDarkMode ? 'bg-dark-bg text-slate-200' : 'bg-[#f4f7fb] text-slate-800'}`}>
+
+            {/* Top Navigation / Status Bar (Premium Glassmorphism) */}
+            <div className={`sticky top-0 z-40 backdrop-blur-2xl border-b ${isDarkMode ? 'bg-dark-bg/70 border-white/5' : 'bg-white/70 border-slate-200/60 shadow-sm'}`}>
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className={`p-2.5 rounded-2xl relative group ${isDarkMode ? 'bg-gradient-to-br from-slate-500/20 to-slate-400/10' : 'bg-gradient-to-br from-slate-50 to-slate-100 shadow-inner'}`}>
+                            <Shield size={18} className="text-slate-500 relative z-10" />
+                            <div className="absolute inset-0 rounded-2xl bg-slate-400 opacity-0 group-hover:opacity-20 blur transition-opacity duration-500"></div>
                         </div>
                         <div>
-                            <p className={`text-[11px] font-bold tracking-tight ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
-                                Consultation Session
-                            </p>
-                            <p className={`text-[9px] font-semibold uppercase tracking-[0.15em] ${isDarkMode ? 'text-blue-400/70' : 'text-blue-600/70'}`}>
-                                Secure Channel Established
+                            <h1 className={`text-sm sm:text-base font-extrabold tracking-tight ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>
+                                Secure Consultation Lounge
+                            </h1>
+                            <p className={`text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] mt-0.5 ${isDarkMode ? 'text-slate-400/80' : 'text-slate-600/80'}`}>
+                                End-to-End Encrypted Session
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         {/* Connection Status */}
-                        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${connectionStatus === 'connected'
-                            ? isDarkMode ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'
-                            : isDarkMode ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600'
+                        <div className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest border shadow-sm ${connectionStatus === 'connected'
+                            ? isDarkMode ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                            : isDarkMode ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-600 border-amber-200'
                             }`}>
-                            {connectionStatus === 'connected' ? <Wifi size={10} /> : <WifiOff size={10} />}
-                            {connectionStatus === 'connected' ? 'Live' : 'Reconnecting'}
+                            {connectionStatus === 'connected' ? (
+                                <>
+                                    <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                    </span>
+                                    Connected
+                                </>
+                            ) : (
+                                <>
+                                    <WifiOff size={12} className="animate-pulse" />
+                                    Reconnecting
+                                </>
+                            )}
                         </div>
 
                         {/* Timer */}
                         {timeRemaining !== null && (
-                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${isDarkMode ? 'bg-white/5' : 'bg-slate-100'}`}>
-                                <Clock size={10} className={isDarkMode ? 'text-slate-400' : 'text-slate-500'} />
-                                <span className={`text-[10px] font-bold tracking-wider font-mono ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                            <div className={`flex items-center gap-2 px-4 py-2 rounded-full border shadow-sm ${isDarkMode ? 'bg-dark-bg-secondary border-white/10' : 'bg-white border-slate-200'}`}>
+                                <Clock size={14} className={isDarkMode ? 'text-slate-400' : 'text-slate-500'} />
+                                <span className={`text-xs sm:text-sm font-bold tracking-wider font-mono ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
                                     {formatTime(timeRemaining)}
                                 </span>
                             </div>
@@ -75,121 +103,193 @@ const ConsultationLobby = ({
                 </div>
             </div>
 
-            {/* Main Lobby Content */}
-            <div className="flex-1 flex items-center justify-center px-4 py-8">
-                <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                    className="w-full max-w-md"
-                >
-                    <div className={`p-8 rounded-[28px] border text-center ${isDarkMode
-                        ? 'bg-[#121212] border-white/5'
-                        : 'bg-white border-slate-200/60 shadow-2xl shadow-slate-200/40'
-                        }`}>
-                        {/* Avatar with pulse ring */}
-                        <div className="relative w-24 h-24 mx-auto mb-6">
-                            {/* Pulse rings */}
-                            <motion.div
-                                animate={{ scale: [1, 1.5], opacity: [0.3, 0] }}
-                                transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
-                                className="absolute inset-0 rounded-full bg-blue-500/20"
-                            />
-                            <motion.div
-                                animate={{ scale: [1, 1.3], opacity: [0.2, 0] }}
-                                transition={{ duration: 2, repeat: Infinity, ease: 'easeOut', delay: 0.4 }}
-                                className="absolute inset-0 rounded-full bg-blue-500/15"
-                            />
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden">
 
-                            {/* Avatar circle */}
-                            <div className={`relative w-full h-full rounded-full flex items-center justify-center text-2xl font-bold ${isDarkMode
-                                ? 'bg-gradient-to-br from-blue-500/20 to-indigo-500/20 text-blue-400 border-2 border-blue-500/20'
-                                : 'bg-gradient-to-br from-blue-50 to-indigo-50 text-blue-600 border-2 border-blue-200/50'
+                {/* Background Ambient Orbs */}
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-slate-600/10 rounded-full blur-[120px] pointer-events-none" />
+                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-slate-600/10 rounded-full blur-[120px] pointer-events-none" />
+
+                <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                    className="w-full max-w-5xl z-10"
+                >
+                    {/* Header Section */}
+                    <motion.div variants={itemVariants} className="text-center mb-10 sm:mb-16">
+                        <div className="inline-flex items-center justify-center relative mb-6">
+                            {/* Pulse Rings */}
+                            <motion.div
+                                animate={{ scale: [1, 1.4], opacity: [0.3, 0] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
+                                className={`absolute inset-0 rounded-full ${isDarkMode ? 'bg-slate-500' : 'bg-slate-400'}`}
+                            />
+                            <motion.div
+                                animate={{ scale: [1, 1.2], opacity: [0.5, 0] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: 'easeOut', delay: 0.5 }}
+                                className={`absolute inset-0 rounded-full ${isDarkMode ? 'bg-slate-500' : 'bg-slate-400'}`}
+                            />
+                            <div className={`relative w-24 h-24 rounded-full flex items-center justify-center text-3xl font-black shadow-2xl backdrop-blur-sm ${isDarkMode
+                                ? 'bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] text-slate-400 border border-slate-500/30'
+                                : 'bg-gradient-to-br from-white to-slate-100 text-slate-600 border border-slate-200'
                                 }`}>
                                 {initials}
                             </div>
                         </div>
 
-                        {/* Waiting Text */}
-                        <h2 className={`text-lg font-bold tracking-tight mb-1 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                        <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-4 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
                             Waiting for {otherName}{dots}
                         </h2>
-                        <p className={`text-xs font-medium mb-6 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                            {otherRole} has been notified and will join shortly
-                        </p>
-
-                        {/* Session Info Cards */}
-                        <div className={`grid grid-cols-2 gap-px rounded-2xl overflow-hidden border mb-6 ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-slate-100/50 border-slate-100'}`}>
-                            <div className={`flex flex-col items-center py-4 gap-2 ${isDarkMode ? 'bg-[#151515]' : 'bg-white'}`}>
-                                <User size={14} className="opacity-30" />
-                                <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                                    {otherRole}
-                                </span>
-                                <span className={`text-[11px] font-bold tracking-tight ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
-                                    {otherName}
-                                </span>
-                            </div>
-                            <div className={`flex flex-col items-center py-4 gap-2 ${isDarkMode ? 'bg-[#151515]' : 'bg-white'}`}>
-                                <Clock size={14} className="opacity-30" />
-                                <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                                    Duration
-                                </span>
-                                <span className={`text-[11px] font-bold tracking-tight ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
-                                    {session?.duration_minutes || 55} min
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Security Badge */}
-                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 ${isDarkMode ? 'bg-blue-500/5 border border-blue-500/10' : 'bg-blue-50 border border-blue-100'}`}>
-                            <Shield size={12} className="text-blue-500" />
-                            <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-                                End-to-End Encrypted
-                            </span>
-                        </div>
-
-                        {/* Loading Indicator */}
-                        <div className="flex justify-center mb-6">
-                            <div className="flex items-center gap-1.5">
-                                {[0, 1, 2].map(i => (
-                                    <motion.div
-                                        key={i}
-                                        animate={{ y: [0, -8, 0] }}
-                                        transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
-                                        className={`w-2 h-2 rounded-full ${isDarkMode ? 'bg-blue-400' : 'bg-blue-500'}`}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Leave Button */}
-                        <button
-                            onClick={onLeave}
-                            className={`flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all ${isDarkMode
-                                ? 'bg-white/5 hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 border border-white/5 hover:border-rose-500/20'
-                                : 'bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200 hover:border-rose-200'
-                                }`}
-                        >
-                            <LogOut size={12} />
-                            Leave Waiting Room
-                        </button>
-                    </div>
-
-                    {/* Tips below the card */}
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.8 }}
-                        className={`mt-6 text-center px-4`}
-                    >
-                        <p className={`text-[10px] font-medium ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>
-                            💡 Tip: Prepare your questions while waiting for the best experience
+                        <p className={`text-sm sm:text-base font-medium max-w-xl mx-auto leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                            The session will begin automatically as soon as the {otherRole.toLowerCase()} joins. Please stay on this screen to ensure a seamless connection.
                         </p>
                     </motion.div>
+
+                    {/* Dual Cards Section */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+
+                        {/* Card 1: Expert/Participant Profile */}
+                        <motion.div variants={itemVariants} className={`group relative rounded-[2rem] overflow-hidden border shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-3xl ${isDarkMode ? 'bg-dark-bg-tertiary border-white/5 shadow-black/50' : 'bg-white border-slate-200/50 shadow-slate-200/50'}`}>
+                            {/* Card Header Image */}
+                            <div className="h-40 relative overflow-hidden bg-slate-900">
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10" />
+                                <div
+                                    className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+                                    style={{ backgroundImage: `url('https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=800')` }}
+                                />
+                                <div className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10">
+                                    <User size={12} className="text-white" />
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-white">{otherRole} Profile</span>
+                                </div>
+                            </div>
+
+                            <div className="relative px-6 sm:px-8 pb-8 pt-8">
+                                {/* Profile Avatar overlapping header */}
+                                <div className="absolute -top-12 left-6 sm:left-8">
+                                    <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-subtitle font-bold text-2xl shadow-xl border-4 ${isDarkMode ? 'bg-dark-bg-secondary text-slate-400 border-[#111]' : 'bg-white text-slate-600 border-white'}`}>
+                                        {initials}
+                                    </div>
+                                </div>
+
+                                {/* Content */}
+                                <div className="mt-8">
+                                    <h3 className={`text-xl font-bold tracking-tight mb-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                                        {otherName}
+                                    </h3>
+                                    <p className={`text-sm font-medium mb-6 flex items-center gap-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                        {isUser ? <Briefcase size={16} /> : <User size={16} />}
+                                        {isUser ? 'Verified Legal Practitioner' : 'Registered Client'}
+                                    </p>
+
+                                    <div className="space-y-4">
+                                        <div className={`flex items-start gap-4 p-4 rounded-2xl border ${isDarkMode ? 'bg-white/[0.02] border-white/5' : 'bg-slate-50 border-slate-100'}`}>
+                                            <div className={`p-2 rounded-xl mt-0.5 ${isDarkMode ? 'bg-slate-500/10' : 'bg-slate-100'}`}>
+                                                <Award size={18} className="text-slate-500" />
+                                            </div>
+                                            <div>
+                                                <p className={`text-user text-sm font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                                                    Secure Connection
+                                                </p>
+                                                <p className={`text-xs mt-1 leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                                    Your conversation is protected with enterprise-grade encryption.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className={`flex items-start gap-4 p-4 rounded-2xl border ${isDarkMode ? 'bg-white/[0.02] border-white/5' : 'bg-slate-50 border-slate-100'}`}>
+                                            <div className={`p-2 rounded-xl mt-0.5 ${isDarkMode ? 'bg-slate-500/10' : 'bg-slate-100'}`}>
+                                                <Clock size={18} className="text-slate-500" />
+                                            </div>
+                                            <div>
+                                                <p className={`text-user text-sm font-bold ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                                                    Dedicated Time
+                                                </p>
+                                                <p className={`text-xs mt-1 leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                                    Session duration is booked for {session?.duration_minutes || 55} minutes of uninterrupted focus.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+
+                        {/* Card 2: Session Preparation */}
+                        <motion.div variants={itemVariants} className={`relative rounded-[2rem] overflow-hidden border shadow-2xl flex flex-col ${isDarkMode ? 'bg-dark-bg-tertiary border-white/5 shadow-black/50' : 'bg-white border-slate-200/50 shadow-slate-200/50'}`}>
+                            {/* Card Header Image */}
+                            <div className="h-40 relative overflow-hidden bg-slate-900">
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10" />
+                                <div
+                                    className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-60 transition-transform duration-700 hover:scale-105"
+                                    style={{ backgroundImage: `url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=800')` }}
+                                />
+                                <div className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10">
+                                    <Info size={12} className="text-emerald-400" />
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-white">Guidelines</span>
+                                </div>
+                                <div className="absolute bottom-4 left-6 z-20">
+                                    <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white mb-1">
+                                        Session Preparation
+                                    </h3>
+                                    <p className="text-xs font-medium text-slate-300">
+                                        Review these tips before you begin
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="p-6 sm:p-8 flex-1 flex flex-col justify-between">
+                                <ul className="space-y-5">
+                                    {[
+                                        { icon: FileText, title: 'Compile Your Documents', desc: 'Have any relevant case files, contracts, or notices ready to share.', color: 'text-amber-500', bg: isDarkMode ? 'bg-amber-500/10' : 'bg-amber-100' },
+                                        { icon: MessageSquare, title: 'Note Your Questions', desc: 'Jot down key points you want to discuss to maximize your time.', color: 'text-sky-500', bg: isDarkMode ? 'bg-sky-500/10' : 'bg-sky-100' },
+                                        { icon: Lock, title: '100% Confidential', desc: 'Everything discussed remains strictly confidential under attorney-client privilege.', color: 'text-emerald-500', bg: isDarkMode ? 'bg-emerald-500/10' : 'bg-emerald-100' }
+                                    ].map((item, idx) => (
+                                        <li key={idx} className="flex gap-4 group">
+                                            <div className={`p-2.5 rounded-xl h-fit shrink-0 transition-colors ${item.bg}`}>
+                                                <item.icon size={18} className={item.color} />
+                                            </div>
+                                            <div>
+                                                <h4 className={`text-sm font-bold mb-1 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                                                    {item.title}
+                                                </h4>
+                                                <p className={`text-xs leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                                    {item.desc}
+                                                </p>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+
+                                {/* Action Button */}
+                                <div className="mt-8 pt-6 border-t border-slate-200 dark:border-white/10">
+                                    <button
+                                        onClick={onLeave}
+                                        className={`flex items-center justify-center gap-2 w-full py-4 rounded-2xl text-[11px] sm:text-xs font-bold uppercase tracking-widest transition-all ${isDarkMode
+                                            ? 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300'
+                                            : 'bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700'
+                                            }`}
+                                    >
+                                        <LogOut size={16} />
+                                        Leave Waiting Room
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+
+                    </div>
                 </motion.div>
             </div>
+
+            {/* Custom CSS overrides if needed */}
+            <style>{`
+                .shadow-3xl {
+                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+                }
+            `}</style>
         </div>
     );
 };
 
 export default ConsultationLobby;
+
