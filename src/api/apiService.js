@@ -508,30 +508,36 @@ export const authAPI = {
   getUserProfile: () => apiClient.get('/user/profile'),
 
   // Update lawyer verification status after Satyapan API confirms enrollment
-  // Accepts Satyapan result data to enrich the profile (name, bar_association, etc.)
-  updateLawyerStatus: async (status, satyapanData = {}) => {
+  // Accepts numeric status or string status which is mapped internally
+  updateLawyerStatus: async (userId, status, satyapanData = {}) => {
     try {
+      // Map string status to numeric if needed
+      let numericStatus = status;
+      if (status === 'Bar Council Verified') numericStatus = "1";
+      if (status === 'pending') numericStatus = "0";
+
       const payload = {
-        lawyer_data: {
-          status,
-          ...(satyapanData.name && { bar_association: satyapanData.bar_council || satyapanData.bar_association }),
-        }
+        user_id: userId,
+        status: String(numericStatus),
+        // Enrich profile if data provided (maintained for local sync)
+        ...(satyapanData.name && { bar_association: satyapanData.bar_council || satyapanData.bar_association })
       };
-      const response = await apiClient.put('/user/profile', payload);
+
+      const response = await apiClient.post('/lawyers/update_enrollment_status', payload);
       const updatedData = response.data?.data || response.data;
 
-      // Sync to localStorage so all components stay consistent
+      // Sync to localStorage
       if (updatedData) {
         localStorage.setItem('user_profile', JSON.stringify(updatedData));
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
           try {
             const parsedUser = JSON.parse(storedUser);
-            // Deep merge lawyer_data to avoid losing other fields (bio, etc.)
             const updatedUser = {
               ...parsedUser,
               lawyer_data: {
                 ...(parsedUser.lawyer_data || {}),
+                status: status === 'Bar Council Verified' ? 'Bar Council Verified' : (numericStatus === "1" ? 'Bar Council Verified' : 'pending'),
                 ...(updatedData.lawyer_data || {})
               }
             };

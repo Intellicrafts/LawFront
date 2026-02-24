@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { BadgeCheck, Search, AlertCircle, CheckCircle, MapPin, Calendar, User, Briefcase, ChevronRight, Loader2, Phone, Mail, Shield } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { verificationService } from '../../services/verificationService';
+import { authAPI } from '../../api/apiService';
 
 const VerifyLawyer = () => {
     const { mode } = useSelector((state) => state.theme);
@@ -98,6 +99,20 @@ const VerifyLawyer = () => {
         try {
             const data = await verificationService.verifyLawyer(enrollmentNumber, state);
             setResult(data);
+
+            // If user is logged in, try to update their status
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                try {
+                    const user = JSON.parse(storedUser);
+                    if (user && user.id && user.user_type === 2) { // 2 = Lawyer
+                        console.log('[VerifyLawyer] Logged-in lawyer verified, updating status...');
+                        await authAPI.updateLawyerStatus(user.id, 'Bar Council Verified', data);
+                    }
+                } catch (e) {
+                    console.error('[VerifyLawyer] Error updating lawyer status:', e);
+                }
+            }
         } catch (err) {
             console.error("Verification Error:", err);
             let userMessage = 'Failed to verify lawyer details. Please check the enrollment number and try again.';
