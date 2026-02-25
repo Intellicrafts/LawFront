@@ -275,7 +275,7 @@ const MyAppointments = ({ onBack }) => {
     };
 
     return (
-        <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-slate-50/50'}`}>
+        <div className={`min-h-[100dvh] overflow-x-hidden flex flex-col transition-colors duration-300 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-slate-50/50'}`}>
 
             {/* Premium Sticky Header */}
             <div className={`sticky top-0 z-40 transition-all duration-300 ${isDarkMode ? 'bg-[#0A0A0A]/95' : 'bg-white/95'} backdrop-blur-xl border-b ${isDarkMode ? 'border-white/[0.03]' : 'border-slate-200/60'}`}>
@@ -403,7 +403,7 @@ const MyAppointments = ({ onBack }) => {
                 </div>
             </div>
 
-            <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
+            <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
 
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-24 gap-4">
@@ -512,12 +512,17 @@ const MyAppointments = ({ onBack }) => {
                                             // Completed or Past
                                             if (joinState.state === 'completed' || joinState.state === 'past') {
                                                 return (
-                                                    <div className={`w-full py-3 rounded-xl text-[9px] font-bold uppercase tracking-wider text-center border ${isDarkMode
-                                                        ? 'bg-white/[0.02] border-white/[0.03] text-slate-600'
-                                                        : 'bg-slate-50/50 border-slate-100 text-slate-400'
-                                                        }`}>
-                                                        Session Concluded
-                                                    </div>
+                                                    <button
+                                                        onClick={() => handleJoinConsultation(apt)}
+                                                        disabled={isJoining}
+                                                        className={`w-full py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider text-center border flex items-center justify-center gap-2 transition-all ${isDarkMode
+                                                            ? 'bg-slate-800 hover:bg-slate-700 border-white/[0.05] text-slate-300'
+                                                            : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 shadow-sm'
+                                                            }`}
+                                                    >
+                                                        {isJoining ? <Loader size={12} className="animate-spin" /> : <FileText size={12} />}
+                                                        View Report
+                                                    </button>
                                                 );
                                             }
 

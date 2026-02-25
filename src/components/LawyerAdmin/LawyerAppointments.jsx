@@ -343,8 +343,8 @@ const LawyerAppointments = ({ darkMode, initialAppointments = [], userData, acti
                           onClick={() => handleStartMeeting(apt.id)}
                           disabled={actionLoading === apt.id || !canJoin}
                           className={`flex-1 h-9 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl ${activeSession?.appointment_id === apt.id
-                              ? (darkMode ? 'bg-white text-slate-900 shadow-white/20' : 'bg-slate-900 text-white shadow-black/20')
-                              : (darkMode ? 'bg-white text-slate-900 shadow-white/5' : 'bg-slate-900 text-white shadow-black/10')
+                            ? (darkMode ? 'bg-white text-slate-900 shadow-white/20' : 'bg-slate-900 text-white shadow-black/20')
+                            : (darkMode ? 'bg-white text-slate-900 shadow-white/5' : 'bg-slate-900 text-white shadow-black/10')
                             } ${actionLoading === apt.id ? 'opacity-80' : (!canJoin ? 'opacity-50 cursor-not-allowed bg-slate-400 text-white dark:bg-slate-700' : 'hover:scale-[1.02]')}`}
                         >
                           {actionLoading === apt.id ? (
@@ -364,6 +364,27 @@ const LawyerAppointments = ({ darkMode, initialAppointments = [], userData, acti
                           )}
                         </button>
                       );
+                    } else if (apt.status === 'completed' || isPastEnded) {
+                      return (
+                        <button
+                          onClick={() => handleStartMeeting(apt.id)}
+                          disabled={actionLoading === apt.id}
+                          className={`flex-1 h-9 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg ${darkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                            }`}
+                        >
+                          {actionLoading === apt.id ? (
+                            <>
+                              <RefreshCw size={12} className="animate-spin" />
+                              Loading...
+                            </>
+                          ) : (
+                            <>
+                              <FileText size={12} />
+                              View Report
+                            </>
+                          )}
+                        </button>
+                      );
                     } else {
                       return (
                         <button
@@ -371,7 +392,7 @@ const LawyerAppointments = ({ darkMode, initialAppointments = [], userData, acti
                           className={`flex-1 h-9 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 bg-slate-100 dark:bg-white/5 text-slate-400 cursor-not-allowed`}
                         >
                           <VideoOff size={12} />
-                          {apt.status === 'completed' ? 'Session Closed' : 'Unavailable'}
+                          Unavailable
                         </button>
                       );
                     }

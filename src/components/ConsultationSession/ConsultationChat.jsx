@@ -1,18 +1,27 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Shield, Clock, Send, Paperclip, Smile, X, Image as ImageIcon,
     File, Download, Check, CheckCheck, Wifi, WifiOff,
     Phone, MoreVertical, AlertTriangle, ArrowDown, Loader,
-    ChevronLeft, MessageCircle, Lock, Mic, Square, Trash2
+    ChevronLeft, MessageCircle, Lock, Mic, MicOff, Square, Trash2,
+    User, Briefcase, Scale, Sun, Moon, ZoomIn
 } from 'lucide-react';
 import { deriveKey, encryptText, decryptText } from '../../utils/e2ee';
+import { toggleTheme } from '../../redux/themeSlice';
 
 const CustomAudioPlayer = ({ src, isDarkMode, isOwnMessage }) => {
     const [isPlaying, setIsPlaying] = React.useState(false);
     const [progress, setProgress] = React.useState(0);
     const [duration, setDuration] = React.useState(0);
     const audioRef = React.useRef(null);
+
+    React.useEffect(() => {
+        if (audioRef.current && src) {
+            audioRef.current.load();
+        }
+    }, [src]);
 
     React.useEffect(() => {
         const audio = audioRef.current;
@@ -41,10 +50,23 @@ const CustomAudioPlayer = ({ src, isDarkMode, isOwnMessage }) => {
         };
     }, []);
 
-    const togglePlay = (e) => {
+    const togglePlay = async (e) => {
         e.stopPropagation();
-        if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); }
-        else { audioRef.current.play(); setIsPlaying(true); }
+        if (isPlaying) {
+            audioRef.current.pause();
+            setIsPlaying(false);
+        } else {
+            try {
+                const playPromise = audioRef.current.play();
+                if (playPromise !== undefined) {
+                    await playPromise;
+                }
+                setIsPlaying(true);
+            } catch (err) {
+                console.warn('Audio play error (no supported sources or stream issue):', err);
+                setIsPlaying(false);
+            }
+        }
     };
 
     const handleSeek = (e) => {
@@ -96,10 +118,10 @@ const ConsultationChat = ({
     onEndSession,
     onTyping
 }) => {
+    const dispatch = useDispatch();
     const [newMessage, setNewMessage] = useState('');
     const [sending, setSending] = useState(false);
     const [showEndModal, setShowEndModal] = useState(false);
-    const [showScrollBtn, setShowScrollBtn] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [showTimeWarning, setShowTimeWarning] = useState(false);
@@ -119,33 +141,51 @@ const ConsultationChat = ({
 
     // Message Expressions Local State
     const [reactions, setReactions] = useState({});
+    const [reactionsFromMessages, setReactionsFromMessages] = useState({});
     const [activeReactionMessageId, setActiveReactionMessageId] = useState(null);
     const QUICK_EMOJIS = ['👍', '❤️', '😂', '😯', '🙏', '👎'];
+    const [previewFile, setPreviewFile] = useState(null); // { url, name, type }
 
     const handleAddReaction = (msgId, emoji, e) => {
         if (e) {
             e.stopPropagation();
             e.preventDefault();
         }
+        const isSame = reactions[msgId] === emoji;
+        // Update local state immediately (optimistic)
         setReactions(prev => {
-            const msgReactions = prev[msgId] || [];
-            if (msgReactions.includes(emoji)) {
-                return { ...prev, [msgId]: msgReactions.filter(r => r !== emoji) };
+            if (isSame) {
+                const next = { ...prev };
+                delete next[msgId];
+                return next;
             }
-            return { ...prev, [msgId]: [...msgReactions, emoji] };
+            return { ...prev, [msgId]: emoji };
         });
         setActiveReactionMessageId(null);
+        // Send reaction as a special message so both sides sync via polling
+        const reactionPayload = isSame
+            ? `_REACTION_REMOVE_:${msgId}`
+            : `_REACTION_:${msgId}:${emoji}`;
+        try {
+            onSendMessage(reactionPayload, null);
+        } catch (_) { /* silent */ }
     };
 
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
     const inputRef = useRef(null);
     const fileInputRef = useRef(null);
+    const imageInputRef = useRef(null);
     const typingTimeoutRef = useRef(null);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
     const recordIntervalRef = useRef(null);
     const autoSendRef = useRef(false);
+
+    // Voice Gesture Refs
+    const cancelRecordRef = useRef(false);
+    const startXRef = useRef(0);
+    const [slideOffset, setSlideOffset] = useState(0);
 
     const otherName = otherParticipant?.name || (userType === 'user' ? 'Lawyer' : 'Client');
     const otherInitials = otherName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -170,7 +210,11 @@ const ConsultationChat = ({
     }, []);
 
     useEffect(() => {
-        scrollToBottom('instant');
+        // slight delay ensures images and DOM paint before scrolling
+        const t = setTimeout(() => {
+            scrollToBottom('smooth');
+        }, 150);
+        return () => clearTimeout(t);
     }, [decryptedMessages.length, scrollToBottom]);
 
     // Initialize E2EE Key
@@ -203,18 +247,32 @@ const ConsultationChat = ({
         decryptAll();
     }, [messages, e2eKey]);
 
-    // Scroll observer for "scroll to bottom" button
+    // Parse reaction messages from decrypted messages to sync both sides
     useEffect(() => {
-        const container = messagesContainerRef.current;
-        if (!container) return;
+        const reactionMap = {};
+        decryptedMessages.forEach(msg => {
+            const c = msg.content || '';
+            if (c.startsWith('_REACTION_:')) {
+                // Format: _REACTION_:msgId:emoji
+                const parts = c.split(':');
+                const targetId = parts[1];
+                const emoji = parts.slice(2).join(':'); // emoji may contain colons
+                if (targetId && emoji) {
+                    // Last reaction wins (messages are ordered by time)
+                    reactionMap[targetId] = emoji;
+                }
+            } else if (c.startsWith('_REACTION_REMOVE_:')) {
+                const targetId = c.replace('_REACTION_REMOVE_:', '');
+                delete reactionMap[targetId];
+            }
+        });
+        setReactionsFromMessages(reactionMap);
+    }, [decryptedMessages]);
 
-        const handleScroll = () => {
-            const { scrollTop, scrollHeight, clientHeight } = container;
-            setShowScrollBtn(scrollHeight - scrollTop - clientHeight > 100);
-        };
-
-        container.addEventListener('scroll', handleScroll);
-        return () => container.removeEventListener('scroll', handleScroll);
+    // Scroll observer removed
+    useEffect(() => {
+        // cleanup only
+        return () => { };
     }, []);
 
     // Time warning at 5 minutes
@@ -281,7 +339,16 @@ const ConsultationChat = ({
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mediaRecorder = new MediaRecorder(stream);
+
+            // Safari/iOS compatibility for audio MIME type
+            let mimeType = '';
+            if (MediaRecorder.isTypeSupported('audio/webm')) {
+                mimeType = 'audio/webm';
+            } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                mimeType = 'audio/mp4';
+            }
+
+            const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
             mediaRecorderRef.current = mediaRecorder;
             audioChunksRef.current = [];
 
@@ -290,14 +357,26 @@ const ConsultationChat = ({
             };
 
             mediaRecorder.onstop = () => {
-                const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                stream.getTracks().forEach(track => track.stop());
+
+                // Cancel block
+                if (cancelRecordRef.current) {
+                    cancelRecordRef.current = false;
+                    setIsRecording(false);
+                    return;
+                }
+
+                // Determine file extension based on mimeType
+                const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+                const blobType = mimeType || 'audio/webm';
+
+                const blob = new Blob(audioChunksRef.current, { type: blobType });
                 const url = URL.createObjectURL(blob);
                 setAudioBlob(blob);
                 setAudioPreviewUrl(url);
                 // Fix: explicit window.File to prevent 'ucide-react' File component name collision
-                const file = new window.File([blob], `voice_note_${new Date().getTime()}.webm`, { type: 'audio/webm' });
+                const file = new window.File([blob], `voice_note_${new Date().getTime()}.${ext}`, { type: blobType });
                 setSelectedFile(file);
-                stream.getTracks().forEach(track => track.stop());
 
                 if (autoSendRef.current) {
                     autoSendRef.current = false;
@@ -315,6 +394,7 @@ const ConsultationChat = ({
             recordIntervalRef.current = setInterval(() => {
                 setRecordingTime(prev => {
                     if (prev >= 29) {
+                        autoSendRef.current = true;
                         stopRecording();
                         return 30;
                     }
@@ -335,20 +415,83 @@ const ConsultationChat = ({
         if (recordIntervalRef.current) clearInterval(recordIntervalRef.current);
     };
 
+    // Hold-to-record gesture handlers
+    const handleRecordStart = (e) => {
+        e.preventDefault();
+        if (e.target.setPointerCapture) e.target.setPointerCapture(e.pointerId);
+        startXRef.current = e.clientX || (e.touches && e.touches[0].clientX);
+        setSlideOffset(0);
+        cancelRecordRef.current = false;
+        startRecording();
+    };
+
+    const handleRecordMove = (e) => {
+        if (!isRecording) return;
+        const currentX = e.clientX || (e.touches && e.touches[0].clientX);
+        if (!currentX) return;
+
+        const diff = startXRef.current - currentX;
+        if (diff > 0) { // sliding left
+            setSlideOffset(-diff);
+            if (diff > 90) { // Cancel threshold
+                cancelRecordRef.current = true;
+                stopRecording();
+                setSlideOffset(0);
+            }
+        }
+    };
+
+    const handleRecordEnd = (e) => {
+        if (!isRecording) return;
+        if (e.target.releasePointerCapture) e.target.releasePointerCapture(e.pointerId);
+        setSlideOffset(0);
+        if (!cancelRecordRef.current) {
+            autoSendRef.current = true;
+            stopRecording();
+        }
+    };
+
     const handleEmojiClick = (emoji) => {
         setNewMessage(prev => prev + emoji);
     };
 
-    // Handle Enter key
+    // Handle Enter key — sends text, file, image, OR voice note
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             if (isRecording) {
                 autoSendRef.current = true;
                 stopRecording();
-            } else {
+            } else if (newMessage.trim() || selectedFile) {
                 handleSend();
             }
+        }
+    };
+
+    // Direct blob download helper
+    const downloadFile = async (url, filename) => {
+        try {
+            const res = await fetch(url, { cache: 'no-cache' });
+            if (!res.ok) throw new Error('Fetch failed');
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename || 'download';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+        } catch {
+            // Fallback: cross-origin force download using invisible anchor
+            const a = document.createElement('a');
+            // Adding download=1 query param to ask backend for attachment disposition if it supports it
+            a.href = url + (url.includes('?') ? '&' : '?') + 'download=1';
+            a.setAttribute('download', filename || 'download');
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
     };
 
@@ -374,47 +517,50 @@ const ConsultationChat = ({
     };
 
     return (
-        <div className={`h-screen flex flex-col font-sans selection:bg-slate-500/30 overflow-hidden ${isDarkMode ? 'bg-dark-bg text-slate-200' : 'bg-[#f4f7fb] text-slate-800'}`}>
+        <div className={`h-[100dvh] min-h-[100dvh] max-h-[100dvh] flex flex-col font-sans selection:bg-indigo-500/20 overflow-hidden ${isDarkMode ? 'bg-[#0f1221] text-slate-200' : 'bg-[#f4f7fb] text-slate-800'}`}>
             {/* Background Ambient Orbs */}
-            <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-slate-600/10 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-slate-600/10 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-indigo-600/8 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-violet-600/8 rounded-full blur-[120px] pointer-events-none" />
 
             {/* ============ HEADER ============ */}
-            <div className={`sticky top-0 z-40 backdrop-blur-2xl border-b shadow-sm ${isDarkMode ? 'bg-dark-bg/70 border-white/5' : 'bg-white/70 border-slate-200/60'}`}>
-                <div className="max-w-[98%] lg:max-w-6xl mx-auto px-4 sm:px-6">
-                    <div className="flex items-center justify-between py-3">
+            <div className={`shrink-0 z-40 border-b ${isDarkMode
+                ? 'bg-[#0f1221]/90 border-white/[0.06] shadow-black/20 shadow-sm backdrop-blur-xl'
+                : 'bg-white/90 border-slate-200/60 shadow-slate-200/50 shadow-sm backdrop-blur-xl'
+                }`}>
+                <div className="max-w-[98%] lg:max-w-6xl mx-auto px-3 sm:px-6">
+                    <div className="flex items-center justify-between py-2.5 sm:py-3">
 
                         {/* Left: Participant Info */}
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                             {/* Back button (mobile) */}
                             <button
                                 onClick={() => setShowEndModal(true)}
-                                className={`p-2 rounded-xl transition-all sm:hidden ${isDarkMode ? 'hover:bg-white/5 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
+                                className={`p-1.5 rounded-xl transition-all sm:hidden flex-shrink-0 ${isDarkMode ? 'hover:bg-white/5 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
                             >
-                                <ChevronLeft size={18} />
+                                <ChevronLeft size={20} />
                             </button>
 
-                            {/* Avatar */}
+                            {/* Avatar with Role Icon */}
                             <div className="relative flex-shrink-0">
-                                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-bold ${isDarkMode
-                                    ? 'bg-gradient-to-br from-slate-500/20 to-slate-400/20 text-slate-400 border border-slate-500/20'
-                                    : 'bg-gradient-to-br from-slate-50 to-slate-100 text-slate-600 border border-slate-200/50'
+                                <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center text-xs sm:text-sm font-bold shadow-sm ${userType === 'user'
+                                    ? 'bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-indigo-500/30'
+                                    : 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-amber-500/30'
                                     }`}>
                                     {otherInitials}
                                 </div>
-                                {/* Online dot */}
-                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-slate-500 border-2 border-white dark:border-[#080808]" />
+                                {/* Live green dot */}
+                                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-emerald-400 border-2 border-white dark:border-[#0d0d14] shadow-sm shadow-emerald-400/50" />
                             </div>
 
                             {/* Name & Status */}
                             <div className="min-w-0">
-                                <h3 className={`text-[13px] font-bold tracking-tight truncate ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
+                                <h3 className={`text-[13px] sm:text-[14px] font-bold tracking-tight truncate ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
                                     {otherName}
                                 </h3>
-                                <div className="flex items-center gap-1.5">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-pulse" />
-                                    <span className={`text-[9px] font-semibold uppercase tracking-[0.15em] ${isDarkMode ? 'text-slate-400/70' : 'text-slate-600/70'}`}>
-                                        Online • In Session
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                    <span className={`text-[9px] font-bold uppercase tracking-[0.18em] ${isDarkMode ? 'text-emerald-400/80' : 'text-emerald-600/80'}`}>
+                                        {userType === 'user' ? 'Lawyer' : 'Client'} • In Session
                                     </span>
                                 </div>
                             </div>
@@ -443,6 +589,15 @@ const ConsultationChat = ({
                                     </span>
                                 </div>
                             )}
+
+                            {/* Dark mode toggle */}
+                            <button
+                                onClick={() => dispatch(toggleTheme())}
+                                className={`p-2 rounded-xl transition-all ${isDarkMode ? 'hover:bg-white/8 text-amber-400 hover:text-amber-300' : 'hover:bg-slate-100 text-slate-500 hover:text-slate-700'}`}
+                                title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                            >
+                                {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+                            </button>
 
                             {/* End Session */}
                             <button
@@ -495,451 +650,584 @@ const ConsultationChat = ({
             {/* ============ MESSAGES AREA ============ */}
             <div
                 ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto relative scrollbar-hide pb-4 z-10"
+                className="flex-1 overflow-y-auto relative scrollbar-hide z-10"
                 style={{ scrollBehavior: 'smooth' }}
             >
-                <div className="max-w-[95%] lg:max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-4">
+                <div className="w-full max-w-3xl lg:max-w-4xl mx-auto px-6 sm:px-10 pt-6 pb-4 space-y-3">
 
-                    {/* Messages */}
-                    {decryptedMessages.map((msg, index) => {
-                        const isOwnMessage = (userType === 'user' && msg.sender_type === 'user') ||
-                            (userType === 'lawyer' && msg.sender_type === 'lawyer');
-                        const isSystem = msg.sender_type === 'system' || msg.message_type === 'system';
-                        const showDateSep = index === 0 ||
-                            getMessageDate(msg.created_at) !== getMessageDate(decryptedMessages[index - 1]?.created_at);
+                    {/* Messages - filter out reaction-protocol messages */}
+                    {decryptedMessages
+                        .filter(msg => {
+                            const c = msg.content || '';
+                            return !c.startsWith('_REACTION_:') && !c.startsWith('_REACTION_REMOVE_:');
+                        })
+                        .map((msg, index) => {
+                            // Merge: server reactions (from polling) override local optimistic
+                            const mergedReactions = { ...reactions, ...reactionsFromMessages };
+                            const isOwnMessage = (userType === 'user' && msg.sender_type === 'user') ||
+                                (userType === 'lawyer' && msg.sender_type === 'lawyer');
+                            const isSystem = msg.sender_type === 'system' || msg.message_type === 'system';
+                            const showDateSep = index === 0 ||
+                                getMessageDate(msg.created_at) !== getMessageDate(decryptedMessages[index - 1]?.created_at);
 
-                        return (
-                            <React.Fragment key={msg.id || index}>
-                                {/* Date separator */}
-                                {showDateSep && (
-                                    <div className="flex items-center justify-center py-4">
-                                        <div className={`px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? 'bg-white/5 text-slate-500' : 'bg-slate-100 text-slate-400'}`}>
-                                            {getMessageDate(msg.created_at)}
+                            return (
+                                <React.Fragment key={msg.id || index}>
+                                    {/* Date separator */}
+                                    {showDateSep && (
+                                        <div className="flex items-center justify-center py-4">
+                                            <div className={`px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? 'bg-white/5 text-slate-500' : 'bg-slate-100 text-slate-400'}`}>
+                                                {getMessageDate(msg.created_at)}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
-                                {/* System message */}
-                                {isSystem ? (
-                                    <div className="flex justify-center py-2">
-                                        <div className={`px-4 py-1.5 rounded-full text-[10px] font-medium max-w-[80%] text-center ${isDarkMode ? 'bg-white/[0.03] text-slate-500 border border-white/5' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>
-                                            {msg.content}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    /* Regular message */
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.2 }}
-                                        className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} py-1`}
-                                    >
-                                        <div className={`flex items-end gap-2 max-w-[85%] sm:max-w-[70%]`}>
+                                    {/* System message - hide; regular messages below */}
+                                    {!isSystem && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 8 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.18 }}
+                                            className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} py-0.5`}
+                                        >
+                                            <div className={`flex items-end gap-2 max-w-[72%] sm:max-w-[58%]`}>
 
-                                            {/* Avatar (other user only) */}
-                                            {!isOwnMessage && (
-                                                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold mt-auto shadow-sm ${isDarkMode
-                                                    ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'
-                                                    : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'
-                                                    }`}>
-                                                    {otherInitials}
-                                                </div>
-                                            )}
+                                                {/* Avatar (other user only) */}
+                                                {!isOwnMessage && (
+                                                    <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold mt-auto shadow-sm text-white ${userType === 'user'
+                                                        ? 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-amber-500/20'
+                                                        : 'bg-gradient-to-br from-sky-500 to-cyan-600 shadow-sky-500/20'
+                                                        }`}>
+                                                        {otherInitials}
+                                                    </div>
+                                                )}
 
-                                            {/* Message bubble */}
-                                            {(() => {
-                                                const isImage = ['.png', '.jpg', '.jpeg', '.gif', '.webp'].some(ext => msg.file_name?.toLowerCase().endsWith(ext)) || msg.file_type?.startsWith('image/');
-                                                const isOnlyAttachment = msg.message_type === 'file' && (!msg.content || msg.content.startsWith('Sent a file:') || msg.content.includes('.webm') || msg.content.trim() === '');
-                                                return (
-                                                    <div className={`group relative ${isOnlyAttachment && isImage ? 'p-0' : isOnlyAttachment ? 'p-0.5' : 'px-4 py-2.5 shadow-md'} ${isOwnMessage
-                                                        ? (isOnlyAttachment && isImage ? '' : isOnlyAttachment ? 'bg-gradient-to-r from-[#ff007f] to-[#ff4d4d]' : 'bg-gradient-to-r from-[#ff007f] to-[#ff4d4d] text-white rounded-[2rem] rounded-br-[6px] shadow-pink-500/20')
-                                                        : (isOnlyAttachment && isImage ? '' : isOnlyAttachment ? isDarkMode ? 'bg-[#2a2a2a]' : 'bg-white' : isDarkMode
-                                                            ? 'bg-[#2a2a2a] text-slate-200 rounded-[2rem] rounded-bl-[6px] shadow-black/20'
-                                                            : 'bg-white text-slate-800 shadow-slate-200/50 rounded-[2rem] rounded-bl-[6px]')
-                                                        } ${isOnlyAttachment && !isImage ? 'rounded-full' : ''}`}>
-                                                        {/* File/Audio attachment */}
-                                                        {msg.message_type === 'file' && msg.file_name && (
-                                                            ['.webm', '.mp3', '.m4a', '.wav', '.ogg'].some(ext => msg.file_name.toLowerCase().endsWith(ext)) || msg.file_type?.startsWith('audio/') ? (
-                                                                <div className={`mt-0.5 px-3 py-1.5 ${(!isOnlyAttachment) ? (isOwnMessage ? 'bg-white/20 rounded-full' : isDarkMode ? 'bg-white/5 rounded-full' : 'bg-slate-100 rounded-full') : ''}`}>
-                                                                    <CustomAudioPlayer src={msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`} isDarkMode={isDarkMode} isOwnMessage={isOwnMessage} />
-                                                                </div>
-                                                            ) : isImage ? (
-                                                                <div className={`relative overflow-hidden group/img ${isOwnMessage ? 'rounded-[2rem] rounded-br-[6px]' : 'rounded-[2rem] rounded-bl-[6px]'} bg-slate-100 dark:bg-slate-800`}>
-                                                                    <img src={msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`} alt="attachment" className="max-w-[220px] max-h-[220px] w-auto h-auto object-cover" />
-                                                                    <a href={msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`} target="_blank" rel="noreferrer" download={msg.file_name} className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                                                                        <Download className="text-white w-8 h-8" />
-                                                                    </a>
-                                                                </div>
-                                                            ) : (
-                                                                <div className={`flex items-center gap-2.5 rounded-[1.5rem] px-4 py-2.5 shadow-sm ${(!isOnlyAttachment) ? (isOwnMessage ? 'bg-white/20' : isDarkMode ? 'bg-white/5' : 'bg-slate-100') : ''}`}>
-                                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isOwnMessage ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-400'}`}>
-                                                                        <File size={14} />
+                                                {/* Message bubble */}
+                                                {(() => {
+                                                    const isImage = ['.png', '.jpg', '.jpeg', '.gif', '.webp'].some(ext => msg.file_name?.toLowerCase().endsWith(ext)) || msg.file_type?.startsWith('image/');
+                                                    const isOnlyAttachment = msg.message_type === 'file' && (!msg.content || msg.content.startsWith('Sent a file:') || msg.content.includes('.webm') || msg.content.includes('.mp4') || msg.content.includes('.ogg') || msg.content.trim() === '');
+                                                    return (
+                                                        <div className={`group relative ${isOnlyAttachment
+                                                            ? 'p-0 bg-transparent shadow-none'
+                                                            : `px-4 py-2.5 ${isOwnMessage
+                                                                ? 'bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 text-white rounded-[1.2rem] rounded-br-[4px] shadow-lg shadow-indigo-500/20'
+                                                                : isDarkMode
+                                                                    ? 'bg-white/[0.08] text-slate-100 rounded-[1.2rem] rounded-bl-[4px] shadow-sm border border-white/[0.08]'
+                                                                    : 'bg-white text-slate-800 shadow-sm rounded-[1.2rem] rounded-bl-[4px] border border-slate-100'
+                                                            }`
+                                                            }`}>
+                                                            {/* File/Audio attachment */}
+                                                            {msg.message_type === 'file' && msg.file_name && (
+                                                                ['.webm', '.mp3', '.m4a', '.wav', '.ogg', '.mp4'].some(ext => msg.file_name.toLowerCase().endsWith(ext)) || msg.file_type?.startsWith('audio/') ? (
+                                                                    <div className={`flex items-center rounded-2xl overflow-hidden ${isOnlyAttachment
+                                                                        ? isDarkMode
+                                                                            ? 'bg-white/[0.08] border border-white/[0.08] px-3 py-2'
+                                                                            : 'bg-white shadow-sm border border-slate-100 px-3 py-2'
+                                                                        : 'bg-black/15 px-2 py-1.5'
+                                                                        }`}>
+                                                                        <CustomAudioPlayer src={msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`} isDarkMode={isDarkMode} isOwnMessage={isOwnMessage} />
                                                                     </div>
-                                                                    <div className="flex-1 min-w-0 pr-2">
-                                                                        <div className={`text-[12px] font-semibold truncate ${isOwnMessage ? 'text-white' : isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
-                                                                            {msg.file_name}
-                                                                        </div>
-                                                                        <div className={`text-[9px] uppercase tracking-widest mt-0.5 ${isOwnMessage ? 'text-white/80' : isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                                                                            FILE
-                                                                        </div>
-                                                                    </div>
-                                                                    <a
-                                                                        href={msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`}
-                                                                        target="_blank"
-                                                                        rel="noreferrer"
-                                                                        className={`flex-shrink-0 p-1.5 rounded-full transition-colors ${isOwnMessage ? 'hover:bg-white/20 text-white' : 'hover:bg-slate-200 text-slate-600 dark:hover:bg-white/10'}`}
-                                                                        download={msg.file_name}
+                                                                ) : isImage ? (
+                                                                    <div className={`relative overflow-hidden group/img cursor-pointer ${isOwnMessage ? 'rounded-[2rem] rounded-br-[6px]' : 'rounded-[2rem] rounded-bl-[6px]'} bg-slate-100 dark:bg-slate-800 border ${isDarkMode ? 'border-white/10' : 'border-slate-200'} shadow-sm`}
+                                                                        onClick={() => setPreviewFile({ url: msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`, name: msg.file_name, type: 'image' })}
                                                                     >
-                                                                        <Download size={14} />
-                                                                    </a>
-                                                                </div>
-                                                            )
-                                                        )}
-
-                                                        {/* Text content */}
-                                                        {msg.content && msg.message_type !== 'file' && (
-                                                            <p className="text-[14px] sm:text-[13px] leading-relaxed whitespace-pre-wrap break-words">
-                                                                {msg.content}
-                                                            </p>
-                                                        )}
-                                                        {msg.content && msg.message_type === 'file' && !msg.content.startsWith('Sent a file:') && !msg.content.includes('.webm') && (
-                                                            <p className="text-[14px] sm:text-[13px] leading-relaxed whitespace-pre-wrap break-words mt-1">
-                                                                {msg.content}
-                                                            </p>
-                                                        )}
-
-                                                        {/* Reactions & Info */}
-                                                        <div className={`flex items-center gap-1.5 ${isOnlyAttachment ? 'absolute -bottom-5 right-2' : 'relative mt-2'} ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-
-                                                            {/* Reaction Button Hover */}
-                                                            <button
-                                                                onClick={() => setActiveReactionMessageId(activeReactionMessageId === msg.id ? null : msg.id)}
-                                                                className={`absolute ${isOwnMessage ? '-left-8' : '-right-8'} top-1/2 -translate-y-1/2 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-md shadow-sm border z-10 ${isDarkMode ? 'bg-[#2a2a2a]/80 border-white/10 hover:bg-[#333]' : 'bg-white/80 border-slate-200 hover:bg-slate-50'}`}
-                                                            >
-                                                                <Smile size={16} className={isDarkMode ? 'text-slate-300' : 'text-slate-500'} />
-                                                            </button>
-
-                                                            {/* Reaction Picker */}
-                                                            <AnimatePresence>
-                                                                {activeReactionMessageId === msg.id && (
-                                                                    <motion.div
-                                                                        initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                                        exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                                                                        className={`absolute bottom-[110%] mb-1 ${isOwnMessage ? 'right-0' : 'left-0'} z-50 flex gap-1 p-1.5 rounded-full shadow-2xl border ${isDarkMode ? 'bg-[#1e1e1e] border-white/10' : 'bg-white border-slate-200'}`}
-                                                                    >
-                                                                        {QUICK_EMOJIS.map(emoji => (
+                                                                        <img src={msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`} alt="attachment" className="max-w-[220px] max-h-[220px] w-auto h-auto object-cover block" />
+                                                                        {/* Hover overlay */}
+                                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                                                                            <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                                                                                <ZoomIn className="text-white" size={16} />
+                                                                            </div>
                                                                             <button
-                                                                                key={emoji}
-                                                                                onClick={(e) => handleAddReaction(msg.id, emoji, e)}
-                                                                                className="w-8 h-8 flex items-center justify-center text-lg rounded-full hover:bg-slate-500/20 hover:scale-110 active:scale-95 transition-all"
+                                                                                type="button"
+                                                                                onClick={(e) => { e.stopPropagation(); downloadFile(msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`, msg.file_name); }}
+                                                                                className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm hover:bg-white/40 transition-colors"
                                                                             >
-                                                                                {emoji}
+                                                                                <Download className="text-white" size={16} />
                                                                             </button>
-                                                                        ))}
+                                                                        </div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 border ${isDarkMode
+                                                                        ? 'border-white/[0.08] bg-white/[0.06]'
+                                                                        : 'border-slate-200 bg-white shadow-sm'
+                                                                        }`}>
+                                                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isOwnMessage ? 'bg-rose-500/10 text-rose-500' : 'bg-indigo-500/10 text-indigo-500'}`}>
+                                                                            <File size={16} />
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0 pr-2">
+                                                                            <div className={`text-[12px] font-bold truncate ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
+                                                                                {msg.file_name}
+                                                                            </div>
+                                                                            <div className={`text-[9px] uppercase tracking-widest mt-0.5 ${isOwnMessage ? 'text-white/80' : isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                                                                                FILE
+                                                                            </div>
+                                                                        </div>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => downloadFile(msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`, msg.file_name)}
+                                                                            className={`flex-shrink-0 p-2 rounded-xl transition-all ${isOwnMessage ? 'hover:bg-white/20 text-white/80 hover:text-white' : isDarkMode ? 'hover:bg-white/10 text-slate-400 hover:text-slate-200' : 'hover:bg-slate-100 text-slate-500 hover:text-slate-700'}`}
+                                                                            title="Download"
+                                                                        >
+                                                                            <Download size={14} />
+                                                                        </button>
+                                                                    </div>
+                                                                )
+                                                            )}
+
+                                                            {/* Text content */}
+                                                            {msg.content && msg.message_type !== 'file' && (
+                                                                <p className="text-[14px] sm:text-[13px] leading-relaxed whitespace-pre-wrap break-words">
+                                                                    {msg.content}
+                                                                </p>
+                                                            )}
+                                                            {msg.content && msg.message_type === 'file' && !msg.content.startsWith('Sent a file:') && !msg.content.includes('.webm') && (
+                                                                <p className="text-[14px] sm:text-[13px] leading-relaxed whitespace-pre-wrap break-words mt-1">
+                                                                    {msg.content}
+                                                                </p>
+                                                            )}
+
+                                                            {/* Reactions & Info */}
+                                                            <div className={`flex items-center gap-1.5 ${isOnlyAttachment ? 'absolute -bottom-5 right-2' : 'relative mt-2'} ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+
+                                                                {/* Reaction trigger — only for opponent's messages */}
+                                                                {!isOwnMessage && (
+                                                                    <button
+                                                                        onClick={() => setActiveReactionMessageId(activeReactionMessageId === msg.id ? null : msg.id)}
+                                                                        className={`absolute -right-9 top-[-6px] p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-150 backdrop-blur-md shadow-md border z-10 ${isDarkMode ? 'bg-[#252530]/90 border-white/10 hover:bg-[#2e2e3a]' : 'bg-white/90 border-slate-200/80 hover:bg-slate-50'}`}
+                                                                    >
+                                                                        <Smile size={14} className={isDarkMode ? 'text-slate-300' : 'text-slate-500'} />
+                                                                    </button>
+                                                                )}
+
+                                                                {/* Reaction Picker - always floats above the bottom of the bubble */}
+                                                                <AnimatePresence>
+                                                                    {activeReactionMessageId === msg.id && (
+                                                                        <motion.div
+                                                                            initial={{ opacity: 0, scale: 0.85, y: 8 }}
+                                                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                            exit={{ opacity: 0, scale: 0.85, y: 8 }}
+                                                                            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                                                                            className={`absolute bottom-[110%] mb-2 ${isOwnMessage ? 'right-0' : 'left-0'} z-50 flex gap-0.5 p-1.5 rounded-full shadow-2xl border ${isDarkMode ? 'bg-[#18181f] border-white/10' : 'bg-white border-slate-200/80'}`}
+                                                                        >
+                                                                            {QUICK_EMOJIS.map((emoji, ei) => (
+                                                                                <motion.button
+                                                                                    key={emoji}
+                                                                                    initial={{ opacity: 0, scale: 0.5 }}
+                                                                                    animate={{ opacity: 1, scale: 1 }}
+                                                                                    transition={{ delay: ei * 0.04 }}
+                                                                                    onClick={(e) => handleAddReaction(msg.id, emoji, e)}
+                                                                                    className={`w-8 h-8 flex items-center justify-center text-base rounded-full transition-all hover:scale-125 active:scale-95 ${mergedReactions[msg.id] === emoji ? 'bg-indigo-500/20 scale-110' : 'hover:bg-slate-100 dark:hover:bg-white/10'
+                                                                                        }`}
+                                                                                >
+                                                                                    {emoji}
+                                                                                </motion.button>
+                                                                            ))}
+                                                                        </motion.div>
+                                                                    )}
+                                                                </AnimatePresence>
+
+                                                                {/* Reaction badge - bottom-right corner, synced from both sides */}
+                                                                {mergedReactions[msg.id] && (
+                                                                    <motion.div
+                                                                        initial={{ scale: 0, opacity: 0 }}
+                                                                        animate={{ scale: 1, opacity: 1 }}
+                                                                        className={`absolute -bottom-5 right-3 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full shadow-md border z-20 cursor-pointer ${isDarkMode ? 'bg-[#1e1e2a] border-white/10' : 'bg-white border-slate-200'}`}
+                                                                        onClick={(e) => handleAddReaction(msg.id, mergedReactions[msg.id], e)}
+                                                                    >
+                                                                        <span className="text-[13px] leading-none">{mergedReactions[msg.id]}</span>
                                                                     </motion.div>
                                                                 )}
-                                                            </AnimatePresence>
 
-                                                            {/* Active Reactions */}
-                                                            {(reactions[msg.id] && reactions[msg.id].length > 0) && (
-                                                                <div className={`absolute ${isOnlyAttachment ? 'bottom-0' : '-bottom-6'} ${isOwnMessage ? 'right-4' : 'left-4'} flex -space-x-1 p-0.5 rounded-full shadow-sm border backdrop-blur-xl z-20 ${isDarkMode ? 'bg-[#1a1a1a] border-white/10' : 'bg-white border-slate-200'}`}>
-                                                                    {reactions[msg.id].map(emoji => (
-                                                                        <div key={emoji} onClick={(e) => handleAddReaction(msg.id, emoji, e)} className="w-5 h-5 flex items-center justify-center text-[10px] rounded-full bg-slate-500/10 cursor-pointer hover:bg-slate-500/30 transition-colors">
-                                                                            {emoji}
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-
-                                                            {!isOnlyAttachment && (
-                                                                <>
-                                                                    <span className={`text-[10px] font-semibold tracking-wide ${isOwnMessage ? 'text-white/70' : isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                                                                        {formatMessageTime(msg.created_at)}
-                                                                    </span>
-                                                                    {isOwnMessage && (
-                                                                        msg.is_read
-                                                                            ? <CheckCheck size={14} className="text-emerald-400 drop-shadow-[0_0_2px_rgba(52,211,153,0.5)]" />
-                                                                            : (msg.id ? <CheckCheck size={14} className="text-white/60" /> : <Check size={12} className="text-white/40" />)
-                                                                    )}
-                                                                </>
-                                                            )}
+                                                                {!isOnlyAttachment && (
+                                                                    <>
+                                                                        <span className={`text-[10px] font-medium tracking-wide ${isOwnMessage ? 'text-white/60' : isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                                                                            {formatMessageTime(msg.created_at)}
+                                                                        </span>
+                                                                        {isOwnMessage && (
+                                                                            msg.is_read
+                                                                                ? <CheckCheck size={13} className="text-emerald-300 drop-shadow-[0_0_3px_rgba(52,211,153,0.6)]" />
+                                                                                : (msg.id ? <CheckCheck size={13} className="text-white/50" /> : <Check size={11} className="text-white/35" />)
+                                                                        )}
+                                                                    </>
+                                                                )}
+                                                            </div>
                                                         </div>
+                                                    );
+                                                })()}
+
+                                                {/* Own Avatar */}
+                                                {isOwnMessage && (
+                                                    <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold mt-auto shadow-sm text-white ${userType === 'user'
+                                                        ? 'bg-gradient-to-br from-indigo-500 to-violet-600 shadow-indigo-500/20'
+                                                        : 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-amber-500/20'
+                                                        }`}>
+                                                        {userType === 'user' ? <User size={12} /> : <Scale size={11} />}
                                                     </div>
-                                                );
-                                            })()}
+                                                )}
 
-                                            {/* Own Avatar */}
-                                            {isOwnMessage && (
-                                                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold mt-auto shadow-sm shadow-pink-500/20 text-white bg-gradient-to-br from-[#ff007f] to-[#ff4d4d]`}>
-                                                    {userType === 'user' ? 'U' : 'L'}
-                                                </div>
-                                            )}
-
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </React.Fragment>
-                        );
-                    })}
+                                            </div>
+                                        </motion.div>
+                                    )
+                                    }
+                                </React.Fragment>
+                            );
+                        })}
 
                     {/* Scroll anchor */}
                     <div ref={messagesEndRef} />
                 </div>
-
-                {/* Scroll to bottom button */}
-                <AnimatePresence>
-                    {showScrollBtn && (
-                        <motion.button
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            onClick={() => scrollToBottom()}
-                            className={`fixed bottom-24 right-4 sm:right-8 p-3 rounded-full shadow-lg transition-all z-30 ${isDarkMode
-                                ? 'bg-white/10 hover:bg-white/15 text-white backdrop-blur-sm border border-white/10'
-                                : 'bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 shadow-xl'
-                                }`}
-                        >
-                            <ArrowDown size={16} />
-                        </motion.button>
-                    )}
-                </AnimatePresence>
             </div>
 
-            {/* ============ INPUT AREA ============ */}
-            <div className="sticky bottom-0 z-30 pb-4 pt-1 bg-transparent">
-                <div className="max-w-3xl mx-auto px-2 sm:px-4">
+            {/* ============ INPUT AREA — seamless with page bg ============ */}
+            <div className={`shrink-0 w-full z-30 pb-safe pb-4 sm:pb-6 pt-2 mt-auto ${isDarkMode ? 'bg-[#0f1221]' : 'bg-[#f4f7fb]'}`}>
+                <div className="w-full max-w-2xl lg:max-w-3xl mx-auto px-3 sm:px-5">
 
-                    {/* Selected file preview */}
+                    {/* ─── Previews above input card ─── */}
                     <AnimatePresence>
+
+                        {/* File / Image preview chip */}
                         {selectedFile && !audioPreviewUrl && (
                             <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                className="mb-3"
+                                key="file-preview"
+                                initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                                transition={{ duration: 0.18 }}
+                                className="mb-2.5"
                             >
-                                <div className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl w-max max-w-sm ${isDarkMode ? 'bg-dark-bg-secondary border border-white/10' : 'bg-white border border-slate-200 shadow-sm'}`}>
+                                <div className={`flex items-center gap-2.5 px-3 py-2 rounded-2xl max-w-full ${isDarkMode
+                                    ? 'bg-white/[0.06] border border-white/[0.07]'
+                                    : 'bg-slate-50 border border-slate-200/70'
+                                    }`}>
+                                    {/* Thumbnail or icon */}
                                     {selectedFile.type.startsWith('image/') ? (
-                                        <div className="relative w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-white/10">
+                                        <div className="relative w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 shadow-sm">
                                             <img src={URL.createObjectURL(selectedFile)} alt="preview" className="w-full h-full object-cover" />
                                         </div>
                                     ) : (
-                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDarkMode ? 'bg-slate-500/10' : 'bg-slate-50'}`}>
-                                            <File size={16} className="text-slate-500" />
+                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${isDarkMode ? 'bg-indigo-500/15' : 'bg-indigo-50'
+                                            }`}>
+                                            <File size={15} className="text-indigo-500" />
                                         </div>
                                     )}
-                                    <div className="flex-1 min-w-0 pr-4">
-                                        <div className={`text-[12px] font-bold truncate ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
-                                            {selectedFile.name}
-                                        </div>
-                                        <div className={`text-[10px] font-semibold mt-0.5 uppercase tracking-wider ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                                            {(selectedFile.size / 1024).toFixed(1)} KB
+                                    {/* Name + size */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className={`text-[12px] font-semibold truncate leading-snug ${isDarkMode ? 'text-slate-200' : 'text-slate-700'
+                                            }`}>{selectedFile.name}</div>
+                                        <div className={`text-[10px] mt-0.5 ${isDarkMode ? 'text-slate-600' : 'text-slate-400'
+                                            }`}>{(selectedFile.size / 1024).toFixed(1)} KB
+                                            {selectedFile.type.startsWith('image/') && ' · Image'}
                                         </div>
                                     </div>
-                                    <button onClick={() => setSelectedFile(null)} className={`p-1.5 rounded-lg transition-all ${isDarkMode ? 'hover:bg-white/10 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
-                                        <X size={14} />
-                                    </button>
-                                </div>
-                            </motion.div>
-                        )}
-
-                        {audioPreviewUrl && (
-                            <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                className="mb-3"
-                            >
-                                <div className={`flex items-center gap-3 px-3 py-2 rounded-[1.2rem] w-max max-w-sm ${isDarkMode ? 'bg-[#2a2a2a] shadow-sm' : 'bg-slate-100 shadow-sm'}`}>
-                                    <CustomAudioPlayer src={audioPreviewUrl} isDarkMode={isDarkMode} isOwnMessage={false} />
-                                    <button onClick={() => { setAudioPreviewUrl(null); setSelectedFile(null); }} className="p-1.5 rounded-full hover:bg-rose-500/10 transition-colors">
-                                        <Trash2 size={16} className="text-rose-500" />
-                                    </button>
-                                </div>
-                            </motion.div>
-                        )}
-
-                        {isRecording && (
-                            <motion.div
-                                initial={{ height: 0, opacity: 0, y: 10 }}
-                                animate={{ height: 'auto', opacity: 1, y: 0 }}
-                                exit={{ height: 0, opacity: 0, y: 10 }}
-                                className="mb-3"
-                            >
-                                <div className={`flex items-center justify-between px-4 py-2 rounded-[1.5rem] ${isDarkMode ? 'bg-[#1e1e1e] shadow-lg border border-white/5' : 'bg-white shadow-lg border border-slate-100'}`}>
-                                    <button onClick={() => { stopRecording(); setAudioPreviewUrl(null); setSelectedFile(null); }} className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-full transition-colors flex items-center gap-2">
-                                        <Trash2 size={18} />
-                                    </button>
-                                    <div className="flex items-center gap-2.5 animate-pulse">
-                                        <div className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
-                                        <span className={`text-[13px] font-mono tracking-wide ${isDarkMode ? 'text-rose-400' : 'text-rose-600'}`}>
-                                            00:{String(recordingTime).padStart(2, '0')}
-                                        </span>
-                                    </div>
-                                    <button onClick={() => { autoSendRef.current = true; stopRecording(); }} className="w-9 h-9 flex items-center justify-center bg-emerald-500 text-white rounded-full shadow-md hover:bg-emerald-600 hover:scale-105 active:scale-95 transition-all">
-                                        <Send size={14} className="translate-x-[1px]" fill="currentColor" />
-                                    </button>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* Input row */}
-                    <div className={`flex items-end gap-1 p-1 rounded-[1.5rem] transition-all duration-300 ${isDarkMode
-                        ? 'bg-[#1e1e24] shadow-lg'
-                        : 'bg-[#f0f2f5] shadow-sm'}`}>
-
-                        {/* Attach button */}
-                        <div className="relative">
-                            <button
-                                onClick={() => setShowAttachMenu(!showAttachMenu)}
-                                className={`p-2.5 rounded-full transition-all flex-shrink-0 ${isDarkMode
-                                    ? 'hover:bg-white/10 text-slate-400 hover:text-white'
-                                    : 'hover:bg-slate-200 text-slate-500 hover:text-slate-700'
-                                    }`}
-                            >
-                                <Paperclip size={18} />
-                            </button>
-
-                            {/* Attach menu */}
-                            <AnimatePresence>
-                                {showAttachMenu && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        className={`absolute bottom-14 left-0 p-2 rounded-2xl border shadow-xl z-50 min-w-[160px] ${isDarkMode
-                                            ? 'bg-dark-bg-secondary border-white/10'
-                                            : 'bg-white border-slate-200'
+                                    {/* Remove */}
+                                    <button
+                                        type="button"
+                                        onClick={() => { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; if (imageInputRef.current) imageInputRef.current.value = ''; }}
+                                        className={`w-7 h-7 flex items-center justify-center rounded-full flex-shrink-0 transition-all ${isDarkMode ? 'hover:bg-white/10 text-slate-500 hover:text-slate-200' : 'hover:bg-slate-200 text-slate-400 hover:text-slate-700'
                                             }`}
                                     >
-                                        <button
-                                            onClick={() => {
-                                                fileInputRef.current?.click();
-                                            }}
-                                            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-[12px] font-bold transition-all ${isDarkMode
-                                                ? 'hover:bg-white/5 text-slate-300'
-                                                : 'hover:bg-slate-50 text-slate-700'
-                                                }`}
-                                        >
-                                            <File size={16} className="text-slate-500" />
-                                            Document
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                fileInputRef.current?.click();
-                                            }}
-                                            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-[12px] font-bold transition-all ${isDarkMode
-                                                ? 'hover:bg-white/5 text-slate-300'
-                                                : 'hover:bg-slate-50 text-slate-700'
-                                                }`}
-                                        >
-                                            <ImageIcon size={16} className="text-emerald-500" />
-                                            Photo / Image
-                                        </button>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                                        <X size={13} />
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
 
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                onChange={handleFileSelect}
-                                className="hidden"
-                                accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.webp"
-                            />
-                        </div>
-
-                        {/* Emoji button */}
-                        <div className="relative">
-                            <button
-                                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                className={`p-2.5 rounded-full transition-all hidden sm:flex flex-shrink-0 ${isDarkMode
-                                    ? 'hover:bg-white/10 text-slate-400 hover:text-white'
-                                    : 'hover:bg-slate-200 text-slate-500 hover:text-slate-700'}`}
+                        {/* Voice note recorded preview — swipe left to cancel, swipe right (or tap send) to send */}
+                        {audioPreviewUrl && (
+                            <motion.div
+                                key="audio-preview"
+                                initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                                transition={{ duration: 0.18 }}
+                                className="mb-2.5"
                             >
-                                <Smile size={18} />
-                            </button>
-
-                            <AnimatePresence>
-                                {showEmojiPicker && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                        className={`absolute bottom-14 left-0 p-3 rounded-2xl border shadow-2xl z-50 w-64 ${isDarkMode ? 'bg-dark-bg-secondary border-white/10' : 'bg-white border-slate-200'}`}
+                                <div className={`flex items-center gap-2 px-3 py-2.5 rounded-2xl ${isDarkMode
+                                    ? 'bg-white/[0.06] border border-white/[0.07]'
+                                    : 'bg-slate-50 border border-slate-200/70'
+                                    }`}>
+                                    {/* Mic badge */}
+                                    <div className="w-8 h-8 rounded-xl bg-rose-500/15 flex items-center justify-center flex-shrink-0">
+                                        <Mic size={14} className="text-rose-500" />
+                                    </div>
+                                    {/* Player */}
+                                    <div className="flex-1 min-w-0">
+                                        <CustomAudioPlayer src={audioPreviewUrl} isDarkMode={isDarkMode} isOwnMessage={false} />
+                                    </div>
+                                    {/* Discard */}
+                                    <button
+                                        type="button"
+                                        onClick={() => { setAudioPreviewUrl(null); setSelectedFile(null); setAudioBlob(null); }}
+                                        className={`w-7 h-7 flex items-center justify-center rounded-full flex-shrink-0 transition-all ${isDarkMode ? 'hover:bg-rose-500/15 text-slate-500 hover:text-rose-400' : 'hover:bg-rose-50 text-slate-400 hover:text-rose-500'
+                                            }`}
+                                        title="Discard voice note"
                                     >
-                                        <div className="grid grid-cols-4 gap-2">
-                                            {emojis.map((emoji, index) => (
-                                                <button
-                                                    key={index}
-                                                    onClick={() => { handleEmojiClick(emoji); setShowEmojiPicker(false); }}
-                                                    className="w-10 h-10 flex items-center justify-center text-xl rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
-                                                >
-                                                    {emoji}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
+                                        <Trash2 size={13} />
+                                    </button>
+                                    {/* Send now */}
+                                    <button
+                                        type="button"
+                                        onClick={handleSend}
+                                        disabled={sending}
+                                        className="w-8 h-8 flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm shadow-indigo-500/30 hover:scale-105 active:scale-95 transition-all flex-shrink-0"
+                                        title="Send voice note"
+                                    >
+                                        {sending ? <Loader size={13} className="animate-spin" /> : <Send size={13} fill="currentColor" />}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
 
-                        {/* Text input */}
-                        <div className="flex-1 relative">
+                        {/* Recording-in-progress indicator */}
+                        {isRecording && (
+                            <motion.div
+                                key="recording"
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 6 }}
+                                className="mb-2.5"
+                            >
+                                <div className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl ${isDarkMode ? 'bg-rose-500/8 border border-rose-500/15' : 'bg-rose-50 border border-rose-100'
+                                    }`}>
+                                    {/* Ping dot */}
+                                    <div className="w-2 h-2 rounded-full bg-rose-500 animate-ping flex-shrink-0" />
+                                    {/* Waveform */}
+                                    <div className="flex items-center gap-[3px] flex-1">
+                                        {[0.4, 0.8, 1, 0.6, 0.9, 0.5, 0.7, 1, 0.6].map((h, i) => (
+                                            <div key={i} className="w-[3px] rounded-full bg-rose-400" style={{
+                                                height: `${h * 16}px`,
+                                                animation: `pulse ${0.5 + i * 0.08}s ease-in-out infinite alternate`,
+                                            }} />
+                                        ))}
+                                    </div>
+                                    {/* Timer */}
+                                    <span className={`text-[12px] font-mono font-bold tabular-nums flex-shrink-0 ${isDarkMode ? 'text-rose-400' : 'text-rose-600'
+                                        }`}>0:{String(recordingTime).padStart(2, '0')}</span>
+                                    {/* Cancel */}
+                                    <button type="button" onClick={() => { autoSendRef.current = false; stopRecording(); setAudioBlob(null); setAudioPreviewUrl(null); setSelectedFile(null); }}
+                                        className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-lg flex-shrink-0 ${isDarkMode ? 'text-slate-500 hover:text-rose-400 hover:bg-rose-500/10' : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50'
+                                            } transition-all`}
+                                    >Cancel</button>
+                                </div>
+                            </motion.div>
+                        )}
+
+                    </AnimatePresence>
+
+
+                    {/* ── Input Card — unified bg, single row ── */}
+                    <motion.div
+                        layout
+                        className={`relative rounded-2xl transition-all duration-200 ${isDarkMode
+                            ? 'bg-[#1a1a2e] border border-white/[0.09] shadow-[0_4px_32px_rgba(0,0,0,0.45)]'
+                            : 'bg-white border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.07)]'
+                            }`}
+                    >
+                        {/* Sending progress stripe */}
+                        {sending && (
+                            <div className="absolute top-0 left-0 right-0 h-[2px] overflow-hidden z-50 rounded-t-2xl">
+                                <div className="h-full bg-gradient-to-r from-indigo-500 via-violet-400 to-indigo-500 animate-[pulse_0.9s_ease-in-out_infinite]" />
+                            </div>
+                        )}
+
+                        {/* ── Single Row ── */}
+                        <div className="flex items-end gap-1.5 px-2.5 py-2.5">
+
+                            {/* ── Left: Attach + Emoji ── */}
+                            <div className="flex items-center gap-0.5 flex-shrink-0 mb-0.5">
+                                {/* Attach */}
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); setShowAttachMenu(v => !v); setShowEmojiPicker(false); }}
+                                        className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${showAttachMenu
+                                            ? isDarkMode ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-600'
+                                            : isDarkMode ? 'text-slate-500 hover:text-slate-200 hover:bg-white/8' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                                            }`}
+                                        title="Attach file"
+                                    >
+                                        <Paperclip size={16} />
+                                    </button>
+                                    <AnimatePresence>
+                                        {showAttachMenu && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10, scale: 0.93 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: 10, scale: 0.93 }}
+                                                transition={{ duration: 0.15 }}
+                                                className={`absolute bottom-[54px] left-0 p-2 rounded-2xl border shadow-2xl z-[100] min-w-[170px] ${isDarkMode ? 'bg-[#1c1c2e] border-white/10 shadow-black/60' : 'bg-white border-slate-200 shadow-slate-300/40'
+                                                    }`}
+                                            >
+                                                <p className={`text-[9px] font-bold uppercase tracking-widest px-3 pt-1 pb-1.5 ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Attach</p>
+                                                <button type="button" onClick={() => { fileInputRef.current?.click(); setShowAttachMenu(false); }} className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${isDarkMode ? 'hover:bg-white/8 text-slate-200' : 'hover:bg-slate-50 text-slate-700'}`}>
+                                                    <div className="w-7 h-7 rounded-lg bg-indigo-500/15 flex items-center justify-center"><File size={13} className="text-indigo-500" /></div>
+                                                    Document
+                                                </button>
+                                                <button type="button" onClick={() => { imageInputRef.current?.click(); setShowAttachMenu(false); }} className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${isDarkMode ? 'hover:bg-white/8 text-slate-200' : 'hover:bg-slate-50 text-slate-700'}`}>
+                                                    <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center"><ImageIcon size={13} className="text-emerald-500" /></div>
+                                                    Photo
+                                                </button>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                    <input ref={fileInputRef} type="file" onChange={handleFileSelect} className="hidden" accept=".pdf,.doc,.docx,.txt" />
+                                    <input ref={imageInputRef} type="file" onChange={handleFileSelect} className="hidden" accept="image/*" />
+                                </div>
+
+                                {/* Emoji */}
+                                <div className="relative hidden sm:block">
+                                    <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(v => !v); setShowAttachMenu(false); }}
+                                        className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${showEmojiPicker
+                                            ? isDarkMode ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-50 text-amber-500'
+                                            : isDarkMode ? 'text-slate-500 hover:text-slate-200 hover:bg-white/8' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                                            }`}
+                                        title="Emoji"
+                                    >
+                                        <Smile size={16} />
+                                    </button>
+                                    <AnimatePresence>
+                                        {showEmojiPicker && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10, scale: 0.93 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: 10, scale: 0.93 }}
+                                                transition={{ duration: 0.15 }}
+                                                className={`absolute bottom-[54px] left-0 p-3 rounded-2xl border shadow-2xl z-[100] w-64 ${isDarkMode ? 'bg-[#1c1c2e] border-white/10 shadow-black/60' : 'bg-white border-slate-200 shadow-slate-300/40'}`}
+                                            >
+                                                <p className={`text-[9px] font-bold uppercase tracking-widest mb-2 ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Emoji</p>
+                                                <div className="grid grid-cols-6 gap-1">
+                                                    {emojis.map((emoji, index) => (
+                                                        <button key={index} type="button" onClick={() => { handleEmojiClick(emoji); setShowEmojiPicker(false); }}
+                                                            className={`w-9 h-9 flex items-center justify-center text-[18px] rounded-xl transition-all hover:scale-110 ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100'}`}
+                                                        >
+                                                            {emoji}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            </div>
+
+                            {/* ── Center: Auto-growing textarea ── */}
                             <textarea
                                 ref={inputRef}
                                 value={newMessage}
                                 onChange={handleInputChange}
                                 onKeyDown={handleKeyDown}
                                 rows={1}
-                                placeholder="Message securely..."
-                                className={`w-full px-2 py-3 bg-transparent !border-none text-[15px] leading-tight font-normal resize-none scrollbar-hide !focus:ring-0 !focus:outline-none max-h-32 ${isDarkMode
-                                    ? 'text-slate-200 placeholder-slate-500'
-                                    : 'text-slate-800 placeholder-slate-500'
+                                placeholder="Type your message..."
+                                className={`flex-1 bg-transparent outline-none border-none ring-0 text-[14px] leading-relaxed font-medium resize-none scrollbar-hide py-1.5 ${isDarkMode ? 'text-slate-100 placeholder:text-slate-600 caret-indigo-400' : 'text-slate-800 placeholder:text-slate-400/80 caret-indigo-600'
                                     }`}
-                                style={{ minHeight: '44px' }}
+                                style={{ minHeight: '26px', maxHeight: '120px' }}
+                                onClick={() => { setShowAttachMenu(false); setShowEmojiPicker(false); }}
                                 onInput={(e) => {
                                     e.target.style.height = 'auto';
-                                    e.target.style.height = Math.min(e.target.scrollHeight, 128) + 'px';
+                                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
                                 }}
                             />
+
+                            {/* ── Right: Mic (click-toggle) or Send ── */}
+                            <div className="flex-shrink-0 mb-0.5">
+                                {(!newMessage.trim() && !selectedFile) ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (isRecording) {
+                                                autoSendRef.current = true;
+                                                stopRecording();
+                                            } else {
+                                                startRecording();
+                                            }
+                                        }}
+                                        className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${isRecording
+                                            ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30 animate-pulse'
+                                            : isDarkMode
+                                                ? 'bg-white/8 text-slate-400 hover:text-white hover:bg-white/14'
+                                                : 'bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200'
+                                            }`}
+                                        title={isRecording ? 'Stop & Send voice note' : 'Record voice note'}
+                                    >
+                                        <Mic size={17} />
+                                    </button>
+                                ) : (
+                                    <button
+                                        id="hidden_send_btn"
+                                        type="button"
+                                        onClick={handleSend}
+                                        disabled={sending}
+                                        className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${sending
+                                            ? 'bg-indigo-400/60 text-white cursor-not-allowed'
+                                            : 'bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-105 active:scale-95'
+                                            }`}
+                                    >
+                                        {sending ? <Loader size={15} className="animate-spin" /> : <Send size={15} fill="currentColor" className="translate-x-px" />}
+                                    </button>
+                                )}
+                            </div>
+
                         </div>
+                    </motion.div>
 
-                        {/* Mic or Send button */}
-                        {(!newMessage.trim() && !selectedFile) ? (
-                            <button
-                                onClick={startRecording}
-                                disabled={isRecording}
-                                className={`p-2.5 rounded-full transition-all flex-shrink-0 mr-1 mb-0.5 ${isRecording ? 'opacity-50' : isDarkMode ? 'text-slate-400 hover:bg-white/5 hover:text-slate-200' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-700'}`}
-                            >
-                                <Mic size={20} />
-                            </button>
-                        ) : (
-                            <button
-                                id="hidden_send_btn"
-                                onClick={handleSend}
-                                disabled={sending}
-                                className={`p-2.5 mr-1 mb-0.5 rounded-full transition-all flex-shrink-0 bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 active:scale-95`}
-                            >
-                                {sending ? <Loader size={18} className="animate-spin" /> : <Send size={18} fill="currentColor" className="ml-0.5" />}
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Security footer */}
-                    <div className="flex items-center justify-center gap-1.5 mt-2">
-                        <Lock size={8} className={isDarkMode ? 'text-slate-600' : 'text-slate-300'} />
-                        <span className={`text-[8px] font-semibold uppercase tracking-[0.2em] ${isDarkMode ? 'text-slate-600' : 'text-slate-300'}`}>
+                    {/* E2E label */}
+                    <div className="flex items-center justify-center gap-1.5 mt-2 mb-1">
+                        <Lock size={9} className={isDarkMode ? 'text-emerald-500/50' : 'text-emerald-600/40'} />
+                        <span className={`text-[9px] font-semibold uppercase tracking-widest ${isDarkMode ? 'text-slate-700' : 'text-slate-400'}`}>
                             End-to-end encrypted
                         </span>
+                        <Lock size={9} className={isDarkMode ? 'text-emerald-500/50' : 'text-emerald-600/40'} />
                     </div>
-                </div>
-            </div>
+
+                </div >
+            </div >
+
+            {/* ============ IMAGE PREVIEW LIGHTBOX ============ */}
+            < AnimatePresence >
+                {previewFile && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 backdrop-blur-md p-4"
+                        onClick={() => setPreviewFile(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.92, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.92, opacity: 0 }}
+                            transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="relative max-w-[90vw] max-h-[85vh] flex flex-col items-center gap-3"
+                        >
+                            <div className="w-full flex items-center justify-between px-1">
+                                <span className="text-white/70 text-[12px] font-medium truncate max-w-[60vw]">{previewFile.name}</span>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); downloadFile(previewFile.url, previewFile.name); }}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-[11px] font-semibold transition-all border border-white/20 backdrop-blur-sm"
+                                    >
+                                        <Download size={12} /> Download
+                                    </button>
+                                    <button onClick={() => setPreviewFile(null)} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/15 hover:bg-white/25 text-white transition-all border border-white/20">
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                            <img
+                                src={previewFile.url}
+                                alt={previewFile.name}
+                                className="rounded-2xl max-w-full max-h-[75vh] object-contain shadow-2xl border border-white/10"
+                            />
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence >
 
             {/* ============ END SESSION MODAL ============ */}
-            <AnimatePresence>
+            < AnimatePresence >
                 {showEndModal && (
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -954,7 +1242,7 @@ const ConsultationChat = ({
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             onClick={(e) => e.stopPropagation()}
                             className={`w-full max-w-sm p-6 rounded-[24px] border ${isDarkMode
-                                ? 'bg-dark-bg-secondary border-white/10'
+                                ? 'bg-[#1a1a2e] border-white/10 shadow-2xl shadow-black/60'
                                 : 'bg-white border-slate-200 shadow-2xl'
                                 }`}
                         >
@@ -962,30 +1250,15 @@ const ConsultationChat = ({
                                 <div className={`w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center ${isDarkMode ? 'bg-rose-500/10' : 'bg-rose-50'}`}>
                                     <Phone size={24} className="text-rose-500 rotate-[135deg]" />
                                 </div>
-                                <h3 className={`text-base font-bold tracking-tight mb-1 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>
-                                    End Consultation?
-                                </h3>
+                                <h3 className={`text-base font-bold tracking-tight mb-1 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>End Consultation?</h3>
                                 <p className={`text-xs font-medium mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                                     This will end the session for both participants. Chat history will be saved.
                                 </p>
-
                                 <div className="flex gap-3">
-                                    <button
-                                        onClick={() => setShowEndModal(false)}
-                                        className={`flex-1 py-3 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all ${isDarkMode
-                                            ? 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5'
-                                            : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200'
-                                            }`}
-                                    >
+                                    <button onClick={() => setShowEndModal(false)} className={`flex-1 py-3 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all ${isDarkMode ? 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5' : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200'}`}>
                                         Continue
                                     </button>
-                                    <button
-                                        onClick={() => {
-                                            setShowEndModal(false);
-                                            onEndSession();
-                                        }}
-                                        className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-600 text-white text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-pink-700 active:scale-[0.98] transition-all"
-                                    >
+                                    <button onClick={() => { setShowEndModal(false); onEndSession(); }} className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-600 text-white text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-pink-700 active:scale-[0.98] transition-all">
                                         End Session
                                     </button>
                                 </div>
@@ -993,7 +1266,7 @@ const ConsultationChat = ({
                         </motion.div>
                     </motion.div>
                 )}
-            </AnimatePresence>
+            </AnimatePresence >
         </div >
     );
 };

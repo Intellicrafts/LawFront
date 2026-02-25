@@ -214,6 +214,15 @@ const ConsultationSession = () => {
         };
     }, [timeRemaining, sessionEnded, handleEndSession]);
 
+    /**
+     * Terminate the lobby/session automatically if time ends
+     */
+    useEffect(() => {
+        if (timeRemaining === 0 && !sessionEnded) {
+            handleEndSession('completed');
+        }
+    }, [timeRemaining, sessionEnded, handleEndSession]);
+
     // ==================== RENDER ====================
 
     // Loading state
@@ -326,7 +335,6 @@ const ConsultationSession = () => {
                 timeRemaining={timeRemaining}
                 connectionStatus={connectionStatus}
                 onLeave={() => {
-                    handleEndSession('cancelled');
                     navigate('/legal-consoltation');
                 }}
             />
