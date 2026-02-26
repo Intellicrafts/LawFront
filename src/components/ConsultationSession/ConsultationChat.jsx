@@ -176,8 +176,21 @@ const ConsultationChat = ({
     const [reactions, setReactions] = useState({});
     const [reactionsFromMessages, setReactionsFromMessages] = useState({});
     const [activeReactionMessageId, setActiveReactionMessageId] = useState(null);
-    const QUICK_EMOJIS = ['ðŸ‘', 'â¤ï¸', 'ðŸ˜‚', 'ðŸ˜¯', 'ðŸ™', 'ðŸ‘Ž'];
+    const QUICK_EMOJIS = ['👍', '❤️', '😂', '😮', '🙏', '👎'];
     const [previewFile, setPreviewFile] = useState(null); // { url, name, type }
+
+    // Touch gesture ref for mobile reactions
+    const touchTimerRef = useRef(null);
+    const handleBubbleTouchStart = useCallback((msgId, e) => {
+        if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
+        touchTimerRef.current = setTimeout(() => {
+            setActiveReactionMessageId(msgId);
+            if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(50);
+        }, 400); // 400ms long press
+    }, []);
+    const handleBubbleTouchEnd = useCallback(() => {
+        if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
+    }, []);
 
     // â”€â”€ Smart suggestions state â”€â”€
     const [suggestions, setSuggestions] = useState([]);
@@ -518,12 +531,13 @@ const ConsultationChat = ({
 
             const sentMsg = await onSendMessage(encryptedContent, selectedFile);
 
-            // If the API returns the message with a real ID/URL, map blob â†’ server URL
-            if (sentMsg?.id && blobUrlForThisSend) {
+            // If the API returns the message with a real ID/URL, map blob -> server URL
+            const realId = sentMsg?.data?.id || sentMsg?.id;
+            if (realId && blobUrlForThisSend) {
                 setLocalAudioBlobUrls(prev => {
                     const next = { ...prev };
                     // Keep blob url mapped to the real message id for instant playback
-                    next[String(sentMsg.id)] = blobUrlForThisSend;
+                    next[String(realId)] = blobUrlForThisSend;
                     if (tempVoiceId) delete next[tempVoiceId];
                     return next;
                 });
@@ -534,7 +548,11 @@ const ConsultationChat = ({
             setAudioPreviewUrl(null);
             setAudioBlob(null);
             setShowEmojiPicker(false);
-            inputRef.current?.focus();
+
+            // Reset textarea height physically so it collapses instantly
+            if (inputRef.current) {
+                inputRef.current.style.height = 'auto';
+            }
         } catch (err) {
             console.error('Failed to send message:', err);
         } finally {
@@ -923,15 +941,23 @@ const ConsultationChat = ({
                                                     const isImage = ['.png', '.jpg', '.jpeg', '.gif', '.webp'].some(ext => msg.file_name?.toLowerCase().endsWith(ext)) || msg.file_type?.startsWith('image/');
                                                     const isOnlyAttachment = msg.message_type === 'file' && (!msg.content || msg.content.startsWith('Sent a file:') || msg.content.includes('.webm') || msg.content.includes('.mp4') || msg.content.includes('.ogg') || msg.content.trim() === '');
                                                     return (
-                                                        <div className={`group relative ${isOnlyAttachment
-                                                            ? 'p-0 bg-transparent shadow-none'
-                                                            : `px-4 py-2.5 ${isOwnMessage
-                                                                ? 'bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 text-white rounded-[1.2rem] rounded-br-[4px] shadow-lg shadow-indigo-500/20'
-                                                                : isDarkMode
-                                                                    ? 'bg-white/[0.08] text-slate-100 rounded-[1.2rem] rounded-bl-[4px] shadow-sm border border-white/[0.08]'
-                                                                    : 'bg-white text-slate-800 shadow-sm rounded-[1.2rem] rounded-bl-[4px] border border-slate-100'
-                                                            }`
-                                                            }`}>
+                                                        <div
+                                                            onTouchStart={() => handleBubbleTouchStart(msg.id)}
+                                                            onTouchEnd={handleBubbleTouchEnd}
+                                                            onTouchMove={handleBubbleTouchEnd}
+                                                            onContextMenu={(e) => {
+                                                                // If mobile, prevent default context menu to allow our long press to work perfectly
+                                                                if (window.innerWidth <= 768) e.preventDefault();
+                                                            }}
+                                                            className={`group relative ${isOnlyAttachment
+                                                                ? 'p-0 bg-transparent shadow-none'
+                                                                : `px-4 py-2.5 ${isOwnMessage
+                                                                    ? 'bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 text-white rounded-[1.2rem] rounded-br-[4px] shadow-lg shadow-indigo-500/20'
+                                                                    : isDarkMode
+                                                                        ? 'bg-white/[0.08] text-slate-100 rounded-[1.2rem] rounded-bl-[4px] shadow-sm border border-white/[0.08]'
+                                                                        : 'bg-white text-slate-800 shadow-sm rounded-[1.2rem] rounded-bl-[4px] border border-slate-100'
+                                                                }`
+                                                                }`}>
                                                             {/* File/Audio attachment */}
                                                             {msg.message_type === 'file' && msg.file_name && (
                                                                 ['.webm', '.mp3', '.m4a', '.wav', '.ogg', '.mp4'].some(ext => msg.file_name.toLowerCase().endsWith(ext)) || msg.file_type?.startsWith('audio/') ? (
@@ -1013,15 +1039,13 @@ const ConsultationChat = ({
                                                             {/* Reactions & Info */}
                                                             <div className={`flex items-center gap-1.5 ${isOnlyAttachment ? 'absolute -bottom-5 right-2' : 'relative mt-2'} ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
 
-                                                                {/* Reaction trigger â€” only for opponent's messages */}
-                                                                {!isOwnMessage && (
-                                                                    <button
-                                                                        onClick={() => setActiveReactionMessageId(activeReactionMessageId === msg.id ? null : msg.id)}
-                                                                        className={`absolute -right-9 top-[-6px] p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-150 backdrop-blur-md shadow-md border z-10 ${isDarkMode ? 'bg-[#252530]/90 border-white/10 hover:bg-[#2e2e3a]' : 'bg-white/90 border-slate-200/80 hover:bg-slate-50'}`}
-                                                                    >
-                                                                        <Smile size={14} className={isDarkMode ? 'text-slate-300' : 'text-slate-500'} />
-                                                                    </button>
-                                                                )}
+                                                                {/* Reaction trigger — works for both sides */}
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); setActiveReactionMessageId(activeReactionMessageId === msg.id ? null : msg.id); }}
+                                                                    className={`absolute ${isOwnMessage ? '-left-8 sm:-left-10' : '-right-8 sm:-right-10'} top-1 p-1.5 rounded-full opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 backdrop-blur-md shadow-sm border z-10 ${isDarkMode ? 'bg-[#252530]/90 border-white/10 hover:bg-[#2e2e3a]' : 'bg-white/90 border-slate-200/80 hover:bg-slate-50'}`}
+                                                                >
+                                                                    <Smile size={14} className={isDarkMode ? 'text-slate-300' : 'text-slate-500'} />
+                                                                </button>
 
                                                                 {/* Reaction Picker - always floats above the bottom of the bubble */}
                                                                 <AnimatePresence>
@@ -1031,17 +1055,17 @@ const ConsultationChat = ({
                                                                             animate={{ opacity: 1, scale: 1, y: 0 }}
                                                                             exit={{ opacity: 0, scale: 0.85, y: 8 }}
                                                                             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                                                                            className={`absolute bottom-[110%] mb-2 ${isOwnMessage ? 'right-0' : 'left-0'} z-50 flex gap-0.5 p-1.5 rounded-full shadow-2xl border ${isDarkMode ? 'bg-[#18181f] border-white/10' : 'bg-white border-slate-200/80'}`}
+                                                                            className={`absolute bottom-[110%] mb-2 ${isOwnMessage ? 'right-0' : 'left-0'} z-50 flex gap-1 p-2 rounded-full shadow-2xl border ${isDarkMode ? 'bg-[#18181f]/95 border-white/20 backdrop-blur-xl' : 'bg-white/95 border-slate-200/80 backdrop-blur-xl'}`}
                                                                         >
                                                                             {QUICK_EMOJIS.map((emoji, ei) => (
                                                                                 <motion.button
                                                                                     key={emoji}
-                                                                                    initial={{ opacity: 0, scale: 0.5 }}
-                                                                                    animate={{ opacity: 1, scale: 1 }}
-                                                                                    transition={{ delay: ei * 0.04 }}
-                                                                                    onClick={(e) => handleAddReaction(msg.id, emoji, e)}
-                                                                                    className={`w-8 h-8 flex items-center justify-center text-base rounded-full transition-all hover:scale-125 active:scale-95 ${mergedReactions[msg.id] === emoji ? 'bg-indigo-500/20 scale-110' : 'hover:bg-slate-100 dark:hover:bg-white/10'
-                                                                                        }`}
+                                                                                    initial={{ opacity: 0, scale: 0.2, y: 20 }}
+                                                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                                    transition={{ delay: ei * 0.04, type: 'spring', stiffness: 500 }}
+                                                                                    onClick={(e) => { handleAddReaction(msg.id, emoji, e); setActiveReactionMessageId(null); }}
+                                                                                    whileHover={{ scale: 1.3, y: -4 }}
+                                                                                    className={`w-9 h-9 flex items-center justify-center text-xl rounded-full transition-all active:scale-95 cursor-pointer ${mergedReactions[msg.id] === emoji ? 'bg-indigo-500/20 scale-125' : 'hover:bg-slate-100 dark:hover:bg-white/10'}`}
                                                                                 >
                                                                                     {emoji}
                                                                                 </motion.button>
@@ -1050,16 +1074,21 @@ const ConsultationChat = ({
                                                                     )}
                                                                 </AnimatePresence>
 
-                                                                {/* Reaction badge - bottom-right corner, synced from both sides */}
+                                                                {/* Reaction badge - synced from both sides */}
                                                                 {mergedReactions[msg.id] && (
-                                                                    <motion.div
-                                                                        initial={{ scale: 0, opacity: 0 }}
-                                                                        animate={{ scale: 1, opacity: 1 }}
-                                                                        className={`absolute -bottom-5 right-3 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full shadow-md border z-20 cursor-pointer ${isDarkMode ? 'bg-[#1e1e2a] border-white/10' : 'bg-white border-slate-200'}`}
-                                                                        onClick={(e) => handleAddReaction(msg.id, mergedReactions[msg.id], e)}
-                                                                    >
-                                                                        <span className="text-[13px] leading-none">{mergedReactions[msg.id]}</span>
-                                                                    </motion.div>
+                                                                    <AnimatePresence mode="popLayout">
+                                                                        <motion.div
+                                                                            key={mergedReactions[msg.id]}
+                                                                            initial={{ scale: 0, opacity: 0, rotate: -20, y: 10 }}
+                                                                            animate={{ scale: 1, opacity: 1, rotate: 0, y: 0 }}
+                                                                            exit={{ scale: 0, opacity: 0 }}
+                                                                            transition={{ type: "spring", stiffness: 500, damping: 14 }}
+                                                                            className={`absolute -bottom-5 ${isOwnMessage ? 'left-3' : 'right-3'} flex items-center gap-0.5 px-2 py-1 rounded-full shadow-lg border z-20 cursor-pointer ${isDarkMode ? 'bg-[#1e1e2a] border-white/10' : 'bg-white border-slate-200'}`}
+                                                                            onClick={(e) => { e.stopPropagation(); setActiveReactionMessageId(activeReactionMessageId === msg.id ? null : msg.id); }}
+                                                                        >
+                                                                            <span className="text-[14px] leading-none drop-shadow-sm">{mergedReactions[msg.id]}</span>
+                                                                        </motion.div>
+                                                                    </AnimatePresence>
                                                                 )}
 
                                                                 {!isOnlyAttachment && (
@@ -1356,7 +1385,7 @@ const ConsultationChat = ({
                                 </div>
 
                                 {/* Emoji */}
-                                <div className="relative hidden sm:block">
+                                <div className="relative">
                                     <button
                                         type="button"
                                         onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(v => !v); setShowAttachMenu(false); }}
@@ -1501,6 +1530,8 @@ const ConsultationChat = ({
                                     <button
                                         id="hidden_send_btn"
                                         type="button"
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onTouchStart={(e) => e.preventDefault()}
                                         onClick={handleSend}
                                         disabled={sending}
                                         className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${sending
@@ -1609,4 +1640,5 @@ const ConsultationChat = ({
 };
 
 export default ConsultationChat;
+
 
