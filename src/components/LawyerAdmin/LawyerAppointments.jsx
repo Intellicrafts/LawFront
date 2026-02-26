@@ -48,6 +48,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { consultationAPI, lawyerAPI } from '../../api/apiService';
 import { useToast } from '../../context/ToastContext';
 import Avatar from '../common/Avatar';
+import AppointmentReportModal from '../ConsultationSession/AppointmentReportModal';
 
 // --- Premium UI Components (Synced with LawyerAdmin) ---
 
@@ -184,6 +185,7 @@ const LawyerAppointments = ({ darkMode, initialAppointments = [], userData, acti
   }, [appointments, searchQuery, filterType]);
 
   const [actionLoading, setActionLoading] = useState(null);
+  const [reportAppointment, setReportAppointment] = useState(null); // which apt's report modal is open
 
   const handleStartMeeting = async (aptId) => {
     setActionLoading(aptId);
@@ -366,24 +368,19 @@ const LawyerAppointments = ({ darkMode, initialAppointments = [], userData, acti
                       );
                     } else if (apt.status === 'completed' || isPastEnded) {
                       return (
-                        <button
-                          onClick={() => handleStartMeeting(apt.id)}
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => setReportAppointment(apt)}
                           disabled={actionLoading === apt.id}
-                          className={`flex-1 h-9 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg ${darkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                          className={`flex-1 h-9 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${darkMode
+                            ? 'bg-gradient-to-r from-indigo-500/15 to-violet-500/15 border border-indigo-500/25 text-indigo-300 hover:from-indigo-500/25 hover:to-violet-500/25 shadow-md'
+                            : 'bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 text-indigo-700 hover:from-indigo-100 hover:to-violet-100 shadow-md'
                             }`}
                         >
-                          {actionLoading === apt.id ? (
-                            <>
-                              <RefreshCw size={12} className="animate-spin" />
-                              Loading...
-                            </>
-                          ) : (
-                            <>
-                              <FileText size={12} />
-                              View Report
-                            </>
-                          )}
-                        </button>
+                          <FileText size={12} />
+                          View Report
+                        </motion.button>
                       );
                     } else {
                       return (
@@ -414,6 +411,18 @@ const LawyerAppointments = ({ darkMode, initialAppointments = [], userData, acti
           </div>
         )}
       </div>
+
+      {/* ── Session Report Modal ── */}
+      <AnimatePresence>
+        {reportAppointment && (
+          <AppointmentReportModal
+            appointment={reportAppointment}
+            isDarkMode={darkMode}
+            viewerType="lawyer"
+            onClose={() => setReportAppointment(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

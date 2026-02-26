@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { apiServices, consultationAPI, appointmentAPI } from '../api/apiService';
 import { useToast } from '../context/ToastContext';
+import AppointmentReportModal from './ConsultationSession/AppointmentReportModal';
 import {
     Calendar, Clock, Search, Filter, ArrowLeft,
     Video, Mail, Shield, Hourglass, Briefcase,
@@ -27,6 +27,7 @@ const MyAppointments = ({ onBack }) => {
     const [showFilters, setShowFilters] = useState(false);
     const [joiningId, setJoiningId] = useState(null);
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [reportAppointment, setReportAppointment] = useState(null); // which apt's report modal is open
 
     useEffect(() => {
         const fetchAppointments = async () => {
@@ -509,20 +510,21 @@ const MyAppointments = ({ onBack }) => {
                                                 );
                                             }
 
-                                            // Completed or Past
+                                            // Completed or Past → View Report
                                             if (joinState.state === 'completed' || joinState.state === 'past') {
                                                 return (
-                                                    <button
-                                                        onClick={() => handleJoinConsultation(apt)}
-                                                        disabled={isJoining}
+                                                    <motion.button
+                                                        whileHover={{ scale: 1.02 }}
+                                                        whileTap={{ scale: 0.97 }}
+                                                        onClick={() => setReportAppointment(apt)}
                                                         className={`w-full py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider text-center border flex items-center justify-center gap-2 transition-all ${isDarkMode
-                                                            ? 'bg-slate-800 hover:bg-slate-700 border-white/[0.05] text-slate-300'
-                                                            : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 shadow-sm'
+                                                                ? 'bg-gradient-to-r from-indigo-500/15 to-violet-500/15 border-indigo-500/25 text-indigo-300 hover:from-indigo-500/25 hover:to-violet-500/25'
+                                                                : 'bg-gradient-to-r from-indigo-50 to-violet-50 border-indigo-200 text-indigo-700 hover:from-indigo-100 hover:to-violet-100 shadow-sm'
                                                             }`}
                                                     >
-                                                        {isJoining ? <Loader size={12} className="animate-spin" /> : <FileText size={12} />}
-                                                        View Report
-                                                    </button>
+                                                        <FileText size={12} />
+                                                        View Session Report
+                                                    </motion.button>
                                                 );
                                             }
 
@@ -638,6 +640,18 @@ const MyAppointments = ({ onBack }) => {
                     <span className="text-[10px] font-semibold uppercase tracking-wider">Verified Secure Protocol</span>
                 </div>
             </div>
+
+            {/* ── Session Report Modal ── */}
+            <AnimatePresence>
+                {reportAppointment && (
+                    <AppointmentReportModal
+                        appointment={reportAppointment}
+                        isDarkMode={isDarkMode}
+                        viewerType="user"
+                        onClose={() => setReportAppointment(null)}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 };

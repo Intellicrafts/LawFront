@@ -2083,12 +2083,30 @@ const LegalCosultation = () => {
                     <span className="text-[11px] text-blue-500 font-bold">Encrypted Video Meeting Link Sent</span>
                   </div>
                 </div>
-                <button
-                  onClick={goBack}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all"
-                >
-                  Return to Dashboard
-                </button>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                  {/* Primary: go to My Appointments */}
+                  <button
+                    onClick={() => {
+                      setActiveTab('appointments');
+                      setView('list');
+                    }}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all shadow-lg shadow-blue-600/20"
+                  >
+                    <Calendar size={13} />
+                    View My Appointments
+                  </button>
+
+                  {/* Secondary: back to expert list */}
+                  <button
+                    onClick={goBack}
+                    className={`flex items-center gap-2 px-6 py-2.5 text-[10px] font-bold uppercase tracking-wider rounded-lg border transition-all ${isDarkMode
+                        ? 'bg-white/5 hover:bg-white/10 border-[#2A2A2A] text-gray-300'
+                        : 'bg-gray-100 hover:bg-gray-200 border-gray-200 text-gray-700'
+                      }`}
+                  >
+                    Back to Experts
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="p-6">

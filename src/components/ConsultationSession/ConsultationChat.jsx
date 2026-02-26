@@ -138,6 +138,9 @@ const ConsultationChat = ({
     const [e2eKey, setE2eKey] = useState(null);
     const [decryptedMessages, setDecryptedMessages] = useState([]);
     const [emojiTab, setEmojiTab] = React.useState(0);
+
+    // Mobile Virtual Keyboard Viewport Fix
+    const [viewportHeight, setViewportHeight] = useState('100dvh');
     const EMOJI_CATEGORIES = [
         {
             label: '😊 General',
@@ -246,6 +249,37 @@ const ConsultationChat = ({
     // Auto-scroll to bottom
     const scrollToBottom = useCallback((behavior = 'smooth') => {
         messagesEndRef.current?.scrollIntoView({ behavior });
+    }, []);
+
+    // Mobile Virtual Keyboard Management
+    useEffect(() => {
+        const updateHeight = () => {
+            if (window.visualViewport) {
+                // visualViewport accurately reflects screen size minus the virtual keyboard
+                setViewportHeight(`${window.visualViewport.height}px`);
+                window.scrollTo(0, 0); // Keep content grounded to prevent shifts
+            } else {
+                setViewportHeight(`${window.innerHeight}px`);
+            }
+        };
+
+        updateHeight();
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', updateHeight);
+            window.visualViewport.addEventListener('scroll', updateHeight);
+        } else {
+            window.addEventListener('resize', updateHeight);
+        }
+
+        return () => {
+            if (window.visualViewport) {
+                window.visualViewport.removeEventListener('resize', updateHeight);
+                window.visualViewport.removeEventListener('scroll', updateHeight);
+            } else {
+                window.removeEventListener('resize', updateHeight);
+            }
+        };
     }, []);
 
     useEffect(() => {
@@ -662,7 +696,10 @@ const ConsultationChat = ({
     };
 
     return (
-        <div className={`fixed inset-0 w-screen h-[100dvh] min-h-[100dvh] max-h-[100dvh] flex flex-col font-sans text-[13px] sm:text-[14px] selection:bg-indigo-500/20 overflow-hidden ${isDarkMode ? 'bg-[#0f1221] text-slate-200' : 'bg-[#f4f7fb] text-slate-800'}`}>
+        <div
+            className={`fixed inset-0 w-screen flex flex-col font-sans text-[13px] sm:text-[14px] selection:bg-indigo-500/20 overflow-hidden ${isDarkMode ? 'bg-[#0f1221] text-slate-200' : 'bg-[#f4f7fb] text-slate-800'}`}
+            style={{ height: viewportHeight, minHeight: viewportHeight, maxHeight: viewportHeight }}
+        >
             {/* Background Ambient Orbs */}
             <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-indigo-600/8 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-violet-600/8 rounded-full blur-[120px] pointer-events-none" />
@@ -1304,8 +1341,8 @@ const ConsultationChat = ({
                                                 exit={{ opacity: 0, y: 12, scale: 0.92 }}
                                                 transition={{ type: 'spring', stiffness: 380, damping: 26 }}
                                                 className={`absolute bottom-[58px] left-0 rounded-2xl border shadow-2xl z-[100] overflow-hidden ${isDarkMode
-                                                        ? 'bg-[#16162a] border-white/10 shadow-black/70'
-                                                        : 'bg-white border-slate-200/80 shadow-slate-300/50'
+                                                    ? 'bg-[#16162a] border-white/10 shadow-black/70'
+                                                    : 'bg-white border-slate-200/80 shadow-slate-300/50'
                                                     }`}
                                                 style={{ width: '288px' }}
                                                 onClick={e => e.stopPropagation()}
@@ -1319,12 +1356,12 @@ const ConsultationChat = ({
                                                                 type="button"
                                                                 onClick={() => setEmojiTab(ci)}
                                                                 className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${emojiTab === ci
-                                                                        ? isDarkMode
-                                                                            ? 'bg-indigo-500/20 text-indigo-300'
-                                                                            : 'bg-indigo-50 text-indigo-600'
-                                                                        : isDarkMode
-                                                                            ? 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
-                                                                            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                                                                    ? isDarkMode
+                                                                        ? 'bg-indigo-500/20 text-indigo-300'
+                                                                        : 'bg-indigo-50 text-indigo-600'
+                                                                    : isDarkMode
+                                                                        ? 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                                                                        : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
                                                                     }`}
                                                             >
                                                                 {cat.label}
