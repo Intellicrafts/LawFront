@@ -18,12 +18,6 @@ const CustomAudioPlayer = ({ src, isDarkMode, isOwnMessage }) => {
     const audioRef = React.useRef(null);
 
     React.useEffect(() => {
-        if (audioRef.current && src) {
-            audioRef.current.load();
-        }
-    }, [src]);
-
-    React.useEffect(() => {
         const audio = audioRef.current;
         if (!audio) return;
 
@@ -57,6 +51,12 @@ const CustomAudioPlayer = ({ src, isDarkMode, isOwnMessage }) => {
             setIsPlaying(false);
         } else {
             try {
+                // If on mobile and it hasn't loaded yet, load it now (INSIDE the user gesture)
+                // This gives us iOS explicit un-muted permission to play
+                if (audioRef.current.readyState === 0) {
+                    audioRef.current.load();
+                }
+
                 const playPromise = audioRef.current.play();
                 if (playPromise !== undefined) {
                     await playPromise;
@@ -141,6 +141,7 @@ const ConsultationChat = ({
 
     // Mobile Virtual Keyboard Viewport Fix
     const [viewportHeight, setViewportHeight] = useState('100dvh');
+    const [viewportTop, setViewportTop] = useState('0px');
     const EMOJI_CATEGORIES = [
         {
             label: '😊 General',
@@ -253,31 +254,57 @@ const ConsultationChat = ({
 
     // Mobile Virtual Keyboard Management
     useEffect(() => {
-        const updateHeight = () => {
+        // Lock body scrolling to prevent background layout shifts on mobile
+        const originalBodyScroll = document.body.style.overflow;
+        const originalDocScroll = document.documentElement.style.overflow;
+        const originalPosition = document.body.style.position;
+        const originalWidth = document.body.style.width;
+        const originalHeight = document.body.style.height;
+
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.width = '100%';
+        document.body.style.height = '100%';
+
+        const updateLayout = () => {
             if (window.visualViewport) {
-                // visualViewport accurately reflects screen size minus the virtual keyboard
+                // The visualViewport gives exact height minus virtual keyboard
                 setViewportHeight(`${window.visualViewport.height}px`);
-                window.scrollTo(0, 0); // Keep content grounded to prevent shifts
+
+                // If the browser natively shifted the viewport (like iOS Safari), we anchor our top
+                setViewportTop(`${window.visualViewport.offsetTop}px`);
+
+                // Keep content grounded
+                window.scrollTo(0, 0);
             } else {
                 setViewportHeight(`${window.innerHeight}px`);
+                setViewportTop('0px');
             }
         };
 
-        updateHeight();
+        updateLayout();
 
         if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', updateHeight);
-            window.visualViewport.addEventListener('scroll', updateHeight);
+            window.visualViewport.addEventListener('resize', updateLayout);
+            window.visualViewport.addEventListener('scroll', updateLayout);
         } else {
-            window.addEventListener('resize', updateHeight);
+            window.addEventListener('resize', updateLayout);
         }
 
         return () => {
+            // Restore native body states
+            document.body.style.overflow = originalBodyScroll;
+            document.documentElement.style.overflow = originalDocScroll;
+            document.body.style.position = originalPosition;
+            document.body.style.width = originalWidth;
+            document.body.style.height = originalHeight;
+
             if (window.visualViewport) {
-                window.visualViewport.removeEventListener('resize', updateHeight);
-                window.visualViewport.removeEventListener('scroll', updateHeight);
+                window.visualViewport.removeEventListener('resize', updateLayout);
+                window.visualViewport.removeEventListener('scroll', updateLayout);
             } else {
-                window.removeEventListener('resize', updateHeight);
+                window.removeEventListener('resize', updateLayout);
             }
         };
     }, []);
@@ -698,8 +725,16 @@ const ConsultationChat = ({
     return (
         <div
             className={`fixed inset-0 w-screen flex flex-col font-sans text-[13px] sm:text-[14px] selection:bg-indigo-500/20 overflow-hidden ${isDarkMode ? 'bg-[#0f1221] text-slate-200' : 'bg-[#f4f7fb] text-slate-800'}`}
-            style={{ height: viewportHeight, minHeight: viewportHeight, maxHeight: viewportHeight }}
+            style={{
+                height: viewportHeight,
+                minHeight: viewportHeight,
+                maxHeight: viewportHeight,
+                top: viewportTop,
+                left: '0px',
+                right: '0px'
+            }}
         >
+
             {/* Background Ambient Orbs */}
             <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-indigo-600/8 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-violet-600/8 rounded-full blur-[120px] pointer-events-none" />
