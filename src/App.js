@@ -88,23 +88,31 @@ const AppLayout = ({ children }) => {
     }
   }, [dispatch, isLawyerAdmin, isLandingPage, isWalletPage]);
 
-  // Manage chatbot-mode class on body for fixed height stability on mobile
+  // Manage immersive page modes for fixed viewport stability on mobile
   useEffect(() => {
     if (isChatbotPage) {
       document.body.classList.add('chatbot-mode');
     } else {
       document.body.classList.remove('chatbot-mode');
     }
-    return () => document.body.classList.remove('chatbot-mode');
-  }, [isChatbotPage]);
+    if (isConsultation) {
+      document.body.classList.add('consultation-mode');
+    } else {
+      document.body.classList.remove('consultation-mode');
+    }
+    return () => {
+      document.body.classList.remove('chatbot-mode');
+      document.body.classList.remove('consultation-mode');
+    };
+  }, [isChatbotPage, isConsultation]);
 
   return (
     <>
       {!isLawyerAdmin && !isConsultation && <Navbar isLandingPage={isLandingPage} />}
       <ScrollToTop />
-      <div className="flex flex-1 min-h-0">
+      <div className={`flex flex-1 min-h-0 ${isConsultation ? 'h-[100dvh] overflow-hidden' : ''}`}>
         {!isLawyerAdmin && !isLandingPage && !isConsultation && !isFindLawyer && !isWalletPage && !isAuthPage && <Sidebar chatHistory={chatHistory} />}
-        <main className="flex-1 min-w-0 min-h-0 relative">
+        <main className={`flex-1 min-w-0 min-h-0 relative ${isConsultation ? 'overflow-hidden' : ''}`}>
           {children}
         </main>
       </div>

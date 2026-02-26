@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiServices, authAPI, tokenManager, lawyerAPI, casesAPI, consultationAPI, lawyerAdminAPI } from '../../api/apiService';
 import NotificationDropdown from '../NotificationDropdown';
 import Avatar from '../common/Avatar';
@@ -482,7 +482,10 @@ const LawyerAdmin = () => {
   const { isOpen: isSidebarOpen } = useSelector((state) => state.sidebar);
 
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [searchParams] = useSearchParams();
+  // Read ?tab= query param so returning from ConsultationSession lands on the right section
+  const initialTab = searchParams.get('tab') || 'dashboard';
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 

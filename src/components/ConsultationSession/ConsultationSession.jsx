@@ -228,7 +228,7 @@ const ConsultationSession = () => {
     // Loading state
     if (loading) {
         return (
-            <div className={`min-h-screen flex flex-col items-center justify-center font-sans ${isDarkMode ? 'bg-dark-bg' : 'bg-[#f4f7fb]'}`}>
+            <div className={`fixed inset-0 w-screen h-[100dvh] overflow-hidden flex flex-col items-center justify-center font-sans ${isDarkMode ? 'bg-dark-bg' : 'bg-[#f4f7fb]'}`}>
                 {/* Background Ambient Orbs */}
                 <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-slate-600/10 rounded-full blur-[120px] pointer-events-none" />
                 <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-slate-600/10 rounded-full blur-[120px] pointer-events-none" />
@@ -274,7 +274,7 @@ const ConsultationSession = () => {
     // Error state
     if (error) {
         return (
-            <div className={`min-h-screen flex flex-col items-center justify-center px-4 font-sans ${isDarkMode ? 'bg-dark-bg' : 'bg-[#f4f7fb]'}`}>
+            <div className={`fixed inset-0 w-screen h-[100dvh] overflow-hidden flex flex-col items-center justify-center px-4 font-sans ${isDarkMode ? 'bg-dark-bg' : 'bg-[#f4f7fb]'}`}>
                 {/* Background Ambient Orbs */}
                 <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-rose-600/10 rounded-full blur-[120px] pointer-events-none" />
 
@@ -319,7 +319,15 @@ const ConsultationSession = () => {
                 userType={userType}
                 otherParticipant={otherParticipant}
                 isDarkMode={isDarkMode}
-                onBack={() => navigate('/legal-consoltation')}
+                onBack={() => {
+                    // Lawyers return to their admin dashboard, users return to find-lawyer page
+                    if (userType === 'lawyer') {
+                        // Land directly on the Consultations tab in Lawyer Admin
+                        navigate('/lawyer-admin?tab=appointments');
+                    } else {
+                        navigate('/legal-consoltation');
+                    }
+                }}
             />
         );
     }
@@ -335,7 +343,12 @@ const ConsultationSession = () => {
                 timeRemaining={timeRemaining}
                 connectionStatus={connectionStatus}
                 onLeave={() => {
-                    navigate('/legal-consoltation');
+                    if (userType === 'lawyer') {
+                        // Land directly on the Consultations tab in Lawyer Admin
+                        navigate('/lawyer-admin?tab=appointments');
+                    } else {
+                        navigate('/legal-consoltation');
+                    }
                 }}
             />
         );

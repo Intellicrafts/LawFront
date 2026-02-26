@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -137,14 +137,53 @@ const ConsultationChat = ({
     // E2EE States
     const [e2eKey, setE2eKey] = useState(null);
     const [decryptedMessages, setDecryptedMessages] = useState([]);
-    const emojis = ['😀', '😂', '😍', '🙏', '👍', '😊', '🙌', '🔥', '🎉', '😢', '😡', '🤔'];
+    const [emojiTab, setEmojiTab] = React.useState(0);
+    const EMOJI_CATEGORIES = [
+        {
+            label: '😊 General',
+            emojis: [
+                '😀', '😂', '😍', '🥰', '😊', '😎', '🤩', '😏',
+                '😢', '😭', '😤', '😡', '🥺', '😬', '😴', '🤯',
+                '👍', '👎', '🙌', '👏', '🙏', '✌️', '🤝', '💪',
+                '❤️', '🔥', '🎉', '✨', '💯', '🚀', '⚡', '🌟',
+            ],
+        },
+        {
+            label: '⚖️ Legal',
+            emojis: [
+                '⚖️', '🏛️', '📜', '📋', '✍️', '🔏', '🔒', '🛡️',
+                '📁', '📂', '🗂️', '📎', '🖊️', '📝', '📄', '🗃️',
+                '👨‍⚖️', '👩‍⚖️', '🤵', '👔', '🏢', '💼', '🎓', '📚',
+                '✅', '❌', '⛔', '⚠️', '🔍', '💡', '📊', '🕐',
+            ],
+        },
+        {
+            label: '💬 Reactions',
+            emojis: [
+                '👀', '💬', '🗣️', '🤔', '💭', '❓', '❗', '‼️',
+                '👌', '🤞', '🫶', '🤲', '🫱', '🫲', '🫳', '🫴',
+                '🙄', '😑', '🫡', '🫠', '😮', '🫤', '😌', '🥹',
+                '💰', '💳', '💵', '🤑', '📈', '📉', '⏳', '🔑',
+            ],
+        },
+    ];
 
     // Message Expressions Local State
     const [reactions, setReactions] = useState({});
     const [reactionsFromMessages, setReactionsFromMessages] = useState({});
     const [activeReactionMessageId, setActiveReactionMessageId] = useState(null);
-    const QUICK_EMOJIS = ['👍', '❤️', '😂', '😯', '🙏', '👎'];
+    const QUICK_EMOJIS = ['ðŸ‘', 'â¤ï¸', 'ðŸ˜‚', 'ðŸ˜¯', 'ðŸ™', 'ðŸ‘Ž'];
     const [previewFile, setPreviewFile] = useState(null); // { url, name, type }
+
+    // â”€â”€ Smart suggestions state â”€â”€
+    const [suggestions, setSuggestions] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const suggestionTimeoutRef = useRef(null);
+
+    // â”€â”€ Local blob URL map for instant voice note playback (sender side) â”€â”€
+    // key: temp_id string, value: blob URL string
+    const [localAudioBlobUrls, setLocalAudioBlobUrls] = useState({});
+    const pendingAudioBlobRef = useRef(null); // hold blob URL until send completes
 
     const handleAddReaction = (msgId, emoji, e) => {
         if (e) {
@@ -282,20 +321,101 @@ const ConsultationChat = ({
         }
     }, [timeRemaining]);
 
+    // â”€â”€ Smart text suggestions engine â”€â”€
+    const LEGAL_PHRASES = [
+        // Legal terms
+        'pursuant to', 'in accordance with', 'notwithstanding', 'hereinafter referred to as',
+        'prima facie', 'ex parte', 'pro bono', 'habeas corpus', 'due diligence',
+        'affidavit', 'jurisdiction', 'litigation', 'arbitration', 'indemnification',
+        'confidentiality agreement', 'non-disclosure', 'breach of contract', 'force majeure',
+        'statute of limitations', 'power of attorney', 'injunction', 'subpoena',
+        // Common chat completions
+        'I understand', 'I would like to', 'Please advise', 'Kindly note that',
+        'With respect to', 'As discussed', 'Please review', 'I have attached',
+        'Could you please', 'I need assistance with', 'Thank you for', 'Looking forward to',
+        'Please find attached', 'I would recommend', 'Based on the information',
+        // Grammar corrections / replacements
+        'receive', 'necessary', 'definitely', 'separately', 'judgment',
+        'acknowledge', 'opportunity', 'immediately', 'appreciate', 'recommend',
+    ];
+
+    const COMMON_CORRECTIONS = {
+        'recieve': 'receive', 'teh': 'the', 'taht': 'that', 'wich': 'which',
+        'seperate': 'separate', 'occured': 'occurred', 'wierd': 'weird',
+        'goverment': 'government', 'judgement': 'judgment', 'priviledge': 'privilege',
+        'arguement': 'argument', 'existance': 'existence', 'occassion': 'occasion',
+        'reccomend': 'recommend', 'harrass': 'harass', 'neccessary': 'necessary',
+        'definitly': 'definitely', 'accomodate': 'accommodate', 'aquire': 'acquire',
+        'thier': 'their', 'beleive': 'believe', 'tommorow': 'tomorrow',
+        'greatful': 'grateful', 'untill': 'until', 'comittee': 'committee',
+    };
+
+    const computeSuggestions = (text) => {
+        if (!text || text.length < 2) { setSuggestions([]); setShowSuggestions(false); return; }
+        const words = text.split(/\s+/);
+        const lastWord = words[words.length - 1].toLowerCase();
+        if (lastWord.length < 2) { setSuggestions([]); setShowSuggestions(false); return; }
+
+        const results = [];
+
+        // 1. Spell correction (highest priority â€” show as "Did you mean X?")
+        if (COMMON_CORRECTIONS[lastWord]) {
+            const correction = COMMON_CORRECTIONS[lastWord];
+            const corrected = text.slice(0, text.lastIndexOf(words[words.length - 1])) + correction;
+            results.push({ type: 'correction', label: `âœï¸ ${correction}`, value: corrected, desc: 'Spelling fix' });
+        }
+
+        // 2. Phrase completions (match start of last word)
+        const phraseMatches = LEGAL_PHRASES
+            .filter(p => p.toLowerCase().startsWith(lastWord) && p.toLowerCase() !== lastWord)
+            .slice(0, 3);
+        phraseMatches.forEach(phrase => {
+            const completed = text.slice(0, text.lastIndexOf(words[words.length - 1])) + phrase;
+            results.push({ type: 'phrase', label: phrase, value: completed, desc: 'Complete' });
+        });
+
+        // 3. Partial word match in middle
+        if (results.length < 3) {
+            const partialMatches = LEGAL_PHRASES
+                .filter(p => p.toLowerCase().includes(lastWord) && !p.toLowerCase().startsWith(lastWord))
+                .slice(0, 2 - results.filter(r => r.type === 'phrase').length);
+            partialMatches.forEach(phrase => {
+                const completed = text.slice(0, text.lastIndexOf(words[words.length - 1])) + phrase;
+                results.push({ type: 'phrase', label: phrase, value: completed, desc: 'Suggestion' });
+            });
+        }
+
+        if (results.length > 0) {
+            setSuggestions(results.slice(0, 4));
+            setShowSuggestions(true);
+        } else {
+            setSuggestions([]);
+            setShowSuggestions(false);
+        }
+    };
+
+    const applySuggestion = (suggestion) => {
+        setNewMessage(suggestion.value);
+        setSuggestions([]);
+        setShowSuggestions(false);
+        inputRef.current?.focus();
+    };
+
     // Handle typing indicator debounce
     const handleInputChange = (e) => {
-        setNewMessage(e.target.value);
+        const val = e.target.value;
+        setNewMessage(val);
+
+        // Smart suggestions (debounced 350ms)
+        if (suggestionTimeoutRef.current) clearTimeout(suggestionTimeoutRef.current);
+        suggestionTimeoutRef.current = setTimeout(() => computeSuggestions(val), 350);
 
         // Send typing indicator
         if (!isTyping) {
             setIsTyping(true);
             onTyping(true);
         }
-
-        if (typingTimeoutRef.current) {
-            clearTimeout(typingTimeoutRef.current);
-        }
-
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(() => {
             setIsTyping(false);
             onTyping(false);
@@ -306,6 +426,14 @@ const ConsultationChat = ({
     const handleSend = async () => {
         const content = newMessage.trim();
         if (!content && !selectedFile) return;
+
+        // Hide suggestions
+        setSuggestions([]);
+        setShowSuggestions(false);
+
+        // Stash the audio blob URL BEFORE clearing, so the optimistic message can play it
+        const blobUrlForThisSend = audioPreviewUrl;
+        const tempVoiceId = audioBlob ? `local_voice_${Date.now()}` : null;
 
         try {
             setSending(true);
@@ -318,11 +446,28 @@ const ConsultationChat = ({
             if (e2eKey) {
                 encryptedContent = await encryptText(rawText, e2eKey);
             } else {
-                encryptedContent = rawText; // Fallback
+                encryptedContent = rawText;
             }
 
-            // We pass selected file as-is (files are transferred securely via HTTPS, text is E2EE wrapped)
-            await onSendMessage(encryptedContent, selectedFile);
+            // Store blob URL optimistically so the sender can play the voice note immediately
+            if (tempVoiceId && blobUrlForThisSend) {
+                setLocalAudioBlobUrls(prev => ({ ...prev, [tempVoiceId]: blobUrlForThisSend }));
+                pendingAudioBlobRef.current = { tempId: tempVoiceId, blobUrl: blobUrlForThisSend };
+            }
+
+            const sentMsg = await onSendMessage(encryptedContent, selectedFile);
+
+            // If the API returns the message with a real ID/URL, map blob â†’ server URL
+            if (sentMsg?.id && blobUrlForThisSend) {
+                setLocalAudioBlobUrls(prev => {
+                    const next = { ...prev };
+                    // Keep blob url mapped to the real message id for instant playback
+                    next[String(sentMsg.id)] = blobUrlForThisSend;
+                    if (tempVoiceId) delete next[tempVoiceId];
+                    return next;
+                });
+            }
+
             setNewMessage('');
             setSelectedFile(null);
             setAudioPreviewUrl(null);
@@ -455,7 +600,7 @@ const ConsultationChat = ({
         setNewMessage(prev => prev + emoji);
     };
 
-    // Handle Enter key — sends text, file, image, OR voice note
+    // Handle Enter key â€” sends text, file, image, OR voice note
     const handleKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -517,7 +662,7 @@ const ConsultationChat = ({
     };
 
     return (
-        <div className={`h-[100dvh] min-h-[100dvh] max-h-[100dvh] flex flex-col font-sans selection:bg-indigo-500/20 overflow-hidden ${isDarkMode ? 'bg-[#0f1221] text-slate-200' : 'bg-[#f4f7fb] text-slate-800'}`}>
+        <div className={`fixed inset-0 w-screen h-[100dvh] min-h-[100dvh] max-h-[100dvh] flex flex-col font-sans text-[13px] sm:text-[14px] selection:bg-indigo-500/20 overflow-hidden ${isDarkMode ? 'bg-[#0f1221] text-slate-200' : 'bg-[#f4f7fb] text-slate-800'}`}>
             {/* Background Ambient Orbs */}
             <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-indigo-600/8 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-violet-600/8 rounded-full blur-[120px] pointer-events-none" />
@@ -527,8 +672,8 @@ const ConsultationChat = ({
                 ? 'bg-[#0f1221]/90 border-white/[0.06] shadow-black/20 shadow-sm backdrop-blur-xl'
                 : 'bg-white/90 border-slate-200/60 shadow-slate-200/50 shadow-sm backdrop-blur-xl'
                 }`}>
-                <div className="max-w-[98%] lg:max-w-6xl mx-auto px-3 sm:px-6">
-                    <div className="flex items-center justify-between py-2.5 sm:py-3">
+                <div className="max-w-4xl mx-auto px-3 sm:px-5">
+                    <div className="flex items-center justify-between py-2 sm:py-2.5">
 
                         {/* Left: Participant Info */}
                         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
@@ -560,7 +705,7 @@ const ConsultationChat = ({
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                                     <span className={`text-[9px] font-bold uppercase tracking-[0.18em] ${isDarkMode ? 'text-emerald-400/80' : 'text-emerald-600/80'}`}>
-                                        {userType === 'user' ? 'Lawyer' : 'Client'} • In Session
+                                        {userType === 'user' ? 'Lawyer' : 'Client'} â€¢ In Session
                                     </span>
                                 </div>
                             </div>
@@ -632,7 +777,7 @@ const ConsultationChat = ({
                         exit={{ height: 0, opacity: 0 }}
                         className={`border-b ${isDarkMode ? 'bg-amber-500/5 border-amber-500/10' : 'bg-amber-50 border-amber-100'}`}
                     >
-                        <div className="max-w-[98%] lg:max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+                        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <AlertTriangle size={12} className="text-amber-500" />
                                 <span className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-amber-400' : 'text-amber-600'}`}>
@@ -650,10 +795,10 @@ const ConsultationChat = ({
             {/* ============ MESSAGES AREA ============ */}
             <div
                 ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto relative scrollbar-hide z-10"
+                className="flex-1 min-h-0 overflow-y-auto relative scrollbar-hide z-10"
                 style={{ scrollBehavior: 'smooth' }}
             >
-                <div className="w-full max-w-3xl lg:max-w-4xl mx-auto px-6 sm:px-10 pt-6 pb-4 space-y-3">
+                <div className="w-full max-w-2xl lg:max-w-3xl mx-auto px-3 sm:px-5 pt-4 sm:pt-5 pb-3 space-y-2">
 
                     {/* Messages - filter out reaction-protocol messages */}
                     {decryptedMessages
@@ -689,7 +834,7 @@ const ConsultationChat = ({
                                             transition={{ duration: 0.18 }}
                                             className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} py-0.5`}
                                         >
-                                            <div className={`flex items-end gap-2 max-w-[72%] sm:max-w-[58%]`}>
+                                            <div className={`flex items-end gap-2 max-w-[78%] sm:max-w-[68%]`}>
 
                                                 {/* Avatar (other user only) */}
                                                 {!isOwnMessage && (
@@ -724,13 +869,21 @@ const ConsultationChat = ({
                                                                             : 'bg-white shadow-sm border border-slate-100 px-3 py-2'
                                                                         : 'bg-black/15 px-2 py-1.5'
                                                                         }`}>
-                                                                        <CustomAudioPlayer src={msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`} isDarkMode={isDarkMode} isOwnMessage={isOwnMessage} />
+                                                                        <CustomAudioPlayer src={(isOwnMessage && localAudioBlobUrls[String(msg.id)]) ? localAudioBlobUrls[String(msg.id)] : (msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`)} isDarkMode={isDarkMode} isOwnMessage={isOwnMessage} />
                                                                     </div>
                                                                 ) : isImage ? (
-                                                                    <div className={`relative overflow-hidden group/img cursor-pointer ${isOwnMessage ? 'rounded-[2rem] rounded-br-[6px]' : 'rounded-[2rem] rounded-bl-[6px]'} bg-slate-100 dark:bg-slate-800 border ${isDarkMode ? 'border-white/10' : 'border-slate-200'} shadow-sm`}
+                                                                    <div
+                                                                        className={`relative overflow-hidden group/img cursor-pointer ${isOwnMessage ? 'rounded-[2rem] rounded-br-[6px]' : 'rounded-[2rem] rounded-bl-[6px]'} border ${isDarkMode ? 'border-white/10 bg-slate-800' : 'border-slate-200 bg-slate-100'} shadow-sm`}
+                                                                        style={{ width: '100%', maxWidth: 'min(220px, 72vw)' }}
                                                                         onClick={() => setPreviewFile({ url: msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`, name: msg.file_name, type: 'image' })}
                                                                     >
-                                                                        <img src={msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`} alt="attachment" className="max-w-[220px] max-h-[220px] w-auto h-auto object-cover block" />
+                                                                        <img
+                                                                            src={msg.file_url || `${process.env.REACT_APP_API_URL?.replace('/api', '')}/storage/${msg.file_path}`}
+                                                                            alt="attachment"
+                                                                            className="w-full h-auto block object-cover"
+                                                                            style={{ maxHeight: '240px', objectFit: 'cover', display: 'block' }}
+                                                                            loading="lazy"
+                                                                        />
                                                                         {/* Hover overlay */}
                                                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-3">
                                                                             <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
@@ -788,7 +941,7 @@ const ConsultationChat = ({
                                                             {/* Reactions & Info */}
                                                             <div className={`flex items-center gap-1.5 ${isOnlyAttachment ? 'absolute -bottom-5 right-2' : 'relative mt-2'} ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
 
-                                                                {/* Reaction trigger — only for opponent's messages */}
+                                                                {/* Reaction trigger â€” only for opponent's messages */}
                                                                 {!isOwnMessage && (
                                                                     <button
                                                                         onClick={() => setActiveReactionMessageId(activeReactionMessageId === msg.id ? null : msg.id)}
@@ -877,11 +1030,11 @@ const ConsultationChat = ({
                 </div>
             </div>
 
-            {/* ============ INPUT AREA — seamless with page bg ============ */}
-            <div className={`shrink-0 w-full z-30 pb-safe pb-4 sm:pb-6 pt-2 mt-auto ${isDarkMode ? 'bg-[#0f1221]' : 'bg-[#f4f7fb]'}`}>
-                <div className="w-full max-w-2xl lg:max-w-3xl mx-auto px-3 sm:px-5">
+            {/* ============ INPUT AREA â€” seamless with page bg ============ */}
+            <div className={`shrink-0 w-full z-30 pb-safe pb-1.5 sm:pb-2 pt-1 mt-auto ${isDarkMode ? 'bg-[#0f1221]' : 'bg-[#f4f7fb]'}`}>
+                <div className="w-full max-w-2xl lg:max-w-3xl mx-auto px-2.5 sm:px-4">
 
-                    {/* ─── Previews above input card ─── */}
+                    {/* â”€â”€â”€ Previews above input card â”€â”€â”€ */}
                     <AnimatePresence>
 
                         {/* File / Image preview chip */}
@@ -915,7 +1068,7 @@ const ConsultationChat = ({
                                             }`}>{selectedFile.name}</div>
                                         <div className={`text-[10px] mt-0.5 ${isDarkMode ? 'text-slate-600' : 'text-slate-400'
                                             }`}>{(selectedFile.size / 1024).toFixed(1)} KB
-                                            {selectedFile.type.startsWith('image/') && ' · Image'}
+                                            {selectedFile.type.startsWith('image/') && ' Â· Image'}
                                         </div>
                                     </div>
                                     {/* Remove */}
@@ -931,7 +1084,7 @@ const ConsultationChat = ({
                             </motion.div>
                         )}
 
-                        {/* Voice note recorded preview — swipe left to cancel, swipe right (or tap send) to send */}
+                        {/* Voice note recorded preview â€” swipe left to cancel, swipe right (or tap send) to send */}
                         {audioPreviewUrl && (
                             <motion.div
                                 key="audio-preview"
@@ -1013,12 +1166,60 @@ const ConsultationChat = ({
 
                     </AnimatePresence>
 
+                    {/* â”€â”€ Smart Suggestion Chips â”€â”€ */}
+                    <AnimatePresence>
+                        {showSuggestions && suggestions.length > 0 && !isRecording && !audioPreviewUrl && (
+                            <motion.div
+                                key="suggestions"
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 6 }}
+                                transition={{ duration: 0.15 }}
+                                className="mb-2 flex items-center gap-1.5 flex-wrap px-0.5"
+                            >
+                                {/* dismiss */}
+                                <button
+                                    type="button"
+                                    onClick={() => { setSuggestions([]); setShowSuggestions(false); }}
+                                    className={`flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-[10px] transition-all ${isDarkMode ? 'text-slate-600 hover:text-slate-400 hover:bg-white/5' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
+                                    title="Dismiss suggestions"
+                                >
+                                    Ã—
+                                </button>
+                                {suggestions.map((s, i) => (
+                                    <motion.button
+                                        key={i}
+                                        type="button"
+                                        initial={{ opacity: 0, scale: 0.92 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: i * 0.04 }}
+                                        onClick={() => applySuggestion(s)}
+                                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all hover:scale-105 active:scale-95 ${s.type === 'correction'
+                                            ? isDarkMode
+                                                ? 'bg-amber-500/10 border-amber-500/25 text-amber-300 hover:bg-amber-500/20'
+                                                : 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'
+                                            : isDarkMode
+                                                ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-300 hover:bg-indigo-500/20'
+                                                : 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100'
+                                            }`}
+                                        title={s.desc}
+                                    >
+                                        <span className="truncate max-w-[160px]">{s.label}</span>
+                                        {i === 0 && (
+                                            <span className={`text-[9px] opacity-50 font-mono hidden sm:inline ${s.type === 'correction' ? 'text-amber-500' : 'text-indigo-400'
+                                                }`}>Tab</span>
+                                        )}
+                                    </motion.button>
+                                ))}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
-                    {/* ── Input Card — unified bg, single row ── */}
+                    {/* â”€â”€ Input Card â€” unified bg, single row â”€â”€ */}
                     <motion.div
                         layout
                         className={`relative rounded-2xl transition-all duration-200 ${isDarkMode
-                            ? 'bg-[#1a1a2e] border border-white/[0.09] shadow-[0_4px_32px_rgba(0,0,0,0.45)]'
+                            ? 'bg-[#151525] border border-white/[0.08] shadow-[0_4px_28px_rgba(0,0,0,0.5)]'
                             : 'bg-white border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.07)]'
                             }`}
                     >
@@ -1029,10 +1230,19 @@ const ConsultationChat = ({
                             </div>
                         )}
 
-                        {/* ── Single Row ── */}
-                        <div className="flex items-end gap-1.5 px-2.5 py-2.5">
+                        {/* â”€â”€ E2E encrypted pill â€” top edge of card â”€â”€ */}
+                        <div className={`flex items-center justify-center gap-1.5 py-1.5 rounded-t-2xl border-b ${isDarkMode ? 'border-white/[0.05] bg-emerald-500/[0.03]' : 'border-slate-100 bg-emerald-50/40'}`}>
+                            <Lock size={8} className={isDarkMode ? 'text-emerald-500/50' : 'text-emerald-600/50'} />
+                            <span className={`text-[9px] font-bold uppercase tracking-[0.18em] ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                                End-to-end encrypted
+                            </span>
+                            <Lock size={8} className={isDarkMode ? 'text-emerald-500/50' : 'text-emerald-600/50'} />
+                        </div>
 
-                            {/* ── Left: Attach + Emoji ── */}
+                        {/* â”€â”€ Single Row â”€â”€ */}
+                        <div className="flex items-end gap-1.5 px-2.5 py-2">
+
+                            {/* â”€â”€ Left: Attach + Emoji â”€â”€ */}
                             <div className="flex items-center gap-0.5 flex-shrink-0 mb-0.5">
                                 {/* Attach */}
                                 <div className="relative">
@@ -1089,21 +1299,74 @@ const ConsultationChat = ({
                                     <AnimatePresence>
                                         {showEmojiPicker && (
                                             <motion.div
-                                                initial={{ opacity: 0, y: 10, scale: 0.93 }}
+                                                initial={{ opacity: 0, y: 12, scale: 0.92 }}
                                                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                exit={{ opacity: 0, y: 10, scale: 0.93 }}
-                                                transition={{ duration: 0.15 }}
-                                                className={`absolute bottom-[54px] left-0 p-3 rounded-2xl border shadow-2xl z-[100] w-64 ${isDarkMode ? 'bg-[#1c1c2e] border-white/10 shadow-black/60' : 'bg-white border-slate-200 shadow-slate-300/40'}`}
+                                                exit={{ opacity: 0, y: 12, scale: 0.92 }}
+                                                transition={{ type: 'spring', stiffness: 380, damping: 26 }}
+                                                className={`absolute bottom-[58px] left-0 rounded-2xl border shadow-2xl z-[100] overflow-hidden ${isDarkMode
+                                                        ? 'bg-[#16162a] border-white/10 shadow-black/70'
+                                                        : 'bg-white border-slate-200/80 shadow-slate-300/50'
+                                                    }`}
+                                                style={{ width: '288px' }}
+                                                onClick={e => e.stopPropagation()}
                                             >
-                                                <p className={`text-[9px] font-bold uppercase tracking-widest mb-2 ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Emoji</p>
-                                                <div className="grid grid-cols-6 gap-1">
-                                                    {emojis.map((emoji, index) => (
-                                                        <button key={index} type="button" onClick={() => { handleEmojiClick(emoji); setShowEmojiPicker(false); }}
-                                                            className={`w-9 h-9 flex items-center justify-center text-[18px] rounded-xl transition-all hover:scale-110 ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100'}`}
+                                                {/* Header */}
+                                                <div className={`flex items-center justify-between px-3 pt-2.5 pb-1.5 border-b ${isDarkMode ? 'border-white/[0.06]' : 'border-slate-100'}`}>
+                                                    <div className="flex gap-1">
+                                                        {EMOJI_CATEGORIES.map((cat, ci) => (
+                                                            <button
+                                                                key={ci}
+                                                                type="button"
+                                                                onClick={() => setEmojiTab(ci)}
+                                                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${emojiTab === ci
+                                                                        ? isDarkMode
+                                                                            ? 'bg-indigo-500/20 text-indigo-300'
+                                                                            : 'bg-indigo-50 text-indigo-600'
+                                                                        : isDarkMode
+                                                                            ? 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                                                                            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                                                                    }`}
+                                                            >
+                                                                {cat.label}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowEmojiPicker(false)}
+                                                        className={`p-1 rounded-lg transition-all ${isDarkMode ? 'text-slate-600 hover:text-slate-400 hover:bg-white/5' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
+                                                    >
+                                                        <X size={12} />
+                                                    </button>
+                                                </div>
+
+                                                {/* Emoji grid — animated tab switch */}
+                                                <div className="p-2" style={{ minHeight: '160px' }}>
+                                                    <AnimatePresence mode="wait">
+                                                        <motion.div
+                                                            key={emojiTab}
+                                                            initial={{ opacity: 0, x: 10 }}
+                                                            animate={{ opacity: 1, x: 0 }}
+                                                            exit={{ opacity: 0, x: -10 }}
+                                                            transition={{ duration: 0.12 }}
+                                                            className="grid grid-cols-8 gap-0.5"
                                                         >
-                                                            {emoji}
-                                                        </button>
-                                                    ))}
+                                                            {EMOJI_CATEGORIES[emojiTab].emojis.map((emoji, index) => (
+                                                                <motion.button
+                                                                    key={index}
+                                                                    type="button"
+                                                                    onClick={() => { handleEmojiClick(emoji); setShowEmojiPicker(false); }}
+                                                                    whileHover={{ scale: 1.3 }}
+                                                                    whileTap={{ scale: 0.88 }}
+                                                                    transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                                                                    className={`w-8 h-8 flex items-center justify-center text-[18px] rounded-xl transition-colors ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-slate-100'}`}
+                                                                    title={emoji}
+                                                                >
+                                                                    {emoji}
+                                                                </motion.button>
+                                                            ))}
+                                                        </motion.div>
+                                                    </AnimatePresence>
                                                 </div>
                                             </motion.div>
                                         )}
@@ -1111,7 +1374,7 @@ const ConsultationChat = ({
                                 </div>
                             </div>
 
-                            {/* ── Center: Auto-growing textarea ── */}
+                            {/* â”€â”€ Center: Auto-growing textarea â”€â”€ */}
                             <textarea
                                 ref={inputRef}
                                 value={newMessage}
@@ -1119,9 +1382,19 @@ const ConsultationChat = ({
                                 onKeyDown={handleKeyDown}
                                 rows={1}
                                 placeholder="Type your message..."
-                                className={`flex-1 bg-transparent outline-none border-none ring-0 text-[14px] leading-relaxed font-medium resize-none scrollbar-hide py-1.5 ${isDarkMode ? 'text-slate-100 placeholder:text-slate-600 caret-indigo-400' : 'text-slate-800 placeholder:text-slate-400/80 caret-indigo-600'
+                                className={`flex-1 outline-none border-none ring-0 text-[14px] leading-relaxed font-medium resize-none scrollbar-hide py-1.5 ${isDarkMode
+                                    ? 'text-slate-100 placeholder:text-slate-600 caret-indigo-400'
+                                    : 'text-slate-800 placeholder:text-slate-400/80 caret-indigo-600'
                                     }`}
-                                style={{ minHeight: '26px', maxHeight: '120px' }}
+                                style={{
+                                    minHeight: '26px',
+                                    maxHeight: '120px',
+                                    background: 'transparent',
+                                    backgroundColor: 'transparent',
+                                    WebkitBoxShadow: '0 0 0px 1000px transparent inset',
+                                    WebkitTextFillColor: isDarkMode ? '#e2e8f0' : '#1e293b',
+                                    colorScheme: isDarkMode ? 'dark' : 'light',
+                                }}
                                 onClick={() => { setShowAttachMenu(false); setShowEmojiPicker(false); }}
                                 onInput={(e) => {
                                     e.target.style.height = 'auto';
@@ -1129,7 +1402,7 @@ const ConsultationChat = ({
                                 }}
                             />
 
-                            {/* ── Right: Mic (click-toggle) or Send ── */}
+                            {/* â”€â”€ Right: Mic (click-toggle) or Send â”€â”€ */}
                             <div className="flex-shrink-0 mb-0.5">
                                 {(!newMessage.trim() && !selectedFile) ? (
                                     <button
@@ -1171,14 +1444,6 @@ const ConsultationChat = ({
                         </div>
                     </motion.div>
 
-                    {/* E2E label */}
-                    <div className="flex items-center justify-center gap-1.5 mt-2 mb-1">
-                        <Lock size={9} className={isDarkMode ? 'text-emerald-500/50' : 'text-emerald-600/40'} />
-                        <span className={`text-[9px] font-semibold uppercase tracking-widest ${isDarkMode ? 'text-slate-700' : 'text-slate-400'}`}>
-                            End-to-end encrypted
-                        </span>
-                        <Lock size={9} className={isDarkMode ? 'text-emerald-500/50' : 'text-emerald-600/40'} />
-                    </div>
 
                 </div >
             </div >
@@ -1272,3 +1537,4 @@ const ConsultationChat = ({
 };
 
 export default ConsultationChat;
+
