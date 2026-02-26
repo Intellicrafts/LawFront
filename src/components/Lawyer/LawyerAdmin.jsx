@@ -340,7 +340,7 @@ const LiveSessionCard = ({ appointment, darkMode, onJoin }) => (
       >
         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
         <span className="relative z-10 flex items-center gap-2">
-          Join Consultation Room <ChevronRight size={16} />
+          {appointment?.status === 'completed' ? 'Resume Consultation' : 'Join Consultation Room'} <ChevronRight size={16} />
         </span>
       </button>
     </div>
@@ -600,11 +600,13 @@ const LawyerAdmin = () => {
 
           const aptTime = new Date(apt.appointment_time).getTime();
           const now = new Date().getTime();
+          const durationMs = (apt.duration_minutes || 60) * 60 * 1000;
 
-          // Priority 2: Temporal proximity (15m before, 2h after)
-          return apt.status === 'scheduled' &&
+          // Priority 2: Temporal proximity (15m before, up to duration after)
+          // Allow rejoining ("resuming") even if 'completed' as long as the session time hasn't lapsed.
+          return (apt.status === 'scheduled' || apt.status === 'completed') &&
             (aptTime - now) < 15 * 60 * 1000 &&
-            (now - aptTime) < 120 * 60 * 1000;
+            (now - aptTime) < durationMs;
         });
 
         if (liveApt) {

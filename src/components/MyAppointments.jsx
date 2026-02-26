@@ -116,11 +116,10 @@ const MyAppointments = ({ onBack }) => {
         const msUntilStart = appointmentTime - now;
         const msUntilEnd = endTime - now;
 
-        // If cancelled or completed, not joinable
+        // If cancelled, it means cancelled.
         if (apt.status === 'cancelled') return { state: 'cancelled', timeInfo: null };
-        if (apt.status === 'completed') return { state: 'completed', timeInfo: null };
 
-        // If appointment has ended
+        // If appointment has ended time-wise
         if (now > endTime) return { state: 'past', timeInfo: null };
 
         // If currently in the appointment window (from start to end)
@@ -130,6 +129,7 @@ const MyAppointments = ({ onBack }) => {
             const secondsRemaining = Math.floor((msRemaining % (1000 * 60)) / 1000);
             return {
                 state: 'active',
+                isResuming: apt.status === 'completed',
                 timeInfo: { minutesRemaining, secondsRemaining }
             };
         }
@@ -510,16 +510,16 @@ const MyAppointments = ({ onBack }) => {
                                                 );
                                             }
 
-                                            // Completed or Past → View Report
-                                            if (joinState.state === 'completed' || joinState.state === 'past') {
+                                            // Past
+                                            if (joinState.state === 'past' || (apt.status === 'completed' && joinState.state !== 'active')) {
                                                 return (
                                                     <motion.button
                                                         whileHover={{ scale: 1.02 }}
                                                         whileTap={{ scale: 0.97 }}
                                                         onClick={() => setReportAppointment(apt)}
                                                         className={`w-full py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider text-center border flex items-center justify-center gap-2 transition-all ${isDarkMode
-                                                                ? 'bg-gradient-to-r from-indigo-500/15 to-violet-500/15 border-indigo-500/25 text-indigo-300 hover:from-indigo-500/25 hover:to-violet-500/25'
-                                                                : 'bg-gradient-to-r from-indigo-50 to-violet-50 border-indigo-200 text-indigo-700 hover:from-indigo-100 hover:to-violet-100 shadow-sm'
+                                                            ? 'bg-gradient-to-r from-indigo-500/15 to-violet-500/15 border-indigo-500/25 text-indigo-300 hover:from-indigo-500/25 hover:to-violet-500/25'
+                                                            : 'bg-gradient-to-r from-indigo-50 to-violet-50 border-indigo-200 text-indigo-700 hover:from-indigo-100 hover:to-violet-100 shadow-sm'
                                                             }`}
                                                     >
                                                         <FileText size={12} />
@@ -532,26 +532,39 @@ const MyAppointments = ({ onBack }) => {
                                             if (joinState.state === 'active') {
                                                 return (
                                                     <div className="space-y-2">
-                                                        <button
-                                                            onClick={() => handleJoinConsultation(apt)}
-                                                            disabled={isJoining}
-                                                            className="relative flex items-center justify-center gap-2.5 w-full py-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-bold uppercase tracking-wider shadow-xl shadow-black/10 active:scale-[0.98] transition-all overflow-hidden group"
-                                                        >
-                                                            {/* Animated glow */}
-                                                            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 animate-pulse" />
-
-                                                            {isJoining ? (
-                                                                <>
-                                                                    <Loader size={12} className="animate-spin" />
-                                                                    Establishing Connection...
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <Play size={12} strokeWidth={2.5} className="animate-pulse" />
-                                                                    Enter Secure Chamber
-                                                                </>
+                                                        <div className={joinState.isResuming ? "grid grid-cols-2 gap-2" : "w-full"}>
+                                                            {joinState.isResuming && (
+                                                                <button
+                                                                    onClick={() => setReportAppointment(apt)}
+                                                                    disabled={isJoining}
+                                                                    className={`relative flex items-center justify-center gap-2 w-full py-3 rounded-xl text-[9px] font-bold uppercase tracking-wider shadow-sm transition-all overflow-hidden ${isDarkMode ? 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 hover:bg-indigo-500/20' : 'bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100'
+                                                                        }`}
+                                                                >
+                                                                    <FileText size={12} strokeWidth={2} />
+                                                                    View Report
+                                                                </button>
                                                             )}
-                                                        </button>
+                                                            <button
+                                                                onClick={() => handleJoinConsultation(apt)}
+                                                                disabled={isJoining}
+                                                                className={`relative flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-bold uppercase tracking-wider shadow-xl shadow-black/10 active:scale-[0.98] transition-all overflow-hidden group ${joinState.isResuming ? 'text-[9px]' : ''}`}
+                                                            >
+                                                                {/* Animated glow */}
+                                                                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 animate-pulse" />
+
+                                                                {isJoining ? (
+                                                                    <>
+                                                                        <Loader size={12} className="animate-spin" />
+                                                                        Connecting...
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <Play size={12} strokeWidth={2.5} className="animate-pulse" />
+                                                                        {joinState.isResuming ? 'Resume Session' : 'Enter Secure Chamber'}
+                                                                    </>
+                                                                )}
+                                                            </button>
+                                                        </div>
                                                         <div className="flex items-center justify-center gap-1.5">
                                                             <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                                                             <span className={`text-[8px] font-semibold uppercase tracking-wider ${isDarkMode ? 'text-blue-400/70' : 'text-blue-600/70'}`}>

@@ -22,6 +22,7 @@ const ConsultationLobby = ({
     const [networkStrength, setNetworkStrength] = useState(4);
     const [checklistItems, setChecklistItems] = useState([false, false, false]);
     const [elapsed, setElapsed] = useState(0);
+    const [showLeaveModal, setShowLeaveModal] = useState(false);
 
     // Network connection strength
     useEffect(() => {
@@ -388,7 +389,7 @@ const ConsultationLobby = ({
                                     {/* Leave button */}
                                     <div className="mt-3 pt-3 border-t border-slate-100 dark:border-white/5">
                                         <button
-                                            onClick={onLeave}
+                                            onClick={() => setShowLeaveModal(true)}
                                             className={`flex items-center justify-center gap-2 w-full py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${isDarkMode
                                                 ? 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300'
                                                 : 'bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700'
@@ -417,6 +418,72 @@ const ConsultationLobby = ({
                     </motion.div>
                 </div>
             </div>
+
+            {/* ── LEAVE CONFIRMATION MODAL ── */}
+            <AnimatePresence>
+                {showLeaveModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                            onClick={() => setShowLeaveModal(false)}
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                            transition={{ type: 'spring', stiffness: 450, damping: 25 }}
+                            className={`relative w-full max-w-[320px] rounded-2xl shadow-2xl overflow-hidden border ${isDarkMode ? 'bg-[#1a1a24] border-white/10' : 'bg-white border-slate-100'
+                                }`}
+                        >
+                            {/* Header Gradient */}
+                            <div className={`h-12 w-full flex items-center justify-center ${isDarkMode ? 'bg-rose-500/10' : 'bg-rose-50'
+                                }`}>
+                                <LogOut size={20} className={isDarkMode ? 'text-rose-400' : 'text-rose-500'} />
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-5 text-center">
+                                <h3 className={`text-[15px] font-bold mb-1.5 tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'
+                                    }`}>
+                                    Leave Waiting Room?
+                                </h3>
+                                <p className={`text-[11.5px] font-medium leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-500'
+                                    }`}>
+                                    Are you sure you want to exit? The {otherRole.toLowerCase()} could be joining anytime soon.
+                                </p>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className={`grid grid-cols-2 gap-px border-t ${isDarkMode ? 'bg-white/10 border-white/5' : 'bg-slate-200 border-slate-100'
+                                }`}>
+                                <button
+                                    onClick={() => setShowLeaveModal(false)}
+                                    className={`py-3 text-[12px] font-bold tracking-wide transition-colors ${isDarkMode
+                                            ? 'bg-[#1a1a24] text-slate-300 hover:bg-white/5'
+                                            : 'bg-white text-slate-600 hover:bg-slate-50'
+                                        }`}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={onLeave}
+                                    className={`py-3 text-[12px] font-bold tracking-wide transition-colors ${isDarkMode
+                                            ? 'bg-[#1a1a24] text-rose-400 hover:bg-rose-500/10'
+                                            : 'bg-white text-rose-600 hover:bg-rose-50'
+                                        }`}
+                                >
+                                    Yes, Leave
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
         </div>
     );
 };
