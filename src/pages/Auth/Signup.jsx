@@ -467,6 +467,7 @@ export const Signup = ({ onSignupSuccess }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [accountType, setAccountType] = useState('personal');
@@ -545,8 +546,13 @@ export const Signup = ({ onSignupSuccess }) => {
     e.preventDefault();
 
     // Final validation for step 2
-    if (!firstName.trim() || !lastName.trim() || !passwordsMatch || password !== confirmPassword) {
+    if (!firstName.trim() || !lastName.trim() || !phoneNumber.trim() || !passwordsMatch || password !== confirmPassword) {
       showError('Please fill in all required fields correctly');
+      return;
+    }
+
+    if (phoneNumber.replace(/\D/g, '').length < 10) {
+      showError('Please enter a valid phone number (min. 10 digits)');
       return;
     }
 
@@ -576,6 +582,7 @@ export const Signup = ({ onSignupSuccess }) => {
       const formData = new FormData();
       formData.append('name', `${firstName.trim()} ${lastName.trim()}`);
       formData.append('email', email.trim().toLowerCase());
+      formData.append('phone', phoneNumber.trim());
       formData.append('password', password);
       formData.append('password_confirmation', confirmPassword);
       formData.append('account_type', accountType);
@@ -584,6 +591,7 @@ export const Signup = ({ onSignupSuccess }) => {
       const registrationData = {
         name: `${firstName.trim()} ${lastName.trim()}`,
         email: email.trim().toLowerCase(),
+        phone: phoneNumber.trim(),
         password: password,
         password_confirmation: confirmPassword,
         account_type: accountType === 'personal' ? 1 : 2
@@ -629,8 +637,8 @@ export const Signup = ({ onSignupSuccess }) => {
           if (walletError.response && walletError.response.data) {
             errorMsg = `Wallet Error: ${walletError.response.data.detail || JSON.stringify(walletError.response.data)}`;
           }
-          // Hard fail - disrupt the signup flow BEFORE setting tokens
-          throw new Error(errorMsg);
+          // Soft fail - allow the user to complete signup and login flow
+          console.warn('Wallet creation failed, but proceeding with login:', errorMsg);
         }
         // === END: Auto-create Wallet ===
 
@@ -762,8 +770,6 @@ export const Signup = ({ onSignupSuccess }) => {
     setLoading(true);
 
     try {
-      showInfo('Creating your account...');
-
       // Call the Google login API (which can also handle signup)
       const response = await authAPI.googleLogin(googleToken);
 
@@ -1011,6 +1017,19 @@ export const Signup = ({ onSignupSuccess }) => {
                     </div>
                   </div>
 
+                  <div className="space-y-1.5 pt-2">
+                    <label className="text-xs font-bold uppercase text-gray-500 tracking-wider">Phone Number <span className="text-red-500">*</span></label>
+                    <InputField
+                      type="tel"
+                      id="phoneNumber"
+                      name="phoneNumber"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9+\s-]/g, ''))}
+                      placeholder="+91 9876543210"
+                      icon={<Smartphone size={16} />}
+                    />
+                  </div>
+
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold uppercase text-gray-500 tracking-wider">Confirm Password</label>
                     <InputField
@@ -1053,7 +1072,7 @@ export const Signup = ({ onSignupSuccess }) => {
                       <Button
                         type="submit"
                         loading={loading}
-                        disabled={!firstName.trim() || !lastName.trim() || !passwordsMatch || loading}
+                        disabled={!firstName.trim() || !lastName.trim() || !phoneNumber.trim() || !passwordsMatch || loading}
                       >
                         Create Account
                       </Button>
