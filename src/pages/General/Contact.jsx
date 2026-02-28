@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
+import mailService from '../../services/mailService';
 import {
   MapPin,
   Phone,
@@ -23,23 +24,6 @@ import {
   ChevronRight,
   Star
 } from 'lucide-react';
-
-// Mock API service for demonstration
-const mockApiClient = {
-  post: async (url, data) => {
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    if (!data.name || !data.email || !data.message) {
-      throw new Error('Validation failed');
-    }
-    return {
-      data: {
-        success: true,
-        message: 'Message sent successfully!',
-        id: Math.random().toString(36).substr(2, 9)
-      }
-    };
-  }
-};
 
 // Token manager for user authentication
 const tokenManager = {
@@ -146,7 +130,7 @@ const Contact = () => {
 
     setIsSubmitting(true);
     try {
-      await mockApiClient.post('/api/contact', formData);
+      await mailService.sendContact(formData);
       showSuccess('Message Sent!', 'We have received your message and will get back to you soon.');
       setFormData(prev => ({
         ...prev,
