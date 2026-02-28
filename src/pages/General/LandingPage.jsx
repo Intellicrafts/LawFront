@@ -25,6 +25,54 @@ const LandingPage = () => {
     const heroRef = useRef(null);
     const [intakeQuery, setIntakeQuery] = useState('');
     const [walletBalance, setWalletBalance] = useState(null);
+    const [placeholderText, setPlaceholderText] = useState('');
+    const [placeholderIndex, setPlaceholderIndex] = useState(0);
+
+    const sampleQueries = [
+        "I need help drafting a generic NDA...",
+        "Can a landlord evict me without notice?",
+        "What are the legal steps to register a startup?",
+        "How do I respond to a legal notice for debt?",
+        "Review this employment contract clause..."
+    ];
+
+    React.useEffect(() => {
+        let isTyping = true;
+        let charIndex = 0;
+        let queryIndex = 0;
+        let timer;
+
+        const type = () => {
+            const currentQuery = sampleQueries[queryIndex];
+
+            if (isTyping) {
+                setPlaceholderText(currentQuery.substring(0, charIndex + 1));
+                charIndex++;
+
+                if (charIndex === currentQuery.length) {
+                    isTyping = false;
+                    timer = setTimeout(type, 2500); // Pause at end of sentence
+                } else {
+                    timer = setTimeout(type, 50); // Typing speed
+                }
+            } else {
+                setPlaceholderText(currentQuery.substring(0, charIndex - 1));
+                charIndex--;
+
+                if (charIndex === 0) {
+                    isTyping = true;
+                    queryIndex = (queryIndex + 1) % sampleQueries.length;
+                    timer = setTimeout(type, 500); // Pause before typing new sentence
+                } else {
+                    timer = setTimeout(type, 30); // Deleting speed
+                }
+            }
+        };
+
+        timer = setTimeout(type, 1000); // Initial delay
+
+        return () => clearTimeout(timer);
+    }, []);
 
     // Fetch wallet balance for logged-in customer
     React.useEffect(() => {
@@ -212,47 +260,30 @@ const LandingPage = () => {
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4 }}
-                        className="mb-6"
+                        className="mb-8"
                     >
-                        <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest uppercase
-              ${isDark
-                                ? 'bg-brand-900/50 text-brand-300 border border-brand-800'
-                                : 'bg-brand-50 text-brand-700 border border-brand-200'}`}
+                        <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase
+                            ${isDark
+                                ? 'bg-[#1A1A1A]/60 text-gray-300 border border-[#333] backdrop-blur-[4px]'
+                                : 'bg-white/80 text-gray-600 border border-gray-200 backdrop-blur-[4px]'}`}
                         >
-                            <BadgeCheck className="h-3.5 w-3.5 text-accent-500" />
-                            {t('hero.badge')}
+                            <BadgeCheck className="h-4 w-4 text-[#F5B041]" />
+                            BAR COUNCIL VERIFIED · AI-ENABLED · TRUST-FIRST
                         </span>
                     </motion.div>
 
-                    {/* Headline — serif for authority */}
+                    {/* Headline */}
                     <motion.h1
                         initial={{ opacity: 0, y: 24 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.55, delay: 0.1 }}
-                        className={`text-4xl md:text-6xl lg:text-[68px] font-bold leading-[1.12] tracking-tight mb-5
-              ${isDark ? 'text-dark-text' : 'text-brand-900'}`}
+                        className={`text-5xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight mb-4
+              ${isDark ? 'text-white' : 'text-gray-900'}`}
                     >
-                        {(() => {
-                            const user = tokenManager.getUser();
-                            if (!tokenManager.isAuthenticated()) return (
-                                <>
-                                    {t('hero.headlineGuest1') || 'Your Legal Problem,'}{' '}
-                                    <span className="text-brand-600 italic">{t('hero.headlineGuest2') || 'In Safe Hands.'}</span>
-                                </>
-                            );
-                            if (user?.user_type === 2) return (
-                                <>
-                                    {t('hero.headlineLawyer1') || 'Welcome Back,'}{' '}
-                                    <span className="text-brand-600 italic">{t('hero.headlineLawyer2') || 'Advocate.'}</span>
-                                </>
-                            );
-                            return (
-                                <>
-                                    {t('hero.headline1')}{' '}
-                                    <span className="text-brand-600 italic">{t('hero.headline2')}</span>
-                                </>
-                            );
-                        })()}
+                        Your Legal Matters, In<br />
+                        <span className="text-[#00E5FF] font-serif italic font-light drop-shadow-[0_0_20px_rgba(0,229,255,0.4)]">
+                            Trusted Hands.
+                        </span>
                     </motion.h1>
 
                     {/* Subtitle */}
@@ -260,287 +291,119 @@ const LandingPage = () => {
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.2 }}
-                        className={`text-base md:text-lg max-w-xl mx-auto mb-10 leading-relaxed
-              ${isDark ? 'text-dark-text-tertiary' : 'text-gray-600'}`}
+                        className={`text-base md:text-lg max-w-xl mx-auto mb-12 font-medium tracking-wide
+              ${isDark ? 'text-gray-300' : 'text-gray-600'}`}
                     >
-                        {(() => {
-                            const user = tokenManager.getUser();
-                            if (!tokenManager.isAuthenticated())
-                                return t('hero.subheadlineGuestLanding') || 'Get clear on your rights. A verified lawyer takes it from there.';
-                            if (user?.user_type === 2)
-                                return t('hero.subheadlineLawyer') || 'Manage appointments, track earnings, and connect with matched clients.';
-                            return t('hero.subheadline');
-                        })()}
+                        Pick up where you left off, or start something new.
                     </motion.p>
 
-                    {/* AI Intake Widget — the hero IS the product */}
-                    {!tokenManager.isAuthenticated() && (
-                        <>
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.55, delay: 0.25 }}
-                                className="mb-6 max-w-2xl mx-auto"
+                    {/* Unified AI Chat Widget */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.55, delay: 0.25 }}
+                        className="mb-6 w-full max-w-3xl mx-auto"
+                    >
+                        <form onSubmit={handleIntakeSubmit}>
+                            <div className={`relative flex items-center w-full rounded-2xl border transition-all duration-300 shadow-lg hover:shadow-xl
+                                ${isDark ? 'bg-[#1A1A1A]/40 border-gray-700/50 focus-within:border-[#00E5FF]/50 focus-within:shadow-[0_0_30px_rgba(0,229,255,0.15)] focus-within:-translate-y-0.5'
+                                    : 'bg-white/80 border-gray-200 focus-within:border-[#00E5FF] focus-within:shadow-[0_0_30px_rgba(0,229,255,0.2)] focus-within:-translate-y-0.5'}`}
+                                style={{ backdropFilter: 'blur(12px)' }}
                             >
-                                <form onSubmit={handleIntakeSubmit}>
-                                    <div className={`relative rounded-lg border-2 transition-all duration-200
-                      ${isDark
-                                            ? 'bg-dark-bg-secondary border-dark-border focus-within:border-brand-600'
-                                            : 'bg-white border-brand-200 focus-within:border-brand-500 shadow-card hover:shadow-card-hover'}`}
-                                    >
-                                        <textarea
-                                            value={intakeQuery}
-                                            onChange={(e) => setIntakeQuery(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' && !e.shiftKey) {
-                                                    e.preventDefault();
-                                                    handleIntakeSubmit(e);
-                                                }
-                                            }}
-                                            rows={3}
-                                            placeholder={t('hero.chatPlaceholder')}
-                                            className={`w-full px-5 pt-4 pb-3 text-sm leading-relaxed resize-none rounded-t-lg
-                          bg-transparent border-none
-                          ${isDark ? 'text-dark-text placeholder-dark-text-muted' : 'text-gray-800 placeholder-gray-400'}
-                          focus:ring-0 focus:outline-none`}
-                                        />
-                                        <div className={`flex items-center justify-between px-4 py-2.5 border-t
-                        ${isDark ? 'border-dark-border' : 'border-brand-100'}`}
-                                        >
-                                            <p className={`text-xs flex items-center gap-1.5 ${isDark ? 'text-dark-text-muted' : 'text-gray-400'}`}>
-                                                <Lock className="h-3 w-3" />
-                                                {t('hero.chatPrivate')}
-                                            </p>
-                                            <button
-                                                type="submit"
-                                                className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-md text-xs font-semibold
-                            text-white bg-brand-500 hover:bg-brand-600 transition-colors duration-150`}
-                                            >
-                                                <Send className="h-3.5 w-3.5" />
-                                                {t('hero.getAiGuidance')}
-                                            </button>
-                                        </div>
-                                    </div>
-                                </form>
-                                <p className={`mt-2.5 text-center text-[11px] ${isDark ? 'text-dark-text-muted' : 'text-gray-400'}`}>
-                                    {t('hero.guestDisclaimer')}
-                                </p>
-                            </motion.div>
-
-                            {/* Guest secondary CTA — Browse lawyers */}
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.45, delay: 0.35 }}
-                                className="flex items-center gap-4 max-w-sm mx-auto mb-4"
-                            >
-                                <div className={`flex-1 h-px ${isDark ? 'bg-dark-border' : 'bg-gray-200'}`} />
-                                <span className={`text-[11px] font-medium ${isDark ? 'text-dark-text-muted' : 'text-gray-400'}`}>{t('hero.orDivider')}</span>
-                                <div className={`flex-1 h-px ${isDark ? 'bg-dark-border' : 'bg-gray-200'}`} />
-                            </motion.div>
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.45, delay: 0.4 }}
-                                className="flex justify-center mb-10"
-                            >
-                                <button
-                                    onClick={() => tokenManager.isAuthenticated() ? navigate('/legal-consoltation') : navigate('/auth')}
-                                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-md text-sm font-semibold border transition-all duration-200 group ${isDark
-                                        ? 'border-dark-border text-dark-text-secondary hover:border-brand-500 hover:text-brand-400'
-                                        : 'border-gray-200 text-gray-600 hover:border-brand-400 hover:text-brand-600'
-                                        }`}
-                                >
-                                    <Scale className="h-4 w-4" />
-                                    {t('hero.findLawyer')}
-                                    <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
-                                </button>
-                            </motion.div>
-                        </>
-                    )}
-
-                    {/* Dashboard strip — authenticated customer */}
-                    {tokenManager.isAuthenticated() && (() => {
-                        const user = tokenManager.getUser();
-                        if (user?.user_type === 2) return (
-                            // Lawyer — just two buttons
-                            <motion.div
-                                initial={{ opacity: 0, y: 16 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: 0.25 }}
-                                className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10"
-                            >
-                                <button onClick={() => navigate('/lawyer-admin')} className={primaryBtn}>
-                                    <Briefcase className="h-4 w-4" />
-                                    {t('nav.dashboard')}
-                                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                                </button>
-                                <button onClick={() => navigate('/profile')} className={outlineBtn}>
-                                    <Users className="h-4 w-4" />
-                                    {t('nav.profile')}
-                                </button>
-                            </motion.div>
-                        );
-
-                        // Client — rich quick-action strip
-                        const firstName = user?.name?.split(' ')[0] || user?.full_name?.split(' ')[0] || 'there';
-                        return (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: 0.2 }}
-                                className="w-full max-w-2xl mx-auto mb-10"
-                            >
-                                {/* Wallet balance pill */}
-                                {walletBalance !== null && (
-                                    <motion.div
-                                        initial={{ opacity: 0, scale: 0.95 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ delay: 0.3 }}
-                                        className="flex justify-center mb-5"
-                                    >
-                                        <button
-                                            onClick={() => navigate('/wallet')}
-                                            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 hover:-translate-y-0.5 ${isDark
-                                                ? 'bg-accent-900/20 border-accent-700/30 text-accent-400 hover:bg-accent-900/30'
-                                                : 'bg-accent-50 border-accent-200 text-accent-700 hover:bg-accent-100'
-                                                }`}
-                                        >
-                                            <Wallet className="h-3 w-3" />
-                                            {t('hero.walletBalance')}: ₹{walletBalance}
-                                            <ChevronRight className="h-3 w-3" />
-                                        </button>
-                                    </motion.div>
-                                )}
-
-                                {/* ── Inline AI Chat Widget ── */}
-                                <motion.form
-                                    initial={{ opacity: 0, y: 12 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.3 }}
-                                    onSubmit={(e) => {
-                                        e.preventDefault();
-                                        const q = intakeQuery.trim();
-                                        navigate('/chatbot', { state: { prefillQuery: q } });
+                                <textarea
+                                    value={intakeQuery}
+                                    onChange={(e) => setIntakeQuery(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            handleIntakeSubmit(e);
+                                        }
                                     }}
-                                    className={`relative w-full rounded-2xl border shadow-md transition-all duration-200 focus-within:shadow-lg ${isDark
-                                        ? 'bg-dark-surface border-dark-border focus-within:border-brand-500/50'
-                                        : 'bg-white border-gray-200 focus-within:border-brand-400'
-                                        }`}
-                                >
-                                    <textarea
-                                        autoFocus
-                                        rows={2}
-                                        value={intakeQuery}
-                                        onChange={(e) => setIntakeQuery(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && !e.shiftKey) {
-                                                e.preventDefault();
-                                                navigate('/chatbot', { state: { prefillQuery: intakeQuery.trim() } });
-                                            }
-                                        }}
-                                        placeholder={t('hero.chatPlaceholder')}
-                                        className={`w-full resize-none bg-transparent px-4 pt-4 pb-2 text-sm leading-relaxed outline-none placeholder:text-sm ${isDark
-                                            ? 'text-dark-text placeholder:text-dark-text-muted'
-                                            : 'text-gray-800 placeholder:text-gray-400'
-                                            }`}
-                                    />
-                                    <div className={`flex items-center justify-between px-3 pb-3 pt-1 border-t ${isDark ? 'border-white/5' : 'border-gray-100'}`}>
-                                        <span className={`text-[10px] font-medium ${isDark ? 'text-dark-text-muted' : 'text-gray-400'}`}>
-                                            {t('hero.chatHint')}
-                                        </span>
-                                        <motion.button
-                                            type="submit"
-                                            whileTap={{ scale: 0.95 }}
-                                            whileHover={{ scale: 1.04 }}
-                                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold transition-colors duration-150 shadow-sm"
-                                        >
-                                            <Send className="h-3 w-3" />
-                                            {t('hero.askTia')}
-                                        </motion.button>
+                                    rows={1}
+                                    placeholder=""
+                                    className={`w-full bg-transparent pl-6 pr-[64px] py-[18px] text-sm resize-none outline-none leading-relaxed h-[56px] overflow-hidden rounded-2xl z-10
+                                        ${isDark ? 'text-white font-medium' : 'text-gray-900 font-medium'}`}
+                                />
+                                {/* Animated Placeholder built as absolute underlay/overlay */}
+                                {!intakeQuery && (
+                                    <div className={`absolute left-6 top-[18px] pointer-events-none text-sm font-medium flex items-center z-20
+                                            ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                                        {placeholderText}
+                                        <span className="w-0.5 h-4 bg-current ml-[1px] animate-[pulse_1s_ease-in-out_infinite]" style={{ opacity: 0.8 }} />
                                     </div>
-                                </motion.form>
+                                )}
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 z-30">
+                                    <button
+                                        type="submit"
+                                        className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-[#00E5FF] to-teal-400 hover:from-cyan-400 hover:to-teal-500 text-teal-950 transition-all shadow-lg hover:shadow-cyan-500/40 hover:scale-105"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <line x1="12" y1="19" x2="12" y2="5"></line>
+                                            <polyline points="5 12 12 5 19 12"></polyline>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </motion.div>
 
-                                {/* ── Secondary quick-action pills ── */}
-                                <motion.div
-                                    initial={{ opacity: 0, y: 8 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.4 }}
-                                    className="flex items-center justify-center gap-3 mt-4"
-                                >
-                                    <button
-                                        onClick={() => navigate('/legal-consoltation')}
-                                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150 hover:-translate-y-0.5 ${isDark
-                                            ? 'border-dark-border text-dark-text-secondary hover:border-brand-500/50 hover:text-brand-400'
-                                            : 'border-gray-200 text-gray-600 hover:border-brand-300 hover:text-brand-600 bg-white shadow-sm'
-                                            }`}
-                                    >
-                                        <Scale className="h-3 w-3" />
-                                        {t('hero.findLawyer')}
-                                    </button>
-                                    <button
-                                        onClick={() => navigate('/legal-consoltation?view=appointments')}
-                                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150 hover:-translate-y-0.5 ${isDark
-                                            ? 'border-dark-border text-dark-text-secondary hover:border-accent-500/50 hover:text-accent-400'
-                                            : 'border-gray-200 text-gray-600 hover:border-accent-300 hover:text-accent-600 bg-white shadow-sm'
-                                            }`}
-                                    >
-                                        <CalendarCheck className="h-3 w-3" />
-                                        {t('hero.myAppointments')}
-                                    </button>
-                                </motion.div>
-                            </motion.div>
-                        );
-                    })()}
+                    {/* Secondary action pills */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.45, delay: 0.35 }}
+                        className="flex flex-wrap items-center justify-center gap-3 mb-16"
+                    >
+                        <button
+                            onClick={() => navigate('/legal-consoltation')}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold border transition-all hover:-translate-y-1 duration-200
+                                ${isDark ? 'bg-white/[0.03] border-gray-700 text-gray-300 hover:border-[#00E5FF]/50 hover:text-white hover:bg-white/[0.05]'
+                                    : 'bg-white border-gray-200 text-gray-700 hover:border-[#00E5FF] hover:text-teal-700 shadow-sm'}`}
+                            style={{ backdropFilter: 'blur(8px)' }}
+                        >
+                            <Users className="h-4 w-4 text-gray-400" />
+                            Find a Lawyer
+                        </button>
+                        <button
+                            onClick={() => tokenManager.isAuthenticated() ? navigate('/legal-consoltation?view=appointments') : navigate('/auth')}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold border transition-all hover:-translate-y-1 duration-200
+                                ${isDark ? 'bg-white/[0.03] border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white hover:bg-white/[0.05]'
+                                    : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:text-gray-900 shadow-sm'}`}
+                            style={{ backdropFilter: 'blur(8px)' }}
+                        >
+                            <CalendarCheck className="h-4 w-4 text-gray-400" />
+                            My Appointments
+                        </button>
+                    </motion.div>
 
                     {/* Trust strip */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.6, delay: 0.45 }}
-                        className={`flex flex-wrap items-center justify-center gap-x-8 gap-y-3 pt-4 border-t
-              ${isDark ? 'border-dark-border' : 'border-brand-100'}`}
+                        className={`flex flex-col items-center pt-8 border-t w-full max-w-4xl mx-auto
+                            ${isDark ? 'border-gray-800' : 'border-gray-200'}`}
                     >
-                        {[
-                            { icon: BadgeCheck, label: t('trust.barCouncil'), color: 'text-brand-500' },
-                            { icon: Lock, label: t('trust.encrypted'), color: 'text-brand-500' },
-                            { icon: Sparkles, label: t('trust.aiAssisted'), color: 'text-accent-500' },
-                        ].map((badge, i) => (
-                            <div key={i} className={`flex items-center gap-2 text-xs font-medium ${isDark ? 'text-dark-text-tertiary' : 'text-gray-500'}`}>
-                                <badge.icon className={`h-3.5 w-3.5 ${badge.color}`} />
-                                <span>{badge.label}</span>
-                            </div>
-                        ))}
+                        <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
+                            {[
+                                { icon: CheckCircle, label: 'Bar Council Verified Lawyers', color: 'text-teal-400' },
+                                { icon: Lock, label: 'End-to-End Encrypted', color: 'text-gray-400' },
+                                { icon: Sparkles, label: 'AI-Assisted, Lawyer-Resolved', color: 'text-yellow-500' },
+                            ].map((badge, i) => (
+                                <div key={i} className={`flex items-center gap-2 text-xs font-medium tracking-wide ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                                    <badge.icon className={`h-4 w-4 ${badge.color}`} />
+                                    <span>{badge.label}</span>
+                                </div>
+                            ))}
+                        </div>
                     </motion.div>
-
-                    {/* Lawyer entry point */}
-                    {!tokenManager.isAuthenticated() && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.5, delay: 0.6 }}
-                            className="flex justify-center pt-4"
-                        >
-                            <button
-                                onClick={() => document.getElementById('for-lawyers')?.scrollIntoView({ behavior: 'smooth' })}
-                                className={`inline-flex items-center gap-1.5 text-xs font-medium transition-colors duration-150
-                                    ${isDark ? 'text-dark-text-muted hover:text-accent-400' : 'text-gray-400 hover:text-brand-600'}`}
-                            >
-                                <Briefcase className="h-3.5 w-3.5" />
-                                {t('hero.lawyerQuestion')}
-                                <span className={`underline underline-offset-2 ${isDark ? 'text-accent-400' : 'text-brand-600'}`}>
-                                    {t('hero.joinPlatform')}
-                                </span>
-                            </button>
-                        </motion.div>
-                    )}
                 </div>
-            </motion.section>
+            </motion.section >
 
             {/* ═══════════════════════════════════════════
               HOW IT WORKS — 4-step linear flow
               ═══════════════════════════════════════════ */}
-            <section className={`py-16 md:py-20 px-4 md:px-6 border-t
+            < section className={`py-16 md:py-20 px-4 md:px-6 border-t
               ${isDark ? 'border-dark-border bg-dark-bg-secondary' : 'border-brand-100 bg-white'}`}
             >
                 <div className="max-w-6xl mx-auto">
@@ -595,12 +458,12 @@ const LandingPage = () => {
                         </div>
                     </div>
                 </div>
-            </section>
+            </section >
 
             {/* ═══════════════════════════════════════════
               CORE SERVICES
               ═══════════════════════════════════════════ */}
-            <section className={`py-16 md:py-20 px-4 md:px-6 border-t
+            < section className={`py-16 md:py-20 px-4 md:px-6 border-t
               ${isDark ? 'border-dark-border bg-dark-bg' : 'border-brand-100 bg-[hsl(40,20%,97%)]'}`}
             >
                 <div className="max-w-6xl mx-auto">
@@ -676,12 +539,12 @@ const LandingPage = () => {
                         })}
                     </div>
                 </div>
-            </section>
+            </section >
 
             {/* ═══════════════════════════════════════════
               LAWYER VERIFICATION
               ═══════════════════════════════════════════ */}
-            <section className={`py-16 md:py-20 px-4 md:px-6 border-t
+            < section className={`py-16 md:py-20 px-4 md:px-6 border-t
               ${isDark ? 'border-dark-border bg-dark-bg-secondary' : 'border-brand-100 bg-white'}`}
             >
                 <div className="max-w-6xl mx-auto">
@@ -763,12 +626,12 @@ const LandingPage = () => {
                         </motion.div>
                     </div>
                 </div>
-            </section>
+            </section >
 
             {/* ═══════════════════════════════════════════
               STATS STRIP
               ═══════════════════════════════════════════ */}
-            <section className={`py-14 px-4 md:px-6 border-t
+            < section className={`py-14 px-4 md:px-6 border-t
               ${isDark ? 'border-dark-border bg-dark-bg' : 'border-brand-100 bg-[hsl(40,20%,97%)]'}`}
             >
                 <div className="max-w-5xl mx-auto">
@@ -795,12 +658,12 @@ const LandingPage = () => {
                         ))}
                     </div>
                 </div>
-            </section>
+            </section >
 
             {/* ═══════════════════════════════════════════
               TESTIMONIALS
               ═══════════════════════════════════════════ */}
-            <section className={`py-16 md:py-20 px-4 md:px-6 border-t
+            < section className={`py-16 md:py-20 px-4 md:px-6 border-t
               ${isDark ? 'border-dark-border bg-dark-bg-secondary' : 'border-brand-100 bg-white'}`}
             >
                 <div className="max-w-6xl mx-auto">
@@ -858,12 +721,12 @@ const LandingPage = () => {
                         ))}
                     </div>
                 </div>
-            </section>
+            </section >
 
             {/* ═══════════════════════════════════════════
               WHY CHOOSE MERABAKIL
               ═══════════════════════════════════════════ */}
-            <section className={`py-16 md:py-20 px-4 md:px-6 border-t
+            < section className={`py-16 md:py-20 px-4 md:px-6 border-t
               ${isDark ? 'border-dark-border bg-dark-bg' : 'border-brand-100 bg-[hsl(40,20%,97%)]'}`}
             >
                 <div className="max-w-6xl mx-auto">
@@ -912,125 +775,129 @@ const LandingPage = () => {
                         ))}
                     </div>
                 </div>
-            </section>
+            </section >
 
             {/* ═══════════════════════════════════════════
               FOR LAWYERS
               ═══════════════════════════════════════════ */}
-            {(!tokenManager.isAuthenticated() || tokenManager.getUser()?.user_type === 2) && (
-                <section id="for-lawyers" className={`py-16 md:py-20 px-4 md:px-6 border-t
+            {
+                (!tokenManager.isAuthenticated() || tokenManager.getUser()?.user_type === 2) && (
+                    <section id="for-lawyers" className={`py-16 md:py-20 px-4 md:px-6 border-t
                   ${isDark ? 'border-dark-border bg-dark-bg-secondary' : 'border-brand-100 bg-brand-900'}`}
-                >
-                    <div className="max-w-6xl mx-auto">
-                        <div className="grid md:grid-cols-2 gap-12 items-center">
-                            <motion.div
-                                initial={{ opacity: 0, x: -24 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true }}
-                            >
-                                <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-5 animate-badge-pulse
-                  ${isDark
-                                        ? 'bg-accent-900/30 text-accent-400 border border-accent-800'
-                                        : 'bg-accent-500/20 text-accent-200 border border-accent-500/30'}`}
+                    >
+                        <div className="max-w-6xl mx-auto">
+                            <div className="grid md:grid-cols-2 gap-12 items-center">
+                                <motion.div
+                                    initial={{ opacity: 0, x: -24 }}
+                                    whileInView={{ opacity: 1, x: 0 }}
+                                    viewport={{ once: true }}
                                 >
-                                    <Briefcase className="h-3.5 w-3.5" />
-                                    {t('forLawyers.badge')}
-                                </span>
-                                <h2 className={`text-2xl md:text-3xl font-bold mb-4 ${isDark ? 'text-dark-text' : 'text-white'}`}>
-                                    {t('forLawyers.title')}
-                                </h2>
-                                <p className={`text-sm md:text-base mb-6 leading-relaxed ${isDark ? 'text-dark-text-tertiary' : 'text-brand-100'}`}>
-                                    {t('forLawyers.desc1')} {t('forLawyers.desc2')}
-                                </p>
-                                <button
-                                    onClick={() => navigate('/signup')}
-                                    className="inline-flex items-center gap-2 px-6 py-3 rounded-md font-semibold text-sm
+                                    <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-5 animate-badge-pulse
+                  ${isDark
+                                            ? 'bg-accent-900/30 text-accent-400 border border-accent-800'
+                                            : 'bg-accent-500/20 text-accent-200 border border-accent-500/30'}`}
+                                    >
+                                        <Briefcase className="h-3.5 w-3.5" />
+                                        {t('forLawyers.badge')}
+                                    </span>
+                                    <h2 className={`text-2xl md:text-3xl font-bold mb-4 ${isDark ? 'text-dark-text' : 'text-white'}`}>
+                                        {t('forLawyers.title')}
+                                    </h2>
+                                    <p className={`text-sm md:text-base mb-6 leading-relaxed ${isDark ? 'text-dark-text-tertiary' : 'text-brand-100'}`}>
+                                        {t('forLawyers.desc1')} {t('forLawyers.desc2')}
+                                    </p>
+                                    <button
+                                        onClick={() => navigate('/signup')}
+                                        className="inline-flex items-center gap-2 px-6 py-3 rounded-md font-semibold text-sm
                     bg-accent-500 hover:bg-accent-600 text-white shadow-gold-glow
                     transition-all duration-200 hover:-translate-y-0.5"
-                                >
-                                    <Briefcase className="h-4 w-4" />
-                                    {t('forLawyers.cta')}
-                                    <ArrowRight className="h-4 w-4" />
-                                </button>
-                            </motion.div>
-
-                            <motion.div
-                                initial={{ opacity: 0, x: 24 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true }}
-                                className="grid grid-cols-2 gap-4"
-                            >
-                                {[
-                                    { icon: Users, title: t('lawyerFeatures.f1.title'), desc: t('lawyerFeatures.f1.desc') },
-                                    { icon: IndianRupee, title: t('lawyerFeatures.f2.title'), desc: t('lawyerFeatures.f2.desc') },
-                                    { icon: Banknote, title: t('lawyerFeatures.f3.title'), desc: t('lawyerFeatures.f3.desc') },
-                                    { icon: Bot, title: t('lawyerFeatures.f4.title'), desc: t('lawyerFeatures.f4.desc') },
-                                ].map((item, i) => (
-                                    <div key={i} className={`p-4 rounded-md border transition-all duration-200
-                      ${isDark
-                                            ? 'bg-dark-bg border-dark-border'
-                                            : 'bg-white/10 border-white/20 hover:bg-white/15'}`}
                                     >
-                                        <item.icon className={`h-4 w-4 mb-3 ${isDark ? 'text-accent-400' : 'text-accent-300'}`} />
-                                        <h3 className={`text-xs font-semibold mb-1.5 ${isDark ? 'text-dark-text' : 'text-white'}`}>{item.title}</h3>
-                                        <p className={`text-[11px] leading-relaxed ${isDark ? 'text-dark-text-tertiary' : 'text-brand-200'}`}>{item.desc}</p>
-                                    </div>
-                                ))}
-                            </motion.div>
+                                        <Briefcase className="h-4 w-4" />
+                                        {t('forLawyers.cta')}
+                                        <ArrowRight className="h-4 w-4" />
+                                    </button>
+                                </motion.div>
+
+                                <motion.div
+                                    initial={{ opacity: 0, x: 24 }}
+                                    whileInView={{ opacity: 1, x: 0 }}
+                                    viewport={{ once: true }}
+                                    className="grid grid-cols-2 gap-4"
+                                >
+                                    {[
+                                        { icon: Users, title: t('lawyerFeatures.f1.title'), desc: t('lawyerFeatures.f1.desc') },
+                                        { icon: IndianRupee, title: t('lawyerFeatures.f2.title'), desc: t('lawyerFeatures.f2.desc') },
+                                        { icon: Banknote, title: t('lawyerFeatures.f3.title'), desc: t('lawyerFeatures.f3.desc') },
+                                        { icon: Bot, title: t('lawyerFeatures.f4.title'), desc: t('lawyerFeatures.f4.desc') },
+                                    ].map((item, i) => (
+                                        <div key={i} className={`p-4 rounded-md border transition-all duration-200
+                      ${isDark
+                                                ? 'bg-dark-bg border-dark-border'
+                                                : 'bg-white/10 border-white/20 hover:bg-white/15'}`}
+                                        >
+                                            <item.icon className={`h-4 w-4 mb-3 ${isDark ? 'text-accent-400' : 'text-accent-300'}`} />
+                                            <h3 className={`text-xs font-semibold mb-1.5 ${isDark ? 'text-dark-text' : 'text-white'}`}>{item.title}</h3>
+                                            <p className={`text-[11px] leading-relaxed ${isDark ? 'text-dark-text-tertiary' : 'text-brand-200'}`}>{item.desc}</p>
+                                        </div>
+                                    ))}
+                                </motion.div>
+                            </div>
                         </div>
-                    </div>
-                </section>
-            )}
+                    </section>
+                )
+            }
 
             {/* ═══════════════════════════════════════════
               FINAL CTA — visitors only
               ═══════════════════════════════════════════ */}
-            {!tokenManager.isAuthenticated() && (
-                <section className={`py-16 md:py-20 px-4 md:px-6 border-t
+            {
+                !tokenManager.isAuthenticated() && (
+                    <section className={`py-16 md:py-20 px-4 md:px-6 border-t
                   ${isDark ? 'border-dark-border bg-dark-bg' : 'border-t-0 bg-brand-600'}`}
-                >
-                    <div className="max-w-3xl mx-auto text-center">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                        >
-                            <h2 className={`text-2xl md:text-3xl font-bold mb-4 ${isDark ? 'text-dark-text' : 'text-white'}`}>
-                                {t('finalCta.title')}
-                            </h2>
-                            <p className={`text-sm md:text-base mb-10 max-w-lg mx-auto leading-relaxed
-                ${isDark ? 'text-dark-text-tertiary' : 'text-brand-100'}`}
+                    >
+                        <div className="max-w-3xl mx-auto text-center">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
                             >
-                                {t('finalCta.subtitle')}
-                            </p>
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                                <button
-                                    onClick={() => navigate('/signup')}
-                                    className={`px-7 py-3 rounded-md font-semibold text-sm transition-all duration-200 hover:-translate-y-0.5
-                    ${isDark
-                                            ? 'bg-brand-500 text-white hover:bg-brand-600 shadow-teal-glow'
-                                            : 'bg-white text-brand-700 hover:bg-brand-50 shadow-lg'}`}
+                                <h2 className={`text-2xl md:text-3xl font-bold mb-4 ${isDark ? 'text-dark-text' : 'text-white'}`}>
+                                    {t('finalCta.title')}
+                                </h2>
+                                <p className={`text-sm md:text-base mb-10 max-w-lg mx-auto leading-relaxed
+                ${isDark ? 'text-dark-text-tertiary' : 'text-brand-100'}`}
                                 >
-                                    {t('finalCta.cta')}
-                                </button>
-                                <button
-                                    onClick={() => navigate('/chatbot')}
-                                    className={`px-7 py-3 border-2 rounded-md font-semibold text-sm transition-all duration-200
+                                    {t('finalCta.subtitle')}
+                                </p>
+                                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                                    <button
+                                        onClick={() => navigate('/signup')}
+                                        className={`px-7 py-3 rounded-md font-semibold text-sm transition-all duration-200 hover:-translate-y-0.5
                     ${isDark
-                                            ? 'border-brand-700 text-brand-300 hover:bg-brand-900/30'
-                                            : 'border-white/30 text-white hover:bg-white/10'}`}
-                                >
-                                    {t('finalCta.ctaLawyer')}
-                                </button>
-                            </div>
-                            <p className={`mt-6 text-xs ${isDark ? 'text-dark-text-muted' : 'text-brand-200'}`}>
-                                {t('whyChooseUs.feature6.desc')}
-                            </p>
-                        </motion.div>
-                    </div>
-                </section>
-            )}
-        </div>
+                                                ? 'bg-brand-500 text-white hover:bg-brand-600 shadow-teal-glow'
+                                                : 'bg-white text-brand-700 hover:bg-brand-50 shadow-lg'}`}
+                                    >
+                                        {t('finalCta.cta')}
+                                    </button>
+                                    <button
+                                        onClick={() => navigate('/chatbot')}
+                                        className={`px-7 py-3 border-2 rounded-md font-semibold text-sm transition-all duration-200
+                    ${isDark
+                                                ? 'border-brand-700 text-brand-300 hover:bg-brand-900/30'
+                                                : 'border-white/30 text-white hover:bg-white/10'}`}
+                                    >
+                                        {t('finalCta.ctaLawyer')}
+                                    </button>
+                                </div>
+                                <p className={`mt-6 text-xs ${isDark ? 'text-dark-text-muted' : 'text-brand-200'}`}>
+                                    {t('whyChooseUs.feature6.desc')}
+                                </p>
+                            </motion.div>
+                        </div>
+                    </section>
+                )
+            }
+        </div >
     );
 };
 

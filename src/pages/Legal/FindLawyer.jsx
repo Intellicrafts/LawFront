@@ -1815,8 +1815,8 @@ const LegalCosultation = () => {
                           }`}
                       >
                         <div className="p-4 relative">
-                          {/* Header - Profile Picture & Info */}
-                          <div className="flex gap-3 mb-3 items-start">
+                          {/* Header - Profile Picture & Premium Info */}
+                          <div className="flex gap-4 mb-4 items-start">
                             {/* Profile Picture */}
                             <div className="flex-shrink-0 relative">
                               {lawyer.profile_picture_url && lawyer.profile_picture_url.trim() !== '' ? (
@@ -1836,66 +1836,78 @@ const LegalCosultation = () => {
                                 </div>
                               )}
                               {lawyer.is_verified && (
-                                <div className={`absolute -bottom-1 -right-1 bg-blue-600 text-white p-0.5 rounded-full border-2 ${isDarkMode ? 'border-[#1A1A1A]' : 'border-white'}`}>
-                                  <Check size={8} strokeWidth={4} />
+                                <div className={`absolute -bottom-1 -right-1 bg-gradient-to-tr from-emerald-600 to-teal-400 text-white p-1 rounded-full border-2 shadow-sm ${isDarkMode ? 'border-[#1A1A1A] shadow-emerald-500/20' : 'border-white shadow-emerald-500/30'}`}>
+                                  <Check size={10} strokeWidth={4} />
                                 </div>
                               )}
                             </div>
 
-                            {/* Name & Specialization */}
-                            <div className="flex-1 min-w-0">
-                              <h2 className={`text-xs font-bold truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                {lawyer.full_name}
-                              </h2>
-                              <p className={`text-[10px] ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-bold uppercase tracking-wider`}>
+                            {/* Name, Tier & Specialization */}
+                            <div className="flex-1 min-w-0 pt-1">
+                              <div className="flex items-center justify-between mb-1">
+                                <h2 className={`text-base font-black truncate font-display tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                                  {lawyer.full_name}
+                                </h2>
+                                {/* Algorithmic Tier Badge */}
+                                {(lawyer.rating >= 4.5 || lawyer.appointments_count > 50) && (
+                                  <div className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border flex items-center gap-1 ${isDarkMode ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
+                                    <Award size={8} /> Elite
+                                  </div>
+                                )}
+                              </div>
+                              <p className={`text-[11px] ${isDarkMode ? 'text-teal-400' : 'text-teal-700'} font-bold uppercase tracking-wider mb-1`}>
                                 {lawyer.specialization || 'General Practice'}
                               </p>
-                              <div className="flex items-center gap-1 mt-0.5">
-                                <Star size={10} className="text-amber-500 fill-amber-500" />
-                                <span className={`text-[10px] font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{lawyer.rating || '—'}</span>
-                                {lawyer.reviews_count ? <span className="text-[9px] text-gray-500">({lawyer.reviews_count}+)</span> : <span className="text-[9px] text-gray-500">New</span>}
+                              <div className="flex items-center gap-2 mt-1">
+                                <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-white/5 px-1.5 py-0.5 rounded">
+                                  <Star size={10} className="text-amber-500 fill-amber-500" />
+                                  <span className={`text-[10px] font-black ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{lawyer.rating || 'New'}</span>
+                                </div>
+                                {lawyer.reviews_count ? <span className="text-[10px] font-medium text-slate-500">{lawyer.reviews_count} Reviews</span> : <span className="text-[10px] font-medium text-slate-500">No reviews yet</span>}
                               </div>
                             </div>
                           </div>
 
                           {/* Bio/Description */}
-                          <p className={`text-[10px] leading-relaxed mb-3 line-clamp-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          <p className={`text-xs leading-relaxed mb-4 line-clamp-2 font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                             {lawyer.bio || `${lawyer.specialization ? `Specialized in ${lawyer.specialization}` : 'Legal professional'}${lawyer.years_of_experience ? ` with ${lawyer.years_of_experience} years of experience` : ''}.`}
                           </p>
 
-                          {/* Compact Stats */}
-                          <div className="grid grid-cols-3 gap-2 mb-4 py-2 px-1 rounded-xl" style={{
-                            backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)'
-                          }}>
-                            {[
-                              { label: 'Exp', value: lawyer.years_of_experience ? `${lawyer.years_of_experience}Y` : 'New', icon: Briefcase },
-                              { label: 'Cases', value: lawyer.appointments_count || '—', icon: Shield },
-                              { label: 'Fee', value: parseFloat(lawyer.consultation_fee) > 0 ? `₹${Number(lawyer.consultation_fee).toLocaleString('en-IN')}` : 'Free', icon: Award }
-                            ].map((stat, i) => (
-                              <div key={i} className="text-center">
-                                <div className={`text-[8px] font-bold uppercase tracking-tighter ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{stat.label}</div>
-                                <div className={`text-xs font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{stat.value}</div>
+                          {/* Trust Signals */}
+                          <div className="grid grid-cols-2 gap-2 mb-5">
+                            <div className={`py-2 px-3 rounded-lg flex items-center gap-2 ${isDarkMode ? 'bg-white/[0.03]' : 'bg-slate-50'}`}>
+                              <Briefcase size={14} className={isDarkMode ? 'text-slate-400' : 'text-slate-500'} />
+                              <div>
+                                <div className={`text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Experience</div>
+                                <div className={`text-xs font-black ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>{lawyer.years_of_experience ? `${lawyer.years_of_experience} Years` : 'New'}</div>
                               </div>
-                            ))}
+                            </div>
+                            <div className={`py-2 px-3 rounded-lg flex items-center gap-2 ${isDarkMode ? 'bg-white/[0.03]' : 'bg-slate-50'}`}>
+                              <Zap size={14} className={isDarkMode ? 'text-amber-500' : 'text-amber-600'} />
+                              <div>
+                                <div className={`text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Response</div>
+                                <div className={`text-xs font-black ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>{lawyer.appointments_count > 10 ? '< 1 Hour' : 'Usually fast'}</div>
+                              </div>
+                            </div>
                           </div>
 
-                          {/* Action Buttons */}
+                          {/* Action Buttons with Productized Pricing */}
                           <div className="flex gap-2">
                             <button
                               onClick={() => viewLawyerDetails(lawyer)}
-                              className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border ${isDarkMode
-                                ? 'bg-white/5 hover:bg-white/10 text-gray-300 border-[#2A2A2A]'
-                                : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200'
+                              className={`px-3 py-2 rounded-xl text-[11px] font-bold transition-all border flex items-center justify-center ${isDarkMode
+                                ? 'bg-white/5 hover:bg-white/10 text-slate-300 border-[#2A2A2A]'
+                                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
                                 }`}
                             >
-                              Profile
+                              <Info size={14} />
                             </button>
                             <button
                               onClick={() => startBooking(lawyer)}
-                              className="flex-[2] py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
+                              className="flex-1 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white transition-all shadow-lg shadow-teal-900/20 flex items-center justify-center gap-2 group"
                             >
-                              <Calendar size={12} />
-                              Book Appointment
+                              <Calendar size={14} className="group-hover:scale-110 transition-transform" />
+                              Book • {parseFloat(lawyer.consultation_fee) > 0 ? `₹${Number(lawyer.consultation_fee).toLocaleString('en-IN')}` : 'Free'}
                             </button>
                           </div>
                         </div>
@@ -1960,35 +1972,38 @@ const LegalCosultation = () => {
 
               <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="relative">
+                  <div className="relative mt-2">
                     <img
                       src={selectedLawyer.profile_picture_url || "https://t4.ftcdn.net/jpg/03/46/93/61/360_F_346936114_RaxE6OQogOtOt9Wgc91G1oST5p5huzJS.jpg"}
                       alt={selectedLawyer.full_name}
-                      className={`w-16 h-16 rounded-xl border-2 object-cover ${isDarkMode ? 'border-[#1A1A1A]' : 'border-white'}`}
+                      className={`w-20 h-20 rounded-2xl border-2 object-cover shadow-lg ${isDarkMode ? 'border-[#1A1A1A] shadow-black/50' : 'border-white shadow-slate-200/50'}`}
                     />
                     {selectedLawyer.is_verified && (
-                      <div className={`absolute -bottom-1 -right-1 bg-blue-600 text-white p-0.5 rounded-full border-2 ${isDarkMode ? 'border-[#1A1A1A]' : 'border-white'}`}>
-                        <Check size={8} strokeWidth={4} />
+                      <div className={`absolute -bottom-2 -right-2 bg-gradient-to-tr from-emerald-600 to-teal-400 text-white p-1.5 rounded-full border-2 shadow-md ${isDarkMode ? 'border-[#1A1A1A]' : 'border-white'}`}>
+                        <Check size={12} strokeWidth={4} />
                       </div>
                     )}
                   </div>
                   <div>
-                    <h1 className="text-sm font-bold text-white">{selectedLawyer.full_name}</h1>
-                    <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">{selectedLawyer.specialization || 'General Practice'}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <div className="flex items-center gap-1">
+                    <h1 className="text-xl font-black text-white font-display tracking-tight drop-shadow-md">{selectedLawyer.full_name}</h1>
+                    <p className="text-xs text-teal-300 font-bold uppercase tracking-widest mt-1 drop-shadow-md">{selectedLawyer.specialization || 'General Practice'}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md px-2 py-1 rounded shadow-inner">
                         <Star size={10} className="text-amber-500 fill-amber-500" />
-                        <span className="text-[10px] font-bold text-white">{selectedLawyer.rating || '—'}</span>
+                        <span className="text-xs font-black text-white">{selectedLawyer.rating || 'New'}</span>
                       </div>
-                      <span className="text-[9px] text-gray-400">• {selectedLawyer.appointments_count || 0} Consultations</span>
+                      <span className="text-[10px] text-white/80 font-medium bg-black/20 backdrop-blur px-2 py-1 rounded">
+                        {selectedLawyer.appointments_count || 0} Consultations
+                      </span>
                     </div>
                   </div>
                 </div>
                 <button
                   onClick={() => startBooking(selectedLawyer)}
-                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all"
+                  className="px-5 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-teal-900/30 flex items-center gap-2 mb-2"
                 >
-                  Book Consult
+                  <Calendar size={14} />
+                  Book Consult • {parseFloat(selectedLawyer.consultation_fee) > 0 ? `₹${Number(selectedLawyer.consultation_fee).toLocaleString('en-IN')}` : 'Free'}
                 </button>
               </div>
             </div>
@@ -1996,26 +2011,26 @@ const LegalCosultation = () => {
             <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Left Side: About & Stats */}
               <div className="md:col-span-2 space-y-4">
-                <div className={`p-4 rounded-xl border ${isDarkMode ? 'bg-white/[0.02] border-[#2A2A2A]' : 'bg-gray-50 border-gray-100'}`}>
-                  <h3 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2 flex items-center gap-2">
-                    <Info size={12} />
+                <div className={`p-5 rounded-2xl border ${isDarkMode ? 'bg-white/[0.02] border-[#2A2A2A]' : 'bg-slate-50 border-slate-100'}`}>
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3 flex items-center gap-2">
+                    <Info size={14} className={isDarkMode ? 'text-teal-500' : 'text-teal-600'} />
                     Professional Profile
                   </h3>
-                  <p className={`text-[11px] leading-relaxed ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <p className={`text-xs leading-loose font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
                     {selectedLawyer.bio || `${selectedLawyer.full_name || 'This attorney'} is a ${selectedLawyer.specialization ? `distinguished ${selectedLawyer.specialization} expert` : 'legal professional'}${selectedLawyer.years_of_experience ? ` with over ${selectedLawyer.years_of_experience} years of experience` : ''}.`}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-3">
                   {[
                     { label: 'Experience', value: selectedLawyer.years_of_experience ? `${selectedLawyer.years_of_experience}Y` : 'New', icon: Briefcase },
-                    { label: 'Consultation', value: parseFloat(selectedLawyer.consultation_fee) > 0 ? `₹${Number(selectedLawyer.consultation_fee).toLocaleString('en-IN')}` : 'Free', icon: Award },
-                    { label: 'License', value: selectedLawyer.enrollment_no || '—', icon: Shield }
+                    { label: 'Consult Fees', value: parseFloat(selectedLawyer.consultation_fee) > 0 ? `₹${Number(selectedLawyer.consultation_fee).toLocaleString('en-IN')}` : 'Free', icon: Award },
+                    { label: 'License No.', value: selectedLawyer.enrollment_no || '—', icon: Shield }
                   ].map((stat, i) => (
-                    <div key={i} className={`p-3 rounded-xl border text-center ${isDarkMode ? 'bg-white/[0.02] border-[#2A2A2A]' : 'bg-gray-50 border-gray-100'}`}>
-                      <stat.icon size={12} className="mx-auto mb-1 text-blue-500" />
-                      <div className="text-[8px] font-bold text-gray-500 uppercase">{stat.label}</div>
-                      <div className={`text-[11px] font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{stat.value}</div>
+                    <div key={i} className={`p-4 rounded-2xl border text-center ${isDarkMode ? 'bg-white/[0.02] border-[#2A2A2A]' : 'bg-white border-slate-100 shadow-sm'}`}>
+                      <stat.icon size={16} className={`mx-auto mb-2 ${isDarkMode ? 'text-teal-500' : 'text-teal-600'}`} />
+                      <div className="text-[9px] font-black tracking-widest text-slate-400 uppercase mb-1">{stat.label}</div>
+                      <div className={`text-sm font-black ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>{stat.value}</div>
                     </div>
                   ))}
                 </div>
@@ -2023,36 +2038,36 @@ const LegalCosultation = () => {
 
               {/* Right Side: Quick Info */}
               <div className="space-y-4">
-                <div className={`p-4 rounded-xl border ${isDarkMode ? 'bg-white/[0.02] border-[#2A2A2A]' : 'bg-gray-50 border-gray-100'}`}>
-                  <h3 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
-                    <MapPin size={12} />
+                <div className={`p-5 rounded-2xl border ${isDarkMode ? 'bg-white/[0.02] border-[#2A2A2A]' : 'bg-slate-50 border-slate-100'}`}>
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
+                    <MapPin size={14} className={isDarkMode ? 'text-teal-500' : 'text-teal-600'} />
                     Location & Office
                   </h3>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {[
                       { icon: Building, text: selectedLawyer.bar_association },
                       { icon: Phone, text: selectedLawyer.phone_number },
                       { icon: Mail, text: selectedLawyer.email }
                     ].map((item, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <item.icon size={10} className="text-gray-600" />
-                        <span className={`text-[10px] truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-700'}`}>{item.text}</span>
+                      <div key={i} className="flex items-start gap-3">
+                        <item.icon size={14} className={`mt-0.5 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`} />
+                        <span className={`text-xs font-medium break-all ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>{item.text}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className={`p-4 rounded-xl border ${isDarkMode ? 'bg-white/[0.02] border-[#2A2A2A]' : 'bg-gray-50 border-gray-100'}`}>
-                  <h3 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
-                    <Clock size={12} />
+                <div className={`p-5 rounded-2xl border ${isDarkMode ? 'bg-white/[0.02] border-[#2A2A2A]' : 'bg-slate-50 border-slate-100'}`}>
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
+                    <Clock size={14} className={isDarkMode ? 'text-teal-500' : 'text-teal-600'} />
                     Availability
                   </h3>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1.5">
                     {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day) => (
-                      <div key={day} className={`px-2 py-1 rounded bg-blue-500/10 text-blue-500 text-[9px] font-bold`}>{day}</div>
+                      <div key={day} className={`px-2.5 py-1 rounded-md bg-teal-500/10 text-teal-600 dark:text-teal-400 text-[10px] font-black uppercase tracking-wider`}>{day}</div>
                     ))}
                   </div>
-                  <p className="text-[9px] text-gray-500 mt-2">Standard hours: 9:00 AM - 6:00 PM</p>
+                  <p className="text-[11px] font-medium text-slate-500 mt-4">Standard hours: 9:00 AM - 6:00 PM</p>
                 </div>
               </div>
             </div>
@@ -2111,7 +2126,7 @@ const LegalCosultation = () => {
             ) : (
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-6">
-                  <button onClick={() => setBookingStep(1)} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors">
+                  <button onClick={goBack} className="p-1.5 rounded-lg hover:bg-white/5 transition-colors">
                     <ChevronLeft size={16} className="text-gray-500" />
                   </button>
                   <div>
