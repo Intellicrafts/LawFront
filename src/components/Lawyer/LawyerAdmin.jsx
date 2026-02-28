@@ -180,13 +180,12 @@ const TopNavbar = ({
           </button>
         )}
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg relative group overflow-hidden">
-            <Briefcase size={18} className="text-white relative z-10" />
+          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-md relative group overflow-hidden ${darkMode ? 'bg-white/10' : 'bg-slate-900'}`}>
+            <Briefcase size={18} className={`relative z-10 ${darkMode ? 'text-white' : 'text-white'}`} />
             <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 blur-sm opacity-0 group-hover:opacity-70 transition-opacity duration-300 -z-10"></div>
           </div>
-          <h1 className={`text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent`}>
-            MeraBakil
+          <h1 className={`text-xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+            MeraBakil<span className={darkMode ? 'text-blue-400' : 'text-blue-600'}>.</span>
           </h1>
         </div>
       </div>
@@ -347,7 +346,7 @@ const LiveSessionCard = ({ appointment, darkMode, onJoin }) => (
   </GlassCard>
 );
 
-const StatCardPremium = ({ title, value, change, trend, icon: Icon, color, darkMode }) => (
+const StatCardPremium = ({ title, value, change, trend, icon: Icon, gradient, darkMode }) => (
   <GlassCard
     darkMode={darkMode}
     className={`p-3.5 group/stat ${darkMode ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}
@@ -364,13 +363,13 @@ const StatCardPremium = ({ title, value, change, trend, icon: Icon, color, darkM
     </div>
     <div>
       <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">{title}</p>
-      <h3 className={`text-lg font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>{value}</h3>
-      <div className="mt-2 h-[3px] w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+      <h3 className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>{value}</h3>
+      <div className="mt-2.5 h-[4px] w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: '70%' }}
           transition={{ duration: 1.5, ease: "easeOut" }}
-          className="h-full bg-slate-900 dark:bg-white"
+          className={`h-full bg-gradient-to-r ${gradient || (darkMode ? 'from-white to-slate-400' : 'from-slate-900 to-slate-600')}`}
         />
       </div>
     </div>
@@ -405,14 +404,14 @@ const LawyerDashboard = ({ darkMode, userData, onNavigate, handleJoinSession, st
               <div className="flex items-center gap-2 mb-2">
                 <PremiumBadge text="Professional Dashboard" />
               </div>
-              <h1 className={`text-2xl sm:text-3xl font-black tracking-tighter mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+              <h1 className={`text-3xl sm:text-4xl font-black tracking-tighter mb-3 leading-none ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                 Advancing Justice,<br />
-                <span className="text-slate-900 dark:text-white underline decoration-slate-400/30 underline-offset-8">
+                <span className={`underline decoration-4 underline-offset-8 mt-2 inline-block ${darkMode ? 'decoration-blue-500/50' : 'decoration-blue-600/30'}`}>
                   Adv. {userData?.name || 'Bakil'}
                 </span>
               </h1>
-              <p className={`text-[12px] max-w-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'} leading-relaxed font-bold opacity-80`}>
-                Current roster: <span className="text-slate-900 dark:text-slate-300">{appointmentData?.length || 0} active sessions</span>.
+              <p className={`text-[13px] max-w-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'} leading-relaxed font-bold opacity-80 mt-4`}>
+                Current roster: <span className={`px-2 py-0.5 rounded-lg text-white font-black ml-1 ${darkMode ? 'bg-white/10' : 'bg-slate-900'}`}>{appointmentData?.length || 0} active sessions</span>.
               </p>
             </div>
           </GlassCard>

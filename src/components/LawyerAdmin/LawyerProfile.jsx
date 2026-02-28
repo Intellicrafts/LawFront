@@ -1,25 +1,28 @@
-
 import React, { useState, useEffect } from 'react';
 import {
-    User, Mail, Phone, MapPin, Briefcase, Award, Shield,
-    Camera, Edit3, Check, X, ShieldCheck, Globe, Star,
-    Linkedin, Twitter, Facebook, ExternalLink, CheckCircle,
-    Loader2, AlertCircle, Clock, Scale, BadgeCheck, RefreshCw
+    User, Mail, Phone, MapPin, Award, Shield,
+    Camera, Edit3, Check, X, ShieldCheck, Globe,
+    Linkedin, Twitter, CheckCircle,
+    Loader2, AlertCircle, Clock, RefreshCw, Briefcase
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authAPI } from '../../api/apiService';
 import { verificationService } from '../../services/verificationService';
 import Avatar from '../common/Avatar';
 
-const GlassCard = ({ children, className = "", darkMode, hover = true }) => (
+// ─── Premium UI Components ────────────────────────────────────────
+
+const GlassCard = ({ children, className = "", darkMode, hover = true, glow = false }) => (
     <motion.div
-        whileHover={hover ? { y: -2 } : {}}
+        whileHover={hover ? { y: -4, transition: { duration: 0.2 } } : {}}
         className={`
-      relative overflow-hidden rounded-[20px] border transition-all duration-300
+      relative overflow-hidden rounded-3xl border transition-all duration-300
       ${darkMode
-                ? 'bg-neutral-900/60 border-white/5 backdrop-blur-xl'
-                : 'bg-white/80 border-slate-200/50 backdrop-blur-lg shadow-sm'
+                ? 'bg-neutral-900/40 border-white/5 backdrop-blur-2xl'
+                : 'bg-white/70 border-slate-200/50 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)]'
             }
+      ${glow && darkMode ? 'shadow-[0_0_30px_rgba(255,255,255,0.03)]' : ''}
+      ${glow && !darkMode ? 'shadow-[0_0_30px_rgba(0,0,0,0.03)]' : ''}
       ${className}
     `}
     >
@@ -27,22 +30,24 @@ const GlassCard = ({ children, className = "", darkMode, hover = true }) => (
     </motion.div>
 );
 
-const FieldBadge = ({ children, color = 'default', darkMode }) => {
-    const colors = {
-        default: darkMode ? 'bg-white/5 text-slate-400' : 'bg-slate-100 text-slate-500',
-        green: darkMode ? 'bg-green-500/10 text-green-400' : 'bg-green-50 text-green-700 border border-green-200',
-        amber: darkMode ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-700 border border-amber-200',
-        blue: darkMode ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50  text-blue-700  border border-blue-200',
-        red: darkMode ? 'bg-red-500/10 text-red-400' : 'bg-red-50   text-red-700   border border-red-200',
+const PremiumBadge = ({ icon: Icon, children, color = 'blue', darkMode, glow = false }) => {
+    const colorStyles = {
+        blue: darkMode ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-blue-50 text-blue-700 border-blue-200 shadow-blue-500/10',
+        amber: darkMode ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-700 border-amber-200 shadow-amber-500/10',
+        green: darkMode ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-emerald-500/10',
+        red: darkMode ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-rose-50 text-rose-700 border-rose-200 shadow-rose-500/10',
+        default: darkMode ? 'bg-white/5 text-slate-300 border-white/10' : 'bg-slate-100 text-slate-700 border-slate-200',
     };
+
     return (
-        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${colors[color]}`}>
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-widest ${colorStyles[color]} ${glow ? 'shadow-lg' : ''} transition-all`}>
+            {Icon && <Icon size={12} strokeWidth={3} className={glow ? 'animate-pulse' : ''} />}
             {children}
         </span>
     );
 };
 
-// ─── Premium Verification Status Card ────────────────────────────────────────
+// ─── Verification Workflow Card ────────────────────────────────────────
 
 const VerificationStatusCard = ({ userData, lawyerStatus, darkMode, onVerificationSuccess }) => {
     const [loading, setLoading] = useState(false);
@@ -51,47 +56,36 @@ const VerificationStatusCard = ({ userData, lawyerStatus, darkMode, onVerificati
     const [manualEnrollment, setManualEnrollment] = useState('');
     const [verifyResult, setVerifyResult] = useState(null);
 
-    // Use lawyer_data nested object per actual API structure
     const enrollmentNo = userData?.lawyer_data?.enrollment_no || '';
     const hasEnrollment = !!enrollmentNo;
 
-    // Level from the 3-state status string
     const statusToLevel = (s) =>
         (s === 'Bar Council Verified' || s === "1" || s === 1) ? 1 : (s === 'Admin Verified' || s === "2" || s === 2) ? 2 : 0;
 
     const [localLevel, setLocalLevel] = useState(statusToLevel(lawyerStatus));
 
-    // Sync local level if props change (e.g. after global refetch)
     useEffect(() => {
         setLocalLevel(statusToLevel(lawyerStatus));
     }, [lawyerStatus]);
 
-    const statesList = ['Uttar Pradesh', 'Delhi', 'Andhra Pradesh', 'Rajasthan'];
-
+    const statesList = ['Uttar Pradesh', 'Delhi', 'Andhra Pradesh', 'Rajasthan', 'Maharashtra', 'Karnataka'];
     const hasTriggeredRef = React.useRef(false);
 
-    // Auto-trigger Satyapan on mount whenever enrollment exists and status is pending
     useEffect(() => {
         const currentLevel = statusToLevel(lawyerStatus);
         if (!enrollmentNo || currentLevel >= 1 || hasTriggeredRef.current) return;
 
         const run = async () => {
             hasTriggeredRef.current = true;
-            console.log('[ProfileVerification] Auto-triggering Satyapan for:', enrollmentNo);
             setLoading(true); setError(null);
             try {
                 const result = await verificationService.verifyLawyer(enrollmentNo, stateVal);
-                console.log('[ProfileVerification] Satyapan SUCCESS:', result);
                 setVerifyResult(result);
                 setLocalLevel(1);
-
-                // ✅ Sync status to backend
                 await authAPI.updateLawyerStatus(userData.id, 'Bar Council Verified', result);
                 if (onVerificationSuccess) onVerificationSuccess();
             } catch (err) {
                 console.warn('[ProfileVerification] Auto-verification could not complete:', err.message);
-                // We don't set global error here to avoid blocking UI, 
-                // but let them try manually if they want.
             } finally {
                 setLoading(false);
             }
@@ -104,7 +98,6 @@ const VerificationStatusCard = ({ userData, lawyerStatus, darkMode, onVerificati
         if (!num) { setError('Enter your Bar Council Enrollment Number.'); return; }
         setLoading(true); setError(null);
         try {
-            console.log('[ProfileVerification] Manual verification for:', num);
             const result = await verificationService.verifyLawyer(num, stateVal);
             setVerifyResult(result);
             setLocalLevel(1);
@@ -117,117 +110,121 @@ const VerificationStatusCard = ({ userData, lawyerStatus, darkMode, onVerificati
         }
     };
 
-    // Visual step config
     const steps = [
         {
-            num: 1,
-            title: 'Bar Council',
-            sub: 'Automated via Satyapan API',
+            title: 'Bar Council Identity',
+            sub: 'Instant API Verification via Satyapan',
             done: localLevel >= 1,
             active: localLevel === 0,
+            icon: ShieldCheck
         },
         {
-            num: 2,
-            title: 'Admin Approval',
-            sub: 'Manual review by MeraBakil team',
+            title: 'Final Access Approval',
+            sub: 'Manual review by safety team',
             done: localLevel >= 2,
             active: localLevel === 1,
+            icon: Award
         },
     ];
 
     return (
-        <GlassCard darkMode={darkMode} className="p-4">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-                <h3 className={`text-[10px] font-black uppercase tracking-[0.2em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Verification Status
-                </h3>
+        <GlassCard darkMode={darkMode} className="p-6 relative overflow-hidden ring-1 ring-inset ring-slate-900/5 dark:ring-white/5">
+            {/* Subtle Gradient Backdrop */}
+            <div className={`absolute -right-20 -top-20 w-64 h-64 rounded-full blur-[80px] opacity-30 ${localLevel >= 2 ? 'bg-emerald-500' : localLevel === 1 ? 'bg-amber-500' : 'bg-red-500'}`} />
+
+            <div className="flex items-center justify-between mb-8 relative z-10">
+                <div>
+                    <h3 className={`text-[11px] font-black uppercase tracking-[0.2em] mb-1 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                        Trust & Verification
+                    </h3>
+                    <p className={`text-sm font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Account Status</p>
+                </div>
                 {localLevel >= 2 ? (
-                    <FieldBadge color="green" darkMode={darkMode}><BadgeCheck size={10} />Fully Verified</FieldBadge>
+                    <PremiumBadge color="green" darkMode={darkMode} icon={ShieldCheck} glow>Verified Officer</PremiumBadge>
                 ) : localLevel === 1 ? (
-                    <FieldBadge color="amber" darkMode={darkMode}><Clock size={10} />In Review</FieldBadge>
+                    <PremiumBadge color="amber" darkMode={darkMode} icon={Clock} glow>Review Pending</PremiumBadge>
                 ) : (
-                    <FieldBadge color="amber" darkMode={darkMode}><AlertCircle size={10} />Action Needed</FieldBadge>
+                    <PremiumBadge color="red" darkMode={darkMode} icon={AlertCircle} glow>Action Needed</PremiumBadge>
                 )}
             </div>
 
-            {/* Progress track */}
-            <div className="relative pl-2 space-y-1">
-                {steps.map((step, i) => (
-                    <div key={i}>
-                        <div className="flex items-start gap-3">
-                            {/* Circle */}
-                            <div className={`mt-0.5 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-[9px] font-black transition-all
-                                ${step.done ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' :
-                                    step.active ? 'bg-amber-400 text-white animate-pulse' :
-                                        (darkMode ? 'bg-white/8 text-slate-500' : 'bg-slate-100 text-slate-400')}`}>
-                                {step.done ? <Check size={12} strokeWidth={3} /> : step.num}
-                            </div>
-                            <div className="flex-1 pb-4">
-                                <p className={`text-[12px] font-black ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>{step.title}</p>
-                                <p className="text-[10px] text-slate-500 font-medium mt-0.5">{step.sub}</p>
+            <div className="relative space-y-8 z-10">
+                {/* Connecting Line */}
+                <div className={`absolute left-[1.15rem] top-6 bottom-6 w-0.5 rounded-full ${darkMode ? 'bg-white/10' : 'bg-slate-200'}`} />
 
-                                {/* Step 1 action area */}
+                {steps.map((step, i) => (
+                    <div key={i} className="relative flex items-start gap-5">
+                        <div className={`relative z-10 w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-300
+                            ${step.done ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] scale-110' :
+                                step.active ? (darkMode ? 'bg-white text-slate-900 shadow-[0_0_20px_rgba(255,255,255,0.2)]' : 'bg-slate-900 text-white shadow-[0_0_20px_rgba(15,23,42,0.2)] scale-110') :
+                                    (darkMode ? 'bg-neutral-800 text-slate-500' : 'bg-slate-100 text-slate-400')}`}>
+                            {step.done ? <Check size={20} strokeWidth={3} /> : <step.icon size={18} strokeWidth={2.5} />}
+                        </div>
+
+                        <div className="flex-1 pt-1">
+                            <p className={`text-[13px] font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'} ${!step.active && !step.done && 'opacity-50'}`}>
+                                {step.title}
+                            </p>
+                            <p className={`text-[11px] font-medium leading-relaxed mt-1 ${darkMode ? 'text-slate-400' : 'text-slate-500'} ${!step.active && !step.done && 'opacity-50'}`}>
+                                {step.sub}
+                            </p>
+
+                            {/* Active Action Area for Step 1 */}
+                            <AnimatePresence>
                                 {i === 0 && step.active && localLevel === 0 && (
-                                    <div className="mt-3 space-y-3">
-                                        <div className="flex flex-col gap-2">
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Enrollment Number"
-                                                    className={`flex-1 text-[11px] h-9 px-3 rounded-lg border outline-none focus:ring-2 focus:ring-blue-500/30 transition-all
-                                                        ${darkMode ? 'bg-black/30 border-slate-700 text-slate-200 placeholder-slate-600' : 'bg-white border-slate-200 text-slate-700 placeholder-slate-400 shadow-sm'}`}
-                                                    value={hasEnrollment ? enrollmentNo : manualEnrollment}
-                                                    onChange={e => setManualEnrollment(e.target.value)}
-                                                    disabled={loading || hasEnrollment}
-                                                />
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        className="mt-5 space-y-4"
+                                    >
+                                        <div className="flex flex-col gap-3">
+                                            <input
+                                                type="text"
+                                                placeholder="Enter Bar Council Enrollment No."
+                                                className={`w-full text-xs h-11 px-4 rounded-xl border outline-none font-bold transition-all
+                                                    focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500
+                                                    ${darkMode ? 'bg-black/50 border-white/10 text-white placeholder-slate-600' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 shadow-sm'}`}
+                                                value={hasEnrollment ? enrollmentNo : manualEnrollment}
+                                                onChange={e => setManualEnrollment(e.target.value)}
+                                                disabled={loading || hasEnrollment}
+                                            />
+                                            <div className="relative">
                                                 <select
-                                                    className={`text-[11px] h-9 px-2 rounded-lg border outline-none focus:ring-2 focus:ring-blue-500/30 transition-all
-                                                        ${darkMode ? 'bg-black/30 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-700 shadow-sm'}`}
+                                                    className={`w-full text-xs h-11 px-4 rounded-xl border outline-none font-bold transition-all appearance-none cursor-pointer
+                                                        focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500
+                                                        ${darkMode ? 'bg-black/50 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900 shadow-sm'}`}
                                                     value={stateVal}
                                                     onChange={e => setStateVal(e.target.value)}
                                                     disabled={loading}
                                                 >
                                                     {statesList.map(s => <option key={s}>{s}</option>)}
                                                 </select>
+                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                    <Globe size={14} className={darkMode ? 'text-slate-500' : 'text-slate-400'} />
+                                                </div>
                                             </div>
                                             <button
                                                 onClick={handleVerify}
                                                 disabled={loading}
-                                                className={`w-full h-9 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-[0.98]
-                                                    ${darkMode ? 'bg-white text-slate-900 hover:bg-slate-100' : 'bg-slate-900 text-white hover:bg-slate-800'} shadow-md disabled:opacity-50`}
+                                                className={`w-full h-11 rounded-xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-[0.98]
+                                                    ${darkMode ? 'bg-white text-slate-900 hover:bg-slate-200' : 'bg-slate-900 text-white hover:bg-slate-800'} shadow-xl disabled:opacity-50`}
                                             >
-                                                {loading ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
-                                                {loading ? 'Verifying with Satyapan...' : 'Verify Credentials Now'}
+                                                {loading ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
+                                                {loading ? 'Authenticating...' : 'Verify Identity Now'}
                                             </button>
                                         </div>
                                         {error && (
-                                            <p className="text-[9px] font-medium text-red-500 flex items-start gap-1.5 leading-tight">
-                                                <AlertCircle size={10} className="mt-0.5 flex-shrink-0" />
-                                                {error}
-                                            </p>
+                                            <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="p-3 rounded-xl bg-red-500/10 border border-red-500/20">
+                                                <p className="text-[11px] font-bold text-red-500 flex items-start gap-2 leading-tight">
+                                                    <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
+                                                    {error}
+                                                </p>
+                                            </motion.div>
                                         )}
-                                    </div>
+                                    </motion.div>
                                 )}
-
-                                {i === 0 && step.done && (
-                                    <div className={`mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[9px] font-bold
-                                        ${darkMode ? 'bg-green-500/10 text-green-400' : 'bg-green-50 text-green-700 border border-green-100'}`}>
-                                        <CheckCircle size={10} /> Enrollment Number Verified
-                                    </div>
-                                )}
-
-                                {i === 1 && step.active && (
-                                    <div className="mt-2">
-                                        <FieldBadge color="amber" darkMode={darkMode}><Clock size={10} />Awaiting Final Admin Approval</FieldBadge>
-                                    </div>
-                                )}
-                            </div>
+                            </AnimatePresence>
                         </div>
-                        {/* Connector line */}
-                        {i < steps.length - 1 && (
-                            <div className={`ml-3 w-0.5 h-6 -mt-2 mb-1 rounded-full ${step.done ? 'bg-green-400' : (darkMode ? 'bg-white/8' : 'bg-slate-200')}`} />
-                        )}
                     </div>
                 ))}
             </div>
@@ -257,13 +254,13 @@ const LawyerProfile = ({ darkMode }) => {
     useEffect(() => { fetchProfile(); }, []);
 
     if (loading) return (
-        <div className="p-8 flex items-center justify-center min-h-[400px]">
-            <div className={`w-12 h-12 border-4 rounded-full animate-spin ${darkMode ? 'border-white/20 border-t-white' : 'border-slate-200 border-t-slate-900'}`} />
+        <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
+            <div className={`w-12 h-12 rounded-full border-2 border-t-transparent animate-spin ${darkMode ? 'border-white/20 border-t-white' : 'border-slate-200 border-t-slate-900'}`} />
+            <p className={`text-xs font-black uppercase tracking-widest animate-pulse ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Loading Profile...</p>
         </div>
     );
 
-    // All reads use the actual API structure: top-level fields + nested lawyer_data
-    const ld = userData?.lawyer_data || {};   // lawyer_data nested object
+    const ld = userData?.lawyer_data || {};
     const name = userData?.name || 'Advocate';
     const email = userData?.email || '—';
     const phone = userData?.phone || '—';
@@ -273,230 +270,240 @@ const LawyerProfile = ({ darkMode }) => {
     const experience = ld.years_of_experience ? `${ld.years_of_experience}` : null;
     const rating = ld.average_rating ? parseFloat(ld.average_rating).toFixed(1) : null;
     const totalReviews = ld.total_reviews || 0;
-    const consultationFee = ld.consultation_fee ? `₹${ld.consultation_fee}` : null;
     const specializations = ld.specialization ? [ld.specialization] : [];
-    const lawyerStatus = ld.status || 'pending'; // 'pending' | 'Bar Council Verified' | 'Admin Verified' | "1" | "0"
+    const lawyerStatus = ld.status || 'pending';
     const verificationLevel = (lawyerStatus === 'Admin Verified' || lawyerStatus === "2" || lawyerStatus === 2) ? 2 : (lawyerStatus === 'Bar Council Verified' || lawyerStatus === "1" || lawyerStatus === 1) ? 1 : 0;
 
     return (
-        <div className="p-4 sm:p-5 space-y-5 max-w-[1200px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div>
-                    <div className="flex items-center gap-2 mb-1.5">
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border
-                            ${darkMode ? 'bg-white/5 text-slate-400 border-white/10' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
-                            Professional Identity
-                        </span>
-                        <div className="h-0.5 w-0.5 rounded-full bg-slate-300" />
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Public Portfolio</span>
-                    </div>
-                    <h1 className={`text-2xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                        Academic <span className={darkMode ? 'text-slate-400' : 'text-slate-500'}>Profile</span>
-                    </h1>
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 mx-auto max-w-[1400px] font-sans pb-24">
+            {/* Header Banner Area */}
+            <div className="relative h-48 md:h-64 rounded-b-[40px] md:rounded-b-[60px] overflow-hidden -mx-4 sm:mx-0 shadow-2xl z-0">
+                {/* Abstract Premium Gradient */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${darkMode ? 'from-slate-900 via-neutral-900 to-slate-800' : 'from-slate-800 via-slate-900 to-slate-800'}`}>
+                    <div className="absolute inset-0 opacity-20 transition-transform duration-[20s] ease-linear hover:scale-110" style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c1.38 0 2.5-1.12 2.5-2.5S12.38 13 11 13s-2.5 1.12-2.5 2.5S9.62 18 11 18zM11 18c1.38 0 2.5-1.12 2.5-2.5S12.38 13 11 13s-2.5 1.12-2.5 2.5S9.62 18 11 18zM11 18c1.38 0 2.5-1.12 2.5-2.5S12.38 13 11 13s-2.5 1.12-2.5 2.5S9.62 18 11 18z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E")`
+                    }} />
+                    <div className={`absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 ${darkMode ? 'bg-blue-500/20' : 'bg-white/10'}`} />
                 </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={fetchProfile}
-                        className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all
-                            ${darkMode ? 'bg-white/5 text-slate-400 hover:bg-white/10' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
-                        title="Refresh profile"
-                    >
-                        <RefreshCw size={14} />
+
+                {/* Actions overlaying banner */}
+                <div className="absolute top-6 right-6 flex items-center gap-3">
+                    <button onClick={fetchProfile} className="h-10 w-10 rounded-2xl bg-white/10 backdrop-blur-md text-white flex items-center justify-center hover:bg-white/20 transition-all shadow-lg active:scale-95 border border-white/20">
+                        <RefreshCw size={16} />
                     </button>
-                    <button
-                        onClick={() => setIsEditing(!isEditing)}
-                        className={`h-8 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all shadow-sm
-                            ${isEditing
-                                ? 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                                : (darkMode ? 'bg-white text-slate-900 hover:bg-slate-100' : 'bg-slate-900 text-white hover:bg-slate-800')
-                            }`}
-                    >
-                        {isEditing ? <X size={14} /> : <Edit3 size={14} />}
-                        {isEditing ? 'Cancel' : 'Edit Profile'}
+                    <button onClick={() => setIsEditing(!isEditing)} className="h-10 px-5 rounded-2xl bg-white/10 backdrop-blur-md text-white text-[11px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-white/20 transition-all shadow-lg active:scale-95 border border-white/20">
+                        {isEditing ? <X size={16} /> : <Edit3 size={16} />}
+                        {isEditing ? 'Cancel Edit' : 'Edit Profile'}
                     </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                {/* ── Left sidebar ── */}
-                <div className="lg:col-span-4 space-y-4">
-                    {/* Avatar + identity card */}
-                    <GlassCard darkMode={darkMode} className="p-5 flex flex-col items-center text-center">
-                        <div className="relative mb-4 group">
-                            <div className="relative border-4 border-white dark:border-neutral-900 rounded-[28px] overflow-hidden shadow-2xl transition-transform group-hover:scale-[1.02]">
-                                <Avatar src={userData?.profileImage} name={name} size={108} className="rounded-none bg-slate-100" />
-                            </div>
-                            <button className={`absolute -bottom-2 -right-2 w-8 h-8 rounded-xl flex items-center justify-center shadow-lg border-2 border-white dark:border-neutral-900 group-hover:scale-110 transition-all cursor-pointer
-                                ${darkMode ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'}`}>
-                                <Camera size={14} />
-                            </button>
-                        </div>
+            <div className="px-4 sm:px-8 xl:px-12 -mt-24 md:-mt-32 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
 
-                        <div className="space-y-1 mt-2">
-                            <h2 className={`text-lg font-black leading-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>{name}</h2>
-                            <div className="flex items-center justify-center gap-1.5">
-                                {verificationLevel >= 2 ? (
-                                    <><ShieldCheck size={12} className="text-blue-500" /><span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">Fully Verified</span></>
-                                ) : verificationLevel >= 1 ? (
-                                    <><CheckCircle size={12} className="text-green-500" /><span className="text-[10px] font-bold text-green-500 uppercase tracking-widest">Level 1 Verified</span></>
-                                ) : (
-                                    <><Shield size={12} className="text-amber-400" /><span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">Verification Pending</span></>
+                {/* ── Left Sidebar: Identity & Stats ── */}
+                <div className="lg:col-span-4 lg:sticky lg:top-8 space-y-6">
+                    {/* Main Identity Card */}
+                    <GlassCard darkMode={darkMode} className="p-1 pt-1 border border-white/10 dark:border-white/5" glow>
+                        <div className={`p-6 md:p-8 rounded-[22px] flex flex-col items-center text-center ${darkMode ? 'bg-black/50' : 'bg-white'}`}>
+                            <div className="relative mb-6 group">
+                                <div className="relative border-4 border-white dark:border-neutral-900 rounded-[35px] overflow-hidden shadow-2xl transition-transform duration-500 group-hover:scale-[1.03]">
+                                    <Avatar src={userData?.profileImage} name={name} size={140} className="rounded-none bg-slate-100" />
+                                </div>
+                                <button className={`absolute -bottom-3 -right-3 w-10 h-10 rounded-2xl flex items-center justify-center shadow-2xl border-[3px] border-white dark:border-neutral-900 group-hover:scale-110 transition-all cursor-pointer
+                                    ${darkMode ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'}`}>
+                                    <Camera size={16} />
+                                </button>
+                            </div>
+
+                            <div className="space-y-2 w-full">
+                                <h1 className={`text-2xl font-black tracking-tight leading-none ${darkMode ? 'text-white' : 'text-slate-900'}`}>{name}</h1>
+
+                                <div className="flex items-center justify-center gap-2 pt-1">
+                                    {verificationLevel >= 2 ? (
+                                        <div className="flex items-center gap-1.5 bg-blue-500/10 text-blue-500 dark:text-blue-400 px-3 py-1 rounded-full border border-blue-500/20">
+                                            <ShieldCheck size={14} />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Fully Verified</span>
+                                        </div>
+                                    ) : verificationLevel >= 1 ? (
+                                        <div className="flex items-center gap-1.5 bg-green-500/10 text-green-600 dark:text-green-400 px-3 py-1 rounded-full border border-green-500/20">
+                                            <CheckCircle size={14} />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Council Verified</span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 px-3 py-1 rounded-full border border-amber-500/20">
+                                            <Shield size={14} />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Unverified</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {enrollmentNo && (
+                                    <p className={`text-[11px] font-mono font-bold mt-2 pt-2 border-t ${darkMode ? 'border-white/10 text-slate-400' : 'border-slate-100 text-slate-500'}`}>
+                                        ID: {enrollmentNo}
+                                    </p>
                                 )}
                             </div>
-                            {enrollmentNo && (
-                                <p className={`text-[10px] font-mono font-bold mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                                    #{enrollmentNo}
-                                </p>
-                            )}
                         </div>
-
-                        {/* Stats — only show if real data available */}
-                        {(rating || totalReviews || experience) && (
-                            <div className="w-full mt-5 pt-5 border-t border-slate-100 dark:border-white/5 grid grid-cols-3 gap-2">
-                                {[
-                                    { label: 'Rating', val: rating ? `${rating}★` : '—', show: true },
-                                    { label: 'Reviews', val: totalReviews || '0', show: true },
-                                    { label: 'Exp.', val: experience ? `${experience}y` : '—', show: true },
-                                ].filter(s => s.show).map((s, i) => (
-                                    <div key={i} className="flex flex-col items-center">
-                                        <p className={`text-[14px] font-black leading-none mb-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{s.val}</p>
-                                        <p className="text-[8px] font-black uppercase text-slate-400 tracking-tighter">{s.label}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
                     </GlassCard>
 
-                    {/* Verification Status */}
-                    <VerificationStatusCard userData={userData} lawyerStatus={lawyerStatus} darkMode={darkMode} onVerificationSuccess={fetchProfile} />
+                    {/* Quick Stats Grid */}
+                    {(rating || totalReviews || experience) && (
+                        <div className="grid grid-cols-3 gap-3">
+                            {[
+                                { label: 'Rating', val: rating ? `${rating}★` : '—', color: 'from-amber-400 to-orange-500' },
+                                { label: 'Reviews', val: totalReviews || '0', color: 'from-blue-400 to-indigo-500' },
+                                { label: 'Experience', val: experience ? `${experience} Yrs` : '—', color: 'from-emerald-400 to-teal-500' },
+                            ].map((s, i) => (
+                                <GlassCard key={i} darkMode={darkMode} className="p-4 text-center flex flex-col items-center justify-center">
+                                    <span className={`bg-gradient-to-br ${s.color} text-transparent bg-clip-text text-xl font-black mb-1`}>{s.val}</span>
+                                    <span className={`text-[9px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{s.label}</span>
+                                </GlassCard>
+                            ))}
+                        </div>
+                    )}
 
                     {/* Contact Details */}
-                    <GlassCard darkMode={darkMode} className="p-4 space-y-3">
-                        <h3 className={`text-[10px] font-black uppercase tracking-[0.2em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Contact Details</h3>
-                        {[
-                            { Icon: Mail, label: 'Email', val: email },
-                            { Icon: Phone, label: 'Phone', val: phone },
-                            { Icon: MapPin, label: 'Location', val: location },
-                        ].map(({ Icon, label, val }, i) => (
-                            <div key={i} className="flex items-center gap-3">
-                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${darkMode ? 'bg-white/5' : 'bg-slate-100'} text-slate-400`}>
-                                    <Icon size={14} />
+                    <GlassCard darkMode={darkMode} className="p-6 space-y-5">
+                        <h3 className={`text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-2 ${darkMode ? 'text-slate-300' : 'text-slate-800'}`}>
+                            <Phone size={14} className={darkMode ? 'text-slate-500' : 'text-slate-400'} /> Direct Contact
+                        </h3>
+                        <div className="space-y-4">
+                            {[
+                                { Icon: Mail, label: 'Email', val: email },
+                                { Icon: Phone, label: 'Phone', val: phone },
+                                { Icon: MapPin, label: 'Location', val: location },
+                            ].map(({ Icon, label, val }, i) => (
+                                <div key={i} className={`flex items-start gap-4 p-3 rounded-2xl transition-colors ${darkMode ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
+                                    <div className={`mt-0.5 w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${darkMode ? 'bg-white/10 text-white' : 'bg-slate-900 text-white shadow-md'}`}>
+                                        <Icon size={14} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest leading-none mb-1">{label}</p>
+                                        <p className={`text-[13px] font-bold truncate ${darkMode ? 'text-slate-200' : 'text-slate-800'} ${val === '—' ? 'opacity-40 italic' : ''}`}>{val}</p>
+                                    </div>
                                 </div>
-                                <div className="min-w-0">
-                                    <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest leading-none mb-0.5">{label}</p>
-                                    <p className={`text-[11px] font-bold truncate ${darkMode ? 'text-slate-200' : 'text-slate-700'} ${val === '—' ? 'opacity-40' : ''}`}>{val}</p>
-                                </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </GlassCard>
                 </div>
 
-                {/* ── Main content ── */}
-                <div className="lg:col-span-8 space-y-4">
+                {/* ── Main Content: Bio, Verification, Details ── */}
+                <div className="lg:col-span-8 flex flex-col gap-6 lg:gap-8 pt-4 lg:pt-0">
+
                     {/* Professional Summary */}
-                    <GlassCard darkMode={darkMode} className="p-5">
-                        <div className="flex items-center justify-between mb-3">
-                            <h3 className={`text-[10px] font-black uppercase tracking-[0.2em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Professional Summary</h3>
-                            <button className="cursor-pointer"><Edit3 size={14} className="text-slate-400 opacity-50 hover:opacity-100 transition-opacity" /></button>
+                    <GlassCard darkMode={darkMode} className="p-6 md:p-8">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className={`text-[12px] font-black uppercase tracking-[0.2em] flex items-center gap-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                                <Briefcase size={16} className={darkMode ? 'text-slate-400' : 'text-slate-500'} /> Professional Summary
+                            </h3>
+                            <button className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${darkMode ? 'hover:bg-white/10 text-slate-400 hover:text-white' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-900'}`}>
+                                <Edit3 size={14} />
+                            </button>
                         </div>
+
                         {bio ? (
-                            <p className={`text-[12px] leading-relaxed font-medium ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>{bio}</p>
+                            <p className={`text-sm md:text-base leading-relaxed font-medium ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{bio}</p>
                         ) : (
-                            <div className={`text-[11px] leading-relaxed font-medium ${darkMode ? 'text-slate-500' : 'text-slate-400'} italic`}>
-                                No bio added yet. Click Edit Profile to add your professional summary.
+                            <div className={`p-6 rounded-2xl border border-dashed flex flex-col items-center justify-center text-center ${darkMode ? 'border-white/20 bg-white/5' : 'border-slate-300 bg-slate-50'}`}>
+                                <Edit3 size={24} className={`mb-3 ${darkMode ? 'text-slate-600' : 'text-slate-300'}`} />
+                                <p className={`text-[13px] font-bold mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Your story is empty</p>
+                                <p className={`text-[11px] font-medium ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Add a professional summary to stand out to clients.</p>
                             </div>
                         )}
 
-                        {/* Specializations */}
-                        {specializations.length > 0 ? (
-                            <div className="mt-5 flex flex-wrap gap-2">
-                                {specializations.map((tag, i) => (
-                                    <span key={i} className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider cursor-pointer transition-colors
-                                        ${darkMode ? 'bg-white/5 text-slate-400 hover:bg-white/10' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
-                                        {tag}
-                                    </span>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className={`mt-4 flex flex-wrap gap-2`}>
-                                {['Add Specialization', '+ Practice Area'].map((tag, i) => (
-                                    <span key={i} className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border border-dashed cursor-pointer transition-colors
-                                        ${darkMode ? 'border-white/10 text-slate-600 hover:border-white/20' : 'border-slate-300 text-slate-400 hover:border-slate-400'}`}>
-                                        {tag}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
+                        <div className="mt-8 pt-6 border-t border-slate-200 dark:border-white/10">
+                            <h4 className={`text-[10px] font-black uppercase tracking-widest mb-4 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Areas of Expertise</h4>
+                            {specializations.length > 0 ? (
+                                <div className="flex flex-wrap gap-2.5">
+                                    {specializations.map((tag, i) => (
+                                        <span key={i} className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer
+                                            ${darkMode ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-900 text-white hover:bg-slate-800'} shadow-md`}>
+                                            {tag}
+                                        </span>
+                                    ))}
+                                    <button className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider border border-dashed transition-colors
+                                        ${darkMode ? 'border-white/20 text-slate-400 hover:border-white/40 hover:text-white' : 'border-slate-300 text-slate-500 hover:border-slate-500 hover:text-slate-900'}`}>
+                                        + Add Focus
+                                    </button>
+                                </div>
+                            ) : (
+                                <button className={`px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider border border-dashed transition-colors
+                                    ${darkMode ? 'border-white/20 text-slate-400 hover:border-white/40' : 'border-slate-300 text-slate-500 hover:border-slate-500'}`}>
+                                    + Define Practice Areas
+                                </button>
+                            )}
+                        </div>
                     </GlassCard>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Bar Council Details */}
-                        <GlassCard darkMode={darkMode} className="p-5">
-                            <h3 className={`text-[10px] font-black uppercase tracking-[0.2em] mb-4 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Bar Council Details</h3>
-                            <div className="space-y-3">
-                                {[
-                                    { label: 'Enrollment No.', val: enrollmentNo || 'Not provided' },
-                                    { label: 'Account Type', val: 'Advocate / Lawyer' },
-                                    { label: 'Member Since', val: userData?.created_at ? new Date(userData.created_at).getFullYear() : '—' },
-                                ].map((row, i) => (
-                                    <div key={i} className="flex items-center justify-between">
-                                        <p className={`text-[9px] font-black uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{row.label}</p>
-                                        <p className={`text-[11px] font-black font-mono ${darkMode ? 'text-slate-200' : 'text-slate-800'} ${row.val === 'Not provided' || row.val === '—' ? 'opacity-40' : ''}`}>{row.val}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </GlassCard>
+                    {/* Verification Status Heavy Lift */}
+                    <VerificationStatusCard userData={userData} lawyerStatus={lawyerStatus} darkMode={darkMode} onVerificationSuccess={fetchProfile} />
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
                         {/* Digital Presence */}
-                        <GlassCard darkMode={darkMode} className="p-5">
-                            <h3 className={`text-[10px] font-black uppercase tracking-[0.2em] mb-4 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Digital Presence</h3>
-                            <div className="space-y-3">
+                        <GlassCard darkMode={darkMode} className="p-6">
+                            <h3 className={`text-[11px] font-black uppercase tracking-[0.2em] mb-6 flex items-center gap-2 ${darkMode ? 'text-slate-300' : 'text-slate-800'}`}>
+                                <Globe size={14} className={darkMode ? 'text-slate-500' : 'text-slate-400'} /> Digital Footprint
+                            </h3>
+                            <div className="space-y-4">
                                 {[
-                                    { Icon: Linkedin, label: 'LinkedIn', color: 'text-blue-500', val: userData?.linkedin_url },
-                                    { Icon: Twitter, label: 'Twitter / X', color: 'text-sky-400', val: userData?.twitter_url },
-                                    { Icon: Globe, label: 'Website', color: darkMode ? 'text-slate-300' : 'text-slate-700', val: userData?.website_url },
+                                    { Icon: Linkedin, label: 'LinkedIn', color: 'bg-[#0A66C2]', val: userData?.linkedin_url },
+                                    { Icon: Twitter, label: 'Twitter / X', color: 'bg-black dark:bg-white dark:text-black', val: userData?.twitter_url },
+                                    { Icon: Globe, label: 'Personal Website', color: 'bg-slate-600', val: userData?.website_url },
                                 ].map(({ Icon, label, color, val }, i) => (
-                                    <div key={i} className={`flex items-center justify-between group ${val ? 'cursor-pointer' : 'opacity-40'}`}>
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-1.5 rounded-lg ${darkMode ? 'bg-white/5' : 'bg-slate-50'} ${color}`}>
-                                                <Icon size={14} />
+                                    <div key={i} className={`flex items-center justify-between group p-3 rounded-2xl transition-colors ${val ? (darkMode ? 'hover:bg-white/5 cursor-pointer' : 'hover:bg-slate-50 cursor-pointer') : 'opacity-60'}`}>
+                                        <div className="flex items-center gap-3.5">
+                                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-md ${color}`}>
+                                                <Icon size={16} />
                                             </div>
                                             <div>
-                                                <p className={`text-[11px] font-bold ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>{label}</p>
-                                                {val && <p className={`text-[9px] truncate max-w-[120px] ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>{val}</p>}
+                                                <p className={`text-[12px] font-bold ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>{label}</p>
+                                                {val ? (
+                                                    <p className={`text-[10px] uppercase font-bold tracking-widest mt-0.5 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>Connected</p>
+                                                ) : (
+                                                    <p className={`text-[10px] font-medium mt-0.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Not linked</p>
+                                                )}
                                             </div>
                                         </div>
-                                        {val
-                                            ? <ExternalLink size={12} className={`text-slate-400 group-hover:${darkMode ? 'text-white' : 'text-slate-900'} transition-colors`} />
-                                            : <span className={`text-[9px] font-bold ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>Add</span>
-                                        }
+                                        {!val && (
+                                            <button className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-colors ${darkMode ? 'border-white/10 text-white hover:bg-white/10' : 'border-slate-200 text-slate-900 hover:bg-slate-100'}`}>
+                                                Link
+                                            </button>
+                                        )}
                                     </div>
                                 ))}
                             </div>
                         </GlassCard>
-                    </div>
 
-                    {/* Accolades — only if data present, otherwise prompt */}
-                    <GlassCard darkMode={darkMode} className="p-5">
-                        <h3 className={`text-[10px] font-black uppercase tracking-[0.2em] mb-4 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Accolades & Achievements</h3>
-                        {userData?.awards?.length > 0 ? (
-                            <div className="space-y-3">
-                                {userData.awards.map((a, i) => (
-                                    <div key={i} className="flex items-center gap-2.5">
-                                        <Award size={14} className="text-amber-400 flex-shrink-0" />
-                                        <span className={`text-[11px] font-bold ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{a}</span>
-                                    </div>
-                                ))}
+                        {/* Accolades */}
+                        <GlassCard darkMode={darkMode} className="p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className={`text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-2 ${darkMode ? 'text-slate-300' : 'text-slate-800'}`}>
+                                    <Award size={14} className={darkMode ? 'text-amber-400' : 'text-amber-500'} /> Accolades
+                                </h3>
+                                <button className={`w-6 h-6 rounded-lg flex items-center justify-center border border-dashed transition-colors ${darkMode ? 'border-white/20 text-slate-400 hover:text-white' : 'border-slate-300 text-slate-500 hover:text-slate-900'}`}>
+                                    <Check size={12} />
+                                </button>
                             </div>
-                        ) : (
-                            <div className={`text-center py-6 text-[11px] ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>
-                                <Award size={24} className="mx-auto mb-2 opacity-30" />
-                                <p className="font-medium">No accolades added yet.</p>
-                                <p className="text-[10px] mt-1 opacity-70">Your achievements will appear here once added.</p>
-                            </div>
-                        )}
-                    </GlassCard>
+
+                            {userData?.awards?.length > 0 ? (
+                                <div className="space-y-4">
+                                    {userData.awards.map((a, i) => (
+                                        <div key={i} className={`flex items-start gap-3 p-3 rounded-2xl ${darkMode ? 'bg-white/5' : 'bg-amber-50/50'}`}>
+                                            <div className="mt-0.5 w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                                                <Award size={12} className="text-amber-600 dark:text-amber-400" />
+                                            </div>
+                                            <span className={`text-[12px] font-bold leading-relaxed ${darkMode ? 'text-slate-300' : 'text-slate-800'}`}>{a}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className={`h-32 rounded-2xl flex flex-col items-center justify-center text-center ${darkMode ? 'bg-white/5' : 'bg-slate-50'}`}>
+                                    <Award size={24} className={`mb-2 ${darkMode ? 'text-slate-600' : 'text-slate-300'}`} />
+                                    <p className={`text-[11px] font-bold ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>No accolades added yet</p>
+                                </div>
+                            )}
+                        </GlassCard>
+                    </div>
                 </div>
             </div>
         </div>
@@ -504,3 +511,4 @@ const LawyerProfile = ({ darkMode }) => {
 };
 
 export default LawyerProfile;
+
