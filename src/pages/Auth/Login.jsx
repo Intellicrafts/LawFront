@@ -389,6 +389,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
 
     try {
       // Step 1: Get CSRF cookie for Laravel Sanctum
+      showInfo('Initializing secure connection...');
       await authAPI.getCsrfCookie();
 
       // Step 2: Prepare login credentials
@@ -500,6 +501,8 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     setFormState(prev => ({ ...prev, loading: true }));
 
     try {
+      showInfo('Signing in with Google...');
+
       // Call the Google login API
       const response = await authAPI.googleLogin(googleToken);
 
