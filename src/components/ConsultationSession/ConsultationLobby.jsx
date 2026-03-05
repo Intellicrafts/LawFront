@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { toggleTheme } from '../../redux/themeSlice';
+import VoiceCall from './VoiceCall';
+
 
 const ConsultationLobby = ({
     session,
@@ -155,6 +157,17 @@ const ConsultationLobby = ({
                                 <Clock size={10} className={isDarkMode ? 'text-slate-500' : 'text-slate-400'} />
                                 {formatTime(timeRemaining)}
                             </div>
+                        )}
+
+                        {/* Voice call button */}
+                        {session?.session_token && (
+                            <VoiceCall
+                                sessionToken={session.session_token}
+                                userType={userType}
+                                otherParticipant={otherParticipant}
+                                isDarkMode={isDarkMode}
+                                compact
+                            />
                         )}
 
                         {/* Dark mode toggle */}
@@ -463,8 +476,8 @@ const ConsultationLobby = ({
                                 <button
                                     onClick={() => setShowLeaveModal(false)}
                                     className={`py-3 text-[12px] font-bold tracking-wide transition-colors ${isDarkMode
-                                            ? 'bg-[#1a1a24] text-slate-300 hover:bg-white/5'
-                                            : 'bg-white text-slate-600 hover:bg-slate-50'
+                                        ? 'bg-[#1a1a24] text-slate-300 hover:bg-white/5'
+                                        : 'bg-white text-slate-600 hover:bg-slate-50'
                                         }`}
                                 >
                                     Cancel
@@ -472,8 +485,8 @@ const ConsultationLobby = ({
                                 <button
                                     onClick={onLeave}
                                     className={`py-3 text-[12px] font-bold tracking-wide transition-colors ${isDarkMode
-                                            ? 'bg-[#1a1a24] text-rose-400 hover:bg-rose-500/10'
-                                            : 'bg-white text-rose-600 hover:bg-rose-50'
+                                        ? 'bg-[#1a1a24] text-rose-400 hover:bg-rose-500/10'
+                                        : 'bg-white text-rose-600 hover:bg-rose-50'
                                         }`}
                                 >
                                     Yes, Leave

@@ -1,146 +1,168 @@
 import React, {
-    useState,
-    useEffect,
-    useRef,
-    useCallback,
-    memo,
+    useState, useEffect, useRef, useCallback, memo,
 } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Phone,
-    PhoneOff,
-    PhoneCall,
-    PhoneIncoming,
-    Mic,
-    MicOff,
-    Volume2,
-    VolumeX,
-    X,
-    Shield,
-    Wifi,
-    WifiOff,
-    User,
+    Phone, PhoneOff, PhoneCall, PhoneIncoming,
+    PhoneMissed, Mic, MicOff, Volume2, VolumeX,
+    X, Shield, Wifi, WifiOff, Lock,
 } from 'lucide-react';
 import { voiceCallAPI } from '../../api/apiService';
 
-// ─── Dynamic Twilio Voice SDK Loader ─────────────────────────────────────────
-let TwilioDevice = null;
+// ─── Twilio SDK dynamic loader ───────────────────────────────────────────────
+let _TwilioDevice = null;
 async function loadTwilioSDK() {
-    if (TwilioDevice) return TwilioDevice;
+    if (_TwilioDevice) return _TwilioDevice;
     try {
         const { Device } = await import('@twilio/voice-sdk');
-        TwilioDevice = Device;
+        _TwilioDevice = Device;
         return Device;
-    } catch (err) {
-        console.error('Failed to load Twilio Voice SDK:', err);
+    } catch (e) {
+        console.error('Twilio SDK load error:', e);
         return null;
     }
 }
 
 // ─── Call States ─────────────────────────────────────────────────────────────
-const CALL_STATE = {
+const CS = {
     IDLE: 'idle',
-    CONNECTING: 'connecting',
-    RINGING: 'ringing',
-    INCOMING: 'incoming',
-    ACTIVE: 'active',
+    INIT: 'init',        // Loading SDK / token
+    READY: 'ready',       // SDK ready, waiting
+    CALLING: 'calling',     // Outgoing, waiting for other side to pick up
+    RINGING: 'ringing',     // Other side phone is ringing
+    INCOMING: 'incoming',    // We received an incoming call ring
+    ACTIVE: 'active',      // Call connected both sides
     ENDING: 'ending',
     ERROR: 'error',
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-function formatDuration(seconds) {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
+// ─── Ringing tone via Web Audio ──────────────────────────────────────────────
+function useRingtone() {
+    const ctxRef = useRef(null);
+    const intervalRef = useRef(null);
+
+    const play = useCallback(() => {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            if (!ctxRef.current || ctxRef.current.state === 'closed') {
+                ctxRef.current = new AudioCtx();
+            }
+            const ctx = ctxRef.current;
+
+            const beep = () => {
+                try {
+                    const osc = ctx.createOscillator();
+                    const gainNode = ctx.createGain();
+                    osc.connect(gainNode);
+                    gainNode.connect(ctx.destination);
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(480, ctx.currentTime);
+                    osc.frequency.setValueAtTime(440, ctx.currentTime + 0.4);
+                    gainNode.gain.setValueAtTime(0.25, ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+                    osc.start(ctx.currentTime);
+                    osc.stop(ctx.currentTime + 0.8);
+                } catch (_) { }
+            };
+
+            beep();
+            intervalRef.current = setInterval(beep, 3000);
+        } catch (_) { }
+    }, []);
+
+    const stop = useCallback(() => {
+        clearInterval(intervalRef.current);
+        try { ctxRef.current?.close(); } catch (_) { }
+        ctxRef.current = null;
+    }, []);
+
+    useEffect(() => () => stop(), [stop]);
+
+    return { play, stop };
+}
+
+// ─── Duration formatter ──────────────────────────────────────────────────────
+function fmtDur(sec) {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
     if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-// ─── Sound Wave Bars ─────────────────────────────────────────────────────────
-const SoundWaveBars = memo(({ active, color = '#6366f1' }) => {
-    const bars = [3, 6, 8, 5, 9, 4, 7, 5, 6, 3];
-    return (
-        <div className="flex items-center gap-[3px]" style={{ height: 28 }}>
-            {bars.map((height, i) => (
-                <motion.div
-                    key={i}
-                    animate={active ? {
-                        scaleY: [0.3, 1, 0.5, 0.8, 0.3],
-                    } : { scaleY: 0.2 }}
-                    transition={active ? {
-                        duration: 0.8 + i * 0.07,
-                        repeat: Infinity,
-                        ease: 'easeInOut',
-                        delay: i * 0.06,
-                    } : { duration: 0.3 }}
-                    style={{
-                        width: 3,
-                        height: height,
-                        background: color,
-                        borderRadius: 2,
-                        transformOrigin: 'bottom',
-                        opacity: active ? 1 : 0.3,
-                    }}
-                />
-            ))}
-        </div>
-    );
-});
-
-// ─── Avatar Pulse ─────────────────────────────────────────────────────────────
-const AvatarPulse = memo(({ name, active, incoming, isDark }) => {
-    const initials = name
-        ? name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
-        : '??';
-
-    return (
-        <div className="relative flex items-center justify-center" style={{ width: 120, height: 120 }}>
-            {/* Pulse rings */}
-            {(active || incoming) && [0, 1, 2].map(i => (
-                <motion.div
-                    key={i}
-                    animate={{ scale: [1, 2.2], opacity: [0.45, 0] }}
-                    transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        delay: i * 0.65,
-                        ease: 'easeOut',
-                    }}
-                    className="absolute rounded-full"
-                    style={{
-                        width: 120,
-                        height: 120,
-                        background: incoming
-                            ? 'rgba(16, 185, 129, 0.35)'
-                            : active
-                                ? 'rgba(99, 102, 241, 0.35)'
-                                : 'rgba(148, 163, 184, 0.2)',
-                    }}
-                />
-            ))}
-
-            {/* Avatar circle */}
-            <div
-                className="relative z-10 rounded-full flex items-center justify-center text-white font-bold text-2xl shadow-2xl select-none"
+// ─── Sound wave bars (live audio visualiser bars) ────────────────────────────
+const SoundBars = memo(({ active, color }) => (
+    <div className="flex items-center gap-[3px]" style={{ height: 22 }}>
+        {[4, 8, 12, 7, 14, 6, 10, 5, 9, 4].map((h, i) => (
+            <motion.div
+                key={i}
+                animate={active ? { scaleY: [0.2, 1, 0.4, 0.9, 0.2] } : { scaleY: 0.15 }}
+                transition={active ? {
+                    duration: 0.7 + i * 0.08, repeat: Infinity,
+                    ease: 'easeInOut', delay: i * 0.05,
+                } : { duration: 0.3 }}
                 style={{
-                    width: 120,
-                    height: 120,
-                    background: incoming
-                        ? 'linear-gradient(135deg, #10b981, #059669)'
-                        : active
-                            ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
-                            : isDark
-                                ? 'linear-gradient(135deg, #374151, #1f2937)'
-                                : 'linear-gradient(135deg, #e2e8f0, #cbd5e1)',
-                    boxShadow: active || incoming
-                        ? '0 0 0 4px rgba(99,102,241,0.3), 0 20px 60px rgba(99,102,241,0.4)'
-                        : isDark
-                            ? '0 8px 32px rgba(0,0,0,0.5)'
-                            : '0 8px 32px rgba(0,0,0,0.15)',
-                    color: active || incoming
-                        ? '#fff'
-                        : isDark ? '#e2e8f0' : '#64748b',
+                    width: 2.5, height: h, background: color || '#10b981',
+                    borderRadius: 2, transformOrigin: 'bottom',
+                    opacity: active ? 1 : 0.25,
+                }}
+            />
+        ))}
+    </div>
+));
+
+// ─── Animated avatar with pulse rings ────────────────────────────────────────
+const Avatar = memo(({ name, state, isDark }) => {
+    const initials = (name || '??').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    const isRinging = state === CS.RINGING || state === CS.CALLING;
+    const isIncoming = state === CS.INCOMING;
+    const isActive = state === CS.ACTIVE;
+
+    const ringColor = isIncoming
+        ? 'rgba(16,185,129,0.45)'
+        : isActive
+            ? 'rgba(99,102,241,0.4)'
+            : 'rgba(99,102,241,0.3)';
+
+    const bg = isActive
+        ? 'linear-gradient(135deg,#6366f1,#8b5cf6)'
+        : isIncoming
+            ? 'linear-gradient(135deg,#10b981,#059669)'
+            : isRinging
+                ? 'linear-gradient(135deg,#6366f1,#8b5cf6)'
+                : isDark
+                    ? 'linear-gradient(135deg,#1e2035,#2a2d45)'
+                    : 'linear-gradient(135deg,#e2e8f0,#cbd5e1)';
+
+    const glow = isActive
+        ? '0 0 0 3px rgba(99,102,241,0.25),0 16px 48px rgba(99,102,241,0.45)'
+        : isIncoming
+            ? '0 0 0 3px rgba(16,185,129,0.25),0 16px 48px rgba(16,185,129,0.45)'
+            : isDark
+                ? '0 8px 28px rgba(0,0,0,0.5)'
+                : '0 8px 28px rgba(0,0,0,0.12)';
+
+    return (
+        <div className="relative flex items-center justify-center" style={{ width: 128, height: 128 }}>
+            {/* Expanding pulse rings */}
+            {(isActive || isIncoming || isRinging) && [0, 1, 2].map(i => (
+                <motion.div
+                    key={i}
+                    className="absolute rounded-full"
+                    animate={{ scale: [1, 2.4], opacity: [0.5, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, delay: i * 0.65, ease: 'easeOut' }}
+                    style={{ width: 128, height: 128, background: ringColor }}
+                />
+            ))}
+
+            {/* Main circle */}
+            <div
+                className="relative z-10 rounded-full flex items-center justify-center font-black text-2xl select-none transition-all duration-500"
+                style={{
+                    width: 128, height: 128,
+                    background: bg, boxShadow: glow,
+                    color: (isActive || isIncoming || isRinging) ? '#fff' : isDark ? '#94a3b8' : '#64748b',
                 }}
             >
                 {initials}
@@ -150,57 +172,93 @@ const AvatarPulse = memo(({ name, active, incoming, isDark }) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MAIN VoiceCall Component
+//  VoiceCall ── main component
+//
+//  Props:
+//    sessionToken      – consultation session token (string)
+//    userType          – 'user' | 'lawyer'
+//    otherParticipant  – { name?, full_name? }
+//    isDarkMode        – boolean
+//    compact           – if true, renders only a round icon button (for lobby)
 // ═══════════════════════════════════════════════════════════════════════════════
 const VoiceCall = ({
-    sessionToken,     // Consultation session token
-    userType,         // 'user' | 'lawyer'
-    otherParticipant, // { name, ... }
+    sessionToken,
+    userType,
+    otherParticipant,
     isDarkMode = false,
-    className = '',
+    compact = false,
 }) => {
-    // ── Refs ────────────────────────────────────────────────────────────────────
+    // ── refs ─────────────────────────────────────────────────────────────────
     const deviceRef = useRef(null);
     const callRef = useRef(null);
     const timerRef = useRef(null);
-    const hasInitRef = useRef(false);
+    const initDoneRef = useRef(false);
+    const vibRef = useRef(null);
 
-    // ── State ───────────────────────────────────────────────────────────────────
-    const [callState, setCallState] = useState(CALL_STATE.IDLE);
-    const [isMuted, setIsMuted] = useState(false);
-    const [isSpeakerOff, setIsSpeakerOff] = useState(false);
-    const [callDuration, setCallDuration] = useState(0);
-    const [calleeInfo, setCalleeInfo] = useState(null);
-    const [errorMessage, setErrorMessage] = useState('');
-    const [sdkReady, setSdkReady] = useState(false);
+    // ── state ─────────────────────────────────────────────────────────────────
+    const [callState, setCallState] = useState(CS.IDLE);
     const [panelOpen, setPanelOpen] = useState(false);
-    const [incomingCall, setIncomingCall] = useState(null); // active Twilio Call obj for incoming
+    const [isMuted, setIsMuted] = useState(false);
+    const [speakerOff, setSpeakerOff] = useState(false);
+    const [duration, setDuration] = useState(0);
+    const [calleeInfo, setCalleeInfo] = useState(null);
+    const [errMsg, setErrMsg] = useState('');
+    const [incomingCall, setIncoming] = useState(null);
 
-    const calleeName = calleeInfo?.callee_name ?? otherParticipant?.name ?? otherParticipant?.full_name ?? 'Participant';
-    const isActive = callState === CALL_STATE.ACTIVE;
-    const isIncoming = callState === CALL_STATE.INCOMING;
+    const ringtone = useRingtone();
 
-    // ── Timer ───────────────────────────────────────────────────────────────────
+    const calleeName = calleeInfo?.callee_name
+        ?? otherParticipant?.name
+        ?? otherParticipant?.full_name
+        ?? (userType === 'user' ? 'Your Lawyer' : 'Your Client');
+
+    const isActive = callState === CS.ACTIVE;
+    const isIncoming = callState === CS.INCOMING;
+    const isCalling = callState === CS.CALLING || callState === CS.RINGING;
+
+    // ── call duration timer ───────────────────────────────────────────────────
     useEffect(() => {
         if (isActive) {
-            timerRef.current = setInterval(() => setCallDuration(d => d + 1), 1000);
+            timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
         } else {
             clearInterval(timerRef.current);
-            if (!isActive) setCallDuration(0);
+            if (!isActive) setDuration(0);
         }
         return () => clearInterval(timerRef.current);
     }, [isActive]);
 
-    // ── Init Twilio Device ──────────────────────────────────────────────────────
-    const initDevice = useCallback(async () => {
-        if (hasInitRef.current) return;
-        hasInitRef.current = true;
+    // ── vibrate on incoming (mobile) ──────────────────────────────────────────
+    useEffect(() => {
+        if (isIncoming && navigator.vibrate) {
+            vibRef.current = setInterval(() => navigator.vibrate([400, 200, 400]), 1200);
+        } else {
+            clearInterval(vibRef.current);
+            if (navigator.vibrate) navigator.vibrate(0);
+        }
+        return () => {
+            clearInterval(vibRef.current);
+            if (navigator.vibrate) navigator.vibrate(0);
+        };
+    }, [isIncoming]);
 
+    // ── ringtone control ──────────────────────────────────────────────────────
+    useEffect(() => {
+        if (isIncoming) {
+            ringtone.play();
+        } else {
+            ringtone.stop();
+        }
+    }, [isIncoming, ringtone]);
+
+    // ── init Twilio device (as soon as component mounts) ──────────────────────
+    const initDevice = useCallback(async () => {
+        if (initDoneRef.current || !sessionToken) return;
+        initDoneRef.current = true;
+        setCallState(CS.INIT);
         try {
             const Device = await loadTwilioSDK();
             if (!Device) throw new Error('Twilio Voice SDK unavailable');
 
-            // Fetch token + callee info in parallel
             const [tokenData, callee] = await Promise.all([
                 voiceCallAPI.getToken(sessionToken),
                 voiceCallAPI.getCalleeInfo(sessionToken),
@@ -214,136 +272,112 @@ const VoiceCall = ({
                 allowIncomingWhileBusy: false,
             });
 
-            // Register device to receive incoming calls
-            await device.register();
-            deviceRef.current = device;
-
-            // ── Event handlers ─────────────────────────────────────────────────────
-            device.on('registered', () => {
-                setSdkReady(true);
+            device.on('registered', () => setCallState(CS.READY));
+            device.on('error', err => {
+                setErrMsg('Connection error: ' + (err.message || 'Unknown'));
+                setCallState(CS.ERROR);
             });
-
-            device.on('error', (err) => {
-                console.error('Twilio Device error:', err);
-                setErrorMessage(`Connection error: ${err.message}`);
-                setCallState(CALL_STATE.ERROR);
-            });
-
-            device.on('incoming', (call) => {
-                setIncomingCall(call);
-                setCallState(CALL_STATE.INCOMING);
+            device.on('incoming', call => {
+                setIncoming(call);
+                setCallState(CS.INCOMING);
                 setPanelOpen(true);
 
                 call.on('disconnect', () => {
-                    setCallState(CALL_STATE.IDLE);
-                    setIncomingCall(null);
+                    setCallState(CS.READY);
+                    setIncoming(null);
                 });
                 call.on('cancel', () => {
-                    setCallState(CALL_STATE.IDLE);
-                    setIncomingCall(null);
+                    setCallState(CS.READY);
+                    setIncoming(null);
                     setPanelOpen(false);
                 });
             });
-
             device.on('tokenWillExpire', async () => {
                 try {
                     const fresh = await voiceCallAPI.getToken(sessionToken);
                     device.updateToken(fresh.token);
-                } catch (e) {
-                    console.warn('Token refresh failed:', e);
-                }
+                } catch (_) { }
             });
 
-            setSdkReady(true);
+            await device.register();
+            deviceRef.current = device;
         } catch (err) {
-            console.error('VoiceCall init failed:', err);
-            setErrorMessage(err.message || 'Failed to initialize voice call');
-            setCallState(CALL_STATE.ERROR);
-            hasInitRef.current = false;
+            console.error('VoiceCall init error:', err);
+            setErrMsg(err.message || 'Setup failed');
+            setCallState(CS.ERROR);
+            initDoneRef.current = false;
         }
     }, [sessionToken]);
 
-    // ── Auto-init when panel opens ──────────────────────────────────────────────
+    // Auto-init on mount
     useEffect(() => {
-        if (panelOpen && !hasInitRef.current) {
-            initDevice();
-        }
-    }, [panelOpen, initDevice]);
-
-    // ── Cleanup ─────────────────────────────────────────────────────────────────
-    useEffect(() => {
+        initDevice();
         return () => {
             clearInterval(timerRef.current);
-            if (callRef.current) callRef.current.disconnect();
-            if (deviceRef.current) deviceRef.current.destroy();
+            clearInterval(vibRef.current);
+            ringtone.stop();
+            if (callRef.current) try { callRef.current.disconnect(); } catch (_) { }
+            if (deviceRef.current) try { deviceRef.current.destroy(); } catch (_) { }
         };
-    }, []);
+    }, [initDevice]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // ── Call Actions ─────────────────────────────────────────────────────────────
+    // ── outgoing call ─────────────────────────────────────────────────────────
     const startCall = useCallback(async () => {
         if (!deviceRef.current || !calleeInfo) return;
+        setErrMsg('');
+        setCallState(CS.CALLING);
+        setPanelOpen(true);
         try {
-            setCallState(CALL_STATE.CONNECTING);
-            setErrorMessage('');
-            setPanelOpen(true);
-
             const call = await deviceRef.current.connect({
                 params: { To: calleeInfo.callee_identity },
             });
-
             callRef.current = call;
-
-            call.on('ringing', () => setCallState(CALL_STATE.RINGING));
-            call.on('accept', () => setCallState(CALL_STATE.ACTIVE));
+            call.on('ringing', () => setCallState(CS.RINGING));
+            call.on('accept', () => setCallState(CS.ACTIVE));
             call.on('disconnect', () => {
-                setCallState(CALL_STATE.IDLE);
+                setCallState(CS.READY);
                 callRef.current = null;
             });
-            call.on('error', (err) => {
-                setErrorMessage(err.message || 'Call failed');
-                setCallState(CALL_STATE.ERROR);
+            call.on('error', err => {
+                setErrMsg(err.message || 'Call failed');
+                setCallState(CS.ERROR);
                 callRef.current = null;
             });
         } catch (err) {
-            console.error('Call start failed:', err);
-            setErrorMessage(err.message || 'Failed to start call');
-            setCallState(CALL_STATE.ERROR);
+            setErrMsg(err.message || 'Failed to call');
+            setCallState(CS.ERROR);
         }
     }, [calleeInfo]);
 
-    const acceptIncomingCall = useCallback(() => {
+    const acceptCall = useCallback(() => {
         if (!incomingCall) return;
         incomingCall.accept();
         callRef.current = incomingCall;
-        setCallState(CALL_STATE.ACTIVE);
-
+        setCallState(CS.ACTIVE);
         incomingCall.on('disconnect', () => {
-            setCallState(CALL_STATE.IDLE);
+            setCallState(CS.READY);
             callRef.current = null;
-            setIncomingCall(null);
+            setIncoming(null);
         });
     }, [incomingCall]);
 
-    const rejectIncomingCall = useCallback(() => {
+    const declineCall = useCallback(() => {
         if (incomingCall) incomingCall.reject();
-        setIncomingCall(null);
-        setCallState(CALL_STATE.IDLE);
+        setIncoming(null);
+        setCallState(CS.READY);
         setPanelOpen(false);
     }, [incomingCall]);
 
     const endCall = useCallback(() => {
-        setCallState(CALL_STATE.ENDING);
-        if (callRef.current) {
-            callRef.current.disconnect();
-            callRef.current = null;
-        }
-        if (incomingCall) incomingCall.reject();
+        setCallState(CS.ENDING);
+        if (callRef.current) { try { callRef.current.disconnect(); } catch (_) { } callRef.current = null; }
+        if (incomingCall) { try { incomingCall.reject(); } catch (_) { } }
         setTimeout(() => {
-            setCallState(CALL_STATE.IDLE);
+            setCallState(CS.READY);
             setIsMuted(false);
-            setIsSpeakerOff(false);
+            setSpeakerOff(false);
             setPanelOpen(false);
-        }, 500);
+        }, 600);
     }, [incomingCall]);
 
     const toggleMute = useCallback(() => {
@@ -353,123 +387,189 @@ const VoiceCall = ({
         setIsMuted(next);
     }, [isMuted]);
 
-    // ── Styles helpers ──────────────────────────────────────────────────────────
-    const glass = isDarkMode
-        ? 'bg-[#16181f]/95 border-white/10'
-        : 'bg-white/95 border-slate-200/60';
+    // ── derived style shortcuts ───────────────────────────────────────────────
+    const dp = isDarkMode ? 'text-white' : 'text-slate-900';
+    const ds = isDarkMode ? 'text-slate-400' : 'text-slate-500';
+    const glassBg = isDarkMode
+        ? 'bg-[#12141f]/98 border-white/10'
+        : 'bg-white/98 border-slate-200/60';
 
-    const textPrimary = isDarkMode ? 'text-white' : 'text-slate-900';
-    const textSecondary = isDarkMode ? 'text-slate-400' : 'text-slate-500';
+    // Call button colour/state
+    const btnGrad = isActive
+        ? 'linear-gradient(135deg,#10b981,#059669)'
+        : isIncoming
+            ? 'linear-gradient(135deg,#10b981,#0d9488)'
+            : isCalling
+                ? 'linear-gradient(135deg,#6366f1,#8b5cf6)'
+                : 'linear-gradient(135deg,#6366f1,#8b5cf6)';
 
-    // ── Status label ────────────────────────────────────────────────────────────
-    const statusConfig = {
-        [CALL_STATE.IDLE]: { label: 'Call', color: '#64748b' },
-        [CALL_STATE.CONNECTING]: { label: 'Connecting…', color: '#f59e0b' },
-        [CALL_STATE.RINGING]: { label: 'Ringing…', color: '#6366f1' },
-        [CALL_STATE.INCOMING]: { label: 'Incoming Call', color: '#10b981' },
-        [CALL_STATE.ACTIVE]: { label: formatDuration(callDuration), color: '#10b981' },
-        [CALL_STATE.ENDING]: { label: 'Ending…', color: '#ef4444' },
-        [CALL_STATE.ERROR]: { label: 'Error', color: '#ef4444' },
+    const btnGlow = isActive || isIncoming
+        ? '0 4px 20px rgba(16,185,129,0.55)'
+        : '0 4px 20px rgba(99,102,241,0.5)';
+
+    // Status text per state
+    const statusMap = {
+        [CS.IDLE]: { text: 'Tap to call', color: '#64748b' },
+        [CS.INIT]: { text: 'Setting up…', color: '#f59e0b' },
+        [CS.READY]: { text: 'Ready', color: '#10b981' },
+        [CS.CALLING]: { text: 'Calling…', color: '#6366f1' },
+        [CS.RINGING]: { text: 'Ringing…', color: '#6366f1' },
+        [CS.INCOMING]: { text: 'Incoming Call', color: '#10b981' },
+        [CS.ACTIVE]: { text: fmtDur(duration), color: '#10b981' },
+        [CS.ENDING]: { text: 'Ending…', color: '#ef4444' },
+        [CS.ERROR]: { text: 'Connection failed', color: '#ef4444' },
     };
+    const status = statusMap[callState] || statusMap[CS.IDLE];
 
-    const status = statusConfig[callState];
-
-    // ══════════════════════════════════════════════════════════════════════════
+    // ═════════════════════════════════════════════════════════════════════════
     // RENDER
-    // ══════════════════════════════════════════════════════════════════════════
+    // ═════════════════════════════════════════════════════════════════════════
     return (
         <>
-            {/* ── Call Button ── */}
+            {/* ─────────────────────────────────────────────────────────────
+                CALL TRIGGER BUTTON
+                compact=true  → round icon  (Lobby)
+                compact=false → pill button (Chat header)
+            ───────────────────────────────────────────────────────────── */}
             <motion.button
-                id="voice-call-btn"
+                id="vc-trigger"
                 whileHover={{ scale: 1.07 }}
-                whileTap={{ scale: 0.93 }}
+                whileTap={{ scale: 0.92 }}
                 onClick={() => {
-                    if (callState === CALL_STATE.IDLE || callState === CALL_STATE.ERROR) {
-                        setPanelOpen(true);
+                    if (callState === CS.READY || callState === CS.ERROR || callState === CS.IDLE) {
+                        startCall();
                     } else {
                         setPanelOpen(p => !p);
                     }
                 }}
-                className={`relative flex items-center gap-2 px-4 py-2.5 rounded-2xl font-semibold text-sm shadow-lg transition-all duration-300 ${className}`}
+                className="relative flex-shrink-0"
                 style={{
-                    background: isActive
-                        ? 'linear-gradient(135deg, #10b981, #059669)'
-                        : isIncoming
-                            ? 'linear-gradient(135deg, #10b981, #0d9488)'
-                            : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: compact ? 0 : 7,
+                    padding: compact ? 0 : '8px 14px',
+                    width: compact ? 44 : 'auto',
+                    height: compact ? 44 : 38,
+                    borderRadius: compact ? '50%' : 20,
+                    background: btnGrad,
+                    boxShadow: btnGlow,
                     color: '#fff',
-                    boxShadow: isActive
-                        ? '0 4px 24px rgba(16,185,129,0.5)'
-                        : isIncoming
-                            ? '0 4px 24px rgba(16,185,129,0.6)'
-                            : '0 4px 24px rgba(99,102,241,0.5)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: 700,
+                    fontSize: 13,
+                    overflow: 'hidden',
                 }}
             >
-                {/* Incoming pulse ring */}
-                {isIncoming && (
+                {/* Incoming pulse halo */}
+                {(isIncoming || isActive) && (
                     <motion.div
-                        animate={{ scale: [1, 1.8], opacity: [0.6, 0] }}
-                        transition={{ duration: 1.2, repeat: Infinity, ease: 'easeOut' }}
-                        className="absolute inset-0 rounded-2xl"
-                        style={{ background: 'rgba(16,185,129,0.5)' }}
+                        animate={{ scale: [1, 1.9], opacity: [0.55, 0] }}
+                        transition={{ duration: 1.3, repeat: Infinity, ease: 'easeOut' }}
+                        style={{
+                            position: 'absolute', inset: 0,
+                            borderRadius: 'inherit',
+                            background: 'rgba(16,185,129,0.55)',
+                        }}
                     />
                 )}
 
-                <Phone size={16} className={isActive || isIncoming ? 'animate-bounce' : ''} />
-                <span className="relative z-10">
-                    {isActive ? formatDuration(callDuration) : isIncoming ? 'Incoming' : 'Call'}
+                {/* Icon */}
+                <span className="relative z-10 flex items-center justify-center">
+                    {isActive ? (
+                        <motion.span animate={{ rotate: [0, 8, -8, 0] }} transition={{ duration: 1, repeat: Infinity }}>
+                            <Phone size={compact ? 20 : 16} />
+                        </motion.span>
+                    ) : isIncoming ? (
+                        <motion.span animate={{ y: [-2, 2, -2] }} transition={{ duration: 0.5, repeat: Infinity }}>
+                            <PhoneIncoming size={compact ? 20 : 16} />
+                        </motion.span>
+                    ) : isCalling ? (
+                        <motion.span animate={{ scale: [1, 1.25, 1] }} transition={{ duration: 0.8, repeat: Infinity }}>
+                            <PhoneCall size={compact ? 20 : 16} />
+                        </motion.span>
+                    ) : (
+                        <Phone size={compact ? 20 : 16} />
+                    )}
                 </span>
 
-                {/* Green dot when active */}
+                {/* Label (pill only) */}
+                {!compact && (
+                    <span className="relative z-10">
+                        {isActive ? fmtDur(duration) : isIncoming ? 'Incoming' : 'Call'}
+                    </span>
+                )}
+
+                {/* Active timer dot */}
                 {isActive && (
-                    <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                    <span className="relative z-10 w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                 )}
             </motion.button>
 
-            {/* ── Full-Screen Panel (mobile) / Floating Panel (desktop) ── */}
+            {/* ─────────────────────────────────────────────────────────────
+                FULL CALL PANEL — opens on top of everything
+            ───────────────────────────────────────────────────────────── */}
             <AnimatePresence>
                 {panelOpen && (
                     <motion.div
+                        key="call-overlay"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center"
-                        style={{ backdropFilter: 'blur(16px)', background: 'rgba(0,0,0,0.6)' }}
+                        transition={{ duration: 0.22 }}
+                        style={{
+                            position: 'fixed', inset: 0, zIndex: 9999,
+                            display: 'flex', alignItems: 'flex-end',
+                            justifyContent: 'center',
+                            backdropFilter: 'blur(18px)',
+                            background: 'rgba(0,0,0,0.65)',
+                        }}
+                        // Clicking backdrop only closes when idle/ready
+                        onClick={e => {
+                            if (e.target === e.currentTarget &&
+                                (callState === CS.READY || callState === CS.IDLE)) {
+                                setPanelOpen(false);
+                            }
+                        }}
                     >
                         <motion.div
-                            initial={{ y: 80, opacity: 0, scale: 0.95 }}
+                            key="call-panel"
+                            initial={{ y: 100, opacity: 0, scale: 0.94 }}
                             animate={{ y: 0, opacity: 1, scale: 1 }}
-                            exit={{ y: 80, opacity: 0, scale: 0.95 }}
-                            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                            className={`relative w-full max-w-sm mx-4 mb-4 sm:mb-0 rounded-[2.5rem] border backdrop-blur-2xl shadow-2xl overflow-hidden ${glass}`}
+                            exit={{ y: 100, opacity: 0, scale: 0.94 }}
+                            transition={{ type: 'spring', stiffness: 370, damping: 28 }}
+                            className={`relative w-full max-w-xs mx-4 mb-6 sm:mb-0 sm:rounded-[2.5rem] rounded-[2.5rem] border backdrop-blur-2xl shadow-2xl overflow-hidden ${glassBg}`}
+                            style={{ maxHeight: '90dvh' }}
                         >
-                            {/* Background gradient accent */}
+                            {/* ── coloured top glow ───────────────────── */}
                             <div
-                                className="absolute inset-0 pointer-events-none opacity-30"
                                 style={{
+                                    position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.28,
                                     background: isActive
-                                        ? 'radial-gradient(circle at 50% 0%, rgba(16,185,129,0.4) 0%, transparent 65%)'
+                                        ? 'radial-gradient(circle at 50% 0%,rgba(99,102,241,0.7) 0%,transparent 60%)'
                                         : isIncoming
-                                            ? 'radial-gradient(circle at 50% 0%, rgba(16,185,129,0.5) 0%, transparent 65%)'
-                                            : 'radial-gradient(circle at 50% 0%, rgba(99,102,241,0.4) 0%, transparent 65%)',
+                                            ? 'radial-gradient(circle at 50% 0%,rgba(16,185,129,0.7) 0%,transparent 60%)'
+                                            : 'radial-gradient(circle at 50% 0%,rgba(99,102,241,0.5) 0%,transparent 60%)',
                                 }}
                             />
 
-                            <div className="relative z-10 flex flex-col items-center px-8 pt-10 pb-10 gap-6">
+                            <div className="relative z-10 flex flex-col items-center px-7 pt-7 pb-8 gap-5">
 
-                                {/* Header bar */}
-                                <div className="absolute top-4 left-6 right-6 flex items-center justify-between">
+                                {/* ── header row ──────────────────────── */}
+                                <div className="w-full flex items-center justify-between">
                                     <div className="flex items-center gap-1.5">
-                                        <Shield size={12} className="text-indigo-400" />
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">
-                                            Secure Call
+                                        <Lock size={11} className="text-indigo-400" />
+                                        <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-indigo-400">
+                                            Secure Call · E2E
                                         </span>
                                     </div>
-                                    {callState === CALL_STATE.IDLE && (
+                                    {(callState === CS.READY || callState === CS.IDLE || callState === CS.ERROR) && (
                                         <button
                                             onClick={() => setPanelOpen(false)}
-                                            className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${isDarkMode ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                                            className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${isDarkMode
+                                                    ? 'text-slate-500 hover:text-white hover:bg-white/10'
+                                                    : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
                                                 }`}
                                         >
                                             <X size={14} />
@@ -477,248 +577,236 @@ const VoiceCall = ({
                                     )}
                                 </div>
 
-                                {/* Avatar */}
-                                <div className="mt-6">
-                                    <AvatarPulse
-                                        name={calleeName}
-                                        active={isActive}
-                                        incoming={isIncoming}
-                                        isDark={isDarkMode}
-                                    />
-                                </div>
+                                {/* ── avatar ──────────────────────────── */}
+                                <Avatar name={calleeName} state={callState} isDark={isDarkMode} />
 
-                                {/* Name */}
-                                <div className="text-center space-y-1">
-                                    <h3 className={`text-xl font-extrabold tracking-tight ${textPrimary}`}>
-                                        {calleeName}
-                                    </h3>
-                                    <p className={`text-xs font-semibold uppercase tracking-widest ${textSecondary}`}>
-                                        {calleeInfo?.callee_role === 'lawyer' ? 'Advocate' : 'Client'}
+                                {/* ── name / role ─────────────────────── */}
+                                <div className="text-center -mt-1 space-y-0.5">
+                                    <h3 className={`text-xl font-extrabold tracking-tight ${dp}`}>{calleeName}</h3>
+                                    <p className={`text-[11px] font-semibold uppercase tracking-widest ${ds}`}>
+                                        {calleeInfo?.callee_role === 'lawyer' ? '⚖️ Advocate' : '👤 Client'}
                                     </p>
                                 </div>
 
-                                {/* Status row */}
-                                <div className="flex items-center gap-2 min-h-[28px]">
-                                    {(isActive || callState === CALL_STATE.RINGING) ? (
-                                        <>
-                                            <SoundWaveBars
-                                                active={isActive}
-                                                color={isActive ? '#10b981' : '#6366f1'}
-                                            />
-                                            <span
-                                                className="text-sm font-bold tabular-nums"
-                                                style={{ color: status.color }}
-                                            >
-                                                {status.label}
-                                            </span>
-                                            <SoundWaveBars
-                                                active={isActive}
-                                                color={isActive ? '#10b981' : '#6366f1'}
-                                            />
-                                        </>
-                                    ) : (
-                                        <motion.span
-                                            key={callState}
-                                            initial={{ opacity: 0, y: 4 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            className="text-sm font-semibold"
-                                            style={{ color: status.color }}
-                                        >
-                                            {status.label}
-                                        </motion.span>
+                                {/* ── status row ──────────────────────── */}
+                                <div className="flex items-center gap-2.5 min-h-[26px]">
+                                    {isActive && <SoundBars active color="#10b981" />}
+
+                                    <motion.span
+                                        key={callState + duration}
+                                        initial={{ opacity: 0, y: 3 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="text-sm font-bold tabular-nums"
+                                        style={{ color: status.color }}
+                                    >
+                                        {status.text}
+                                    </motion.span>
+
+                                    {isActive && <SoundBars active color="#10b981" />}
+
+                                    {/* Ringing dots */}
+                                    {isCalling && (
+                                        <div className="flex gap-1 ml-1">
+                                            {[0, 1, 2].map(i => (
+                                                <motion.div
+                                                    key={i}
+                                                    animate={{ opacity: [0.2, 1, 0.2] }}
+                                                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.3 }}
+                                                    className="w-1.5 h-1.5 rounded-full bg-indigo-400"
+                                                />
+                                            ))}
+                                        </div>
                                     )}
                                 </div>
 
-                                {/* SDK Not Ready Notice */}
-                                {!sdkReady && callState !== CALL_STATE.ERROR && (
+                                {/* ── error notice ────────────────────── */}
+                                {errMsg && (
+                                    <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium w-full justify-center ${isDarkMode ? 'bg-red-500/15 text-red-400' : 'bg-red-50 text-red-600'
+                                        }`}>
+                                        <WifiOff size={12} />
+                                        {errMsg}
+                                    </div>
+                                )}
+
+                                {/* ── initialising notice ─────────────── */}
+                                {callState === CS.INIT && (
                                     <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium ${isDarkMode ? 'bg-white/5 text-slate-400' : 'bg-slate-50 text-slate-500'
                                         }`}>
-                                        <WifiOff size={12} />
-                                        Initializing secure connection…
+                                        <WifiOff size={11} className="animate-spin" />
+                                        Initialising secure connection…
                                     </div>
                                 )}
 
-                                {/* Error */}
-                                {errorMessage && (
-                                    <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium w-full text-center justify-center ${isDarkMode ? 'bg-red-500/15 text-red-400' : 'bg-red-50 text-red-600'
-                                        }`}>
-                                        <WifiOff size={12} />
-                                        {errorMessage}
-                                    </div>
-                                )}
-
-                                {/* ── INCOMING CALL ACTIONS ── */}
-                                {callState === CALL_STATE.INCOMING && (
-                                    <div className="flex items-center gap-6 mt-2">
-                                        {/* Reject */}
+                                {/* ════════════════════════════════════════
+                                    INCOMING CALL ACTIONS
+                                ════════════════════════════════════════ */}
+                                {isIncoming && (
+                                    <div className="flex items-end gap-10 mt-1">
+                                        {/* Decline */}
                                         <div className="flex flex-col items-center gap-2">
                                             <motion.button
-                                                whileHover={{ scale: 1.1 }}
+                                                whileHover={{ scale: 1.12 }}
                                                 whileTap={{ scale: 0.9 }}
-                                                onClick={rejectIncomingCall}
-                                                className="w-16 h-16 rounded-full flex items-center justify-center shadow-xl"
+                                                onClick={declineCall}
                                                 style={{
-                                                    background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                                                    boxShadow: '0 6px 24px rgba(239,68,68,0.5)',
+                                                    width: 66, height: 66, borderRadius: '50%',
+                                                    background: 'linear-gradient(135deg,#ef4444,#dc2626)',
+                                                    boxShadow: '0 6px 24px rgba(239,68,68,0.55)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 }}
                                             >
-                                                <PhoneOff size={24} color="#fff" />
+                                                <PhoneMissed size={26} color="#fff" />
                                             </motion.button>
-                                            <span className={`text-xs font-semibold ${textSecondary}`}>Decline</span>
+                                            <span className={`text-[11px] font-semibold ${ds}`}>Decline</span>
                                         </div>
 
                                         {/* Accept */}
                                         <div className="flex flex-col items-center gap-2">
                                             <motion.button
-                                                whileHover={{ scale: 1.1 }}
+                                                whileHover={{ scale: 1.12 }}
                                                 whileTap={{ scale: 0.9 }}
-                                                onClick={acceptIncomingCall}
-                                                className="w-16 h-16 rounded-full flex items-center justify-center shadow-xl"
+                                                onClick={acceptCall}
                                                 style={{
-                                                    background: 'linear-gradient(135deg, #10b981, #059669)',
-                                                    boxShadow: '0 6px 24px rgba(16,185,129,0.5)',
+                                                    width: 66, height: 66, borderRadius: '50%',
+                                                    background: 'linear-gradient(135deg,#10b981,#059669)',
+                                                    boxShadow: '0 6px 24px rgba(16,185,129,0.55)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 }}
                                             >
                                                 <motion.div
-                                                    animate={{ rotate: [0, 20, -20, 0] }}
-                                                    transition={{ duration: 0.6, repeat: Infinity }}
+                                                    animate={{ rotate: [0, 18, -18, 0] }}
+                                                    transition={{ duration: 0.55, repeat: Infinity }}
                                                 >
-                                                    <PhoneIncoming size={24} color="#fff" />
+                                                    <PhoneIncoming size={26} color="#fff" />
                                                 </motion.div>
                                             </motion.button>
-                                            <span className={`text-xs font-semibold ${textSecondary}`}>Answer</span>
+                                            <span className={`text-[11px] font-semibold ${ds}`}>Answer</span>
                                         </div>
                                     </div>
                                 )}
 
-                                {/* ── ACTIVE CALL CONTROLS ── */}
-                                {(isActive || callState === CALL_STATE.CONNECTING || callState === CALL_STATE.RINGING) && (
-                                    <div className="flex items-center gap-4 mt-2 w-full justify-center">
+                                {/* ════════════════════════════════════════
+                                    OUTGOING / ACTIVE CONTROLS
+                                ════════════════════════════════════════ */}
+                                {(isActive || isCalling) && (
+                                    <div className="flex items-end gap-5 mt-1 w-full justify-center">
+
                                         {/* Mute */}
-                                        <div className="flex flex-col items-center gap-2">
+                                        <div className="flex flex-col items-center gap-1.5">
                                             <motion.button
                                                 whileHover={{ scale: 1.08 }}
                                                 whileTap={{ scale: 0.92 }}
                                                 onClick={toggleMute}
                                                 disabled={!isActive}
-                                                className="w-13 h-13 rounded-2xl flex items-center justify-center transition-all"
                                                 style={{
-                                                    width: 52, height: 52,
+                                                    width: 52, height: 52, borderRadius: 16,
                                                     background: isMuted
-                                                        ? (isDarkMode ? 'rgba(239,68,68,0.2)' : 'rgba(239,68,68,0.1)')
-                                                        : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
+                                                        ? (isDarkMode ? 'rgba(239,68,68,0.18)' : 'rgba(239,68,68,0.1)')
+                                                        : (isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)'),
                                                     border: `1.5px solid ${isMuted ? 'rgba(239,68,68,0.4)' : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)')}`,
                                                     color: isMuted ? '#ef4444' : isDarkMode ? '#e2e8f0' : '#475569',
-                                                    opacity: isActive ? 1 : 0.4,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    opacity: isActive ? 1 : 0.35, cursor: isActive ? 'pointer' : 'default',
                                                 }}
                                             >
                                                 {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
                                             </motion.button>
-                                            <span className={`text-[11px] font-semibold ${textSecondary}`}>
+                                            <span className={`text-[10px] font-semibold ${ds}`}>
                                                 {isMuted ? 'Unmute' : 'Mute'}
                                             </span>
                                         </div>
 
-                                        {/* End Call */}
-                                        <div className="flex flex-col items-center gap-2">
+                                        {/* End call */}
+                                        <div className="flex flex-col items-center gap-1.5">
                                             <motion.button
                                                 whileHover={{ scale: 1.1 }}
                                                 whileTap={{ scale: 0.9 }}
                                                 onClick={endCall}
-                                                className="rounded-full flex items-center justify-center shadow-xl"
                                                 style={{
-                                                    width: 68, height: 68,
-                                                    background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                                                    boxShadow: '0 8px 32px rgba(239,68,68,0.55)',
+                                                    width: 72, height: 72, borderRadius: '50%',
+                                                    background: 'linear-gradient(135deg,#ef4444,#dc2626)',
+                                                    boxShadow: '0 8px 32px rgba(239,68,68,0.6)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 }}
                                             >
-                                                <PhoneOff size={26} color="#fff" />
+                                                <PhoneOff size={28} color="#fff" />
                                             </motion.button>
-                                            <span className={`text-[11px] font-semibold text-red-500`}>End</span>
+                                            <span className="text-[10px] font-semibold text-red-500">End Call</span>
                                         </div>
 
-                                        {/* Speaker toggle */}
-                                        <div className="flex flex-col items-center gap-2">
+                                        {/* Speaker */}
+                                        <div className="flex flex-col items-center gap-1.5">
                                             <motion.button
                                                 whileHover={{ scale: 1.08 }}
                                                 whileTap={{ scale: 0.92 }}
-                                                onClick={() => setIsSpeakerOff(s => !s)}
-                                                className="rounded-2xl flex items-center justify-center transition-all"
+                                                onClick={() => setSpeakerOff(s => !s)}
                                                 style={{
-                                                    width: 52, height: 52,
-                                                    background: isSpeakerOff
-                                                        ? (isDarkMode ? 'rgba(245,158,11,0.2)' : 'rgba(245,158,11,0.1)')
-                                                        : (isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
-                                                    border: `1.5px solid ${isSpeakerOff ? 'rgba(245,158,11,0.4)' : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)')}`,
-                                                    color: isSpeakerOff ? '#f59e0b' : isDarkMode ? '#e2e8f0' : '#475569',
+                                                    width: 52, height: 52, borderRadius: 16,
+                                                    background: speakerOff
+                                                        ? (isDarkMode ? 'rgba(245,158,11,0.18)' : 'rgba(245,158,11,0.1)')
+                                                        : (isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)'),
+                                                    border: `1.5px solid ${speakerOff ? 'rgba(245,158,11,0.4)' : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)')}`,
+                                                    color: speakerOff ? '#f59e0b' : isDarkMode ? '#e2e8f0' : '#475569',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 }}
                                             >
-                                                {isSpeakerOff ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                                                {speakerOff ? <VolumeX size={20} /> : <Volume2 size={20} />}
                                             </motion.button>
-                                            <span className={`text-[11px] font-semibold ${textSecondary}`}>
-                                                {isSpeakerOff ? 'Speaker Off' : 'Speaker'}
+                                            <span className={`text-[10px] font-semibold ${ds}`}>
+                                                {speakerOff ? 'Speaker Off' : 'Speaker'}
                                             </span>
                                         </div>
                                     </div>
                                 )}
 
-                                {/* ── IDLE — CALL BUTTON ── */}
-                                {callState === CALL_STATE.IDLE && (
-                                    <div className="flex flex-col items-center gap-3 mt-2 w-full">
+                                {/* ════════════════════════════════════════
+                                    READY/IDLE — START CALL
+                                ════════════════════════════════════════ */}
+                                {(callState === CS.READY) && (
+                                    <div className="flex flex-col items-center gap-2.5 w-full mt-1">
                                         <motion.button
-                                            whileHover={{ scale: 1.05 }}
-                                            whileTap={{ scale: 0.95 }}
+                                            whileHover={{ scale: 1.04 }}
+                                            whileTap={{ scale: 0.96 }}
                                             onClick={startCall}
-                                            disabled={!sdkReady}
-                                            className="flex items-center gap-3 px-8 py-4 rounded-2xl font-bold text-base text-white shadow-xl transition-all w-full justify-center"
+                                            className="flex items-center gap-3 py-4 rounded-2xl font-bold text-base text-white w-full justify-center"
                                             style={{
-                                                background: sdkReady
-                                                    ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
-                                                    : isDarkMode ? 'rgba(99,102,241,0.3)' : 'rgba(99,102,241,0.2)',
-                                                boxShadow: sdkReady ? '0 6px 28px rgba(99,102,241,0.55)' : 'none',
-                                                opacity: sdkReady ? 1 : 0.6,
+                                                background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                                                boxShadow: '0 6px 28px rgba(99,102,241,0.55)',
                                             }}
                                         >
                                             <PhoneCall size={20} />
                                             Call {calleeName.split(' ')[0]}
                                         </motion.button>
-
-                                        {/* SDK status */}
-                                        <div className={`flex items-center gap-1.5 text-xs font-medium ${sdkReady ? 'text-emerald-500' : textSecondary
-                                            }`}>
-                                            {sdkReady
-                                                ? <><Wifi size={11} /> Ready</>
-                                                : <><WifiOff size={11} /> Initializing...</>
-                                            }
+                                        <div className="flex items-center gap-1.5 text-emerald-500 text-xs font-semibold">
+                                            <Wifi size={11} /> Ready to call
                                         </div>
                                     </div>
                                 )}
 
-                                {/* ── ERROR — RETRY ── */}
-                                {callState === CALL_STATE.ERROR && (
+                                {/* Error retry */}
+                                {callState === CS.ERROR && (
                                     <motion.button
                                         whileHover={{ scale: 1.04 }}
                                         whileTap={{ scale: 0.96 }}
                                         onClick={() => {
-                                            setCallState(CALL_STATE.IDLE);
-                                            setErrorMessage('');
-                                            hasInitRef.current = false;
-                                            setSdkReady(false);
+                                            setCallState(CS.IDLE);
+                                            setErrMsg('');
+                                            initDoneRef.current = false;
                                             initDevice();
                                         }}
-                                        className="px-6 py-3 rounded-2xl text-sm font-bold text-white"
+                                        className="px-6 py-3 rounded-2xl text-sm font-bold text-white w-full justify-center flex items-center gap-2"
                                         style={{
-                                            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                            background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
                                             boxShadow: '0 4px 16px rgba(99,102,241,0.4)',
                                         }}
                                     >
-                                        Retry Connection
+                                        <Wifi size={14} /> Retry Connection
                                     </motion.button>
                                 )}
 
-                                {/* Footer note */}
-                                <p className={`text-[10px] font-medium text-center leading-relaxed ${textSecondary} opacity-60`}>
-                                    End-to-end encrypted · Powered by MeraVakil
+                                {/* Footer */}
+                                <p className={`text-[9px] font-medium text-center ${ds} opacity-50`}>
+                                    End-to-end encrypted · MeraVakil Secure Chambers
                                 </p>
                             </div>
                         </motion.div>
