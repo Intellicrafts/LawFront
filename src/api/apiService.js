@@ -2521,6 +2521,44 @@ export const lawyerAdminAPI = {
   }
 };
 
+/**
+ * Voice Call API Service
+ * Handles Twilio Voice SDK token generation and callee resolution
+ * for browser-to-browser calling between clients and lawyers.
+ */
+export const voiceCallAPI = {
+  /**
+   * Get a Twilio Access Token for the Voice SDK.
+   * @param {string} sessionToken - Consultation session token
+   */
+  getToken: async (sessionToken) => {
+    try {
+      const response = await apiClient.get('/voice/token', {
+        params: { session_token: sessionToken }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching voice token:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get callee identity and name for a session.
+   * @param {string} sessionToken - Consultation session token
+   */
+  getCalleeInfo: async (sessionToken) => {
+    try {
+      const response = await apiClient.get(`/voice/callee/${sessionToken}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching callee info:', error);
+      throw error;
+    }
+  },
+};
+
 export default apiClient;
 // Export wallet and other services safely
 export const { walletAPI: walletServices } = apiServices;
+

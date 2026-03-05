@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { deriveKey, encryptText, decryptText } from '../../utils/e2ee';
 import { toggleTheme } from '../../redux/themeSlice';
+import VoiceCall from './VoiceCall';
+
 
 const CustomAudioPlayer = ({ src, isDarkMode, isOwnMessage }) => {
     const [isPlaying, setIsPlaying] = React.useState(false);
@@ -824,6 +826,14 @@ const ConsultationChat = ({
                                     </span>
                                 </div>
                             )}
+
+                            {/* ── Voice Call Button ── */}
+                            <VoiceCall
+                                sessionToken={session?.session_token}
+                                userType={userType}
+                                otherParticipant={otherParticipant}
+                                isDarkMode={isDarkMode}
+                            />
 
                             {/* Dark mode toggle */}
                             <button
