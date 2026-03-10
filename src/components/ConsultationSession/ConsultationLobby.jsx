@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { toggleTheme } from '../../redux/themeSlice';
-import VoiceCall from './VoiceCall';
 
 
 const ConsultationLobby = ({
@@ -159,16 +158,6 @@ const ConsultationLobby = ({
                             </div>
                         )}
 
-                        {/* Voice call button */}
-                        {session?.session_token && (
-                            <VoiceCall
-                                sessionToken={session.session_token}
-                                userType={userType}
-                                otherParticipant={otherParticipant}
-                                isDarkMode={isDarkMode}
-                                compact
-                            />
-                        )}
 
                         {/* Dark mode toggle */}
                         <button
