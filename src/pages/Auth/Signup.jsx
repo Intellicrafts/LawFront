@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
   Scale, Check, User as UserIcon, Briefcase as BriefcaseIcon, Shield, Mail, Lock,
@@ -7,7 +8,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
-import { authAPI, tokenManager } from '../../api/apiService';
+import { authAPI, tokenManager, walletAPI } from '../../api/apiService';
 import { useToast } from '../../context/ToastContext';
 
 // Configure axios defaults
@@ -42,7 +43,7 @@ const Logo = () => {
     <div className="flex justify-center mb-4">
       <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${isDarkMode ? 'bg-brand-500/10' : 'bg-brand-50'}`}>
         <Scale size={22} className="text-brand-500" strokeWidth={2.5} />
-        <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-brand-900'}`}>Mera Vakil</span>
+        <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-brand-900'}`}>MeraBakil</span>
       </div>
     </div>
   );
@@ -466,6 +467,7 @@ export const Signup = ({ onSignupSuccess }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [accountType, setAccountType] = useState('personal');
@@ -475,28 +477,23 @@ export const Signup = ({ onSignupSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const { showSuccess, showError, showInfo, showWarning } = useToast();
+  const navigate = useNavigate();
 
   // Lawyer-specific fields
   const [enrollmentNo, setEnrollmentNo] = useState('');
-  const [copCertificate, setCopCertificate] = useState(null);
-  const [enrollmentCertificate, setEnrollmentCertificate] = useState(null);
-  const [addressProof, setAddressProof] = useState(null);
 
   // Reset lawyer-specific fields when account type changes
   useEffect(() => {
     if (accountType === 'personal') {
       setEnrollmentNo('');
-      setCopCertificate(null);
-      setEnrollmentCertificate(null);
-      setAddressProof(null);
     }
   }, [accountType]);
 
   useEffect(() => {
     if (tokenManager.isAuthenticated()) {
-      window.location.href = '/';
+      navigate('/', { replace: true });
     }
-  }, []);
+  }, [navigate]);
 
   // Email validation helper
   const isValidEmail = (email) => {
@@ -549,8 +546,13 @@ export const Signup = ({ onSignupSuccess }) => {
     e.preventDefault();
 
     // Final validation for step 2
-    if (!firstName.trim() || !lastName.trim() || !passwordsMatch || password !== confirmPassword) {
+    if (!firstName.trim() || !lastName.trim() || !phoneNumber.trim() || !passwordsMatch || password !== confirmPassword) {
       showError('Please fill in all required fields correctly');
+      return;
+    }
+
+    if (phoneNumber.replace(/\D/g, '').length < 10) {
+      showError('Please enter a valid phone number (min. 10 digits)');
       return;
     }
 
@@ -558,16 +560,6 @@ export const Signup = ({ onSignupSuccess }) => {
     if (accountType === 'business') {
       if (!enrollmentNo.trim()) {
         showError('Please enter your Enrollment Number');
-        return;
-      }
-
-      if (!enrollmentCertificate) {
-        showError('Please upload your Certificate of Enrollment');
-        return;
-      }
-
-      if (!copCertificate) {
-        showError('Please upload your Certificate of Practice (CoP)');
         return;
       }
     }
@@ -590,34 +582,16 @@ export const Signup = ({ onSignupSuccess }) => {
       const formData = new FormData();
       formData.append('name', `${firstName.trim()} ${lastName.trim()}`);
       formData.append('email', email.trim().toLowerCase());
+      formData.append('phone', phoneNumber.trim());
       formData.append('password', password);
       formData.append('password_confirmation', confirmPassword);
       formData.append('account_type', accountType);
-
-      // Add lawyer-specific fields if account type is business
-      if (accountType === 'business') {
-        // Use a local variable instead of modifying the state directly
-        const accountTypeValue = 2;
-        formData.append('account_type', accountTypeValue);
-        formData.append('enrollment_no', enrollmentNo.trim());
-
-        if (enrollmentCertificate) {
-          formData.append('enrollment_certificate', enrollmentCertificate);
-        }
-
-        if (copCertificate) {
-          formData.append('cop_certificate', copCertificate);
-        }
-
-        if (addressProof) {
-          formData.append('address_proof', addressProof);
-        }
-      }
 
       // Convert to regular object for API that doesn't handle FormData
       const registrationData = {
         name: `${firstName.trim()} ${lastName.trim()}`,
         email: email.trim().toLowerCase(),
+        phone: phoneNumber.trim(),
         password: password,
         password_confirmation: confirmPassword,
         account_type: accountType === 'personal' ? 1 : 2
@@ -626,104 +600,108 @@ export const Signup = ({ onSignupSuccess }) => {
       // Add lawyer-specific fields to the regular object
       if (accountType === 'business') {
         registrationData.enrollment_no = enrollmentNo.trim();
-        // Note: Files will be handled by FormData, not included in this object
       }
-
 
       // Step 3: Send registration request using centralized API
       let response;
 
-      // Use FormData for lawyer registration (with file uploads)
-      if (accountType === 'business' && (enrollmentCertificate || copCertificate || addressProof)) {
-        // Create a custom axios request with FormData
-        const config = {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-          },
-          withCredentials: true
-        };
-
-        try {
-          response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/register`, formData, config);
-          console.log('FormData registration response:', response);
-        } catch (formDataError) {
-          console.error('FormData registration error:', formDataError);
-          throw formDataError;
-        }
-      } else {
-        // Use regular JSON request for standard registration
-        try {
-          response = await authAPI.register(registrationData);
-          console.log('JSON registration response:', response);
-        } catch (jsonError) {
-          console.error('JSON registration error:', jsonError);
-          throw jsonError;
-        }
+      // Use regular JSON request for standard registration
+      try {
+        response = await authAPI.register(registrationData);
+        console.log('JSON registration response:', response);
+      } catch (jsonError) {
+        console.error('JSON registration error:', jsonError);
+        throw jsonError;
       }
 
       console.log('Registration response:', response.data);
 
       // Step 4: Handle successful registration
       if (response.data && (response.data.access_token || response.data.token)) {
-        // Use token manager to store authentication data
+
+        // === START: Auto-create Wallet ===
+        try {
+          if (response.data.user && response.data.user.id) {
+            const userTypeStr = accountType === 'business' ? 'LAWYER' : 'CUSTOMER';
+            const walletPayload = {
+              user_id: response.data.user.id.toString(),
+              user_type: userTypeStr,
+              currency: 'INR'
+            };
+            await walletAPI.createWallet(walletPayload);
+            // showSuccess('Wallet initialized successfully'); // Hiding to avoid double-toasts
+          }
+        } catch (walletError) {
+          console.error('Error auto-creating wallet:', walletError.message);
+          let errorMsg = 'Failed to initialize wallet.';
+          if (walletError.response && walletError.response.data) {
+            errorMsg = `Wallet Error: ${walletError.response.data.detail || JSON.stringify(walletError.response.data)}`;
+          }
+          // Soft fail - allow the user to complete signup and login flow
+          console.warn('Wallet creation failed, but proceeding with login:', errorMsg);
+        }
+        // === END: Auto-create Wallet ===
+
+        // Store tokens silently first so they are ready
         const token = response.data.access_token || response.data.token;
         tokenManager.setToken(token);
-
         if (response.data.user) {
           tokenManager.setUser(response.data.user);
         }
 
-        // Dispatch event to notify other components of authentication change
-        window.dispatchEvent(new CustomEvent('auth-status-changed', {
-          detail: { authenticated: true, user: response.data.user }
-        }));
+        // Set flag to trigger onboarding tour for new signups
+        sessionStorage.setItem('isSignupSession', 'true');
+
+        // For lawyer signups, store enrollment number so the verification
+        // banner can auto-trigger Satyapan API even if the profile endpoint
+        // doesn't return enrollment_no in the response object
+        if (accountType === 'business' && enrollmentNo.trim()) {
+          sessionStorage.setItem('lawyerEnrollmentNo', enrollmentNo.trim());
+        }
 
         showSuccess('Registration successful! Welcome to MeraBakil!');
 
-        // Conditional redirect based on user_type
+        // Wait for the user to see the success message before doing ANY state changes
+        // that would unmount the signup component and cause flickering
         setTimeout(() => {
+          // Dispatch event to notify other components of authentication change
+          // Doing this inside the timeout prevents the Navbar/Router from instantly
+          // jerking the user away while the toast is still trying to render
+          window.dispatchEvent(new CustomEvent('auth-status-changed', {
+            detail: { authenticated: true, user: response.data.user }
+          }));
+
           const user = response?.data?.user;
           const userType = user?.user_type;
           const role = user?.role?.toLowerCase();
 
           // If a redirect URL is explicitly provided in query string, use that
           const urlRedirectParam = new URLSearchParams(window.location.search).get('redirect');
-
           let redirectUrl = '/';
 
           if (urlRedirectParam) {
             redirectUrl = urlRedirectParam;
           } else if (userType === 2 || userType === 'business' || userType === 'lawyer' || role === 'lawyer') {
-            // Lawyer / Business account - redirect to Lawyer Admin Dashboard
             redirectUrl = '/lawyer-admin';
           } else if (userType === 1 || userType === 'personal' || userType === 'user' || role === 'user' || role === 'client') {
-            // Normal user / Client - redirect to homepage
             redirectUrl = '/';
           } else if (userType === null || userType === undefined || userType === 0) {
-            // User has no user_type set (null, undefined, or 0), redirect to profile type selection
             redirectUrl = '/profile-setup/type-selection';
-          } else {
-            // Default fallback
-            redirectUrl = '/';
           }
 
           console.log(`Signup - Redirecting user (type: ${userType}, role: ${role}) to: ${redirectUrl}`);
-          window.location.href = redirectUrl;
-        }, 2000);
 
-
-        // Call parent callback if provided
-        if (onSignupSuccess) {
-          setTimeout(() => {
+          if (onSignupSuccess) {
             onSignupSuccess(response.data);
-          }, 1500);
-        }
+          }
+
+          navigate(redirectUrl, { replace: true });
+        }, 1500);
+
       } else {
         showWarning('Registration completed but authentication failed. Please try logging in.');
         setTimeout(() => {
-          window.location.href = '/auth';
+          navigate('/auth');
         }, 2000);
       }
 
@@ -792,8 +770,6 @@ export const Signup = ({ onSignupSuccess }) => {
     setLoading(true);
 
     try {
-      showInfo('Creating your account...');
-
       // Call the Google login API (which can also handle signup)
       const response = await authAPI.googleLogin(googleToken);
 
@@ -850,12 +826,14 @@ export const Signup = ({ onSignupSuccess }) => {
           }
 
           console.log(`Google Signup - Redirecting user (type: ${userType}, role: ${role}) to: ${redirectUrl}`);
-          window.location.href = redirectUrl;
-        }, 1500);
+          navigate(redirectUrl, { replace: true });
+        }, 2000); // Wait 2 seconds before redirecting so user can see Toasts
 
       } else {
-        showWarning('Google signup completed but authentication token was not received. Please try again.');
+        // Unexpected response format without token
+        throw new Error('Registration failed. Please try again.');
       }
+
 
     } catch (error) {
       console.error('Google signup error:', error);
@@ -922,7 +900,7 @@ export const Signup = ({ onSignupSuccess }) => {
               <Logo />
             </motion.div>
             <h2 className={`text-2xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-1`}>Create Account</h2>
-            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Join Mera Vakil's professional legal network</p>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Join MeraBakil's professional legal network</p>
           </div>
 
           <div className="flex items-center justify-center mb-8 gap-4">
@@ -974,7 +952,7 @@ export const Signup = ({ onSignupSuccess }) => {
                         name="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="lawyer@meravakil.com"
+                        placeholder="lawyer@merabakil.com"
                         icon={<Mail size={16} />}
                       />
                     </div>
@@ -1039,6 +1017,30 @@ export const Signup = ({ onSignupSuccess }) => {
                     </div>
                   </div>
 
+                  <div className="space-y-1.5 pt-2">
+                    <label className="text-xs font-bold uppercase text-gray-500 tracking-wider flex items-center gap-1.5">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                      </svg>
+                      WhatsApp Number <span className="text-red-500">*</span>
+                    </label>
+                    <InputField
+                      type="tel"
+                      id="phoneNumber"
+                      name="phoneNumber"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9+\s-]/g, ''))}
+                      placeholder="+91 9876543210"
+                      icon={<Smartphone size={16} />}
+                    />
+                    <p className={`text-[11px] flex items-center gap-1 ${isDarkMode ? 'text-green-400/70' : 'text-green-600/80'}`}>
+                      <svg viewBox="0 0 24 24" className="w-3 h-3 flex-shrink-0" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                      </svg>
+                      Appointment reminders & updates will be sent to this WhatsApp number
+                    </p>
+                  </div>
+
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold uppercase text-gray-500 tracking-wider">Confirm Password</label>
                     <InputField
@@ -1066,10 +1068,6 @@ export const Signup = ({ onSignupSuccess }) => {
                         <label className="text-xs font-bold uppercase text-gray-500 tracking-wider">Bar Council Enrollment No.</label>
                         <InputField type="text" id="enrollmentNo" name="enrollmentNo" value={enrollmentNo} onChange={(e) => setEnrollmentNo(e.target.value)} icon={<Scale size={16} />} />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FileUploadField id="enrollmentCert" label="Enrollment Cert." onChange={setEnrollmentCertificate} required />
-                        <FileUploadField id="copCert" label="CoP Certificate" onChange={setCopCertificate} required />
-                      </div>
                     </motion.div>
                   )}
 
@@ -1085,7 +1083,7 @@ export const Signup = ({ onSignupSuccess }) => {
                       <Button
                         type="submit"
                         loading={loading}
-                        disabled={!firstName.trim() || !lastName.trim() || !passwordsMatch || loading}
+                        disabled={!firstName.trim() || !lastName.trim() || !phoneNumber.trim() || !passwordsMatch || loading}
                       >
                         Create Account
                       </Button>

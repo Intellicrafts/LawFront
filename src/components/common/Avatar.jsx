@@ -1,9 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { cleanAvatarUrl, generateInitials, generateAvatarColor } from '../../utils/avatarUtils';
-
-// Base64 encoded default avatar (a simple gray user silhouette)
-const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzlFOUU5RSI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgM2MyLjY3IDAgOCAyLjY3IDggOHYyYzAgMi42Ny01LjMzIDUtOCA1cy04LTIuMzMtOC01di0yYzAtNS4zMyA1LjMzLTggOC04em0wIDJjLTEuMSAwLTIgLjktMiAyczAuOSAyIDIgMiAyLS45IDItMi0uOS0yLTItMnoiLz48L3N2Zz4=';
 
 /**
  * Avatar component that handles various avatar URL formats and provides fallback
@@ -22,7 +19,7 @@ const Avatar = ({ src, alt, className, size, style, name, forceRefresh, ...rest 
   const [imageSrc, setImageSrc] = useState(null);
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [refreshKey, setRefreshKey] = useState(Date.now()); // Used to force refresh
+  const [refreshKey, setRefreshKey] = useState(Date.now());
 
   // Generate initials from name using utility function
   const getInitials = () => {
@@ -46,7 +43,7 @@ const Avatar = ({ src, alt, className, size, style, name, forceRefresh, ...rest 
   // Process the avatar URL to ensure it's valid
   useEffect(() => {
     setIsLoading(true);
-    
+
     if (!src) {
       setHasError(true);
       setIsLoading(false);
@@ -56,6 +53,7 @@ const Avatar = ({ src, alt, className, size, style, name, forceRefresh, ...rest 
     // If it's already a data URL, use it directly
     if (typeof src === 'string' && src.startsWith('data:')) {
       setImageSrc(src);
+      setHasError(false);
       setIsLoading(false);
       return;
     }
@@ -65,20 +63,19 @@ const Avatar = ({ src, alt, className, size, style, name, forceRefresh, ...rest 
 
     // Process the URL using the smart avatar utilities
     try {
-      console.log('Avatar: Processing URL with cleanAvatarUrl:', src);
       const processedSrc = cleanAvatarUrl(src);
-      
+
       if (processedSrc) {
         // Add a cache-busting parameter to prevent browser caching
         const cacheBuster = `_cb=${refreshKey}`;
-        const finalSrc = processedSrc.includes('?') 
-          ? `${processedSrc}&${cacheBuster}` 
+        const finalSrc = processedSrc.includes('?')
+          ? `${processedSrc}&${cacheBuster}`
           : `${processedSrc}?${cacheBuster}`;
-        
-        console.log('Avatar: Successfully processed URL:', finalSrc);
+
         setImageSrc(finalSrc);
+        // Don't set isLoading to false here — wait for onLoad/onError
       } else {
-        console.log('Avatar: Failed to process URL, will show initials');
+        // cleanAvatarUrl returned null — show initials instead
         setHasError(true);
         setIsLoading(false);
       }
@@ -91,25 +88,22 @@ const Avatar = ({ src, alt, className, size, style, name, forceRefresh, ...rest 
 
   // Handle image load error
   const handleError = (e) => {
-    console.error('Avatar: Failed to load image:', imageSrc);
-    
     // Prevent further error callbacks
     if (e && e.target) {
       e.target.onerror = null;
     }
-    
+
     setHasError(true);
     setIsLoading(false);
-    
+
     // Try to load from localStorage as a fallback
     const cachedAvatar = localStorage.getItem('user_avatar_offline');
     if (cachedAvatar && cachedAvatar.startsWith('data:')) {
-      console.log('Avatar: Using cached avatar from localStorage after load error');
       setImageSrc(cachedAvatar);
       setHasError(false);
     }
   };
-  
+
   // Handle image load success
   const handleLoad = () => {
     setIsLoading(false);
@@ -124,27 +118,32 @@ const Avatar = ({ src, alt, className, size, style, name, forceRefresh, ...rest 
     borderRadius: '50%',
     ...style
   };
-  
-  // If showing initials and there's an error or no image
+
+  // PRIORITY 1: If there's an error or no src, show initials or default icon
   if (hasError || !src) {
-    // If we have a name, show initials
     if (name) {
       const bgColor = getBackgroundColor();
       const textSize = size ? Math.floor(size / 2.5) : 16;
-      
+
+      // Generate a complementary darker shade for gradient
+      const darkerShade = bgColor + 'CC';
+
       return (
-        <div 
+        <div
           className={`avatar-initials ${className || ''}`}
           style={{
             ...combinedStyle,
-            backgroundColor: bgColor,
+            background: `linear-gradient(135deg, ${bgColor} 0%, ${darkerShade} 100%)`,
             color: '#FFFFFF',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontWeight: 'bold',
+            fontWeight: '700',
             fontSize: `${textSize}px`,
-            textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+            textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
+            letterSpacing: '0.5px',
+            fontFamily: "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif",
+            boxShadow: `inset 0 -2px 6px rgba(0, 0, 0, 0.15), 0 2px 8px ${bgColor}40`,
           }}
           title={alt || name || 'User avatar'}
           {...rest}
@@ -155,7 +154,7 @@ const Avatar = ({ src, alt, className, size, style, name, forceRefresh, ...rest 
     } else {
       // If no name, show a generic user icon
       return (
-        <div 
+        <div
           className={`avatar-default ${className || ''}`}
           style={{
             ...combinedStyle,
@@ -168,65 +167,68 @@ const Avatar = ({ src, alt, className, size, style, name, forceRefresh, ...rest 
           title={alt || 'User avatar'}
           {...rest}
         >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            viewBox="0 0 24 24" 
-            fill="currentColor" 
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
             style={{ width: '60%', height: '60%' }}
           >
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c2.67 0 8 2.67 8 8v2c0 2.67-5.33 5-8 5s-8-2.33-8-5v-2c0-5.33 5.33-8 8-8zm0 2c-1.1 0-2 .9-2 2s0.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
           </svg>
         </div>
       );
     }
   }
-  
-  // If loading, show a skeleton loader
-  if (isLoading) {
-    return (
-      <div 
-        className={`avatar-skeleton ${className || ''}`}
-        style={{
-          ...combinedStyle,
-          backgroundColor: '#e2e8f0',
-          animation: 'pulse 1.5s infinite',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <style>
-          {`
-            @keyframes pulse {
-              0% { opacity: 0.6; }
-              50% { opacity: 1; }
-              100% { opacity: 0.6; }
-            }
-          `}
-        </style>
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          viewBox="0 0 24 24" 
-          fill="#9ca3af" 
-          style={{ width: '60%', height: '60%' }}
-        >
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c2.67 0 8 2.67 8 8v2c0 2.67-5.33 5-8 5s-8-2.33-8-5v-2c0-5.33 5.33-8 8-8zm0 2c-1.1 0-2 .9-2 2s0.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-        </svg>
-      </div>
-    );
-  }
 
-  // Otherwise, show the image
+  // PRIORITY 2: Show the image (with a hidden loading state instead of skeleton)
+  // We render the img tag even during loading but with opacity transition
+  // This avoids the "white skeleton" flash that looks unprofessional
   return (
-    <img
-      src={imageSrc || defaultAvatar}
-      alt={alt || name || 'User avatar'}
-      className={`avatar-image ${className || ''}`}
-      style={combinedStyle}
-      onError={handleError}
-      onLoad={handleLoad}
-      {...rest}
-    />
+    <div
+      className={`avatar-wrapper ${className || ''}`}
+      style={{
+        ...combinedStyle,
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Show initials behind the image as a backdrop during loading */}
+      {isLoading && name && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: `linear-gradient(135deg, ${getBackgroundColor()} 0%, ${getBackgroundColor()}CC 100%)`,
+            color: '#FFFFFF',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: '700',
+            fontSize: `${size ? Math.floor(size / 2.5) : 16}px`,
+            textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
+            letterSpacing: '0.5px',
+            fontFamily: "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif",
+            borderRadius: '50%',
+          }}
+        >
+          {getInitials()}
+        </div>
+      )}
+      <img
+        src={imageSrc}
+        alt={alt || name || 'User avatar'}
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          borderRadius: '50%',
+          opacity: isLoading ? 0 : 1,
+          transition: 'opacity 0.3s ease',
+        }}
+        onError={handleError}
+        onLoad={handleLoad}
+      />
+    </div>
   );
 };
 

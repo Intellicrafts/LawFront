@@ -67,8 +67,9 @@ apiClient.interceptors.response.use(
 // Helper: create a new session for a given app and user
 export async function createSession(appName, userId) {
   try {
-    const base = process.env.REACT_APP_CHATBOT_API_URL || 'http://bakilapp-alb-59756411.ap-south-1.elb.amazonaws.com';
-    const host = base.replace(/\/run$/, ''); // strip trailing /run
+    const base = process.env.REACT_APP_CHATBOT_API_URL;
+    if (!base) console.error('[apiService] REACT_APP_CHATBOT_API_URL is NOT defined!');
+    const host = base ? base.replace(/\/run$/, '') : ''; // strip trailing /run
     const url = `${host}/apps/${appName}/users/${userId}/sessions`;
     const resp = await fetch(url, {
       method: 'POST',
@@ -100,10 +101,10 @@ export const chatbotAPI = {
    */
   getChatResponse: async (query, model = 'legal_counsel', sessionIdInput = 'session_123', userId = 'user_123') => {
     try {
-      const apiUrl = process.env.REACT_APP_CHATBOT_API_URL || 'http://bakilapp-alb-59756411.ap-south-1.elb.amazonaws.com';
+      const apiUrl = process.env.REACT_APP_CHATBOT_API_URL;
 
-      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const baseUrl = isLocalhost ? '' : 'http://bakilapp-alb-59756411.ap-south-1.elb.amazonaws.com';
+      const baseUrl = process.env.REACT_APP_CHATBOT_API_URL || '';
+      console.log(`[apiService] getChatResponse using baseUrl: "${baseUrl}"`);
       const runUrl = `${baseUrl}/unified_chat`;
 
       // 1. Create/Ensure Session first
@@ -505,6 +506,54 @@ export const authAPI = {
 
   // Get user profile (specific endpoint)
   getUserProfile: () => apiClient.get('/user/profile'),
+
+  // Update lawyer verification status after Satyapan API confirms enrollment
+  // Accepts numeric status or string status which is mapped internally
+  updateLawyerStatus: async (userId, status, satyapanData = {}) => {
+    try {
+      // Map string status to numeric if needed
+      let numericStatus = status;
+      if (status === 'Bar Council Verified') numericStatus = "1";
+      if (status === 'pending') numericStatus = "0";
+
+      const payload = {
+        user_id: userId,
+        status: String(numericStatus),
+        // Enrich profile if data provided (maintained for local sync)
+        ...(satyapanData.name && { bar_association: satyapanData.bar_council || satyapanData.bar_association })
+      };
+
+      const response = await apiClient.post('/lawyers/update_enrollment_status', payload);
+      const updatedData = response.data?.data || response.data;
+
+      // Sync to localStorage
+      if (updatedData) {
+        localStorage.setItem('user_profile', JSON.stringify(updatedData));
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          try {
+            const parsedUser = JSON.parse(storedUser);
+            const updatedUser = {
+              ...parsedUser,
+              lawyer_data: {
+                ...(parsedUser.lawyer_data || {}),
+                status: status === 'Bar Council Verified' ? 'Bar Council Verified' : (numericStatus === "1" ? 'Bar Council Verified' : 'pending'),
+                ...(updatedData.lawyer_data || {})
+              }
+            };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+          } catch (e) {
+            console.error('Error syncing localStorage in updateLawyerStatus:', e);
+          }
+        }
+      }
+
+      return updatedData;
+    } catch (error) {
+      console.error('updateLawyerStatus error:', error.response || error);
+      return null;
+    }
+  },
 
   // Refresh token (if your API supports it)
   refreshToken: () => apiClient.post('/refresh'),
@@ -1031,6 +1080,54 @@ export const documentsAPI = {
       return response.data;
     } catch (error) {
       console.error(`Error fetching comments for document ${documentId}:`, error);
+      throw error;
+    }
+  }
+};
+
+/**
+ * Appointment API Service
+ */
+export const appointmentAPI = {
+  /**
+    * Get appointments for a specific user
+    * @param {number} userId - User ID
+    * @returns {Promise} - API response with appointments
+    */
+  getUserAppointments: async (userId) => {
+    try {
+      const response = await apiClient.get(`/appointments/user/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching appointments for user ${userId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get specific appointment details
+   * @param {number} appointmentId - Appointment ID
+   */
+  getAppointment: async (appointmentId) => {
+    try {
+      const response = await apiClient.get(`/appointments/${appointmentId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching appointment ${appointmentId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+  * Generate meeting link for appointment
+  * @param {number} appointmentId - Appointment ID
+  */
+  generateMeetingLink: async (appointmentId) => {
+    try {
+      const response = await apiClient.post(`/appointments/${appointmentId}/generate-meeting-link`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error generating meeting link for appointment ${appointmentId}:`, error);
       throw error;
     }
   }
@@ -2131,67 +2228,143 @@ export const lawyerVerificationAPI = {
       console.error('Error fetching my verification application:', error.response || error);
       throw error;
     }
+  }, // Kept comma for new methods below
+
+  // ── Password Reset Flow ─────────────────────────────────────────────────────
+  /**
+   * Send a 6-digit OTP to the user's email for password reset.
+   * Backend endpoint: POST /password/send-otp
+   */
+  sendPasswordResetOtp: async ({ email }) => {
+    try {
+      const response = await apiClient.post('/password/send-otp', { email });
+      return { success: true, message: response.data?.message || 'OTP sent to your email' };
+    } catch (error) {
+      const message =
+        error.response?.data?.message ||
+        error.response?.data?.errors?.email?.[0] ||
+        'Failed to send OTP. Please try again.';
+      return { success: false, message };
+    }
   },
 
   /**
-   * Wallet API integrations
+   * Verify the OTP entered by the user.
+   * Backend endpoint: GET /password/verify-otp  (query params: email, otp)
+   * NOTE: The route is GET, so we pass params as query string.
    */
-  walletAPI: {
-    /**
-     * Get user wallet balance and details
-     */
-    getBalance: async (userId) => {
-      try {
-        if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
-          // Mock response
-          return {
-            user_id: userId,
-            balance: 2500.00,
-            currency: "INR",
-            status: "active"
-          };
-        }
-        const response = await apiClient.get(config.WALLET.GET_BALANCE(userId));
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching wallet balance:', error);
-        // Fallback for demo if API fails
-        return { balance: 0, currency: "INR" };
-      }
-    },
+  verifyOtp: async ({ email, otp }) => {
+    try {
+      const response = await apiClient.get('/password/verify-otp', {
+        params: { email, otp },
+      });
+      return { success: true, message: response.data?.message || 'OTP verified successfully' };
+    } catch (error) {
+      const message =
+        error.response?.data?.message ||
+        'Invalid or expired OTP. Please try again.';
+      return { success: false, message };
+    }
+  },
 
-    /**
-     * Process service payment
-     */
-    processPayment: async (paymentData) => {
-      // Expected payload: { payer_user_id, receiver_user_id, amount, description, category }
-      try {
-        if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
-          return { status: "success", transaction_id: "mock_tx_" + Date.now() };
-        }
-        const response = await apiClient.post(config.WALLET.PAY, paymentData);
-        return response.data;
-      } catch (error) {
-        console.error('Error processing wallet payment:', error);
-        throw error;
-      }
-    },
+  /**
+   * Reset the user's password using the verified OTP.
+   * Backend endpoint: POST /password/reset
+   */
+  resetPassword: async ({ email, otp, password, password_confirmation }) => {
+    try {
+      const response = await apiClient.post('/password/reset', {
+        email,
+        otp,
+        password,
+        password_confirmation,
+      });
+      return { success: true, message: response.data?.message || 'Password reset successfully' };
+    } catch (error) {
+      const message =
+        error.response?.data?.message ||
+        error.response?.data?.errors?.password?.[0] ||
+        'Failed to reset password. Please try again.';
+      return { success: false, message };
+    }
+  }
+}; // END OF apiServices
 
-    /**
-     * Recharge wallet
-     */
-    recharge: async (rechargeData) => {
-      // Expected payload: { user_id, amount, description }
-      try {
-        if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
-          return { status: "success", new_balance: 5000 };
-        }
-        const response = await apiClient.post(config.WALLET.RECHARGE, rechargeData);
-        return response.data;
-      } catch (error) {
-        console.error('Error recharging wallet:', error);
-        throw error;
+/**
+ * Wallet API integrations
+ */
+export const walletAPI = {
+  /**
+   * Create a new wallet
+   */
+  createWallet: async (walletData) => {
+    // Expected payload: { user_id, user_type, currency }
+    try {
+      if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
+        return { status: "success", wallet_id: "mock_wallet_" + Date.now() };
       }
+      const response = await axios.post(`${config.WALLET_API_URL}${config.WALLET.CREATE}`, walletData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating wallet:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get user wallet balance and details
+   */
+  getBalance: async (userId) => {
+    try {
+      if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
+        // Mock response
+        return {
+          user_id: userId,
+          balance: 2500.00,
+          currency: "INR",
+          status: "active"
+        };
+      }
+      const response = await apiClient.get(config.WALLET.GET_BALANCE(userId));
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching wallet balance:', error);
+      // Fallback for demo if API fails
+      return { balance: 0, currency: "INR" };
+    }
+  },
+
+  /**
+   * Process service payment
+   */
+  processPayment: async (paymentData) => {
+    // Expected payload: { payer_user_id, receiver_user_id, amount, description, category }
+    try {
+      if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
+        return { status: "success", transaction_id: "mock_tx_" + Date.now() };
+      }
+      const response = await apiClient.post(config.WALLET.PAY, paymentData);
+      return response.data;
+    } catch (error) {
+      console.error('Error processing wallet payment:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Recharge wallet
+   */
+  recharge: async (rechargeData) => {
+    // Expected payload: { user_id, amount, description }
+    try {
+      if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
+        return { status: "success", new_balance: 5000 };
+      }
+      const response = await apiClient.post(config.WALLET.RECHARGE, rechargeData);
+      return response.data;
+    } catch (error) {
+      console.error('Error recharging wallet:', error);
+      throw error;
     }
   }
 };
@@ -2407,6 +2580,44 @@ export const lawyerAdminAPI = {
   }
 };
 
+/**
+ * Voice Call API Service
+ * Handles Twilio Voice SDK token generation and callee resolution
+ * for browser-to-browser calling between clients and lawyers.
+ */
+export const voiceCallAPI = {
+  /**
+   * Get a Twilio Access Token for the Voice SDK.
+   * @param {string} sessionToken - Consultation session token
+   */
+  getToken: async (sessionToken) => {
+    try {
+      const response = await apiClient.get('/voice/token', {
+        params: { session_token: sessionToken }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching voice token:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get callee identity and name for a session.
+   * @param {string} sessionToken - Consultation session token
+   */
+  getCalleeInfo: async (sessionToken) => {
+    try {
+      const response = await apiClient.get(`/voice/callee/${sessionToken}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching callee info:', error);
+      throw error;
+    }
+  },
+};
+
 export default apiClient;
-// Export wallet and other services
-export { apiServices as walletServices };
+// Export wallet and other services safely
+export const { walletAPI: walletServices } = apiServices;
+

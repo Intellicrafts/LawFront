@@ -41,6 +41,7 @@ import { ConsultationSession } from './components/ConsultationSession';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import LegalDisclaimer from './components/LegalDisclaimer';
+import RefundPolicy from './components/RefundPolicy';
 import VerifyLawyer from './pages/Legal/VerifyLawyer';
 
 import { fetchChatSessions } from './redux/chatSlice';
@@ -73,34 +74,45 @@ const AppLayout = ({ children }) => {
   const dispatch = useDispatch(); // Get dispatch
   const isLawyerAdmin = location.pathname.startsWith('/lawyer-admin');
   const isConsultation = location.pathname.startsWith('/consultation/');
-  const isLandingPage = location.pathname === '/' || location.pathname === '/pricing' || location.pathname === '/contact';
-  const isChatbotPage = location.pathname === '/chatbot';
+  const isFindLawyer = location.pathname === '/legal-consoltation';
+  const isLandingPage = location.pathname === '/' || location.pathname === '/pricing' || location.pathname === '/contact' || location.pathname === '/terms-of-service' || location.pathname === '/privacy-policy' || location.pathname === '/refund-policy' || location.pathname === '/disclaimer';
+  const isChatbotPage = location.pathname.startsWith('/chatbot');
+  const isWalletPage = location.pathname === '/wallet';
+  const isAuthPage = location.pathname === '/auth' || location.pathname === '/signup';
   const { chatHistory } = useSelector((state) => state.chat);
 
   // Fetch chat sessions when layout mounts (or when user logs in theoretically)
   useEffect(() => {
-    if (!isLawyerAdmin && !isLandingPage) {
+    if (!isLawyerAdmin && !isLandingPage && !isWalletPage) {
       dispatch(fetchChatSessions());
     }
-  }, [dispatch, isLawyerAdmin, isLandingPage]);
+  }, [dispatch, isLawyerAdmin, isLandingPage, isWalletPage]);
 
-  // Manage chatbot-mode class on body for fixed height stability on mobile
+  // Manage immersive page modes for fixed viewport stability on mobile
   useEffect(() => {
     if (isChatbotPage) {
       document.body.classList.add('chatbot-mode');
     } else {
       document.body.classList.remove('chatbot-mode');
     }
-    return () => document.body.classList.remove('chatbot-mode');
-  }, [isChatbotPage]);
+    if (isConsultation) {
+      document.body.classList.add('consultation-mode');
+    } else {
+      document.body.classList.remove('consultation-mode');
+    }
+    return () => {
+      document.body.classList.remove('chatbot-mode');
+      document.body.classList.remove('consultation-mode');
+    };
+  }, [isChatbotPage, isConsultation]);
 
   return (
     <>
       {!isLawyerAdmin && !isConsultation && <Navbar isLandingPage={isLandingPage} />}
       <ScrollToTop />
-      <div className="flex flex-1 min-h-0">
-        {!isLawyerAdmin && !isLandingPage && !isConsultation && <Sidebar chatHistory={chatHistory} />}
-        <main className="flex-1 min-w-0 min-h-0 relative">
+      <div className={`flex flex-1 min-h-0 ${isConsultation ? 'h-[100dvh] overflow-hidden' : ''}`}>
+        {!isLawyerAdmin && !isLandingPage && !isConsultation && !isFindLawyer && !isWalletPage && !isAuthPage && <Sidebar chatHistory={chatHistory} />}
+        <main className={`flex-1 min-w-0 min-h-0 relative ${isConsultation ? 'overflow-hidden' : ''}`}>
           {children}
         </main>
       </div>
@@ -225,19 +237,14 @@ const App = () => {
                     <Route path="/" element={<HomeRoute />} />
 
                     {/* AI Chatbot Route */}
-                    <Route path="/chatbot" element={<Hero />} />
-                    <Route path="/chatbot/:sessionId" element={<Hero />} />
+                    <Route path="/chatbot/:sessionId?" element={<Hero />} />
 
                     {/* Public Routes */}
                     <Route path="/contact" element={<Contact />} />
 
                     {/* User Specific Protected Routes */}
                     <Route path="/verify-lawyer" element={<VerifyLawyer />} />
-                    <Route path="/legal-consoltation" element={
-                      <ProtectedRoute allowedRoles={['user', 'client']}>
-                        <LegalCosultation />
-                      </ProtectedRoute>
-                    } />
+                    <Route path="/legal-consoltation" element={<LegalCosultation />} />
                     <Route path="/task-automation" element={
                       <ProtectedRoute allowedRoles={['user', 'client']}>
                         <TaskAutomation />
@@ -263,6 +270,7 @@ const App = () => {
                     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                     <Route path="/terms-of-service" element={<TermsOfService />} />
                     <Route path="/disclaimer" element={<LegalDisclaimer />} />
+                    <Route path="/refund-policy" element={<RefundPolicy />} />
 
                     {/* Authentication Routes */}
                     <Route path="/auth" element={isAuthenticated ? <Navigate to="/" replace /> : <AuthComponent />} />

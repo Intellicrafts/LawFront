@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { FaShieldAlt, FaEnvelope, FaLock, FaCheck, FaEye, FaEyeSlash, FaExclamationCircle, FaClock, FaCheckCircle } from 'react-icons/fa';
 import { Scale } from 'lucide-react';
 import { apiServices } from '../../api/apiService';
+import { useToast } from '../../context/ToastContext';
 
 // Premium Legal strip component with black/silver/blue accents
 const LegalStrip = () => {
@@ -169,7 +170,20 @@ export const ForgotPassword = ({ onBack }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [toast, setToast] = useState(null);
+  const [timer, setTimer] = useState(0);
+
+  // Global toast
+  const { showSuccess, showError: showToastError } = useToast();
+
+  useEffect(() => {
+    let interval;
+    if (step === 'verify' && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [step, timer]);
 
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
@@ -180,25 +194,17 @@ export const ForgotPassword = ({ onBack }) => {
       const response = await apiServices.sendPasswordResetOtp({ email });
 
       if (response.success) {
-        setToast({
-          message: 'Verification code sent to your email',
-          type: 'success'
-        });
+        // Excluded showing toast for sending code to keep it minimal
         setStep('verify');
+        setTimer(60); // 1 minute timer for professional OTP expiry
       } else {
         setError(response.message || 'Failed to send verification code. Please try again.');
-        setToast({
-          message: response.message || 'Failed to send verification code',
-          type: 'error'
-        });
+        showToastError(response.message || 'Failed to send verification code');
       }
     } catch (error) {
       console.error('Forgot password error:', error);
       setError('An error occurred. Please try again later.');
-      setToast({
-        message: error.response?.data?.message || 'An error occurred. Please try again later.',
-        type: 'error'
-      });
+      showToastError(error.response?.data?.message || 'An error occurred. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -216,25 +222,16 @@ export const ForgotPassword = ({ onBack }) => {
       });
 
       if (response.success) {
-        setToast({
-          message: 'Code verified successfully',
-          type: 'success'
-        });
+        showSuccess('Code verified successfully');
         setStep('reset');
       } else {
         setError(response.message || 'Invalid verification code. Please try again.');
-        setToast({
-          message: response.message || 'Invalid verification code',
-          type: 'error'
-        });
+        showToastError(response.message || 'Invalid verification code');
       }
     } catch (error) {
       console.error('Verify code error:', error);
       setError('An error occurred. Please try again later.');
-      setToast({
-        message: error.response?.data?.message || 'An error occurred. Please try again later.',
-        type: 'error'
-      });
+      showToastError(error.response?.data?.message || 'An error occurred. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -245,10 +242,7 @@ export const ForgotPassword = ({ onBack }) => {
 
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match');
-      setToast({
-        message: 'Passwords do not match',
-        type: 'error'
-      });
+      showToastError('Passwords do not match');
       return;
     }
 
@@ -264,25 +258,16 @@ export const ForgotPassword = ({ onBack }) => {
       });
 
       if (response.success) {
-        setToast({
-          message: 'Password reset successfully',
-          type: 'success'
-        });
+        showSuccess('Password reset successfully! You can now log in.');
         setStep('success');
       } else {
         setError(response.message || 'Failed to reset password. Please try again.');
-        setToast({
-          message: response.message || 'Failed to reset password',
-          type: 'error'
-        });
+        showToastError(response.message || 'Failed to reset password');
       }
     } catch (error) {
       console.error('Reset password error:', error);
       setError('An error occurred. Please try again later.');
-      setToast({
-        message: error.response?.data?.message || 'An error occurred. Please try again later.',
-        type: 'error'
-      });
+      showToastError(error.response?.data?.message || 'An error occurred. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -297,14 +282,7 @@ export const ForgotPassword = ({ onBack }) => {
 
   return (
     <div className={`min-h-screen flex flex-col pt-16 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-white'} relative overflow-hidden`}>
-      {/* Toast notification */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+      {/* Toasts handled by global ToastProvider */}
 
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
@@ -456,22 +434,28 @@ export const ForgotPassword = ({ onBack }) => {
                 {error && <p className="text-red-500 text-xs mt-1 text-center">{error}</p>}
               </div>
 
-              <div className="flex items-center justify-between mt-3">
-                <div className={`flex items-center text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  <FaClock className="mr-1" size={12} />
-                  <span>Code expires in 10 minutes</span>
+              <div className="flex items-center justify-between mt-3 h-6">
+                <div className={`flex items-center text-xs font-medium ${timer > 10 ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') : 'text-red-500 animate-pulse'}`}>
+                  <FaClock className="mr-1.5" size={12} />
+                  <span>{timer > 0 ? `Code expires in 00:${timer.toString().padStart(2, '0')}` : 'Code expired'}</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const e = { preventDefault: () => { } };
-                    handleEmailSubmit(e);
-                  }}
-                  disabled={loading}
-                  className={`text-xs ${isDarkMode ? 'text-white hover:text-gray-300' : 'text-gray-900 hover:text-gray-700'} transition-all duration-200 underline-offset-2 hover:underline focus:outline-none focus:underline disabled:opacity-60 disabled:cursor-not-allowed`}
-                >
-                  Resend code
-                </button>
+                {timer === 0 ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleEmailSubmit(e);
+                    }}
+                    disabled={loading}
+                    className={`text-xs font-semibold ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'} transition-all duration-200 underline-offset-2 hover:underline focus:outline-none focus:underline disabled:opacity-60 disabled:cursor-not-allowed`}
+                  >
+                    Resend code
+                  </button>
+                ) : (
+                  <span className={`text-xs ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
+                    Resend in {timer}s
+                  </span>
+                )}
               </div>
 
               <div className="pt-2">

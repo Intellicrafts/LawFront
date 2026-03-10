@@ -48,6 +48,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { consultationAPI, lawyerAPI } from '../../api/apiService';
 import { useToast } from '../../context/ToastContext';
 import Avatar from '../common/Avatar';
+import AppointmentReportModal from '../ConsultationSession/AppointmentReportModal';
 
 // --- Premium UI Components (Synced with LawyerAdmin) ---
 
@@ -93,14 +94,22 @@ const PremiumBadge = ({ text, type = 'primary' }) => {
 
 // --- Main Component ---
 
-const LawyerAppointments = ({ darkMode, initialAppointments, userData, activeSession }) => {
+const LawyerAppointments = ({ darkMode, initialAppointments = [], userData, activeSession }) => {
   const { showSuccess, showError, showInfo } = useToast();
   const navigate = useNavigate();
 
-  const [appointments, setAppointments] = useState(initialAppointments || []);
-  const [loading, setLoading] = useState(!initialAppointments);
+  const [appointments, setAppointments] = useState(initialAppointments);
+  const [loading, setLoading] = useState(initialAppointments.length === 0);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all'); // all, today, upcoming, past
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     // Only fetch if we don't have initial data passed down on first mount
@@ -133,7 +142,13 @@ const LawyerAppointments = ({ darkMode, initialAppointments, userData, activeSes
         dataArray = profileAppointments;
       }
 
-      setAppointments(Array.isArray(dataArray) ? dataArray : []);
+      const processed = dataArray.map(apt => ({
+        ...apt,
+        client_name: apt.user?.name || apt.client_name || apt.client?.name || apt.user_name || 'Client',
+        case_type: apt.case_type || apt.legal_service || 'Legal Consultation'
+      }));
+
+      setAppointments(processed);
     } catch (error) {
       console.error('Error fetching appointments:', error);
       // Even on error, try to use cache
@@ -170,6 +185,7 @@ const LawyerAppointments = ({ darkMode, initialAppointments, userData, activeSes
   }, [appointments, searchQuery, filterType]);
 
   const [actionLoading, setActionLoading] = useState(null);
+  const [reportAppointment, setReportAppointment] = useState(null); // which apt's report modal is open
 
   const handleStartMeeting = async (aptId) => {
     setActionLoading(aptId);
@@ -312,40 +328,72 @@ const LawyerAppointments = ({ darkMode, initialAppointments, userData, activeSes
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {apt.status === 'scheduled' ? (
-                    <button
-                      onClick={() => handleStartMeeting(apt.id)}
-                      disabled={actionLoading === apt.id}
-                      className={`flex-1 h-9 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl ${activeSession?.appointment_id === apt.id
-                        ? (darkMode ? 'bg-white text-slate-900 shadow-white/20' : 'bg-slate-900 text-white shadow-black/20')
-                        : (darkMode ? 'bg-white text-slate-900 shadow-white/5' : 'bg-slate-900 text-white shadow-black/10')
-                        } ${actionLoading === apt.id ? 'opacity-80' : 'hover:scale-[1.02]'}`}
-                    >
-                      {actionLoading === apt.id ? (
-                        <>
-                          <RefreshCw size={12} className="animate-spin" />
-                          Establishing Secure Tunnel...
-                        </>
-                      ) : (
-                        <>
-                          <Video size={12} />
-                          {activeSession?.appointment_id === apt.id
-                            ? 'Return to Active Chamber'
-                            : Math.abs(new Date(apt.appointment_time).getTime() - new Date().getTime()) < 30 * 60 * 1000
-                              ? 'Join Live Chamber'
-                              : 'Begin Consultation'}
-                        </>
-                      )}
-                    </button>
-                  ) : (
-                    <button
-                      disabled
-                      className={`flex-1 h-9 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 bg-slate-100 dark:bg-white/5 text-slate-400 cursor-not-allowed`}
-                    >
-                      <VideoOff size={12} />
-                      {apt.status === 'completed' ? 'Session Closed' : 'Unavailable'}
-                    </button>
-                  )}
+                  {(() => {
+                    const appointmentTime = new Date(apt.appointment_time);
+                    const diffMs = appointmentTime.getTime() - currentTime.getTime();
+                    const durationMinutes = apt.duration_minutes || 60;
+                    const endTime = new Date(appointmentTime.getTime() + durationMinutes * 60 * 1000);
+                    const isPastEnded = currentTime > endTime;
+
+                    // Can join exactly 1 min before (or let's be lenient on UI: 5 minutes before) but backend uses 1 min
+                    // To match user experience and backend, button is disabled if more than 1 minute before.
+                    const canJoin = diffMs <= 60000 && !isPastEnded && apt.status === 'scheduled';
+
+                    if (apt.status === 'scheduled') {
+                      return (
+                        <button
+                          onClick={() => handleStartMeeting(apt.id)}
+                          disabled={actionLoading === apt.id || !canJoin}
+                          className={`flex-1 h-9 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl ${activeSession?.appointment_id === apt.id
+                            ? (darkMode ? 'bg-white text-slate-900 shadow-white/20' : 'bg-slate-900 text-white shadow-black/20')
+                            : (darkMode ? 'bg-white text-slate-900 shadow-white/5' : 'bg-slate-900 text-white shadow-black/10')
+                            } ${actionLoading === apt.id ? 'opacity-80' : (!canJoin ? 'opacity-50 cursor-not-allowed bg-slate-400 text-white dark:bg-slate-700' : 'hover:scale-[1.02]')}`}
+                        >
+                          {actionLoading === apt.id ? (
+                            <>
+                              <RefreshCw size={12} className="animate-spin" />
+                              Establishing...
+                            </>
+                          ) : (
+                            <>
+                              <Video size={12} />
+                              {activeSession?.appointment_id === apt.id
+                                ? 'Return to Chamber'
+                                : canJoin
+                                  ? 'Join Live Chamber'
+                                  : 'Join Unavailable'}
+                            </>
+                          )}
+                        </button>
+                      );
+                    } else if (apt.status === 'completed' || isPastEnded) {
+                      return (
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => setReportAppointment(apt)}
+                          disabled={actionLoading === apt.id}
+                          className={`flex-1 h-9 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${darkMode
+                            ? 'bg-gradient-to-r from-indigo-500/15 to-violet-500/15 border border-indigo-500/25 text-indigo-300 hover:from-indigo-500/25 hover:to-violet-500/25 shadow-md'
+                            : 'bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 text-indigo-700 hover:from-indigo-100 hover:to-violet-100 shadow-md'
+                            }`}
+                        >
+                          <FileText size={12} />
+                          View Report
+                        </motion.button>
+                      );
+                    } else {
+                      return (
+                        <button
+                          disabled
+                          className={`flex-1 h-9 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 bg-slate-100 dark:bg-white/5 text-slate-400 cursor-not-allowed`}
+                        >
+                          <VideoOff size={12} />
+                          Unavailable
+                        </button>
+                      );
+                    }
+                  })()}
                   <button className={`w-9 h-9 flex items-center justify-center rounded-lg border transition-colors ${darkMode ? 'border-white/10 hover:bg-white/5 text-slate-400 hover:text-white' : 'border-slate-200 hover:bg-slate-50 text-slate-500'}`}>
                     <MoreHorizontal size={14} />
                   </button>
@@ -363,6 +411,18 @@ const LawyerAppointments = ({ darkMode, initialAppointments, userData, activeSes
           </div>
         )}
       </div>
+
+      {/* ── Session Report Modal ── */}
+      <AnimatePresence>
+        {reportAppointment && (
+          <AppointmentReportModal
+            appointment={reportAppointment}
+            isDarkMode={darkMode}
+            viewerType="lawyer"
+            onClose={() => setReportAppointment(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

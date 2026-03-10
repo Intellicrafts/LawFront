@@ -3,11 +3,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { FaFileAlt, FaUpload, FaCheckCircle, FaExclamationCircle, FaShieldAlt, FaIdCard, FaDollarSign, FaGraduationCap, FaUser } from 'react-icons/fa';
 import { authAPI, tokenManager } from '../api/apiService';
+import { useToast } from '../context/ToastContext';
 
 // Toast notification component
 const Toast = ({ message, type = 'success', onClose }) => {
   const [isVisible, setIsVisible] = useState(true);
-  
+
   // Get theme from Redux
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
@@ -19,7 +20,7 @@ const Toast = ({ message, type = 'success', onClose }) => {
     }, type === 'error' ? 7000 : 5000);
     return () => clearTimeout(timer);
   }, [onClose, type]);
-  
+
   const getToastStyles = () => {
     if (isDarkMode) {
       switch (type) {
@@ -49,12 +50,11 @@ const Toast = ({ message, type = 'success', onClose }) => {
       }
     }
   };
-  
+
   return (
-    <div 
-      className={`fixed top-16 right-4 flex items-center p-4 rounded-lg shadow-lg transition-all duration-300 z-50 ${
-        isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
-      } ${getToastStyles()}`}
+    <div
+      className={`fixed top-16 right-4 flex items-center p-4 rounded-lg shadow-lg transition-all duration-300 z-50 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
+        } ${getToastStyles()}`}
       role="alert"
       style={{ maxWidth: '90%', width: '400px' }}
     >
@@ -70,21 +70,20 @@ const Toast = ({ message, type = 'success', onClose }) => {
         )}
       </div>
       <div className="ml-3 text-sm font-medium">{message}</div>
-      <button 
-        type="button" 
+      <button
+        type="button"
         onClick={() => {
           setIsVisible(false);
           setTimeout(onClose, 300);
         }}
-        className={`ml-auto -mx-1.5 -my-1.5 ${
-          isDarkMode 
-            ? 'bg-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
-            : 'bg-white text-gray-400 hover:text-gray-900 hover:bg-gray-100'
-        } rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 inline-flex items-center justify-center h-8 w-8`}
+        className={`ml-auto -mx-1.5 -my-1.5 ${isDarkMode
+          ? 'bg-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-700'
+          : 'bg-white text-gray-400 hover:text-gray-900 hover:bg-gray-100'
+          } rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 inline-flex items-center justify-center h-8 w-8`}
       >
         <span className="sr-only">Close</span>
         <svg className="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
         </svg>
       </button>
     </div>
@@ -112,7 +111,7 @@ const LegalStrip = () => {
 const Logo = () => {
   return (
     <div className="flex justify-center mb-6 animate-fadeIn">
-      <div 
+      <div
         className="w-20 h-20 rounded-lg flex items-center justify-center text-white text-3xl font-bold shadow-lg transform hover:rotate-3 transition-all duration-300"
         style={{ background: "linear-gradient(to right, rgb(34, 87, 122), rgb(92, 172, 222))" }}
       >
@@ -128,7 +127,7 @@ const FileUploadField = ({ id, name, label, icon, onChange, required = false, ac
   const [fileName, setFileName] = useState('');
   const [fileSize, setFileSize] = useState('');
   const [hasFile, setHasFile] = useState(false);
-  
+
   // Get theme from Redux
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
@@ -157,17 +156,16 @@ const FileUploadField = ({ id, name, label, icon, onChange, required = false, ac
       <label htmlFor={id} className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
         {label} {required && <span className="text-red-500">*</span>}
       </label>
-      <div 
+      <div
         onClick={triggerFileInput}
-        className={`relative border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 ${
-          hasFile 
-            ? isDarkMode 
-              ? 'border-green-600 bg-green-900 bg-opacity-20' 
-              : 'border-green-300 bg-green-50'
-            : isDarkMode
-              ? 'border-gray-600 hover:border-blue-600 hover:bg-blue-900 hover:bg-opacity-20' 
-              : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
-        }`}
+        className={`relative border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 ${hasFile
+          ? isDarkMode
+            ? 'border-green-600 bg-green-900 bg-opacity-20'
+            : 'border-green-300 bg-green-50'
+          : isDarkMode
+            ? 'border-gray-600 hover:border-blue-600 hover:bg-blue-900 hover:bg-opacity-20'
+            : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+          }`}
       >
         <input
           type="file"
@@ -179,7 +177,7 @@ const FileUploadField = ({ id, name, label, icon, onChange, required = false, ac
           accept={accept}
           required={required}
         />
-        
+
         {hasFile ? (
           <div className="flex flex-col items-center">
             <FaFileAlt className={`h-8 w-8 ${isDarkMode ? 'text-green-400' : 'text-green-500'} mb-2`} />
@@ -208,11 +206,10 @@ const InputField = ({ type, id, name, value, onChange, placeholder, icon, requir
 
   return (
     <div className="relative group">
-      <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${
-        isDarkMode 
-          ? 'text-gray-500 group-focus-within:text-blue-400' 
-          : 'text-gray-400 group-focus-within:text-blue-500'
-      } transition-colors duration-200`}>
+      <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${isDarkMode
+        ? 'text-gray-500 group-focus-within:text-blue-400'
+        : 'text-gray-400 group-focus-within:text-blue-500'
+        } transition-colors duration-200`}>
         {icon}
       </div>
       <input
@@ -221,11 +218,10 @@ const InputField = ({ type, id, name, value, onChange, placeholder, icon, requir
         type={type}
         value={value}
         onChange={onChange}
-        className={`block w-full pl-10 pr-4 py-3.5 rounded-lg shadow-sm transition-all duration-300 ${
-          isDarkMode 
-            ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500' 
-            : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
-        }`}
+        className={`block w-full pl-10 pr-4 py-3.5 rounded-lg shadow-sm transition-all duration-300 ${isDarkMode
+          ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
+          : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
+          }`}
         placeholder={placeholder}
         required={required}
       />
@@ -246,11 +242,10 @@ const TextareaField = ({ id, name, value, onChange, placeholder, rows = 4, requi
       value={value}
       onChange={onChange}
       rows={rows}
-      className={`block w-full px-4 py-3.5 rounded-lg shadow-sm transition-all duration-300 resize-none ${
-        isDarkMode 
-          ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500' 
-          : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
-      }`}
+      className={`block w-full px-4 py-3.5 rounded-lg shadow-sm transition-all duration-300 resize-none ${isDarkMode
+        ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
+        : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
+        }`}
       placeholder={placeholder}
       required={required}
     />
@@ -273,25 +268,23 @@ const MultiSelectField = ({ id, name, label, options, selectedValues, onChange, 
 
   return (
     <div className="relative">
-      <label htmlFor={id} className={`block text-sm font-medium mb-2 ${
-        isDarkMode ? 'text-gray-300' : 'text-gray-700'
-      }`}>
+      <label htmlFor={id} className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
+        }`}>
         {label} {required && <span className="text-red-500">*</span>}
       </label>
-      
+
       <div className="relative">
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className={`w-full px-4 py-3.5 text-left rounded-lg shadow-sm transition-all duration-300 ${
-            isDarkMode 
-              ? 'border border-gray-600 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500' 
-              : 'border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
-          }`}
+          className={`w-full px-4 py-3.5 text-left rounded-lg shadow-sm transition-all duration-300 ${isDarkMode
+            ? 'border border-gray-600 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
+            : 'border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
+            }`}
         >
           <span className={selectedValues.length === 0 ? 'text-gray-400' : ''}>
-            {selectedValues.length === 0 
-              ? `Select ${label}` 
+            {selectedValues.length === 0
+              ? `Select ${label}`
               : `${selectedValues.length} selected`
             }
           </span>
@@ -301,30 +294,28 @@ const MultiSelectField = ({ id, name, label, options, selectedValues, onChange, 
         </button>
 
         {isOpen && (
-          <div className={`absolute z-10 w-full mt-1 rounded-lg shadow-lg ${
-            isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-200'
-          }`}>
+          <div className={`absolute z-10 w-full mt-1 rounded-lg shadow-lg ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-200'
+            }`}>
             <div className="max-h-48 overflow-y-auto p-2">
               {options.map((option) => (
                 <button
                   key={option}
                   type="button"
                   onClick={() => handleOptionToggle(option)}
-                  className={`w-full text-left px-3 py-2 rounded-md transition-colors duration-200 ${
-                    selectedValues.includes(option)
-                      ? isDarkMode
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-blue-100 text-blue-900'
-                      : isDarkMode
-                        ? 'hover:bg-gray-600 text-gray-300'
-                        : 'hover:bg-gray-50 text-gray-700'
-                  }`}
+                  className={`w-full text-left px-3 py-2 rounded-md transition-colors duration-200 ${selectedValues.includes(option)
+                    ? isDarkMode
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-blue-100 text-blue-900'
+                    : isDarkMode
+                      ? 'hover:bg-gray-600 text-gray-300'
+                      : 'hover:bg-gray-50 text-gray-700'
+                    }`}
                 >
                   <div className="flex items-center">
                     <input
                       type="checkbox"
                       checked={selectedValues.includes(option)}
-                      onChange={() => {}}
+                      onChange={() => { }}
                       className="mr-2 text-blue-600"
                     />
                     {option}
@@ -335,17 +326,16 @@ const MultiSelectField = ({ id, name, label, options, selectedValues, onChange, 
           </div>
         )}
       </div>
-      
+
       {selectedValues.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-2">
           {selectedValues.map((value) => (
             <span
               key={value}
-              className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
-                isDarkMode
-                  ? 'bg-blue-900 text-blue-300 border border-blue-700'
-                  : 'bg-blue-100 text-blue-800 border border-blue-200'
-              }`}
+              className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${isDarkMode
+                ? 'bg-blue-900 text-blue-300 border border-blue-700'
+                : 'bg-blue-100 text-blue-800 border border-blue-200'
+                }`}
             >
               {value}
               <button
@@ -369,7 +359,7 @@ const LawyerAdditionalDetails = () => {
   const [copCertificate, setCopCertificate] = useState(null);
   const [enrollmentCertificate, setEnrollmentCertificate] = useState(null);
   const [addressProof, setAddressProof] = useState(null);
-  
+
   // Additional profile fields
   const [practiceAreas, setPracticeAreas] = useState([]);
   const [experience, setExperience] = useState('');
@@ -378,15 +368,17 @@ const LawyerAdditionalDetails = () => {
   const [consultationFee, setConsultationFee] = useState('');
   const [languages, setLanguages] = useState([]);
   const [profilePhoto, setProfilePhoto] = useState(null);
-  
+
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState(null);
   const [fadeIn, setFadeIn] = useState(false);
   const [userData, setUserData] = useState(null);
 
   // Get theme from Redux
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
+
+  // Global toast system
+  const { showSuccess, showError } = useToast();
 
   // Practice areas options
   const practiceAreasOptions = [
@@ -412,7 +404,7 @@ const LawyerAdditionalDetails = () => {
   useEffect(() => {
     // Trigger fade-in animation after component mounts
     setFadeIn(true);
-    
+
     // Get user data from localStorage
     const user = tokenManager.getUser();
     if (user) {
@@ -427,58 +419,42 @@ const LawyerAdditionalDetails = () => {
     }
   }, []);
 
-  // Show toast notification
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 5000);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validation
     if (!enrollmentNo.trim()) {
-      showToast('Please enter your Enrollment Number', 'error');
+      showError('Please enter your Enrollment Number', 'error');
       return;
     }
 
     if (!experience || experience < 0) {
-      showToast('Please enter valid years of experience', 'error');
+      showError('Please enter valid years of experience', 'error');
       return;
     }
 
     if (!consultationFee || consultationFee < 0) {
-      showToast('Please enter a valid consultation fee', 'error');
+      showError('Please enter a valid consultation fee', 'error');
       return;
     }
 
     if (practiceAreas.length === 0) {
-      showToast('Please select at least one practice area', 'error');
+      showError('Please select at least one practice area', 'error');
       return;
     }
 
     if (courtPractice.length === 0) {
-      showToast('Please select at least one court of practice', 'error');
+      showError('Please select at least one court of practice', 'error');
       return;
     }
 
     if (languages.length === 0) {
-      showToast('Please select at least one language', 'error');
+      showError('Please select at least one language', 'error');
       return;
     }
 
     if (!bio.trim() || bio.trim().length < 50) {
-      showToast('Please provide a professional bio with at least 50 characters', 'error');
-      return;
-    }
-
-    if (!enrollmentCertificate) {
-      showToast('Please upload your Certificate of Enrollment', 'error');
-      return;
-    }
-
-    if (!copCertificate) {
-      showToast('Please upload your Certificate of Practice (CoP)', 'error');
+      showError('Please provide a professional bio with at least 50 characters', 'error');
       return;
     }
 
@@ -494,15 +470,15 @@ const LawyerAdditionalDetails = () => {
       formData.append('court_practice', JSON.stringify(courtPractice));
       formData.append('languages_spoken', JSON.stringify(languages));
       formData.append('professional_bio', bio.trim());
-      
+
       if (enrollmentCertificate) {
         formData.append('enrollment_certificate', enrollmentCertificate);
       }
-      
+
       if (copCertificate) {
         formData.append('cop_certificate', copCertificate);
       }
-      
+
       if (addressProof) {
         formData.append('address_proof', addressProof);
       }
@@ -513,11 +489,11 @@ const LawyerAdditionalDetails = () => {
 
       // Call the additional details API
       const response = await authAPI.saveAdditionalDetails(formData);
-      
+
       console.log('Lawyer details saved:', response.data);
 
       if (response.data.success) {
-        showToast('Lawyer profile created successfully! Redirecting to your dashboard...', 'success');
+        showSuccess('Lawyer profile created successfully! Redirecting to your dashboard...');
 
         // Dispatch event to notify other components
         window.dispatchEvent(new CustomEvent('auth-status-changed', {
@@ -529,23 +505,23 @@ const LawyerAdditionalDetails = () => {
           window.location.href = '/lawyer-admin';
         }, 2500);
       } else {
-        showToast('Failed to save lawyer details. Please try again.', 'error');
+        showError('Failed to save lawyer details. Please try again.');
       }
     } catch (error) {
       console.error('Lawyer details save error:', error);
-      
+
       // Handle validation errors from server
       if (error.response?.status === 422) {
         const validationErrors = error.response.data.errors;
         if (validationErrors) {
           const firstError = Object.values(validationErrors)[0][0];
-          showToast(firstError, 'error');
+          showError(firstError);
         } else {
-          showToast('Please check your form data and try again.', 'error');
+          showError('Please check your form data and try again.');
         }
       } else {
         const errorMessage = error.response?.data?.message || 'Failed to save lawyer details. Please try again.';
-        showToast(errorMessage, 'error');
+        showError(errorMessage);
       }
     } finally {
       setLoading(false);
@@ -553,70 +529,56 @@ const LawyerAdditionalDetails = () => {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      isDarkMode 
-        ? 'bg-gray-900 text-gray-100' 
-        : 'bg-gradient-to-br from-blue-50 via-white to-indigo-50'
-    }`}>
+    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode
+      ? 'bg-gray-900 text-gray-100'
+      : 'bg-gradient-to-br from-blue-50 via-white to-indigo-50'
+      }`}>
       {/* Legal strip */}
       <LegalStrip />
-      
-      {/* Toast notification */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+
+      {/* Toasts handled by global ToastProvider */}
 
       <div className="flex items-center justify-center min-h-screen px-4 py-12">
-        <div className={`w-full max-w-2xl transform transition-all duration-1000 ${
-          fadeIn ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-        }`}>
-          
-          {/* Card container */}
-          <div className={`rounded-2xl shadow-2xl overflow-hidden ${
-            isDarkMode 
-              ? 'bg-gray-800 border border-gray-700' 
-              : 'bg-white'
+        <div className={`w-full max-w-2xl transform transition-all duration-1000 ${fadeIn ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
           }`}>
-            
-            {/* Header */}
-            <div className={`px-8 pt-8 pb-6 ${
-              isDarkMode 
-                ? 'bg-gray-800' 
-                : 'bg-white'
+
+          {/* Card container */}
+          <div className={`rounded-2xl shadow-2xl overflow-hidden ${isDarkMode
+            ? 'bg-gray-800 border border-gray-700'
+            : 'bg-white'
             }`}>
+
+            {/* Header */}
+            <div className={`px-8 pt-8 pb-6 ${isDarkMode
+              ? 'bg-gray-800'
+              : 'bg-white'
+              }`}>
               <Logo />
-              
+
               <div className="text-center mb-8">
-                <h1 className={`text-2xl font-bold mb-2 ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>
+                <h1 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'
+                  }`}>
                   Lawyer Professional Details
                 </h1>
-                <p className={`text-sm ${
-                  isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                }`}>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
                   Please provide your professional credentials to complete your lawyer profile
                 </p>
               </div>
 
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-6">
-                
+
                 {/* Basic Information Section */}
                 <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-blue-50'}`}>
                   <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     Basic Professional Information
                   </h3>
-                  
+
                   {/* Enrollment Number */}
                   <div className="mb-4">
-                    <label className={`block text-sm font-medium mb-2 ${
-                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
+                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
                       Bar Council Enrollment Number <span className="text-red-500">*</span>
                     </label>
                     <InputField
@@ -633,9 +595,8 @@ const LawyerAdditionalDetails = () => {
 
                   {/* Years of Experience */}
                   <div className="mb-4">
-                    <label className={`block text-sm font-medium mb-2 ${
-                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
+                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
                       Years of Experience <span className="text-red-500">*</span>
                     </label>
                     <InputField
@@ -652,9 +613,8 @@ const LawyerAdditionalDetails = () => {
 
                   {/* Consultation Fee */}
                   <div>
-                    <label className={`block text-sm font-medium mb-2 ${
-                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
+                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
                       Consultation Fee (₹) <span className="text-red-500">*</span>
                     </label>
                     <InputField
@@ -675,7 +635,7 @@ const LawyerAdditionalDetails = () => {
                   <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     Practice Details
                   </h3>
-                  
+
                   {/* Practice Areas */}
                   <div className="mb-4">
                     <MultiSelectField
@@ -721,11 +681,10 @@ const LawyerAdditionalDetails = () => {
                   <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     Professional Profile
                   </h3>
-                  
+
                   <div className="mb-4">
-                    <label className={`block text-sm font-medium mb-2 ${
-                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
+                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
                       Professional Bio <span className="text-red-500">*</span>
                     </label>
                     <TextareaField
@@ -756,7 +715,7 @@ const LawyerAdditionalDetails = () => {
                   <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     Required Documents
                   </h3>
-                  
+
                   {/* Certificate of Enrollment */}
                   <div className="mb-4">
                     <FileUploadField
@@ -765,7 +724,7 @@ const LawyerAdditionalDetails = () => {
                       label="Certificate of Enrollment"
                       icon={<FaFileAlt />}
                       onChange={setEnrollmentCertificate}
-                      required
+                      required={false}
                       accept="application/pdf,image/*"
                     />
                   </div>
@@ -778,7 +737,7 @@ const LawyerAdditionalDetails = () => {
                       label="Certificate of Practice (CoP)"
                       icon={<FaFileAlt />}
                       onChange={setCopCertificate}
-                      required
+                      required={false}
                       accept="application/pdf,image/*"
                     />
                   </div>
@@ -799,13 +758,12 @@ const LawyerAdditionalDetails = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`w-full py-3 px-4 rounded-md flex items-center justify-center text-white font-medium shadow-md transition-all duration-300 transform hover:scale-102 hover:shadow-xl relative overflow-hidden ${
-                    loading ? 'opacity-70 cursor-not-allowed' : ''
-                  }`}
-                  style={{ 
-                    background: loading 
-                      ? "#64a6db" 
-                      : "linear-gradient(to right, rgb(34, 87, 122), rgb(92, 172, 222))" 
+                  className={`w-full py-3 px-4 rounded-md flex items-center justify-center text-white font-medium shadow-md transition-all duration-300 transform hover:scale-102 hover:shadow-xl relative overflow-hidden ${loading ? 'opacity-70 cursor-not-allowed' : ''
+                    }`}
+                  style={{
+                    background: loading
+                      ? "#64a6db"
+                      : "linear-gradient(to right, rgb(34, 87, 122), rgb(92, 172, 222))"
                   }}
                 >
                   <span className="relative z-10 flex items-center">
@@ -825,9 +783,8 @@ const LawyerAdditionalDetails = () => {
               <div className="mt-6 text-center">
                 <button
                   onClick={() => window.location.href = '/lawyer-admin'}
-                  className={`text-sm ${
-                    isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-700'
-                  } transition-colors duration-200`}
+                  className={`text-sm ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-700'
+                    } transition-colors duration-200`}
                 >
                   Complete later
                 </button>

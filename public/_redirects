@@ -1,5 +1,5 @@
 # API Proxy for Backend
-/chatbot-api/*  http://bakilapp-alb-59756411.ap-south-1.elb.amazonaws.com/:splat  200!
+
 
 # SPA Fallback for all other routes
 /*  /index.html  200

@@ -347,7 +347,7 @@ const OnboardingTour = ({ isOpen, onClose, onComplete }) => {
                   </div>
 
                   <h2 className={`text-3xl font-bold mb-3 tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                    Welcome to <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">Mera Vakil</span>
+                    Welcome to <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">MeraBakil</span>
                   </h2>
 
                   <p className={`text-base leading-relaxed mb-8 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -485,7 +485,7 @@ const OnboardingTour = ({ isOpen, onClose, onComplete }) => {
                 </h2>
 
                 <p className={`text-base leading-relaxed mb-8 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Ready to transform your legal journey? Whether you need quick advice or deep research, Mera Vakil is here to assist you 24/7.
+                  Ready to transform your legal journey? Whether you need quick advice or deep research, MeraBakil is here to assist you 24/7.
                 </p>
 
                 <button

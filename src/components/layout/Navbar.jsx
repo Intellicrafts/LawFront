@@ -9,6 +9,7 @@ import NotificationDropdown from '../NotificationDropdown';
 import OnboardingTour from '../OnboardingTour';
 import { useGoogleLogin } from '@react-oauth/google';
 import { FaGoogle } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 
 import {
   Menu,
@@ -100,7 +101,7 @@ const SidebarToggleIcon = ({ isOpen, mode }) => {
       {isOpen && (
         <motion.div
           layoutId="icon-glow"
-          className="absolute inset-0 bg-blue-500/10 blur-xl rounded-full"
+          className="absolute inset-0 bg-brand-500/10 blur-xl rounded-full"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -162,7 +163,7 @@ const OneTapPrompt = ({ onGoogleLogin, onDismiss, isDarkMode }) => {
             </div>
             <p className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'
               }`}>
-              Sign in to meravakil.com with google.com
+              Sign in to merabakil.com with google.com
             </p>
           </div>
 
@@ -178,8 +179,8 @@ const OneTapPrompt = ({ onGoogleLogin, onDismiss, isDarkMode }) => {
             className={`group relative w-full py-2.5 px-4 rounded-md flex items-center justify-center space-x-2.5 
                       text-sm font-medium transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99]
                       shadow-md hover:shadow-lg overflow-hidden ${isDarkMode
-                ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400'
-                : 'bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400'
+                ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-white hover:from-brand-500 hover:to-brand-400'
+                : 'bg-gradient-to-r from-brand-600 to-brand-500 text-white hover:from-brand-500 hover:to-brand-400'
               }`}
           >
             {/* Silver shine animation overlay */}
@@ -194,7 +195,7 @@ const OneTapPrompt = ({ onGoogleLogin, onDismiss, isDarkMode }) => {
           <p className={`mt-3 text-[10px] text-center leading-tight ${isDarkMode ? 'text-gray-600' : 'text-gray-500'
             }`}>
             To continue, Google will share your name, email address, and profile picture with this site.{' '}
-            <a href="#" className="text-blue-500 hover:text-blue-400 underline">Learn more</a>
+            <a href="#" className="text-brand-500 hover:text-brand-400 underline">Learn more</a>
           </p>
 
           {/* Silver accent line at bottom */}
@@ -219,7 +220,7 @@ const NavLink = ({ to, children, className = "", mobile = false }) => {
         to={to}
         className={`block px-4 py-3 rounded-xl text-lg font-medium transition-all duration-200 
               ${active
-            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+            ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400'
             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
           } ${className}`}
       >
@@ -233,14 +234,14 @@ const NavLink = ({ to, children, className = "", mobile = false }) => {
       to={to}
       className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 group
           ${active
-          ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/10'
+          ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/10'
           : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
         } ${className}`}
     >
       {children}
       {/* Active Indicator Dot */}
       {active && (
-        <span className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-600 dark:bg-blue-400 rounded-full"></span>
+        <span className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-brand-600 dark:bg-brand-400 rounded-full"></span>
       )}
     </Link>
   );
@@ -263,7 +264,11 @@ const Navbar = ({ isLandingPage = false }) => {
   const { mode } = useSelector((state) => state.theme);
   const { isOpen: sidebarOpen } = useSelector((state) => state.sidebar);
   const dispatch = useDispatch();
+  const { t, i18n } = useTranslation();
   const location = useLocation();
+  const isFindLawyer = location.pathname === '/legal-consoltation';
+  const isWalletPage = location.pathname === '/wallet';
+  const isAuthPage = location.pathname === '/auth' || location.pathname === '/signup';
   const userDropdownRef = useRef(null);
   const notificationsDropdownRef = useRef(null);
 
@@ -299,18 +304,8 @@ const Navbar = ({ isLandingPage = false }) => {
   // Watch for user authentication changes to trigger tour
   useEffect(() => {
     if (isAuthenticated && user && user.id) {
-      // Only check tour for newly authenticated users (avoid multiple triggers)
-      const previousUserId = sessionStorage.getItem('currentUserId');
-      const currentUserId = user.id.toString();
-
-      if (previousUserId !== currentUserId) {
-        console.log('New user session detected, checking tour status');
-        sessionStorage.setItem('currentUserId', currentUserId);
-        checkAndStartTourForNewUser(user);
-      }
-    } else if (!isAuthenticated) {
-      // Clear session when user logs out
-      sessionStorage.removeItem('currentUserId');
+      // Only check tour for newly signed up users
+      checkAndStartTourForNewUser();
     }
   }, [isAuthenticated, user?.id]);
 
@@ -555,6 +550,9 @@ const Navbar = ({ isLandingPage = false }) => {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
 
+      // Clear session-based data (like profile cover image) so new login gets fresh data
+      sessionStorage.removeItem('profile_cover_image_session');
+
       // Dispatch event to notify other components of authentication change
       window.dispatchEvent(new CustomEvent('auth-status-changed', {
         detail: { authenticated: false, user: null }
@@ -651,6 +649,12 @@ const Navbar = ({ isLandingPage = false }) => {
     }
   };
 
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'en' ? 'hi' : 'en';
+    i18n.changeLanguage(newLang);
+    localStorage.setItem('merabakil_lang', newLang);
+  };
+
   // Set up periodic refresh for notifications
   useEffect(() => {
     // Only set up refresh if user is authenticated
@@ -699,29 +703,8 @@ const Navbar = ({ isLandingPage = false }) => {
   // - Manual tour restart is always available via navbar button
   // ===============================
 
-  const getTourStorageKey = (userId) => {
-    return `hasSeenOnboardingTour_${userId || 'guest'}`;
-  };
-
-  const hasUserSeenTour = (userId) => {
-    const storageKey = getTourStorageKey(userId);
-    return localStorage.getItem(storageKey) === 'true';
-  };
-
-  const markTourAsCompleted = (userId) => {
-    const storageKey = getTourStorageKey(userId);
-    localStorage.setItem(storageKey, 'true');
-    // Also set generic flag for backward compatibility
-    localStorage.setItem('hasSeenOnboardingTour', 'true');
-  };
-
-  // Handle start tour
+  // Handle start tour manually via button
   const handleStartTour = () => {
-    // Clear any existing tour completion flag to allow restart
-    if (user?.id) {
-      localStorage.removeItem(getTourStorageKey(user.id));
-    }
-    localStorage.removeItem('hasSeenOnboardingTour');
     setShowOnboardingTour(true);
   };
 
@@ -732,99 +715,48 @@ const Navbar = ({ isLandingPage = false }) => {
 
   const handleTourComplete = () => {
     setShowOnboardingTour(false);
-    if (user?.id) {
-      markTourAsCompleted(user.id);
-      console.log('✅ Tour completed and marked for user:', user.id);
-    } else {
-      localStorage.setItem('hasSeenOnboardingTour', 'true');
-      console.log('✅ Tour completed (no user ID available)');
-    }
+    console.log('✅ Tour completed');
   };
 
-  // Auto-start tour for first-time users
-  const checkAndStartTourForNewUser = (userData) => {
-    if (!userData || !userData.id) {
-      console.log('No user data or user ID available for tour check');
-      return;
-    }
-
+  // Auto-start tour for new signups
+  const checkAndStartTourForNewUser = () => {
     // Don't start tour if it's already open
     if (showOnboardingTour) {
-      console.log('Tour is already open, skipping auto-start');
       return;
     }
 
-    // Check if this user has seen the tour before
-    const hasSeenTour = hasUserSeenTour(userData.id);
-    const storageKey = getTourStorageKey(userData.id);
+    // Check if this is a signup session
+    const isSignupSession = sessionStorage.getItem('isSignupSession');
 
-    console.log(`Tour check for user ${userData.id}:`, {
-      hasSeenTour,
-      storageKey,
-      storageValue: localStorage.getItem(storageKey)
-    });
+    // Start tour automatically ONLY after signup
+    if (isSignupSession === 'true') {
+      console.log('🎯 Starting tour for newly registered user');
+      // Remove flag so it doesn't show again on refresh or subsequent logins
+      sessionStorage.removeItem('isSignupSession');
 
-    // Check if this is a fresh login (no previous tour data for this user)
-    const isFirstTimeUser = !hasSeenTour;
-
-    // Start tour automatically for first-time users
-    if (isFirstTimeUser) {
-      console.log('🎯 Starting tour for first-time user:', userData.id);
       // Small delay to ensure UI is ready
       setTimeout(() => {
-        if (!showOnboardingTour) { // Double-check before starting
+        if (!showOnboardingTour) {
           setShowOnboardingTour(true);
         }
       }, 1500); // 1.5 second delay for smooth UX
-    } else {
-      console.log('✅ User has already seen tour:', userData.id);
     }
   };
 
-  // Debug function to reset tour for current user (for testing)
+  // Debug function to start tour for current user (for testing)
   const resetTourForCurrentUser = () => {
-    if (user?.id) {
-      const storageKey = getTourStorageKey(user.id);
-      localStorage.removeItem(storageKey);
-      localStorage.removeItem('hasSeenOnboardingTour');
-      console.log('🔄 Tour reset for user:', user.id);
-      setShowOnboardingTour(true);
-    }
+    console.log('🔄 Tour reset via debug');
+    setShowOnboardingTour(true);
   };
 
   // Add to window for debugging (development only)
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       window.resetTour = resetTourForCurrentUser;
-      window.checkTourStatus = () => {
-        if (user?.id) {
-          console.log('Tour status for user:', user.id, {
-            hasSeenTour: hasUserSeenTour(user.id),
-            storageKey: getTourStorageKey(user.id),
-            value: localStorage.getItem(getTourStorageKey(user.id))
-          });
-        } else {
-          console.log('No user logged in to check tour status');
-        }
-      };
-      window.simulateFirstLogin = () => {
-        if (user?.id) {
-          console.log('🧪 Simulating first login for user:', user.id);
-          sessionStorage.removeItem('currentUserId');
-          const storageKey = getTourStorageKey(user.id);
-          localStorage.removeItem(storageKey);
-          localStorage.removeItem('hasSeenOnboardingTour');
-          checkAndStartTourForNewUser(user);
-        } else {
-          console.log('❌ No user logged in to simulate first login');
-        }
-      };
 
       // Log available commands
       console.log('🛠️ Development tour debugging commands available:');
       console.log('  window.resetTour() - Reset and start tour for current user');
-      console.log('  window.checkTourStatus() - Check tour completion status');
-      console.log('  window.simulateFirstLogin() - Simulate first-time login');
     }
   }, [user?.id]);
 
@@ -929,7 +861,7 @@ const Navbar = ({ isLandingPage = false }) => {
           to={to}
           className={`block px-4 py-3 rounded-xl text-lg font-medium transition-all duration-200 
                 ${active
-              ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+              ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400'
               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
             } ${className}`}
         >
@@ -943,14 +875,14 @@ const Navbar = ({ isLandingPage = false }) => {
         to={to}
         className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 group
             ${active
-            ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/10'
+            ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/10'
             : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
           } ${className}`}
       >
         {children}
         {/* Active Indicator Dot */}
         {active && (
-          <span className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-600 dark:bg-blue-400 rounded-full"></span>
+          <span className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-brand-600 dark:bg-brand-400 rounded-full"></span>
         )}
       </Link>
     );
@@ -971,7 +903,7 @@ const Navbar = ({ isLandingPage = false }) => {
 
             {/* Logo Section - Left Aligned */}
             <div className="flex-1 flex justify-start items-center gap-2">
-              {!isLandingPage && (
+              {!isLandingPage && !isFindLawyer && !isWalletPage && !isAuthPage && (
                 <button
                   onClick={() => dispatch(toggleSidebar())}
                   className={`p-1.5 rounded-lg transition-all duration-200 group flex items-center
@@ -983,8 +915,8 @@ const Navbar = ({ isLandingPage = false }) => {
               )}
 
               <Link to="/" className="flex items-center group">
-                <span className={`text-xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent group-hover:from-blue-500 group-hover:to-blue-300 transition-all duration-300`}>
-                  Mera Vakil
+                <span className={`text-xl font-bold tracking-tight bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent group-hover:from-brand-500 group-hover:to-brand-300 transition-all duration-300`}>
+                  MeraBakil
                 </span>
               </Link>
             </div>
@@ -993,17 +925,17 @@ const Navbar = ({ isLandingPage = false }) => {
             <div className="hidden lg:flex lg:items-center lg:space-x-1 mx-4">
               {/* Dashboard - Only for Lawyers */}
               {isAuthenticated && user?.user_type === 2 && (
-                <NavLink to="/lawyer-admin">Dashboard</NavLink>
+                <NavLink to="/lawyer-admin">{t('nav.dashboard') || 'Dashboard'}</NavLink>
               )}
 
               {/* AI Assistant - Available to generally everyone, or logic can be refined */}
-              <NavLink to="/chatbot">AI Assistant</NavLink>
+              <NavLink to="/chatbot">{t('nav.aiAssistant')}</NavLink>
 
               {/* Core Features */}
-              <NavLink to="/legal-consoltation">Find Lawyer</NavLink>
+              <NavLink to="/legal-consoltation">{t('nav.findLawyer')}</NavLink>
               {/* <NavLink to="/verify-lawyer">Verify Lawyer</NavLink> removed as requested */}
-              <NavLink to="/legal-documents-review">Documents</NavLink>
-              <NavLink to="/pricing">Pricing</NavLink>
+              <NavLink to="/legal-documents-review">{t('nav.documents')}</NavLink>
+              <NavLink to="/pricing">{t('nav.pricing')}</NavLink>
             </div>
 
             {/* Desktop Right Side - Auth & Theme - Right Aligned */}
@@ -1021,18 +953,27 @@ const Navbar = ({ isLandingPage = false }) => {
                 {mode === 'dark' ? <Sun size={20} className="text-yellow-300" /> : <Moon size={20} />}
               </button>
 
+              {/* Language Toggle Button */}
+              <button
+                className="px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-900/30 dark:hover:text-brand-400 transition-all duration-200 border border-gray-200 dark:border-gray-700 uppercase tracking-wider"
+                onClick={toggleLanguage}
+                aria-label="Toggle language"
+              >
+                {t('nav.switchLanguage')}
+              </button>
+
               {/* Start Tour Button */}
               <button
-                className="p-2 rounded-full text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200
-                          dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/30 focus:outline-none
+                className="p-2 rounded-full text-gray-500 hover:text-brand-600 hover:bg-brand-50 transition-all duration-200
+                          dark:text-gray-400 dark:hover:text-brand-400 dark:hover:bg-brand-900/30 focus:outline-none
                           relative group"
                 onClick={handleStartTour}
                 aria-label="Start tour"
-                title="Take a tour of Mera Vakil"
+                title="Take a tour of MeraBakil"
               >
                 <Compass size={20} />
                 {/* Subtle glow effect */}
-                <span className="absolute inset-0 rounded-full bg-blue-500/20 scale-0 group-hover:scale-110 
+                <span className="absolute inset-0 rounded-full bg-brand-500/20 scale-0 group-hover:scale-110 
                                 transition-transform duration-200 opacity-0 group-hover:opacity-100"></span>
               </button>
 
@@ -1079,18 +1020,18 @@ const Navbar = ({ isLandingPage = false }) => {
                       onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                       className={`flex items-center gap-2 p-0.5 rounded-full transition-all duration-300 
                         ${userDropdownOpen
-                          ? 'bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/20'
+                          ? 'bg-brand-50 dark:bg-brand-900/20 ring-2 ring-brand-500/20'
                           : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
                         } focus:outline-none group`}
                     >
                       <div className="relative rounded-full overflow-hidden">
                         <Avatar
                           src={user?.avatar_url}
-                          name={user?.name || user?.first_name}
+                          name={`${user?.name || user?.first_name || ''} ${user?.last_name || ''}`}
                           size={36}
                           forceRefresh={true}
                           className={`rounded-full object-cover border-2 transition-all duration-300 ${userDropdownOpen
-                            ? 'border-blue-500 shadow-md scale-105'
+                            ? 'border-brand-500 shadow-md scale-105'
                             : 'border-white dark:border-gray-700 shadow-sm group-hover:border-gray-200 dark:group-hover:border-gray-600'
                             }`}
                         />
@@ -1120,7 +1061,7 @@ const Navbar = ({ isLandingPage = false }) => {
                                 {user?.email}
                               </p>
                               <div className="mt-2 text-left">
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 text-[9px] font-bold text-white shadow-sm">
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-brand-600 to-brand-500 text-[9px] font-bold text-white shadow-sm">
                                   <Star size={8} className="fill-current" />
                                   PRO ACCOUNT
                                 </span>
@@ -1135,13 +1076,13 @@ const Navbar = ({ isLandingPage = false }) => {
                               onClick={() => setUserDropdownOpen(false)}
                               className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2C2C2C] transition-colors group"
                             >
-                              <div className="p-1.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                              <div className="p-1.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:bg-brand-500 group-hover:text-white transition-colors">
                                 <User size={14} />
                               </div>
                               <div className="flex-1">
                                 <span className="block text-xs font-semibold">My Profile</span>
                               </div>
-                              <ChevronRight size={12} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
+                              <ChevronRight size={12} className="text-gray-400 group-hover:text-brand-500 transition-colors" />
                             </Link>
 
                             <Link
@@ -1264,13 +1205,13 @@ const Navbar = ({ isLandingPage = false }) => {
               {isAuthenticated && (
                 <Link
                   to="/profile"
-                  className="relative group focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full p-0.5"
+                  className="relative group focus:outline-none focus:ring-2 focus:ring-brand-500 rounded-full p-0.5"
                 >
                   <Avatar
                     src={user?.avatar_url}
-                    name={user?.name || user?.first_name}
+                    name={`${user?.name || user?.first_name || ''} ${user?.last_name || ''}`}
                     size={32}
-                    className="border-2 border-transparent group-hover:border-blue-500/50 transition-all duration-300 shadow-md transform group-hover:scale-105"
+                    className="border-2 border-transparent group-hover:border-brand-500/50 transition-all duration-300 shadow-md transform group-hover:scale-105"
                   />
                   <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-[#121212] rounded-full shadow-sm"></div>
                 </Link>
@@ -1347,7 +1288,7 @@ const Navbar = ({ isLandingPage = false }) => {
                   </Link>
                   <Link
                     to="/signup"
-                    className="flex items-center justify-center w-full px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold text-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30"
+                    className="flex items-center justify-center w-full px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold text-lg hover:bg-brand-700 transition-colors shadow-lg shadow-brand-500/30"
                   >
                     Sign Up
                   </Link>
