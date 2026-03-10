@@ -2228,7 +2228,66 @@ export const lawyerVerificationAPI = {
       console.error('Error fetching my verification application:', error.response || error);
       throw error;
     }
-  } // Removed ending comma, as this is the last item
+  }, // Kept comma for new methods below
+
+  // ── Password Reset Flow ─────────────────────────────────────────────────────
+  /**
+   * Send a 6-digit OTP to the user's email for password reset.
+   * Backend endpoint: POST /password/send-otp
+   */
+  sendPasswordResetOtp: async ({ email }) => {
+    try {
+      const response = await apiClient.post('/password/send-otp', { email });
+      return { success: true, message: response.data?.message || 'OTP sent to your email' };
+    } catch (error) {
+      const message =
+        error.response?.data?.message ||
+        error.response?.data?.errors?.email?.[0] ||
+        'Failed to send OTP. Please try again.';
+      return { success: false, message };
+    }
+  },
+
+  /**
+   * Verify the OTP entered by the user.
+   * Backend endpoint: GET /password/verify-otp  (query params: email, otp)
+   * NOTE: The route is GET, so we pass params as query string.
+   */
+  verifyOtp: async ({ email, otp }) => {
+    try {
+      const response = await apiClient.get('/password/verify-otp', {
+        params: { email, otp },
+      });
+      return { success: true, message: response.data?.message || 'OTP verified successfully' };
+    } catch (error) {
+      const message =
+        error.response?.data?.message ||
+        'Invalid or expired OTP. Please try again.';
+      return { success: false, message };
+    }
+  },
+
+  /**
+   * Reset the user's password using the verified OTP.
+   * Backend endpoint: POST /password/reset
+   */
+  resetPassword: async ({ email, otp, password, password_confirmation }) => {
+    try {
+      const response = await apiClient.post('/password/reset', {
+        email,
+        otp,
+        password,
+        password_confirmation,
+      });
+      return { success: true, message: response.data?.message || 'Password reset successfully' };
+    } catch (error) {
+      const message =
+        error.response?.data?.message ||
+        error.response?.data?.errors?.password?.[0] ||
+        'Failed to reset password. Please try again.';
+      return { success: false, message };
+    }
+  }
 }; // END OF apiServices
 
 /**

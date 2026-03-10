@@ -170,9 +170,20 @@ export const ForgotPassword = ({ onBack }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [timer, setTimer] = useState(0);
 
   // Global toast
   const { showSuccess, showError: showToastError } = useToast();
+
+  useEffect(() => {
+    let interval;
+    if (step === 'verify' && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [step, timer]);
 
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
@@ -183,8 +194,9 @@ export const ForgotPassword = ({ onBack }) => {
       const response = await apiServices.sendPasswordResetOtp({ email });
 
       if (response.success) {
-        showSuccess('Verification code sent to your email');
+        // Excluded showing toast for sending code to keep it minimal
         setStep('verify');
+        setTimer(60); // 1 minute timer for professional OTP expiry
       } else {
         setError(response.message || 'Failed to send verification code. Please try again.');
         showToastError(response.message || 'Failed to send verification code');
@@ -246,7 +258,7 @@ export const ForgotPassword = ({ onBack }) => {
       });
 
       if (response.success) {
-        showSuccess('Password reset successfully');
+        showSuccess('Password reset successfully! You can now log in.');
         setStep('success');
       } else {
         setError(response.message || 'Failed to reset password. Please try again.');
@@ -422,22 +434,28 @@ export const ForgotPassword = ({ onBack }) => {
                 {error && <p className="text-red-500 text-xs mt-1 text-center">{error}</p>}
               </div>
 
-              <div className="flex items-center justify-between mt-3">
-                <div className={`flex items-center text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  <FaClock className="mr-1" size={12} />
-                  <span>Code expires in 10 minutes</span>
+              <div className="flex items-center justify-between mt-3 h-6">
+                <div className={`flex items-center text-xs font-medium ${timer > 10 ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') : 'text-red-500 animate-pulse'}`}>
+                  <FaClock className="mr-1.5" size={12} />
+                  <span>{timer > 0 ? `Code expires in 00:${timer.toString().padStart(2, '0')}` : 'Code expired'}</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const e = { preventDefault: () => { } };
-                    handleEmailSubmit(e);
-                  }}
-                  disabled={loading}
-                  className={`text-xs ${isDarkMode ? 'text-white hover:text-gray-300' : 'text-gray-900 hover:text-gray-700'} transition-all duration-200 underline-offset-2 hover:underline focus:outline-none focus:underline disabled:opacity-60 disabled:cursor-not-allowed`}
-                >
-                  Resend code
-                </button>
+                {timer === 0 ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleEmailSubmit(e);
+                    }}
+                    disabled={loading}
+                    className={`text-xs font-semibold ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'} transition-all duration-200 underline-offset-2 hover:underline focus:outline-none focus:underline disabled:opacity-60 disabled:cursor-not-allowed`}
+                  >
+                    Resend code
+                  </button>
+                ) : (
+                  <span className={`text-xs ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
+                    Resend in {timer}s
+                  </span>
+                )}
               </div>
 
               <div className="pt-2">
