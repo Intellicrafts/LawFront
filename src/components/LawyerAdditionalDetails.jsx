@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { FaFileAlt, FaUpload, FaCheckCircle, FaExclamationCircle, FaShieldAlt, FaIdCard, FaDollarSign, FaGraduationCap, FaUser } from 'react-icons/fa';
 import { authAPI, tokenManager } from '../api/apiService';
+import { buildAppointmentConsultationFee } from '../utils/consultationFee';
 import { useToast } from '../context/ToastContext';
 
 // Toast notification component
@@ -434,7 +435,7 @@ const LawyerAdditionalDetails = () => {
     }
 
     if (!consultationFee || consultationFee < 0) {
-      showError('Please enter a valid consultation fee', 'error');
+      showError('Please enter a valid consultation fee per minute', 'error');
       return;
     }
 
@@ -465,7 +466,7 @@ const LawyerAdditionalDetails = () => {
       const formData = new FormData();
       formData.append('enrollment_no', enrollmentNo.trim());
       formData.append('experience_years', experience);
-      formData.append('consultation_fee', consultationFee);
+      formData.append('consultation_fee', JSON.stringify(buildAppointmentConsultationFee(consultationFee)));
       formData.append('practice_areas', JSON.stringify(practiceAreas));
       formData.append('court_practice', JSON.stringify(courtPractice));
       formData.append('languages_spoken', JSON.stringify(languages));
@@ -615,7 +616,7 @@ const LawyerAdditionalDetails = () => {
                   <div>
                     <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
                       }`}>
-                      Consultation Fee (₹) <span className="text-red-500">*</span>
+                      Consultation Fee (₹ / minute) <span className="text-red-500">*</span>
                     </label>
                     <InputField
                       type="number"
@@ -623,7 +624,7 @@ const LawyerAdditionalDetails = () => {
                       name="consultationFee"
                       value={consultationFee}
                       onChange={(e) => setConsultationFee(e.target.value)}
-                      placeholder="Enter consultation fee amount"
+                      placeholder="Enter consultation fee per minute"
                       icon={<FaDollarSign />}
                       required
                     />

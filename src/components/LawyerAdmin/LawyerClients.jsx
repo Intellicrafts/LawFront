@@ -79,6 +79,10 @@ const LawyerClients = ({ darkMode }) => {
     });
   }, [clients, searchQuery, filterType]);
 
+  const totalClients = filteredClients.length;
+  const premiumClients = filteredClients.filter(c => c.premium).length;
+  const activeClients = filteredClients.filter(c => c.active !== false).length;
+
   return (
     <div className="p-4 sm:p-5 space-y-5 max-w-[1500px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header & Controls */}
@@ -111,6 +115,25 @@ const LawyerClients = ({ darkMode }) => {
         </div>
       </div>
 
+      {/* Stats Summary Bar */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: 'Total Clients', value: totalClients, icon: Users, color: darkMode ? 'text-white' : 'text-slate-900', bg: darkMode ? 'bg-white/5 border-white/8' : 'bg-slate-50 border-slate-100' },
+          { label: 'VIP Clients', value: premiumClients, icon: Crown, color: 'text-amber-500', bg: darkMode ? 'bg-amber-500/10 border-amber-500/20' : 'bg-amber-50 border-amber-100' },
+          { label: 'Active', value: activeClients, icon: Activity, color: 'text-emerald-500', bg: darkMode ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-emerald-50 border-emerald-100' },
+        ].map((s, i) => (
+          <div key={i} className={`flex items-center gap-3 px-4 py-3 rounded-2xl border ${s.bg}`}>
+            <div className={`p-2 rounded-xl ${darkMode ? 'bg-white/5' : 'bg-white shadow-sm'}`}>
+              <s.icon size={14} className={s.color} />
+            </div>
+            <div>
+              <p className="text-[8px] font-black uppercase tracking-widest text-slate-500">{s.label}</p>
+              <p className={`text-lg font-black ${s.color}`}>{s.value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {/* Tabs / Segmented Control */}
       <div className="flex items-center gap-1 p-1 w-fit rounded-xl border bg-slate-100/50 dark:bg-white/5 dark:border-white/5">
         {[
@@ -140,8 +163,11 @@ const LawyerClients = ({ darkMode }) => {
         ) : filteredClients.length > 0 ? (
           filteredClients.map((client, idx) => (
             <GlassCard key={client.id || idx} darkMode={darkMode} className="group">
-              {/* Card Header */}
-              <div className={`h-16 w-full relative ${darkMode ? 'bg-white/[0.03]' : 'bg-slate-50'}`}>
+              {/* Card Banner with gradient tier */}
+              <div className={`h-16 w-full relative rounded-t-[24px] overflow-hidden ${client.premium
+                ? (darkMode ? 'bg-gradient-to-br from-amber-900/60 to-amber-700/40' : 'bg-gradient-to-br from-amber-50 to-amber-100')
+                : (darkMode ? 'bg-gradient-to-br from-slate-800/60 to-slate-700/30' : 'bg-gradient-to-br from-slate-100 to-slate-200')
+                }`}>
                 {client.premium && (
                   <div className="absolute top-2.5 right-2.5 z-10">
                     <div className={`p-1 px-1.5 rounded-lg flex items-center gap-1 shadow-lg ${darkMode ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'}`}>
@@ -198,13 +224,21 @@ const LawyerClients = ({ darkMode }) => {
             </GlassCard>
           ))
         ) : (
-          <div className="col-span-full py-16 flex flex-col items-center text-center">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${darkMode ? 'bg-white/5' : 'bg-slate-100'}`}>
-              <Users size={28} className="text-slate-300" />
-            </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="col-span-full py-20 flex flex-col items-center text-center"
+          >
+            <motion.div
+              animate={{ y: [0, -8, 0] }}
+              transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+              className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg ${darkMode ? 'bg-white/5 border border-white/10' : 'bg-white border border-slate-200 shadow-slate-100'}`}
+            >
+              <Users size={28} className="text-slate-400" />
+            </motion.div>
             <h3 className={`text-base font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>No Clients Found</h3>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">Initialize CRM with 'New' action</p>
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

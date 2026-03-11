@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { lawyerAPI, apiServices, walletServices } from '../../api/apiService';
 import MyAppointments from '../../components/MyAppointments';
+import { formatRatePerMinuteLabel, buildAppointmentConsultationFee } from '../../utils/consultationFee';
 
 // Premium Professional Color Palette matching Hero and Sidebar - Production App
 const colors = {
@@ -280,7 +281,7 @@ const LegalCosultation = () => {
       specialization: 'Corporate',
       years_of_experience: 15,
       bar_association: 'Delhi Bar Association',
-      consultation_fee: 3000,
+      consultation_fee: buildAppointmentConsultationFee(3000),
       phone_number: '+91 98765 43210',
       email: 'rodger.prosacco@example.com',
       enrollment_no: 'BCI/100999/2015',
@@ -1907,7 +1908,7 @@ const LegalCosultation = () => {
                               className="flex-1 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white transition-all shadow-lg shadow-teal-900/20 flex items-center justify-center gap-2 group"
                             >
                               <Calendar size={14} className="group-hover:scale-110 transition-transform" />
-                              Book • {parseFloat(lawyer.consultation_fee) > 0 ? `₹${Number(lawyer.consultation_fee).toLocaleString('en-IN')}` : 'Free'}
+                              Book • {formatRatePerMinuteLabel(lawyer.consultation_fee)}
                             </button>
                           </div>
                         </div>
@@ -2003,7 +2004,7 @@ const LegalCosultation = () => {
                   className="px-5 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-teal-900/30 flex items-center gap-2 mb-2"
                 >
                   <Calendar size={14} />
-                  Book Consult • {parseFloat(selectedLawyer.consultation_fee) > 0 ? `₹${Number(selectedLawyer.consultation_fee).toLocaleString('en-IN')}` : 'Free'}
+                  Book Consult • {formatRatePerMinuteLabel(selectedLawyer.consultation_fee)}
                 </button>
               </div>
             </div>
@@ -2024,7 +2025,7 @@ const LegalCosultation = () => {
                 <div className="grid grid-cols-3 gap-3">
                   {[
                     { label: 'Experience', value: selectedLawyer.years_of_experience ? `${selectedLawyer.years_of_experience}Y` : 'New', icon: Briefcase },
-                    { label: 'Consult Fees', value: parseFloat(selectedLawyer.consultation_fee) > 0 ? `₹${Number(selectedLawyer.consultation_fee).toLocaleString('en-IN')}` : 'Free', icon: Award },
+                    { label: 'Consult Fees', value: formatRatePerMinuteLabel(selectedLawyer.consultation_fee), icon: Award },
                     { label: 'License No.', value: selectedLawyer.enrollment_no || '—', icon: Shield }
                   ].map((stat, i) => (
                     <div key={i} className={`p-4 rounded-2xl border text-center ${isDarkMode ? 'bg-white/[0.02] border-[#2A2A2A]' : 'bg-white border-slate-100 shadow-sm'}`}>
@@ -2382,7 +2383,7 @@ const LegalCosultation = () => {
             </div>
 
             <p className="text-[10px] text-center opacity-40">
-              Secure payments processed via Kuberdhan Wallet Service.
+              Secure payments processed via wallet service.
             </p>
           </div>
         </div>

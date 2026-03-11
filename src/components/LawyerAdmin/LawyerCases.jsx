@@ -134,19 +134,24 @@ const LawyerCases = ({ darkMode }) => {
       {/* Stats Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Litigations', value: cases.length, icon: Scale, color: activeDarkMode ? 'text-white' : 'text-slate-900' },
-          { label: 'Active Hearings', value: cases.filter(c => c.status === 'active').length, icon: Gavel, color: 'text-blue-500' },
-          { label: 'Urgent Filings', value: '03', icon: Flame, color: 'text-orange-500' },
-          { label: 'Win Ratio', value: '94%', icon: Target, color: 'text-purple-500' }
+          { label: 'Total Litigations', value: cases.length, icon: Scale, color: 'text-blue-500', bg: darkMode ? 'bg-blue-500/10' : 'bg-blue-50', border: darkMode ? 'border-blue-500/20' : 'border-blue-100' },
+          { label: 'Active Hearings', value: cases.filter(c => c.status === 'active').length, icon: Gavel, color: 'text-amber-500', bg: darkMode ? 'bg-amber-500/10' : 'bg-amber-50', border: darkMode ? 'border-amber-500/20' : 'border-amber-100' },
+          { label: 'Urgent Filings', value: '03', icon: Flame, color: 'text-red-500', bg: darkMode ? 'bg-red-500/10' : 'bg-red-50', border: darkMode ? 'border-red-500/20' : 'border-red-100' },
+          { label: 'Win Ratio', value: '94%', icon: Target, color: 'text-emerald-500', bg: darkMode ? 'bg-emerald-500/10' : 'bg-emerald-50', border: darkMode ? 'border-emerald-500/20' : 'border-emerald-100' }
         ].map((stat, i) => (
           <GlassCard key={i} darkMode={activeDarkMode} className="p-3" hover={false}>
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-xl bg-slate-100 dark:bg-white/5 ${stat.color}`}>
-                <stat.icon size={16} />
+              <div className={`p-2.5 rounded-xl border ${stat.bg} ${stat.border}`}>
+                <stat.icon size={16} className={stat.color} />
               </div>
               <div>
                 <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest leading-none mb-1">{stat.label}</p>
-                <p className={`text-lg font-black ${activeDarkMode ? 'text-white' : 'text-slate-900'}`}>{stat.value}</p>
+                <motion.p
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.08 }}
+                  className={`text-lg font-black ${activeDarkMode ? 'text-white' : 'text-slate-900'}`}
+                >{stat.value}</motion.p>
               </div>
             </div>
           </GlassCard>
@@ -215,7 +220,13 @@ const LawyerCases = ({ darkMode }) => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <PremiumBadge text={c.status || 'Active'} type={getStatusType(c.status)} />
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${c.status === 'active' ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' :
+                            c.status === 'pending' ? 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.5)]' :
+                              c.status === 'closed' ? 'bg-blue-400' : 'bg-slate-400'
+                          }`} />
+                        <PremiumBadge text={c.status || 'Active'} type={getStatusType(c.status)} />
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">

@@ -187,6 +187,73 @@ const LawyerSettings = ({ darkMode }) => {
                             </GlassCard>
                         </motion.div>
                     )}
+                    {activeTab === 'account' && (
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+                            <GlassCard darkMode={darkMode} className="p-5">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className={`p-2 rounded-xl ${darkMode ? 'bg-white/5 text-white' : 'bg-slate-100 text-slate-900'}`}>
+                                        <User size={18} />
+                                    </div>
+                                    <div>
+                                        <h3 className={`text-[13px] font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>Account Information</h3>
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Manage your identity</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-3 max-w-md">
+                                    {[
+                                        { label: 'Display Name', value: 'Your name from profile', icon: User },
+                                        { label: 'Email Address', value: 'Registered email', icon: Globe },
+                                        { label: 'Phone Number', value: 'Contact on record', icon: Smartphone },
+                                    ].map((field, i) => (
+                                        <div key={i} className={`flex items-center justify-between p-3 rounded-xl border ${darkMode ? 'bg-white/3 border-white/5' : 'bg-slate-50 border-slate-100'
+                                            }`}>
+                                            <div className="flex items-center gap-3">
+                                                <field.icon size={14} className={darkMode ? 'text-slate-500' : 'text-slate-400'} />
+                                                <div>
+                                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">{field.label}</p>
+                                                    <p className={`text-[12px] font-bold ${darkMode ? 'text-slate-300 italic' : 'text-slate-600 italic'}`}>{field.value}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <p className={`text-[10px] font-bold mt-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                        → Edit these details in your Academic Profile tab
+                                    </p>
+                                </div>
+                            </GlassCard>
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'billing' && (
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+                            <GlassCard darkMode={darkMode} className="p-5">
+                                <div className="flex items-center gap-3 mb-5">
+                                    <div className={`p-2 rounded-xl ${darkMode ? 'bg-white/5 text-white' : 'bg-slate-100 text-slate-900'}`}>
+                                        <CreditCard size={18} />
+                                    </div>
+                                    <div>
+                                        <h3 className={`text-[13px] font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>Payment & Wallet</h3>
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Earnings and withdrawal management</p>
+                                    </div>
+                                </div>
+                                <div className={`p-4 rounded-2xl border mb-4 ${darkMode ? 'bg-emerald-500/10 border-emerald-500/25' : 'bg-emerald-50 border-emerald-200'
+                                    }`}>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">Wallet Balance</p>
+                                    <p className={`text-2xl font-black ${darkMode ? 'text-emerald-400' : 'text-emerald-700'}`}>Available in Dashboard</p>
+                                    <p className={`text-[10px] mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                                        View real-time balance and withdraw from the Dashboard tab
+                                    </p>
+                                </div>
+                                <div className={`p-4 rounded-2xl border ${darkMode ? 'bg-white/3 border-white/8' : 'bg-slate-50 border-slate-100'
+                                    }`}>
+                                    <p className={`text-[11px] font-black mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Transaction History</p>
+                                    <p className={`text-[10px] ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                                        Full ledger of all credit and debit transactions is available on the Dashboard.
+                                    </p>
+                                </div>
+                            </GlassCard>
+                        </motion.div>
+                    )}
                 </div>
             </div>
         </div>

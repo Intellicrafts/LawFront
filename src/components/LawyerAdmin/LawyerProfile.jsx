@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { authAPI } from '../../api/apiService';
 import { verificationService } from '../../services/verificationService';
 import Avatar from '../common/Avatar';
+import { buildAppointmentConsultationFee, getAppointmentRatePerMinute } from '../../utils/consultationFee';
 
 // ─── Premium UI Components ────────────────────────────────────────
 
@@ -238,12 +239,40 @@ const LawyerProfile = ({ darkMode }) => {
     const [userData, setUserData] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState('');
+    const [saveSuccess, setSaveSuccess] = useState('');
+    const [formData, setFormData] = useState({
+        name: '',
+        phone: '',
+        city: '',
+        state: '',
+        bio: '',
+        specialization: '',
+        barAssociation: '',
+        consultationRate: '',
+    });
+
+    const initializeFormFromProfile = (profile) => {
+        const ld = profile?.lawyer_data || {};
+        setFormData({
+            name: profile?.name || '',
+            phone: profile?.phone || '',
+            city: profile?.city || '',
+            state: profile?.state || '',
+            bio: ld?.bio || '',
+            specialization: ld?.specialization || '',
+            barAssociation: ld?.bar_association || '',
+            consultationRate: String(getAppointmentRatePerMinute(ld?.consultation_fee) || ''),
+        });
+    };
 
     const fetchProfile = async () => {
         try {
             const response = await authAPI.getUserProfile();
             const profile = response.data?.data || response.data;
             setUserData(profile);
+            initializeFormFromProfile(profile);
         } catch (error) {
             console.error('Error fetching profile:', error);
         } finally {
@@ -253,6 +282,69 @@ const LawyerProfile = ({ darkMode }) => {
 
     useEffect(() => { fetchProfile(); }, []);
 
+    const updateForm = (field, value) => {
+        setFormData((prev) => ({ ...prev, [field]: value }));
+        setSaveError('');
+        setSaveSuccess('');
+    };
+
+    const handleSaveProfile = async () => {
+        setSaving(true);
+        setSaveError('');
+        setSaveSuccess('');
+
+        try {
+            const rateNumber = Number(formData.consultationRate || 0);
+            const payload = {
+                name: formData.name?.trim() || userData?.name || '',
+                phone: formData.phone?.trim() || '',
+                city: formData.city?.trim() || '',
+                state: formData.state?.trim() || '',
+                lawyer_data: {
+                    bio: formData.bio?.trim() || '',
+                    specialization: formData.specialization?.trim() || '',
+                    bar_association: formData.barAssociation?.trim() || '',
+                    consultation_fee: buildAppointmentConsultationFee(rateNumber),
+                },
+            };
+
+            const response = await authAPI.updateUserProfile(payload);
+            const updated = response?.data?.data || response?.data || payload;
+            setUserData((prev) => ({
+                ...(prev || {}),
+                ...updated,
+                lawyer_data: {
+                    ...((prev && prev.lawyer_data) || {}),
+                    ...(updated?.lawyer_data || payload.lawyer_data),
+                },
+            }));
+
+            try {
+                const cached = localStorage.getItem('user_profile');
+                const parsed = cached ? JSON.parse(cached) : {};
+                const merged = {
+                    ...parsed,
+                    ...updated,
+                    lawyer_data: {
+                        ...(parsed?.lawyer_data || {}),
+                        ...(updated?.lawyer_data || payload.lawyer_data),
+                    },
+                };
+                localStorage.setItem('user_profile', JSON.stringify(merged));
+            } catch (cacheErr) {
+                console.warn('Failed to sync updated profile cache:', cacheErr);
+            }
+
+            setIsEditing(false);
+            setSaveSuccess('Profile updated successfully.');
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            setSaveError(error?.response?.data?.message || 'Failed to update profile.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     if (loading) return (
         <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
             <div className={`w-12 h-12 rounded-full border-2 border-t-transparent animate-spin ${darkMode ? 'border-white/20 border-t-white' : 'border-slate-200 border-t-slate-900'}`} />
@@ -261,16 +353,19 @@ const LawyerProfile = ({ darkMode }) => {
     );
 
     const ld = userData?.lawyer_data || {};
-    const name = userData?.name || 'Advocate';
+    const name = (isEditing ? formData.name : userData?.name) || 'Advocate';
     const email = userData?.email || '—';
-    const phone = userData?.phone || '—';
-    const location = userData?.city || userData?.state || '—';
-    const bio = ld.bio || null;
+    const phone = isEditing ? (formData.phone || '—') : (userData?.phone || '—');
+    const location = isEditing
+        ? ([formData.city, formData.state].filter(Boolean).join(', ') || '—')
+        : (userData?.city || userData?.state || '—');
+    const bio = isEditing ? formData.bio : (ld.bio || null);
     const enrollmentNo = ld.enrollment_no || null;
     const experience = ld.years_of_experience ? `${ld.years_of_experience}` : null;
     const rating = ld.average_rating ? parseFloat(ld.average_rating).toFixed(1) : null;
     const totalReviews = ld.total_reviews || 0;
-    const specializations = ld.specialization ? [ld.specialization] : [];
+    const specializationValue = isEditing ? formData.specialization : ld.specialization;
+    const specializations = specializationValue ? [specializationValue] : [];
     const lawyerStatus = ld.status || 'pending';
     const verificationLevel = (lawyerStatus === 'Admin Verified' || lawyerStatus === "2" || lawyerStatus === 2) ? 2 : (lawyerStatus === 'Bar Council Verified' || lawyerStatus === "1" || lawyerStatus === 1) ? 1 : 0;
 
@@ -291,14 +386,44 @@ const LawyerProfile = ({ darkMode }) => {
                     <button onClick={fetchProfile} className="h-10 w-10 rounded-2xl bg-white/10 backdrop-blur-md text-white flex items-center justify-center hover:bg-white/20 transition-all shadow-lg active:scale-95 border border-white/20">
                         <RefreshCw size={16} />
                     </button>
-                    <button onClick={() => setIsEditing(!isEditing)} className="h-10 px-5 rounded-2xl bg-white/10 backdrop-blur-md text-white text-[11px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-white/20 transition-all shadow-lg active:scale-95 border border-white/20">
-                        {isEditing ? <X size={16} /> : <Edit3 size={16} />}
-                        {isEditing ? 'Cancel Edit' : 'Edit Profile'}
-                    </button>
+                    {isEditing ? (
+                        <>
+                            <button
+                                onClick={() => { initializeFormFromProfile(userData); setIsEditing(false); }}
+                                className="h-10 px-5 rounded-2xl bg-white/10 backdrop-blur-md text-white text-[11px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-white/20 transition-all shadow-lg active:scale-95 border border-white/20"
+                            >
+                                <X size={16} />
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSaveProfile}
+                                disabled={saving}
+                                className="h-10 px-5 rounded-2xl bg-white text-slate-900 text-[11px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-slate-100 transition-all shadow-lg active:scale-95 border border-white/20 disabled:opacity-70"
+                            >
+                                {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                                {saving ? 'Saving...' : 'Save'}
+                            </button>
+                        </>
+                    ) : (
+                        <button onClick={() => setIsEditing(true)} className="h-10 px-5 rounded-2xl bg-white/10 backdrop-blur-md text-white text-[11px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-white/20 transition-all shadow-lg active:scale-95 border border-white/20">
+                            <Edit3 size={16} />
+                            Edit Profile
+                        </button>
+                    )}
                 </div>
             </div>
 
             <div className="px-4 sm:px-8 xl:px-12 -mt-24 md:-mt-32 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+                {(saveError || saveSuccess) && (
+                    <div className="lg:col-span-12">
+                        <div className={`rounded-2xl px-4 py-3 text-[11px] font-bold uppercase tracking-wider border ${saveError
+                            ? (darkMode ? 'bg-red-500/10 border-red-500/30 text-red-300' : 'bg-red-50 border-red-200 text-red-700')
+                            : (darkMode ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700')
+                            }`}>
+                            {saveError || saveSuccess}
+                        </div>
+                    </div>
+                )}
 
                 {/* ── Left Sidebar: Identity & Stats ── */}
                 <div className="lg:col-span-4 lg:sticky lg:top-8 space-y-6">
@@ -306,7 +431,14 @@ const LawyerProfile = ({ darkMode }) => {
                     <GlassCard darkMode={darkMode} className="p-1 pt-1 border border-white/10 dark:border-white/5" glow>
                         <div className={`p-6 md:p-8 rounded-[22px] flex flex-col items-center text-center ${darkMode ? 'bg-black/50' : 'bg-white'}`}>
                             <div className="relative mb-6 group">
-                                <div className="relative border-4 border-white dark:border-neutral-900 rounded-[35px] overflow-hidden shadow-2xl transition-transform duration-500 group-hover:scale-[1.03]">
+                                {/* Verification tier ring */}
+                                <div className={`absolute -inset-1.5 rounded-[38px] ${verificationLevel >= 2
+                                        ? 'bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600'
+                                        : verificationLevel >= 1
+                                            ? 'bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-500'
+                                            : 'bg-gradient-to-br from-amber-400 via-amber-500 to-orange-400'
+                                    } opacity-80 blur-[1px]`} />
+                                <div className="relative border-[3px] border-white dark:border-neutral-900 rounded-[35px] overflow-hidden shadow-2xl transition-transform duration-500 group-hover:scale-[1.03]">
                                     <Avatar src={userData?.profileImage} name={name} size={140} className="rounded-none bg-slate-100" />
                                 </div>
                                 <button className={`absolute -bottom-3 -right-3 w-10 h-10 rounded-2xl flex items-center justify-center shadow-2xl border-[3px] border-white dark:border-neutral-900 group-hover:scale-110 transition-all cursor-pointer
@@ -367,23 +499,61 @@ const LawyerProfile = ({ darkMode }) => {
                         <h3 className={`text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-2 ${darkMode ? 'text-slate-300' : 'text-slate-800'}`}>
                             <Phone size={14} className={darkMode ? 'text-slate-500' : 'text-slate-400'} /> Direct Contact
                         </h3>
-                        <div className="space-y-4">
-                            {[
-                                { Icon: Mail, label: 'Email', val: email },
-                                { Icon: Phone, label: 'Phone', val: phone },
-                                { Icon: MapPin, label: 'Location', val: location },
-                            ].map(({ Icon, label, val }, i) => (
-                                <div key={i} className={`flex items-start gap-4 p-3 rounded-2xl transition-colors ${darkMode ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
-                                    <div className={`mt-0.5 w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${darkMode ? 'bg-white/10 text-white' : 'bg-slate-900 text-white shadow-md'}`}>
-                                        <Icon size={14} />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest leading-none mb-1">{label}</p>
-                                        <p className={`text-[13px] font-bold truncate ${darkMode ? 'text-slate-200' : 'text-slate-800'} ${val === '—' ? 'opacity-40 italic' : ''}`}>{val}</p>
-                                    </div>
+                        {isEditing ? (
+                            <div className="space-y-3">
+                                <input
+                                    type="text"
+                                    value={formData.name}
+                                    onChange={(e) => updateForm('name', e.target.value)}
+                                    placeholder="Full name"
+                                    className={`w-full h-10 px-3 rounded-xl text-sm border outline-none ${darkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                                />
+                                <input
+                                    type="text"
+                                    value={formData.phone}
+                                    onChange={(e) => updateForm('phone', e.target.value)}
+                                    placeholder="Phone number"
+                                    className={`w-full h-10 px-3 rounded-xl text-sm border outline-none ${darkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                                />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <input
+                                        type="text"
+                                        value={formData.city}
+                                        onChange={(e) => updateForm('city', e.target.value)}
+                                        placeholder="City"
+                                        className={`w-full h-10 px-3 rounded-xl text-sm border outline-none ${darkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                                    />
+                                    <input
+                                        type="text"
+                                        value={formData.state}
+                                        onChange={(e) => updateForm('state', e.target.value)}
+                                        placeholder="State"
+                                        className={`w-full h-10 px-3 rounded-xl text-sm border outline-none ${darkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                                    />
                                 </div>
-                            ))}
-                        </div>
+                                <div className={`w-full h-10 px-3 rounded-xl text-sm border flex items-center ${darkMode ? 'bg-white/5 border-white/10 text-slate-500' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+                                    {email}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {[
+                                    { Icon: Mail, label: 'Email', val: email },
+                                    { Icon: Phone, label: 'Phone', val: phone },
+                                    { Icon: MapPin, label: 'Location', val: location },
+                                ].map(({ Icon, label, val }, i) => (
+                                    <div key={i} className={`flex items-start gap-4 p-3 rounded-2xl transition-colors ${darkMode ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
+                                        <div className={`mt-0.5 w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${darkMode ? 'bg-white/10 text-white' : 'bg-slate-900 text-white shadow-md'}`}>
+                                            <Icon size={14} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest leading-none mb-1">{label}</p>
+                                            <p className={`text-[13px] font-bold truncate ${darkMode ? 'text-slate-200' : 'text-slate-800'} ${val === '—' ? 'opacity-40 italic' : ''}`}>{val}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </GlassCard>
                 </div>
 
@@ -396,12 +566,49 @@ const LawyerProfile = ({ darkMode }) => {
                             <h3 className={`text-[12px] font-black uppercase tracking-[0.2em] flex items-center gap-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                                 <Briefcase size={16} className={darkMode ? 'text-slate-400' : 'text-slate-500'} /> Professional Summary
                             </h3>
-                            <button className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${darkMode ? 'hover:bg-white/10 text-slate-400 hover:text-white' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-900'}`}>
-                                <Edit3 size={14} />
+                            <button
+                                onClick={() => setIsEditing((v) => !v)}
+                                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${darkMode ? 'hover:bg-white/10 text-slate-400 hover:text-white' : 'hover:bg-slate-100 text-slate-400 hover:text-slate-900'}`}
+                            >
+                                {isEditing ? <X size={14} /> : <Edit3 size={14} />}
                             </button>
                         </div>
 
-                        {bio ? (
+                        {isEditing ? (
+                            <div className="space-y-4">
+                                <textarea
+                                    value={formData.bio}
+                                    onChange={(e) => updateForm('bio', e.target.value)}
+                                    rows={5}
+                                    placeholder="Write your professional summary..."
+                                    className={`w-full px-4 py-3 rounded-2xl text-sm border outline-none resize-none ${darkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                                />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <input
+                                        type="text"
+                                        value={formData.specialization}
+                                        onChange={(e) => updateForm('specialization', e.target.value)}
+                                        placeholder="Specialization"
+                                        className={`w-full h-10 px-3 rounded-xl text-sm border outline-none ${darkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                                    />
+                                    <input
+                                        type="text"
+                                        value={formData.barAssociation}
+                                        onChange={(e) => updateForm('barAssociation', e.target.value)}
+                                        placeholder="Bar Association"
+                                        className={`w-full h-10 px-3 rounded-xl text-sm border outline-none ${darkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                                    />
+                                </div>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={formData.consultationRate}
+                                    onChange={(e) => updateForm('consultationRate', e.target.value)}
+                                    placeholder="Consultation rate (INR per minute)"
+                                    className={`w-full h-10 px-3 rounded-xl text-sm border outline-none ${darkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                                />
+                            </div>
+                        ) : bio ? (
                             <p className={`text-sm md:text-base leading-relaxed font-medium ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{bio}</p>
                         ) : (
                             <div className={`p-6 rounded-2xl border border-dashed flex flex-col items-center justify-center text-center ${darkMode ? 'border-white/20 bg-white/5' : 'border-slate-300 bg-slate-50'}`}>
@@ -421,16 +628,20 @@ const LawyerProfile = ({ darkMode }) => {
                                             {tag}
                                         </span>
                                     ))}
-                                    <button className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider border border-dashed transition-colors
-                                        ${darkMode ? 'border-white/20 text-slate-400 hover:border-white/40 hover:text-white' : 'border-slate-300 text-slate-500 hover:border-slate-500 hover:text-slate-900'}`}>
-                                        + Add Focus
-                                    </button>
+                                    {!isEditing && (
+                                        <button className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider border border-dashed transition-colors
+                                            ${darkMode ? 'border-white/20 text-slate-400 hover:border-white/40 hover:text-white' : 'border-slate-300 text-slate-500 hover:border-slate-500 hover:text-slate-900'}`}>
+                                            + Add Focus
+                                        </button>
+                                    )}
                                 </div>
                             ) : (
-                                <button className={`px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider border border-dashed transition-colors
-                                    ${darkMode ? 'border-white/20 text-slate-400 hover:border-white/40' : 'border-slate-300 text-slate-500 hover:border-slate-500'}`}>
-                                    + Define Practice Areas
-                                </button>
+                                !isEditing && (
+                                    <button className={`px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider border border-dashed transition-colors
+                                        ${darkMode ? 'border-white/20 text-slate-400 hover:border-white/40' : 'border-slate-300 text-slate-500 hover:border-slate-500'}`}>
+                                        + Define Practice Areas
+                                    </button>
+                                )
                             )}
                         </div>
                     </GlassCard>
@@ -497,9 +708,16 @@ const LawyerProfile = ({ darkMode }) => {
                                     ))}
                                 </div>
                             ) : (
-                                <div className={`h-32 rounded-2xl flex flex-col items-center justify-center text-center ${darkMode ? 'bg-white/5' : 'bg-slate-50'}`}>
-                                    <Award size={24} className={`mb-2 ${darkMode ? 'text-slate-600' : 'text-slate-300'}`} />
-                                    <p className={`text-[11px] font-bold ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>No accolades added yet</p>
+                                <div className={`h-36 rounded-2xl flex flex-col items-center justify-center text-center p-4 border border-dashed ${darkMode ? 'bg-white/3 border-white/15' : 'bg-slate-50 border-slate-200'}`}>
+                                    <motion.div
+                                        animate={{ y: [0, -5, 0] }}
+                                        transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+                                    >
+                                        <Award size={24} className={`mb-2 mx-auto ${darkMode ? 'text-amber-400/50' : 'text-amber-500/60'}`} />
+                                    </motion.div>
+                                    <p className={`text-[11px] font-bold ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>No accolades yet</p>
+                                    <button className={`mt-2 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-colors ${darkMode ? 'border-amber-500/30 text-amber-400 hover:bg-amber-500/10' : 'border-amber-300 text-amber-700 hover:bg-amber-50'
+                                        }`}>+ Add Award</button>
                                 </div>
                             )}
                         </GlassCard>
@@ -511,4 +729,3 @@ const LawyerProfile = ({ darkMode }) => {
 };
 
 export default LawyerProfile;
-

@@ -94,6 +94,41 @@ const PremiumBadge = ({ text, type = 'primary' }) => {
 
 // --- Main Component ---
 
+// Countdown hook
+const useCountdown = (targetDate) => {
+  const [timeLeft, setTimeLeft] = useState('');
+  useEffect(() => {
+    const calc = () => {
+      const diff = new Date(targetDate).getTime() - Date.now();
+      if (diff <= 0) { setTimeLeft('Now'); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`);
+    };
+    calc();
+    const id = setInterval(calc, 1000);
+    return () => clearInterval(id);
+  }, [targetDate]);
+  return timeLeft;
+};
+
+const AppointmentCountdown = ({ apt, darkMode }) => {
+  const diff = new Date(apt.appointment_time).getTime() - Date.now();
+  const within24h = diff > 0 && diff < 86400000;
+  const timer = useCountdown(apt.appointment_time);
+  if (!within24h || apt.status !== 'scheduled') return null;
+  return (
+    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${diff < 3600000
+      ? (darkMode ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25' : 'bg-amber-50 text-amber-700 border border-amber-200')
+      : (darkMode ? 'bg-blue-500/10 text-blue-300 border border-blue-500/20' : 'bg-blue-50 text-blue-700 border border-blue-100')
+      }`}>
+      <Timer size={9} />
+      {timer}
+    </div>
+  );
+};
+
 const LawyerAppointments = ({ darkMode, initialAppointments = [], userData, activeSession }) => {
   const { showSuccess, showError, showInfo } = useToast();
   const navigate = useNavigate();
@@ -234,6 +269,12 @@ const LawyerAppointments = ({ darkMode, initialAppointments = [], userData, acti
     return <PremiumBadge text="Scheduled" type="info" />;
   };
 
+  // Stats summary
+  const totalCount = appointments.length;
+  const todayCount = appointments.filter(a => new Date(a.appointment_time).toDateString() === new Date().toDateString()).length;
+  const upcomingCount = appointments.filter(a => new Date(a.appointment_time) > new Date()).length;
+  const completedCount = appointments.filter(a => a.status === 'completed').length;
+
   return (
     <div className="p-4 sm:p-5 space-y-5 max-w-[1500px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header Section */}
@@ -266,6 +307,23 @@ const LawyerAppointments = ({ darkMode, initialAppointments = [], userData, acti
         </div>
       </div>
 
+      {/* Stats Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: 'Total', value: totalCount, color: darkMode ? 'text-white' : 'text-slate-900', bg: darkMode ? 'bg-white/5' : 'bg-slate-50' },
+          { label: 'Today', value: todayCount, color: 'text-blue-500', bg: darkMode ? 'bg-blue-500/10' : 'bg-blue-50' },
+          { label: 'Upcoming', value: upcomingCount, color: 'text-amber-500', bg: darkMode ? 'bg-amber-500/10' : 'bg-amber-50' },
+          { label: 'Completed', value: completedCount, color: 'text-emerald-500', bg: darkMode ? 'bg-emerald-500/10' : 'bg-emerald-50' },
+        ].map((s, i) => (
+          <div key={i} className={`flex items-center gap-3 px-4 py-3 rounded-2xl border ${darkMode ? 'border-white/5' : 'border-slate-100'} ${s.bg}`}>
+            <div>
+              <p className="text-[8px] font-black uppercase tracking-widest text-slate-500">{s.label}</p>
+              <p className={`text-xl font-black ${s.color}`}>{s.value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {/* Tabs / Filter Row */}
       <div className="flex items-center gap-1 p-1 w-fit rounded-xl border bg-slate-100/50 dark:bg-white/5 dark:border-white/5">
         {[
@@ -294,121 +352,148 @@ const LawyerAppointments = ({ darkMode, initialAppointments = [], userData, acti
             <div key={i} className={`h-40 rounded-3xl animate-pulse ${darkMode ? 'bg-white/5' : 'bg-slate-100'}`} />
           ))
         ) : filteredAppointments.length > 0 ? (
-          filteredAppointments.map((apt, idx) => (
-            <GlassCard key={apt.id || idx} darkMode={darkMode} className="group overflow-visible">
-              <div className="p-4 flex flex-col h-full">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${darkMode ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
-                      <Avatar name={apt.client_name} size={28} className="rounded-lg shadow-sm" />
+          filteredAppointments.map((apt, idx) => {
+            const aptTime = new Date(apt.appointment_time);
+            const diff = aptTime.getTime() - Date.now();
+            const isLive = Math.abs(diff) < 30 * 60 * 1000 && apt.status === 'scheduled';
+            const isCompleted = apt.status === 'completed';
+            const isUpcoming = diff > 30 * 60 * 1000 && apt.status === 'scheduled';
+
+            const borderColor = isLive
+              ? 'border-l-4 border-l-emerald-500'
+              : isCompleted
+                ? (darkMode ? 'border-l-4 border-l-slate-600' : 'border-l-4 border-l-slate-300')
+                : isUpcoming
+                  ? 'border-l-4 border-l-amber-400'
+                  : 'border-l-4 border-l-blue-400';
+
+            return (
+              <GlassCard key={apt.id || idx} darkMode={darkMode} className={`group overflow-visible stagger-item ${borderColor}`}>
+                <div className="p-4 flex flex-col h-full">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${darkMode ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
+                        <Avatar name={apt.client_name} size={28} className="rounded-lg shadow-sm" />
+                      </div>
+                      <div>
+                        <h3 className={`text-[12px] font-black leading-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>{apt.client_name}</h3>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{apt.case_type || 'Legal Adv.'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className={`text-[12px] font-black leading-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>{apt.client_name}</h3>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{apt.case_type || 'Legal Adv.'}</p>
+                    <div className="flex flex-col items-end gap-1">
+                      <StatusBadge apt={apt} />
+                      <AppointmentCountdown apt={apt} darkMode={darkMode} />
                     </div>
                   </div>
-                  <StatusBadge apt={apt} />
-                </div>
 
-                <div className={`flex-1 p-3 rounded-xl mb-3 space-y-1.5 border transition-colors ${darkMode ? 'bg-white/3 group-hover:bg-white/5 border-white/5' : 'bg-slate-50 group-hover:bg-slate-100 border-slate-100'}`}>
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
-                    <Calendar size={12} className={darkMode ? 'text-slate-300' : 'text-slate-900'} />
-                    <span className={darkMode ? 'text-slate-300' : 'text-slate-700'}>
-                      {new Date(apt.appointment_time).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
-                    </span>
+                  <div className={`flex-1 p-3 rounded-xl mb-3 space-y-1.5 border transition-colors ${darkMode ? 'bg-white/3 group-hover:bg-white/5 border-white/5' : 'bg-slate-50 group-hover:bg-slate-100 border-slate-100'}`}>
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+                      <Calendar size={12} className={darkMode ? 'text-slate-300' : 'text-slate-900'} />
+                      <span className={darkMode ? 'text-slate-300' : 'text-slate-700'}>
+                        {new Date(apt.appointment_time).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+                      <Clock size={12} className={darkMode ? 'text-slate-300' : 'text-slate-900'} />
+                      <span className={darkMode ? 'text-slate-300' : 'text-slate-700'}>
+                        {new Date(apt.appointment_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                        <span className="opacity-50 mx-1">•</span>
+                        {apt.duration_minutes || 30}m
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
-                    <Clock size={12} className={darkMode ? 'text-slate-300' : 'text-slate-900'} />
-                    <span className={darkMode ? 'text-slate-300' : 'text-slate-700'}>
-                      {new Date(apt.appointment_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                      <span className="opacity-50 mx-1">•</span>
-                      {apt.duration_minutes || 30}m
-                    </span>
+
+                  <div className="flex items-center gap-2">
+                    {(() => {
+                      const appointmentTime = new Date(apt.appointment_time);
+                      const diffMs = appointmentTime.getTime() - currentTime.getTime();
+                      const durationMinutes = apt.duration_minutes || 60;
+                      const endTime = new Date(appointmentTime.getTime() + durationMinutes * 60 * 1000);
+                      const isPastEnded = currentTime > endTime;
+
+                      // Can join exactly 1 min before (or let's be lenient on UI: 5 minutes before) but backend uses 1 min
+                      // To match user experience and backend, button is disabled if more than 1 minute before.
+                      const canJoin = diffMs <= 60000 && !isPastEnded && apt.status === 'scheduled';
+
+                      if (apt.status === 'scheduled') {
+                        return (
+                          <button
+                            onClick={() => handleStartMeeting(apt.id)}
+                            disabled={actionLoading === apt.id || !canJoin}
+                            className={`flex-1 h-9 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl ${activeSession?.appointment_id === apt.id
+                              ? (darkMode ? 'bg-white text-slate-900 shadow-white/20' : 'bg-slate-900 text-white shadow-black/20')
+                              : (darkMode ? 'bg-white text-slate-900 shadow-white/5' : 'bg-slate-900 text-white shadow-black/10')
+                              } ${actionLoading === apt.id ? 'opacity-80' : (!canJoin ? 'opacity-50 cursor-not-allowed bg-slate-400 text-white dark:bg-slate-700' : 'hover:scale-[1.02]')}`}
+                          >
+                            {actionLoading === apt.id ? (
+                              <>
+                                <RefreshCw size={12} className="animate-spin" />
+                                Establishing...
+                              </>
+                            ) : (
+                              <>
+                                <Video size={12} />
+                                {activeSession?.appointment_id === apt.id
+                                  ? 'Return to Chamber'
+                                  : canJoin
+                                    ? 'Join Live Chamber'
+                                    : 'Join Unavailable'}
+                              </>
+                            )}
+                          </button>
+                        );
+                      } else if (apt.status === 'completed' || isPastEnded) {
+                        return (
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.97 }}
+                            onClick={() => setReportAppointment(apt)}
+                            disabled={actionLoading === apt.id}
+                            className={`flex-1 h-9 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${darkMode
+                              ? 'bg-gradient-to-r from-indigo-500/15 to-violet-500/15 border border-indigo-500/25 text-indigo-300 hover:from-indigo-500/25 hover:to-violet-500/25 shadow-md'
+                              : 'bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 text-indigo-700 hover:from-indigo-100 hover:to-violet-100 shadow-md'
+                              }`}
+                          >
+                            <FileText size={12} />
+                            View Report
+                          </motion.button>
+                        );
+                      } else {
+                        return (
+                          <button
+                            disabled
+                            className={`flex-1 h-9 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 bg-slate-100 dark:bg-white/5 text-slate-400 cursor-not-allowed`}
+                          >
+                            <VideoOff size={12} />
+                            Unavailable
+                          </button>
+                        );
+                      }
+                    })()}
+                    <button className={`w-9 h-9 flex items-center justify-center rounded-lg border transition-colors ${darkMode ? 'border-white/10 hover:bg-white/5 text-slate-400 hover:text-white' : 'border-slate-200 hover:bg-slate-50 text-slate-500'}`}>
+                      <MoreHorizontal size={14} />
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  {(() => {
-                    const appointmentTime = new Date(apt.appointment_time);
-                    const diffMs = appointmentTime.getTime() - currentTime.getTime();
-                    const durationMinutes = apt.duration_minutes || 60;
-                    const endTime = new Date(appointmentTime.getTime() + durationMinutes * 60 * 1000);
-                    const isPastEnded = currentTime > endTime;
-
-                    // Can join exactly 1 min before (or let's be lenient on UI: 5 minutes before) but backend uses 1 min
-                    // To match user experience and backend, button is disabled if more than 1 minute before.
-                    const canJoin = diffMs <= 60000 && !isPastEnded && apt.status === 'scheduled';
-
-                    if (apt.status === 'scheduled') {
-                      return (
-                        <button
-                          onClick={() => handleStartMeeting(apt.id)}
-                          disabled={actionLoading === apt.id || !canJoin}
-                          className={`flex-1 h-9 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl ${activeSession?.appointment_id === apt.id
-                            ? (darkMode ? 'bg-white text-slate-900 shadow-white/20' : 'bg-slate-900 text-white shadow-black/20')
-                            : (darkMode ? 'bg-white text-slate-900 shadow-white/5' : 'bg-slate-900 text-white shadow-black/10')
-                            } ${actionLoading === apt.id ? 'opacity-80' : (!canJoin ? 'opacity-50 cursor-not-allowed bg-slate-400 text-white dark:bg-slate-700' : 'hover:scale-[1.02]')}`}
-                        >
-                          {actionLoading === apt.id ? (
-                            <>
-                              <RefreshCw size={12} className="animate-spin" />
-                              Establishing...
-                            </>
-                          ) : (
-                            <>
-                              <Video size={12} />
-                              {activeSession?.appointment_id === apt.id
-                                ? 'Return to Chamber'
-                                : canJoin
-                                  ? 'Join Live Chamber'
-                                  : 'Join Unavailable'}
-                            </>
-                          )}
-                        </button>
-                      );
-                    } else if (apt.status === 'completed' || isPastEnded) {
-                      return (
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.97 }}
-                          onClick={() => setReportAppointment(apt)}
-                          disabled={actionLoading === apt.id}
-                          className={`flex-1 h-9 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${darkMode
-                            ? 'bg-gradient-to-r from-indigo-500/15 to-violet-500/15 border border-indigo-500/25 text-indigo-300 hover:from-indigo-500/25 hover:to-violet-500/25 shadow-md'
-                            : 'bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 text-indigo-700 hover:from-indigo-100 hover:to-violet-100 shadow-md'
-                            }`}
-                        >
-                          <FileText size={12} />
-                          View Report
-                        </motion.button>
-                      );
-                    } else {
-                      return (
-                        <button
-                          disabled
-                          className={`flex-1 h-9 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 bg-slate-100 dark:bg-white/5 text-slate-400 cursor-not-allowed`}
-                        >
-                          <VideoOff size={12} />
-                          Unavailable
-                        </button>
-                      );
-                    }
-                  })()}
-                  <button className={`w-9 h-9 flex items-center justify-center rounded-lg border transition-colors ${darkMode ? 'border-white/10 hover:bg-white/5 text-slate-400 hover:text-white' : 'border-slate-200 hover:bg-slate-50 text-slate-500'}`}>
-                    <MoreHorizontal size={14} />
-                  </button>
-                </div>
-              </div>
-            </GlassCard>
-          ))
+              </GlassCard>
+            );
+          })
         ) : (
-          <div className="col-span-full py-16 flex flex-col items-center justify-center text-center">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 ${darkMode ? 'bg-white/5' : 'bg-slate-100'}`}>
-              <Calendar size={28} className="text-slate-300" />
-            </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="col-span-full py-20 flex flex-col items-center justify-center text-center"
+          >
+            <motion.div
+              animate={{ y: [0, -8, 0] }}
+              transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+              className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg ${darkMode ? 'bg-white/5 border border-white/10' : 'bg-white border border-slate-200 shadow-slate-100'}`}
+            >
+              <Calendar size={28} className={darkMode ? 'text-slate-400' : 'text-slate-400'} />
+            </motion.div>
             <h3 className={`text-base font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>Registry Empty</h3>
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">No sessions match your criteria</p>
-          </div>
+          </motion.div>
         )}
       </div>
 

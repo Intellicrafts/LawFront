@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Landmark, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const WithdrawFundsModal = ({ isOpen, onClose, onConfirm, isDark, loading, maxWithdrawable }) => {
+const WithdrawFundsModal = ({ isOpen, onClose, onConfirm, isDark, loading, maxWithdrawable, useHighContrastWithdraw = false }) => {
     const [amount, setAmount] = useState('');
 
     const handleSubmit = (e) => {
@@ -92,8 +92,16 @@ const WithdrawFundsModal = ({ isOpen, onClose, onConfirm, isDark, loading, maxWi
                             type="submit"
                             disabled={loading || !amount || parseFloat(amount) > maxWithdrawable}
                             className={`w-full py-2.5 rounded-lg font-medium text-sm transition-all ${loading || !amount || parseFloat(amount) > maxWithdrawable
-                                    ? isDark ? 'bg-[#333] text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                    : 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/25'
+                                    ? isDark
+                                        ? useHighContrastWithdraw
+                                            ? 'bg-neutral-700 text-neutral-300 border border-neutral-500 cursor-not-allowed'
+                                            : 'bg-[#333] text-gray-500 cursor-not-allowed'
+                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : isDark
+                                        ? useHighContrastWithdraw
+                                            ? 'bg-amber-300 hover:bg-amber-200 text-slate-900 shadow-lg shadow-amber-500/25'
+                                            : 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/25'
+                                        : 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/25'
                                 }`}
                         >
                             {loading ? 'Processing...' : 'Request Withdrawal'}

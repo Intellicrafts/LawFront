@@ -1,15 +1,17 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { apiServices, authAPI, tokenManager, lawyerAPI, casesAPI, consultationAPI, lawyerAdminAPI } from '../../api/apiService';
+import { apiServices, authAPI, tokenManager, lawyerAPI, casesAPI, consultationAPI, walletServices } from '../../api/apiService';
 import NotificationDropdown from '../NotificationDropdown';
 import Avatar from '../common/Avatar';
 import LawyerAppointments from '../LawyerAdmin/LawyerAppointments';
 import LawyerClients from '../LawyerAdmin/LawyerClients';
 import LawyerCases from '../LawyerAdmin/LawyerCases';
 import LawyerDocuments from '../LawyerAdmin/LawyerDocuments';
+import LawyerFees from '../LawyerAdmin/LawyerFees';
 import LawyerProfile from '../LawyerAdmin/LawyerProfile';
 import LawyerSettings from '../LawyerAdmin/LawyerSettings';
+import WithdrawFundsModal from '../Wallet/WithdrawFundsModal';
 import Sidebar from '../layout/Sidebar';
 import { verificationService } from '../../services/verificationService';
 import {
@@ -89,6 +91,67 @@ const COLORS = {
 const CHartColors = [COLORS.primary, COLORS.secondary, '#3B82F6', '#F59E0B'];
 
 // --- Helper Components ---
+
+const normalizeWalletBalance = (balanceData = {}) => {
+  const earned = Number(balanceData.earned_balance ?? 0);
+  const promo = Number(balanceData.promotional_balance ?? 0);
+  const total = Number(balanceData.total_balance ?? balanceData.balance ?? (earned + promo) ?? 0);
+
+  return {
+    earnedBalance: Number.isFinite(earned) ? earned : 0,
+    promotionalBalance: Number.isFinite(promo) ? promo : 0,
+    totalBalance: Number.isFinite(total) ? total : 0,
+  };
+};
+
+const extractTransactions = (txData) => {
+  if (Array.isArray(txData)) return txData;
+  if (Array.isArray(txData?.transactions)) return txData.transactions;
+  if (Array.isArray(txData?.data?.transactions)) return txData.data.transactions;
+  if (Array.isArray(txData?.data)) return txData.data;
+  return [];
+};
+
+const computeEarningsMetrics = (balanceData, txData) => {
+  const wallet = normalizeWalletBalance(balanceData);
+  const transactions = extractTransactions(txData);
+
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  let monthlyCredits = 0;
+  let lifetimeCredits = 0;
+  let latestCreditAt = null;
+
+  transactions.forEach((tx) => {
+    const amount = Number(tx?.amount ?? tx?.credit_amount ?? 0);
+    const txType = String(tx?.transaction_type || tx?.type || tx?.entry_type || '').toLowerCase();
+    const isCredit = txType.includes('credit') || txType.includes('recharge') || amount > 0;
+    if (!isCredit || !Number.isFinite(amount)) return;
+
+    lifetimeCredits += amount;
+
+    const whenRaw = tx?.created_at || tx?.timestamp || tx?.createdAt;
+    const when = whenRaw ? new Date(whenRaw) : null;
+    if (when && !Number.isNaN(when.getTime())) {
+      if (when.getMonth() === currentMonth && when.getFullYear() === currentYear) {
+        monthlyCredits += amount;
+      }
+      if (!latestCreditAt || when.getTime() > latestCreditAt.getTime()) {
+        latestCreditAt = when;
+      }
+    }
+  });
+
+  return {
+    ...wallet,
+    monthlyCredits,
+    lifetimeCredits,
+    transactionsCount: transactions.length,
+    latestCreditAt: latestCreditAt ? latestCreditAt.toISOString() : null,
+  };
+};
 
 
 
@@ -314,75 +377,199 @@ const SidebarToggleIcon = ({ isOpen, mode }) => {
 
 const ScaleIcon = Scale;
 
+// Count-up animation hook
+const useCountUp = (target, duration = 1200, delay = 0) => {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    const num = parseFloat(String(target).replace(/[^0-9.]/g, ''));
+    if (!Number.isFinite(num) || num === 0) { setValue(target); return; }
+    let startTime = null;
+    let frame;
+    const startAnim = () => {
+      const step = (ts) => {
+        if (!startTime) startTime = ts;
+        const pct = Math.min((ts - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - pct, 3); // ease-out-cubic
+        const cur = Math.round(eased * num);
+        // Reconstruct the original format (e.g. ₹1,234 or 89%)
+        const prefix = String(target).replace(/[0-9,.]+.*/, '');
+        const suffix = String(target).replace(/^[^0-9]*[0-9,.]+/, '');
+        setValue(`${prefix}${cur.toLocaleString('en-IN')}${suffix}`);
+        if (pct < 1) frame = requestAnimationFrame(step);
+      };
+      frame = requestAnimationFrame(step);
+    };
+    const timer = setTimeout(startAnim, delay);
+    return () => { clearTimeout(timer); cancelAnimationFrame(frame); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target]);
+  return value || target;
+};
+
+// Profile Completion Widget
+const ProfileCompletionWidget = ({ userData, darkMode, onNavigate }) => {
+  const fields = [
+    { label: 'Avatar', done: !!userData?.profileImage },
+    { label: 'Bio', done: !!(userData?.lawyer_data?.bio || userData?.bio)?.trim() },
+    { label: 'Specialization', done: !!(userData?.lawyer_data?.specialization || userData?.lawyer_data?.expertise) },
+    { label: 'Verified', done: ['Bar Council Verified', 'Admin Verified'].includes(userData?.lawyer_data?.status) },
+    { label: 'Rate set', done: !!(userData?.lawyer_data?.consultation_fee?.length) },
+  ];
+  const pct = Math.round((fields.filter(f => f.done).length / fields.length) * 100);
+  const radius = 18;
+  const circ = 2 * Math.PI * radius;
+  const offset = circ - (pct / 100) * circ;
+  if (pct === 100) return null; // Hide when complete
+  return (
+    <button
+      onClick={() => onNavigate('profile')}
+      className={`group flex items-center gap-3 px-3 py-2 rounded-2xl border transition-all hover:scale-[1.02] active:scale-95 ${darkMode ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+        }`}
+      data-tip="Complete Profile"
+    >
+      <svg width="44" height="44" viewBox="0 0 44 44" className="completion-ring flex-shrink-0">
+        <circle cx="22" cy="22" r={radius} fill="none" stroke={darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'} strokeWidth="3" />
+        <circle
+          cx="22" cy="22" r={radius} fill="none"
+          stroke={pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444'}
+          strokeWidth="3" strokeLinecap="round"
+          strokeDasharray={circ} strokeDashoffset={offset}
+          transform="rotate(-90 22 22)"
+          style={{ transition: 'stroke-dashoffset 1s ease' }}
+        />
+        <text x="22" y="26" textAnchor="middle" fontSize="9" fontWeight="900"
+          fill={darkMode ? '#fff' : '#0f172a'}>{pct}%</text>
+      </svg>
+      <div className="text-left">
+        <p className={`text-[9px] font-black uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Profile</p>
+        <p className={`text-[11px] font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+          {fields.filter(f => !f.done).length} field{fields.filter(f => !f.done).length !== 1 ? 's' : ''} missing
+        </p>
+      </div>
+      <ChevronRight size={12} className="text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+    </button>
+  );
+};
+
 const LiveSessionCard = ({ appointment, darkMode, onJoin }) => (
-  <GlassCard darkMode={darkMode} className={`p-4 mb-6 border-l-4 ${darkMode ? 'border-l-white bg-white/5' : 'border-l-slate-900 bg-slate-50 shadow-sm'}`}>
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+  <GlassCard darkMode={darkMode} className={`p-4 mb-6 border-l-4 relative overflow-hidden
+    ${darkMode
+      ? 'border-l-emerald-400 bg-emerald-500/5 shadow-[0_0_30px_rgba(16,185,129,0.08)]'
+      : 'border-l-emerald-500 bg-emerald-50/80 shadow-md'
+    }`}>
+    {/* Pulsing backdrop */}
+    <div className="absolute -right-10 -top-10 w-32 h-32 rounded-full bg-emerald-400/10 blur-2xl animate-pulse" />
+    <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div className="flex items-center gap-4">
-        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center relative ${darkMode ? 'bg-white/10' : 'bg-white shadow-md'}`}>
-          <Video size={20} className={darkMode ? 'text-white' : 'text-slate-900'} />
-          <span className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 ${darkMode ? 'bg-white border-neutral-900' : 'bg-slate-900 border-white'} animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.5)]`} />
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center relative shadow-lg
+          ${darkMode ? 'bg-emerald-500/20 border border-emerald-500/30' : 'bg-white border border-emerald-200 shadow-emerald-100'}`}>
+          <Video size={20} className="text-emerald-500" />
+          <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white dark:border-neutral-900 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
         </div>
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h4 className={`text-[13px] font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>Active Channel: {appointment?.client_name || 'Legal Consultation'}</h4>
+            <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full
+              ${darkMode ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>Live</span>
+            <h4 className={`text-[13px] font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>{appointment?.client_name || 'Legal Consultation'}</h4>
           </div>
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-            <Shield size={10} className="text-blue-500" />
-            Secure Session • {appointment?.session_token?.slice(0, 8)}...
+            <Shield size={10} className="text-emerald-500" />
+            Encrypted Session • {appointment?.session_token?.slice(0, 8)}...
           </p>
         </div>
       </div>
 
       <button
         onClick={() => onJoin(appointment)}
-        className="relative px-8 h-12 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl text-[12px] font-black uppercase tracking-wider overflow-hidden group/btn transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-black/10"
+        className={`ripple-btn press-scale relative px-8 h-11 rounded-2xl text-[11px] font-black uppercase tracking-wider overflow-hidden transition-all hover:scale-[1.02] shadow-xl
+          ${darkMode ? 'bg-emerald-500 text-white shadow-emerald-500/25 hover:bg-emerald-400' : 'bg-emerald-600 text-white shadow-emerald-600/25 hover:bg-emerald-700'}`}
       >
-        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
+        <div className="absolute inset-0 bg-white/15 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
         <span className="relative z-10 flex items-center gap-2">
-          {appointment?.status === 'completed' ? 'Resume Consultation' : 'Join Consultation Room'} <ChevronRight size={16} />
+          <Video size={14} />
+          {appointment?.status === 'completed' ? 'Resume Consultation' : 'Join Live Chamber'}
         </span>
       </button>
     </div>
   </GlassCard>
 );
 
-const StatCardPremium = ({ title, value, change, trend, icon: Icon, gradient, darkMode }) => (
-  <GlassCard
-    darkMode={darkMode}
-    className={`p-3.5 group/stat ${darkMode ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}
-    id={`stat-${title.toLowerCase().split(' ')[0]}`}
-  >
-    <div className="flex items-start justify-between mb-2.5">
-      <div className={`p-2 rounded-xl ${darkMode ? 'bg-white/5' : 'bg-slate-50'} transition-all group-hover/stat:scale-110 group-hover/stat:bg-slate-900/10 dark:group-hover/stat:bg-white/10`}>
-        <Icon size={16} className={darkMode ? 'text-slate-300' : 'text-slate-900'} />
+const StatCardPremium = ({ title, value, change, trend, icon: Icon, gradient, darkMode, delay = 0 }) => {
+  const displayValue = useCountUp(value, 1200, delay);
+  return (
+    <GlassCard
+      darkMode={darkMode}
+      className={`p-3.5 group/stat cursor-default press-scale stagger-item ${darkMode ? 'hover:bg-white/5' : 'hover:bg-slate-50/80'}`}
+      id={`stat-${title.toLowerCase().split(' ')[0]}`}
+    >
+      <div className="flex items-start justify-between mb-2.5">
+        <div className={`p-2 rounded-xl transition-all duration-300 group-hover/stat:scale-110
+          ${darkMode ? 'bg-white/5 group-hover/stat:bg-white/10' : 'bg-slate-50 group-hover/stat:bg-slate-100 shadow-sm'}`}>
+          <Icon size={16} className={darkMode ? 'text-slate-300' : 'text-slate-700'} />
+        </div>
+        <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border
+          ${trend === 'up'
+            ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+            : 'bg-red-500/10 text-red-500 border-red-400/20'}`}>
+          {trend === 'up' ? <ArrowUp size={8} /> : <ArrowDown size={8} />}
+          {change}
+        </div>
       </div>
-      <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${trend === 'up' ? 'bg-amber-500/10 text-amber-600' : 'bg-red-500/10 text-red-500'}`}>
-        {trend === 'up' ? <ArrowUp size={8} /> : <ArrowDown size={8} />}
-        {change}%
+      <div>
+        <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">{title}</p>
+        <p className={`stat-reveal text-2xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}
+          style={{ animationDelay: `${delay}ms` }}>
+          {displayValue}
+        </p>
+        <div className="mt-3 space-y-1">
+          <div className={`h-[3px] w-full rounded-full overflow-hidden ${darkMode ? 'bg-white/5' : 'bg-slate-100'}`}>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: '70%' }}
+              transition={{ duration: 1.2, ease: 'easeOut', delay: delay / 1000 + 0.3 }}
+              className={`h-full rounded-full ${gradient
+                ? `bg-gradient-to-r ${gradient}`
+                : darkMode ? 'bg-gradient-to-r from-amber-400 to-amber-500' : 'bg-gradient-to-r from-amber-500 to-amber-400'
+                }`}
+            />
+          </div>
+        </div>
       </div>
-    </div>
-    <div>
-      <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">{title}</p>
-      <h3 className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>{value}</h3>
-      <div className="mt-2.5 h-[4px] w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: '70%' }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-          className={`h-full bg-gradient-to-r ${gradient || (darkMode ? 'from-white to-slate-400' : 'from-slate-900 to-slate-600')}`}
-        />
-      </div>
-    </div>
-  </GlassCard>
-);
+    </GlassCard>
+  );
+};
 
-const LawyerDashboard = ({ darkMode, userData, onNavigate, handleJoinSession, statsData, appointmentData, activeSession, onVerified }) => {
+const EarningsSparkline = ({ darkMode }) => {
+  const sparkData = [
+    { day: 'M', v: 200 }, { day: 'T', v: 450 }, { day: 'W', v: 300 },
+    { day: 'T', v: 700 }, { day: 'F', v: 500 }, { day: 'S', v: 850 }, { day: 'S', v: 620 },
+  ];
+  return (
+    <div className="flex items-end gap-1 h-10 mt-3">
+      {sparkData.map((d, i) => (
+        <motion.div
+          key={i}
+          initial={{ height: 0 }}
+          animate={{ height: `${(d.v / 850) * 100}%` }}
+          transition={{ duration: 0.6, delay: i * 0.06, ease: 'easeOut' }}
+          className={`flex-1 rounded-t-sm min-h-[2px] ${darkMode ? 'bg-white/20' : 'bg-slate-900/20'}`}
+          title={`${d.day}: ₹${d.v}`}
+        />
+      ))}
+    </div>
+  );
+};
+
+const LawyerDashboard = ({ darkMode, userData, onNavigate, handleJoinSession, statsData, appointmentData, activeSession, onVerified, earningsData, onOpenWithdraw, useHighContrastWithdraw = false }) => {
+  const monthlyRevenue = Number(earningsData?.monthlyCredits || statsData?.revenue || 0);
+  const earnedBalance = Number(earningsData?.earnedBalance || 0);
+  const canWithdraw = earnedBalance > 0;
   const stats = useMemo(() => [
-    { title: 'Case Volume', value: statsData?.total_cases || '42', change: '+12%', icon: FileText, gradient: 'from-blue-500 to-blue-600' },
-    { title: 'Appointments', value: statsData?.appointments || '8', change: '+5%', icon: Calendar, gradient: 'from-green-500 to-green-600' },
-    { title: 'Win Rate', value: '89%', change: '+5%', icon: Award, gradient: 'from-purple-500 to-purple-600' },
-    { title: 'Billed Rev.', value: `₹${statsData?.revenue || '45,230'}`, change: '+8%', icon: DollarSign, gradient: 'from-orange-500 to-orange-600' },
-  ], [statsData]);
+    { title: 'Case Volume', value: String(statsData?.total_cases || 42), change: '+12%', icon: FileText, gradient: 'from-blue-500 to-blue-600', delay: 0 },
+    { title: 'Appointments', value: String(statsData?.appointments || 8), change: '+5%', icon: Calendar, gradient: 'from-green-500 to-green-600', delay: 80 },
+    { title: 'Win Rate', value: '89%', change: '+5%', icon: Award, gradient: 'from-purple-500 to-purple-600', delay: 160 },
+    { title: 'Billed Rev.', value: `₹${monthlyRevenue.toLocaleString('en-IN')}`, change: '+8%', icon: DollarSign, gradient: 'from-orange-500 to-orange-600', delay: 240 },
+  ], [statsData, monthlyRevenue]);
 
   const performanceTrend = [
     { name: 'Mon', value: 400, cases: 24 },
@@ -398,27 +585,80 @@ const LawyerDashboard = ({ darkMode, userData, onNavigate, handleJoinSession, st
     <div className="space-y-0 max-w-[1600px] mx-auto overflow-hidden">
       <div className="p-4 sm:p-5 space-y-5">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
+          {/* Hero Welcome Card */}
           <GlassCard darkMode={darkMode} className="lg:col-span-2 p-6 flex flex-col justify-between relative overflow-hidden group">
-            <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 transition-colors ${darkMode ? 'bg-white/5 group-hover:bg-white/10' : 'bg-slate-900/5 group-hover:bg-slate-900/10'}`} />
+            <div className={`absolute top-0 right-0 w-72 h-72 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 transition-colors duration-700 ${darkMode ? 'bg-amber-500/5 group-hover:bg-amber-500/10' : 'bg-amber-400/10 group-hover:bg-amber-400/15'}`} />
+            <div className={`absolute bottom-0 left-0 w-48 h-48 rounded-full blur-[80px] translate-y-1/3 -translate-x-1/4 ${darkMode ? 'bg-blue-500/5' : 'bg-blue-400/8'}`} />
             <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-4">
                 <PremiumBadge text="Professional Dashboard" />
+                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-widest
+                  ${darkMode ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-emerald-500/30 bg-emerald-50 text-emerald-700'}`}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Live
+                </div>
               </div>
-              <h1 className={`text-3xl sm:text-4xl font-black tracking-tighter mb-3 leading-none ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                Advancing Justice,<br />
-                <span className={`underline decoration-4 underline-offset-8 mt-2 inline-block ${darkMode ? 'decoration-blue-500/50' : 'decoration-blue-600/30'}`}>
-                  Adv. {userData?.name || 'Bakil'}
-                </span>
+              <p className={`text-[10px] font-black uppercase tracking-[0.25em] mb-2 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Welcome back, Advocate</p>
+              <h1 className={`font-display text-3xl sm:text-[2.6rem] font-bold tracking-tight leading-[1.1] mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                Adv. {userData?.name || 'Bakil'}
               </h1>
-              <p className={`text-[13px] max-w-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'} leading-relaxed font-bold opacity-80 mt-4`}>
-                Current roster: <span className={`px-2 py-0.5 rounded-lg text-white font-black ml-1 ${darkMode ? 'bg-white/10' : 'bg-slate-900'}`}>{appointmentData?.length || 0} active sessions</span>.
-              </p>
+              <div className="flex flex-wrap items-center gap-3 mt-1">
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold ${darkMode ? 'bg-white/8 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
+                  <Calendar size={12} />
+                  <span>{appointmentData?.length || 0} Active Consultations</span>
+                </div>
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold ${darkMode ? 'bg-white/8 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
+                  <Briefcase size={12} />
+                  <span>{statsData?.total_cases || 0} Open Cases</span>
+                </div>
+                <ProfileCompletionWidget userData={userData} darkMode={darkMode} onNavigate={onNavigate} />
+              </div>
             </div>
           </GlassCard>
 
-          <GlassCard darkMode={darkMode} className="p-6 relative">
-            <h3 className="text-lg font-black">AI Insights</h3>
-            <p className="text-sm opacity-70">Strategy shift recommended for case #29-B.</p>
+          {/* Earnings Overview Card */}
+          <GlassCard darkMode={darkMode} className="p-5 relative overflow-hidden">
+            <div className={`absolute top-0 right-0 w-40 h-40 rounded-full blur-[60px] opacity-30 -translate-y-1/2 translate-x-1/2 ${canWithdraw ? 'bg-amber-400' : 'bg-slate-400'}`} />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <p className={`text-[9px] font-black uppercase tracking-[0.2em] ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Earnings Console</p>
+                  <h3 className={`text-[15px] font-black mt-0.5 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Wallet Overview</h3>
+                </div>
+                <button
+                  onClick={onOpenWithdraw}
+                  disabled={!canWithdraw}
+                  className={`h-8 px-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${!canWithdraw
+                    ? (darkMode ? 'border-white/10 bg-white/5 text-slate-600 cursor-not-allowed' : 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed')
+                    : darkMode
+                      ? useHighContrastWithdraw
+                        ? 'border-amber-400/30 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20'
+                        : 'border-white/20 bg-white/10 text-white hover:bg-white/20'
+                      : 'border-slate-900/20 bg-slate-900 text-white hover:bg-slate-800 shadow-md'
+                    }`}
+                >
+                  Withdraw
+                </button>
+              </div>
+
+              <EarningsSparkline darkMode={darkMode} />
+
+              <div className={`mt-4 pt-4 border-t space-y-2 ${darkMode ? 'border-white/5' : 'border-slate-100'}`}>
+                {[
+                  { label: 'Earned Balance', value: `₹${earnedBalance.toLocaleString('en-IN')}`, highlight: true },
+                  { label: 'This Month', value: `₹${Number(earningsData?.monthlyCredits || 0).toLocaleString('en-IN')}` },
+                  { label: 'Lifetime', value: `₹${Number(earningsData?.lifetimeCredits || 0).toLocaleString('en-IN')}` },
+                ].map((row, i) => (
+                  <div key={i} className="flex justify-between items-center">
+                    <span className={`text-[10px] font-bold uppercase tracking-wider ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{row.label}</span>
+                    <span className={`text-[12px] font-black ${row.highlight ? (darkMode ? 'text-amber-400' : 'text-amber-600') : (darkMode ? 'text-white' : 'text-slate-900')}`}>{row.value}</span>
+                  </div>
+                ))}
+                <div className={`pt-1 text-[9px] font-bold ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                  {earningsData?.transactionsCount || 0} transactions recorded
+                </div>
+              </div>
+            </div>
           </GlassCard>
         </div>
 
@@ -434,9 +674,10 @@ const LawyerDashboard = ({ darkMode, userData, onNavigate, handleJoinSession, st
           )}
         </AnimatePresence>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {stats.map((stat, i) => (
-            <StatCardPremium key={i} {...stat} darkMode={darkMode} />
+        {/* Stat Cards Row */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.map((s, i) => (
+            <StatCardPremium key={i} {...s} trend="up" darkMode={darkMode} delay={s.delay} />
           ))}
         </div>
 
@@ -491,12 +732,24 @@ const LawyerAdmin = () => {
   const [statsData, setStatsData] = useState(null);
   const [appointmentData, setAppointmentData] = useState([]);
   const [activeSession, setActiveSession] = useState(null);
+  const [earningsData, setEarningsData] = useState({
+    earnedBalance: 0,
+    promotionalBalance: 0,
+    totalBalance: 0,
+    monthlyCredits: 0,
+    lifetimeCredits: 0,
+    transactionsCount: 0,
+    latestCreditAt: null,
+  });
 
   const [notifications, setNotifications] = useState([]);
   const [notificationsCount, setNotificationsCount] = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationsDropdownOpen, setNotificationsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+  const [withdrawLoading, setWithdrawLoading] = useState(false);
+  const isSanjayLawyer = userData?.id === 51 || userData?.email === 'sanjay.lawyer@merabakil.com';
 
   // Intelligent Search & Navigation Logic
   useEffect(() => {
@@ -511,6 +764,7 @@ const LawyerAdmin = () => {
       'clients': ['client', 'customer', 'people', 'user', 'vault', 'crm'],
       'cases': ['case', 'legal', 'suit', 'litigation', 'active', 'portfolio'],
       'documents': ['doc', 'file', 'record', 'paper', 'archive', 'bucket'],
+      'fees': ['fee', 'fees', 'price', 'pricing', 'rate', 'service', 'charges'],
       'profile': ['profile', 'academic', 'my info', 'account'],
       'settings': ['settings', 'security', 'preferences', 'config']
     };
@@ -548,30 +802,39 @@ const LawyerAdmin = () => {
 
   const fetchData = React.useCallback(async (profileId, fallbackProfile = null) => {
     try {
-      const [dashResponse, activeConsultResponse] = await Promise.all([
-        lawyerAdminAPI.getDashboardData(profileId).catch((err) => {
-          console.error("Dashboard API error:", err);
-          return { data: {} };
+      const [profileResponse, activeConsultResponse, walletBalanceResponse, walletTxResponse] = await Promise.all([
+        authAPI.getUserProfile().catch((err) => {
+          console.error("Profile API error:", err);
+          return null;
         }),
         consultationAPI.getActiveSession().catch((err) => {
           console.error("Session API error:", err);
           return { data: null };
-        })
+        }),
+        walletServices.getBalance(profileId).catch((err) => {
+          console.error("Wallet balance API error:", err);
+          return {};
+        }),
+        walletServices.getTransactions(profileId, 1, 100).catch((err) => {
+          console.error("Wallet transactions API error:", err);
+          return { transactions: [] };
+        }),
       ]);
 
-      const dashData = dashResponse?.data || {};
+      const dashData = profileResponse || {};
+      const walletMetrics = computeEarningsMetrics(walletBalanceResponse, walletTxResponse);
 
       const stats = {
-        total_cases: dashData.active_cases || 0,
-        revenue: dashData.monthly_revenue || 0,
-        upcoming_count: dashData.upcoming_appointments?.length || 0,
-        trends: dashData.appointment_trends || [],
-        revenue_trends: dashData.revenue_trends || []
+        total_cases: dashData?.recent_activity?.cases_summary?.total || 0,
+        revenue: walletMetrics?.monthlyCredits || dashData?.recent_activity?.billing_summary?.monthly_revenue || 0,
+        upcoming_count: dashData?.recent_activity?.appointments?.length || 0,
+        trends: dashData?.recent_activity?.appointment_trends || [],
+        revenue_trends: dashData?.recent_activity?.revenue_trends || []
       };
 
       // Merge and sanitize appointments from profile JSON hierarchy
       // We use localStorage as a high-integrity source of truth to avoid stale closures in polling
-      let appointments = dashData.upcoming_appointments || [];
+      let appointments = dashData?.recent_activity?.appointments || [];
       const profileData = fallbackProfile || JSON.parse(localStorage.getItem('user_profile') || '{}');
       const profileAppointments = profileData?.recent_activity?.appointments;
 
@@ -620,6 +883,7 @@ const LawyerAdmin = () => {
       setStatsData(stats);
       setAppointmentData(Array.isArray(appointments) ? appointments : []);
       setActiveSession(effectivelyActive);
+      setEarningsData(walletMetrics);
     } catch (error) {
       console.error('Background sync failed:', error);
     }
@@ -753,12 +1017,31 @@ const LawyerAdmin = () => {
     }
   };
 
+  const handleWithdraw = async (amount) => {
+    if (!userData?.id) return;
+    try {
+      setWithdrawLoading(true);
+      await walletServices.withdraw({
+        user_id: userData.id,
+        amount: parseFloat(amount),
+        description: 'Lawyer wallet withdrawal'
+      });
+      await fetchData(userData.id);
+      setIsWithdrawOpen(false);
+    } catch (error) {
+      console.error('Failed to withdraw funds:', error);
+    } finally {
+      setWithdrawLoading(false);
+    }
+  };
+
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, color: COLORS.primary },
     { id: 'appointments', label: 'Consultations', icon: Calendar, color: COLORS.primary },
     { id: 'clients', label: 'Client Center', icon: Users, color: COLORS.primary },
     { id: 'cases', label: 'Active Cases', icon: Briefcase, color: COLORS.primary },
     { id: 'documents', label: 'Knowledge Base', icon: FolderOpen, color: COLORS.primary },
+    { id: 'fees', label: 'Service Fees', icon: DollarSign, color: COLORS.primary },
     { id: 'profile', label: 'Academic Profile', icon: User, color: COLORS.primary },
     { id: 'settings', label: 'System Settings', icon: Settings, color: COLORS.primary },
   ];
@@ -863,6 +1146,9 @@ const LawyerAdmin = () => {
                   appointmentData={appointmentData}
                   activeSession={activeSession}
                   onVerified={initData}
+                  earningsData={earningsData}
+                  onOpenWithdraw={() => setIsWithdrawOpen(true)}
+                  useHighContrastWithdraw={isSanjayLawyer}
                 />
               )}
               {activeTab === 'appointments' && (
@@ -875,6 +1161,7 @@ const LawyerAdmin = () => {
               {activeTab === 'clients' && <LawyerClients darkMode={isDark} />}
               {activeTab === 'cases' && <LawyerCases darkMode={isDark} />}
               {activeTab === 'documents' && <LawyerDocuments darkMode={isDark} />}
+              {activeTab === 'fees' && <LawyerFees darkMode={isDark} userData={userData} />}
               {activeTab === 'profile' && <LawyerProfile darkMode={isDark} />}
               {activeTab === 'settings' && <LawyerSettings darkMode={isDark} />}
             </motion.div>
@@ -887,6 +1174,16 @@ const LawyerAdmin = () => {
           <Plus size={24} />
         </button>
       </div>
+
+      <WithdrawFundsModal
+        isOpen={isWithdrawOpen}
+        onClose={() => setIsWithdrawOpen(false)}
+        onConfirm={handleWithdraw}
+        isDark={isDark}
+        loading={withdrawLoading}
+        maxWithdrawable={Number(earningsData?.earnedBalance || 0)}
+        useHighContrastWithdraw={isSanjayLawyer}
+      />
     </div>
   );
 };

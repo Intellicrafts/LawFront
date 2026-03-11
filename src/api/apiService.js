@@ -507,6 +507,9 @@ export const authAPI = {
   // Get user profile (specific endpoint)
   getUserProfile: () => apiClient.get('/user/profile'),
 
+  // Update user profile (supports nested lawyer_data)
+  updateUserProfile: (payload) => apiClient.put('/user/profile', payload),
+
   // Update lawyer verification status after Satyapan API confirms enrollment
   // Accepts numeric status or string status which is mapped internally
   updateLawyerStatus: async (userId, status, satyapanData = {}) => {
@@ -2365,6 +2368,46 @@ export const walletAPI = {
     } catch (error) {
       console.error('Error recharging wallet:', error);
       throw error;
+    }
+  },
+
+  /**
+   * Withdraw wallet funds
+   */
+  withdraw: async (withdrawData) => {
+    // Expected payload: { user_id, amount, description }
+    try {
+      if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
+        return { status: "success", transaction_id: "mock_wd_" + Date.now() };
+      }
+      const response = await apiClient.post(`${config.WALLET.BASE}/withdraw`, withdrawData);
+      return response.data;
+    } catch (error) {
+      console.error('Error withdrawing wallet funds:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get wallet transactions
+   */
+  getTransactions: async (userId, page = 1, limit = 20) => {
+    try {
+      if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
+        return {
+          transactions: [],
+          page,
+          limit,
+          total: 0
+        };
+      }
+      const response = await apiClient.get(config.WALLET.TRANSACTIONS(userId), {
+        params: { page, limit }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching wallet transactions:', error);
+      return { transactions: [] };
     }
   }
 };
