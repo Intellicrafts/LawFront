@@ -591,6 +591,25 @@ export const authAPI = {
       throw error;
     }
   },
+
+  // Login with OTP APIs
+  sendLoginOtp: async (data) => {
+    try {
+      const response = await apiClient.post('/login/send-otp', data);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  verifyLoginOtp: async (data) => {
+    try {
+      const response = await apiClient.post('/login/verify-otp', data);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 
 /**
@@ -1634,6 +1653,8 @@ export const apiServices = {
       throw error;
     }
   },
+
+
 
   // Contact APIs (from your routes)
   getContacts: async () => {

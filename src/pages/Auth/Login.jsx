@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Mail, Lock, Eye, EyeOff, Scale, Check, AlertCircle, CheckCircle, Smartphone, Globe, Shield } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Scale, Check, AlertCircle, CheckCircle, Smartphone, Globe, Shield, ArrowLeft, KeyRound } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { authAPI, tokenManager } from '../../api/apiService';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -270,6 +270,28 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     showPassword: false,
     errors: {}
   });
+
+  // --- OTP Flow State ---
+  const [loginMethod, setLoginMethod] = useState('password'); // 'password' | 'otp'
+  const [otpStep, setOtpStep] = useState('email'); // 'email' | 'verify'
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [canResend, setCanResend] = useState(false);
+  const [userName, setUserName] = useState('');
+
+  // --- Timer Effect for OTP Resend ---
+  useEffect(() => {
+    let timer;
+    if (timeLeft > 0 && otpStep === 'verify') {
+      timer = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0 && otpStep === 'verify') {
+      setCanResend(true);
+    }
+    return () => clearInterval(timer);
+  }, [timeLeft, otpStep]);
+
   const { showSuccess, showError, showInfo, showWarning } = useToast();
 
   useEffect(() => {
@@ -293,6 +315,150 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     const hasSpecialChar = /[^A-Za-z0-9]/.test(password);
 
     return hasMinLength && hasUppercase && hasNumber && hasSpecialChar;
+  };
+
+  // --- OTP Handlers ---
+  const handleSendLoginOtp = async (e) => {
+    e?.preventDefault();
+    if (!formData.email.trim()) {
+      showWarning('Email address is required.');
+      return;
+    }
+    if (!validateEmail(formData.email)) {
+      showWarning('Please enter a valid email address.');
+      return;
+    }
+
+    setFormState(prev => ({ ...prev, loading: true }));
+    try {
+      showInfo('Sending security code...');
+      const response = await authAPI.sendLoginOtp({ email: formData.email.trim().toLowerCase() });
+      if (response.success || response.message) {
+        setUserName(response.user_name || 'User');
+        showSuccess('Secure code sent successfully!');
+        setOtpStep('verify');
+        setTimeLeft(60);
+        setCanResend(false);
+      }
+    } catch (error) {
+      console.error('Send OTP Error:', error);
+      showError(parseApiError(error));
+    } finally {
+      setFormState(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const handleVerifyLoginOtp = async (e) => {
+    e?.preventDefault();
+    const otpCode = otp.join('');
+    if (otpCode.length !== 6) {
+      showWarning('Please enter the complete 6-digit code.');
+      return;
+    }
+    
+    setFormState(prev => ({ ...prev, loading: true }));
+    try {
+      showInfo('Verifying code securely...');
+      await authAPI.getCsrfCookie();
+      
+      const payload = {
+        email: formData.email.trim().toLowerCase(),
+        otp: otpCode
+      };
+
+      const response = await authAPI.verifyLoginOtp(payload);
+
+      if (response.access_token || response.token) {
+        const generatedToken = response.access_token || response.token;
+        const generatedUser = response.user;
+
+        tokenManager.setToken(generatedToken);
+        if (generatedUser) {
+          tokenManager.setUser(generatedUser);
+        }
+
+        window.dispatchEvent(new CustomEvent('auth-status-changed', {
+          detail: { authenticated: true, user: generatedUser }
+        }));
+
+        showSuccess(`Welcome back${generatedUser?.name ? `, ${generatedUser.name}` : ''}!`);
+
+        if (onLoginSuccess) {
+          onLoginSuccess(response);
+        }
+
+        setTimeout(() => {
+          let redirectUrl = '/';
+          const userType = generatedUser?.user_type;
+          const role = generatedUser?.role?.toLowerCase();
+          const urlRedirectParam = new URLSearchParams(window.location.search).get('redirect');
+
+          if (urlRedirectParam) {
+            redirectUrl = urlRedirectParam;
+          } else if (userType === 2 || userType === 'business' || userType === 'lawyer' || role === 'lawyer') {
+            redirectUrl = '/lawyer-admin';
+          } else if (userType === 1 || userType === 'personal' || userType === 'user' || role === 'user' || role === 'client') {
+            redirectUrl = '/';
+          } else if (userType === null || userType === undefined || userType === 0) {
+            redirectUrl = '/profile-setup/type-selection';
+          }
+
+          navigate(redirectUrl, { replace: true });
+        }, 1500);
+      } else {
+        showWarning('Authentication token was not received. Please try again.');
+      }
+    } catch (error) {
+      showError(parseApiError(error));
+    } finally {
+      setFormState(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const handleOtpChange = (element, index) => {
+    if (isNaN(element.value)) return false;
+    const newOtp = [...otp];
+    newOtp[index] = element.value;
+    setOtp(newOtp);
+
+    // Auto-focus next input
+    if (element.nextSibling && element.value !== '') {
+      element.nextSibling.focus();
+    }
+    
+    // Auto-submit if all filled
+    if (index === 5 && element.value !== '' && newOtp.join('').length === 6) {
+      // Small timeout to allow state to update
+      setTimeout(() => {
+         // handleVerifyLoginOtp using the latest otp state implicitly or passing it directly isn't perfectly reliable with closure, 
+         // so we rely on the submit button or user pressing enter, but for UX, triggering it is cool. Let's let the user hit Enter or button.
+      }, 50);
+    }
+  };
+
+  const handleKeyDown = (e, index) => {
+    if (e.key === 'Backspace' && !otp[index] && e.target.previousSibling) {
+      e.target.previousSibling.focus();
+    } else if (e.key === 'Enter' && otp.join('').length === 6) {
+      handleVerifyLoginOtp(e);
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').slice(0, 6).split('');
+    if (pastedData.some(isNaN)) return;
+    
+    const newOtp = [...otp];
+    pastedData.forEach((value, index) => {
+      if (index < 6) newOtp[index] = value;
+    });
+    setOtp(newOtp);
+    
+    // Focus last filled input
+    const inputs = document.querySelectorAll('.otp-input-field');
+    const focusIndex = Math.min(pastedData.length, 5);
+    if (inputs[focusIndex]) inputs[focusIndex].focus();
   };
 
   const validateForm = () => {
@@ -655,97 +821,241 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
               <div className="flex-grow border-t border-gray-200 dark:border-gray-800"></div>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-4" noValidate>
-              <div className="space-y-2">
-                <label htmlFor="email" className={`block text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Email Address
-                </label>
-                <InputField
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="name@example.com"
-                  autoComplete="email"
-                  error={!!formState.errors.email}
-                  disabled={formState.loading}
-                  icon={<Mail size={16} />}
-                />
-                {formState.errors.email && (
-                  <motion.p
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="text-[10px] font-bold text-red-500 uppercase tracking-tight"
+            {otpStep === 'email' ? (
+              <>
+                <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl mb-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                        setLoginMethod('password');
+                        setFormState(prev => ({ ...prev, errors: {} }));
+                    }}
+                    disabled={formState.loading}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${loginMethod === 'password' ? 'bg-white dark:bg-gray-700 shadow-sm text-brand-600 dark:text-brand-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                   >
-                    {formState.errors.email}
-                  </motion.p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label htmlFor="password" className={`block text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Password
-                  </label>
-                  <a
-                    href="/forgot-password"
-                    className="text-xs font-medium text-brand-500 hover:text-brand-600 transition-colors"
+                    <Lock size={16} /> Password
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                        setLoginMethod('otp');
+                        setFormState(prev => ({ ...prev, errors: {} }));
+                    }}
+                    disabled={formState.loading}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${loginMethod === 'otp' ? 'bg-white dark:bg-gray-700 shadow-sm text-brand-600 dark:text-brand-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                   >
-                    Forgot Password?
-                  </a>
+                    <Smartphone size={16} /> OTP Code
+                  </button>
                 </div>
-                <InputField
-                  type={formState.showPassword ? "text" : "password"}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  error={!!formState.errors.password}
-                  disabled={formState.loading}
-                  icon={<Lock size={16} />}
-                  rightIcon={formState.showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  onRightIconClick={() => setFormState(prev => ({ ...prev, showPassword: !prev.showPassword }))}
-                />
-                {formState.errors.password && (
-                  <motion.p
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="text-[10px] font-bold text-red-500 uppercase tracking-tight"
+
+                <form onSubmit={loginMethod === 'password' ? handleLogin : handleSendLoginOtp} className="space-y-4" noValidate>
+                  <div className="space-y-2">
+                    <label htmlFor="email" className={`block text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Email Address
+                    </label>
+                    <InputField
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      placeholder="name@example.com"
+                      autoComplete="email"
+                      error={!!formState.errors.email}
+                      disabled={formState.loading}
+                      icon={<Mail size={16} />}
+                    />
+                    {formState.errors.email && (
+                      <motion.p
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="text-[10px] font-bold text-red-500 uppercase tracking-tight"
+                      >
+                        {formState.errors.email}
+                      </motion.p>
+                    )}
+                  </div>
+
+                  <AnimatePresence mode="wait">
+                    {loginMethod === 'password' && (
+                      <motion.div
+                        key="password-field"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <div className="space-y-2 mb-4 mt-4">
+                          <div className="flex justify-between items-center">
+                            <label htmlFor="password" className={`block text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                              Password
+                            </label>
+                            <a
+                              href="/forgot-password"
+                              className="text-xs font-medium text-brand-500 hover:text-brand-600 transition-colors"
+                            >
+                              Forgot Password?
+                            </a>
+                          </div>
+                          <InputField
+                            type={formState.showPassword ? "text" : "password"}
+                            id="password"
+                            name="password"
+                            value={formData.password}
+                            onChange={handleInputChange}
+                            placeholder="••••••••"
+                            autoComplete="current-password"
+                            error={!!formState.errors.password}
+                            disabled={formState.loading}
+                            icon={<Lock size={16} />}
+                            rightIcon={formState.showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            onRightIconClick={() => setFormState(prev => ({ ...prev, showPassword: !prev.showPassword }))}
+                          />
+                          {formState.errors.password && (
+                            <motion.p
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              className="text-[10px] font-bold text-red-500 uppercase tracking-tight"
+                            >
+                              {formState.errors.password}
+                            </motion.p>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between pb-4">
+                          <CustomCheckbox
+                            id="rememberMe"
+                            name="rememberMe"
+                            checked={formState.rememberMe}
+                            onChange={handleCheckboxChange}
+                            label="Remember me"
+                            disabled={formState.loading}
+                            isDarkMode={isDarkMode}
+                          />
+                        </div>
+
+                        <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
+                          <Button
+                            type="submit"
+                            loading={formState.loading}
+                            disabled={formState.loading || !formData.email || !formData.password || !validatePassword(formData.password)}
+                            className="rounded-xl h-11"
+                          >
+                            {formState.loading ? 'Signing in...' : 'Sign In'}
+                          </Button>
+                        </motion.div>
+                      </motion.div>
+                    )}
+
+                    {loginMethod === 'otp' && (
+                      <motion.div
+                        key="otp-field"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="pt-2"
+                      >
+                         <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
+                            <Button
+                              type="submit"
+                              loading={formState.loading}
+                              disabled={formState.loading || !formData.email}
+                              className="rounded-xl h-11"
+                            >
+                              {formState.loading ? 'Sending Code...' : 'Send Secure OTP'}
+                            </Button>
+                         </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </form>
+              </>
+            ) : (
+              <div className="space-y-6">
+                <div className="mb-6 p-4 rounded-xl border border-blue-100 bg-blue-50/50 dark:border-blue-900/30 dark:bg-blue-900/10">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 text-blue-500 dark:text-blue-400">
+                       <Shield size={18} />
+                    </div>
+                    <div>
+                      <h4 className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-1`}>
+                        Enter Verification Code
+                      </h4>
+                      <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                         We sent a 6-digit code to <span className="font-semibold text-brand-500">{formData.email}</span>. Valid for 5 minutes.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between gap-2 sm:gap-4 mb-2">
+                  {otp.map((digit, index) => (
+                    <input
+                      key={index}
+                      type="text"
+                      maxLength="1"
+                      min="0"
+                      max="9"
+                      pattern="[0-9]*"
+                      inputMode="numeric"
+                      value={digit}
+                      onChange={(e) => handleOtpChange(e.target, index)}
+                      onKeyDown={(e) => handleKeyDown(e, index)}
+                      onPaste={handlePaste}
+                      disabled={formState.loading}
+                      className={`otp-input-field w-10 h-10 sm:w-12 sm:h-14 text-center text-lg sm:text-2xl font-bold rounded-xl outline-none transition-all duration-300 ${
+                        isDarkMode
+                          ? 'bg-[#121212] border-gray-700 text-white focus:border-brand-500 focus:bg-[#1e1e1e]'
+                          : 'bg-white border-gray-300 text-brand-900 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 shadow-sm'
+                      } border-2 ${digit ? 'border-brand-500 bg-brand-50/10' : ''}`}
+                    />
+                  ))}
+                </div>
+
+                <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
+                  <Button
+                     onClick={handleVerifyLoginOtp}
+                     loading={formState.loading}
+                     disabled={formState.loading || otp.join('').length !== 6}
+                     className="rounded-xl h-11 w-full mt-6"
+                   >
+                     {formState.loading ? 'Verifying...' : 'Verify Secure Code'}
+                   </Button>
+                </motion.div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
+                  <button
+                    onClick={() => {
+                        setOtpStep('email');
+                        setOtp(['', '', '', '', '', '']);
+                    }}
+                    disabled={formState.loading}
+                    className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                   >
-                    {formState.errors.password}
-                  </motion.p>
-                )}
+                    <ArrowLeft size={16} className="mr-1" />
+                    Back
+                  </button>
+                  
+                  <div className="text-sm">
+                    {canResend ? (
+                      <button
+                        type="button"
+                        onClick={handleSendLoginOtp}
+                        disabled={formState.loading}
+                        className="font-semibold text-brand-500 hover:text-brand-600 transition-colors focus:outline-none"
+                      >
+                        Resend Code
+                      </button>
+                    ) : (
+                      <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        Resend code in <strong className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>{timeLeft}s</strong>
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
-
-              <div className="flex items-center justify-between pb-2">
-                <CustomCheckbox
-                  id="rememberMe"
-                  name="rememberMe"
-                  checked={formState.rememberMe}
-                  onChange={handleCheckboxChange}
-                  label="Remember me"
-                  disabled={formState.loading}
-                  isDarkMode={isDarkMode}
-                />
-              </div>
-
-              <motion.div
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Button
-                  type="submit"
-                  loading={formState.loading}
-                  disabled={formState.loading || !formData.email || !formData.password || !validatePassword(formData.password)}
-                  className="rounded-xl h-11"
-                >
-                  {formState.loading ? 'Signing in...' : 'Sign In'}
-                </Button>
-              </motion.div>
-            </form>
+            )}
 
             <div className="pt-6 border-t border-gray-100 dark:border-gray-800 text-center">
               <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>

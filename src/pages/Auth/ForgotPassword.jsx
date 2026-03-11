@@ -1,167 +1,121 @@
-// ForgotPassword.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { FaShieldAlt, FaEnvelope, FaLock, FaCheck, FaEye, FaEyeSlash, FaExclamationCircle, FaClock, FaCheckCircle } from 'react-icons/fa';
-import { Scale } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Scale, CheckCircle, ArrowLeft, KeyRound } from 'lucide-react';
 import { apiServices } from '../../api/apiService';
 import { useToast } from '../../context/ToastContext';
+import { motion } from 'framer-motion';
 
-// Premium Legal strip component with black/silver/blue accents
-const LegalStrip = () => {
-  return (
-    <div className="relative w-full py-2.5 px-4 bg-gradient-to-r from-gray-900 via-black to-gray-900 text-gray-200 text-xs font-light flex items-center justify-between overflow-hidden border-b border-gray-800">
-      {/* Silver shine effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-700/10 to-transparent"></div>
-      {/* Blue accent line */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
-
-      <div className="relative z-10 flex items-center">
-        <FaShieldAlt className="mr-2 text-blue-400" />
-        <span className="text-gray-300">Secure Authentication | ISO 27001 Certified</span>
-      </div>
-      <div className="relative z-10">
-        <a href="/privacy" className="hover:text-blue-400 hover:underline transition-all duration-200">Privacy Policy</a>
-        <span className="mx-2 text-gray-600">|</span>
-        <a href="/terms" className="hover:text-blue-400 hover:underline transition-all duration-200">Terms of Service</a>
-      </div>
-    </div>
-  );
-};
-
-// Premium Logo component with black/silver gradient and Scale icon
+// Brand Logo component
 const Logo = () => {
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
   return (
     <div className="flex justify-center mb-4">
-      <div
-        className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-300 overflow-hidden border border-gray-700/50"
-        style={{ background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)" }}
-      >
-        {/* Silver shine effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-gray-400/10 to-transparent"></div>
-        <Scale size={24} className="relative z-10 text-white drop-shadow-lg" strokeWidth={2} />
+      <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${isDarkMode ? 'bg-brand-500/10' : 'bg-brand-50'}`}>
+        <Scale size={22} className="text-brand-500" strokeWidth={2.5} />
+        <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-brand-900'}`}>MeraBakil</span>
       </div>
     </div>
   );
 };
 
-// Enhanced Toast notification component with different types
-const Toast = ({ message, type = 'success', onClose }) => {
-  const [isVisible, setIsVisible] = useState(true);
-
-  const { mode } = useSelector((state) => state.theme);
-  const isDarkMode = mode === 'dark';
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(false);
-      setTimeout(onClose, 300);
-    }, type === 'error' ? 7000 : 5000);
-    return () => clearTimeout(timer);
-  }, [onClose, type]);
-
-  const getToastStyles = () => {
-    if (isDarkMode) {
-      switch (type) {
-        case 'success':
-          return 'bg-gradient-to-r from-green-900 to-gray-900 text-green-100 border-l-4 border-green-500';
-        case 'error':
-          return 'bg-gradient-to-r from-red-900 to-gray-900 text-red-100 border-l-4 border-red-500';
-        default:
-          return 'bg-gradient-to-r from-gray-800 to-gray-900 text-gray-100 border-l-4 border-gray-500';
-      }
-    } else {
-      switch (type) {
-        case 'success':
-          return 'bg-gradient-to-r from-green-50 to-white text-green-900 border-l-4 border-green-500';
-        case 'error':
-          return 'bg-gradient-to-r from-red-50 to-white text-red-900 border-l-4 border-red-500';
-        default:
-          return 'bg-gradient-to-r from-gray-50 to-white text-gray-900 border-l-4 border-gray-500';
-      }
-    }
-  };
-
-  const getIcon = () => {
-    switch (type) {
-      case 'success':
-        return <FaCheckCircle className="w-6 h-6 text-green-500" />;
-      case 'error':
-        return <FaExclamationCircle className="w-6 h-6 text-red-500" />;
-      default:
-        return <FaCheckCircle className="w-6 h-6 text-gray-500" />;
-    }
-  };
-
+// Brand Button component
+const Button = ({ children, loading, onClick, type = "button", className = "", disabled = false }) => {
   return (
-    <div
-      className={`fixed top-16 right-6 max-w-sm w-full z-50 transform transition-all duration-500 ease-in-out 
-        ${isVisible ? 'opacity-100 scale-100 translate-x-0' : 'opacity-0 scale-95 translate-x-5'}
-        ${getToastStyles()}
-        rounded-lg shadow-xl flex items-start p-4 space-x-4`}
-      role="alert"
-      aria-live="assertive"
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={loading || disabled}
+      className={`group w-full py-2.5 px-4 rounded-xl flex items-center justify-center text-white text-sm font-semibold shadow-md transition-all duration-200 hover:shadow-lg relative overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed bg-brand-500 hover:bg-brand-600 ${className}`}
     >
-      <div className="flex-shrink-0 mt-0.5">
-        {getIcon()}
-      </div>
-
-      <div className="flex-1 text-sm font-medium leading-relaxed">
-        {message}
-      </div>
-
-      <button
-        onClick={() => {
-          setIsVisible(false);
-          setTimeout(onClose, 300);
-        }}
-        className={`${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-700'} transition duration-200 rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-offset-2 ${isDarkMode ? 'focus:ring-gray-700' : 'focus:ring-gray-300'}`}
-        aria-label="Close notification"
-      >
-        <svg className="w-4 h-4" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-    </div>
+      <span className="relative z-10 flex items-center tracking-wide">
+        {loading ? (
+          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        ) : null}
+        {children}
+      </span>
+    </button>
   );
 };
 
-// Password requirements component
-const PasswordRequirements = ({ password }) => {
+// Enhanced Input Field component
+const InputField = ({
+  type,
+  id,
+  name,
+  value,
+  onChange,
+  placeholder,
+  icon,
+  rightIcon,
+  onRightIconClick,
+  error = false,
+  disabled = false,
+  autoComplete
+}) => {
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
 
-  const requirements = [
-    { text: 'At least 8 characters', met: password.length >= 8 },
-    { text: 'At least 1 uppercase letter', met: /[A-Z]/.test(password) },
-    { text: 'At least 1 number', met: /[0-9]/.test(password) },
-    { text: 'At least 1 special character', met: /[^A-Za-z0-9]/.test(password) }
-  ];
-
   return (
-    <div className="mt-2 space-y-1">
-      {requirements.map((req, index) => (
-        <div key={index} className="flex items-center text-xs">
-          <div className={`mr-2 ${req.met ? 'text-green-500' : isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-            {req.met ? <FaCheck size={12} /> : '○'}
-          </div>
-          <span className={`${req.met
-            ? 'text-green-500'
+    <div className="relative group">
+      <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors duration-200 ${error ? 'text-red-400' : disabled ? 'text-gray-300' : isDarkMode ? 'text-gray-500 group-focus-within:text-gray-300' : 'text-gray-400 group-focus-within:text-gray-600'}`}>
+        {icon}
+      </div>
+      <input
+        id={id}
+        name={name}
+        type={type}
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        autoComplete={autoComplete}
+        className={`block w-full pl-9 pr-10 py-2.5 text-sm rounded-lg shadow-sm transition-all duration-300 ${isDarkMode
+          ? `${error
+            ? 'border-2 border-red-500 focus:border-red-400 focus:ring-2 focus:ring-red-900 bg-gray-700 text-white placeholder-gray-400'
+            : disabled
+              ? 'border border-gray-700 bg-gray-800 text-gray-400 cursor-not-allowed placeholder-gray-600'
+              : 'border border-gray-600 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500 placeholder-gray-400'
+          }`
+          : `${error
+            ? 'border-2 border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 placeholder-gray-400'
+            : disabled
+              ? 'border border-gray-200 bg-gray-50 cursor-not-allowed placeholder-gray-400'
+              : 'border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400 placeholder-gray-400'
+          }`
+          }`}
+        placeholder={placeholder}
+        required
+      />
+      {rightIcon && (
+        <button
+          type="button"
+          className={`absolute inset-y-0 right-0 pr-3 flex items-center transition-colors duration-200 ${disabled
+            ? 'text-gray-300 cursor-not-allowed'
             : isDarkMode
-              ? 'text-gray-400'
-              : 'text-gray-600'
-            }`}>{req.text}</span>
-        </div>
-      ))}
+              ? 'text-gray-400 hover:text-gray-300'
+              : 'text-gray-400 hover:text-gray-600'
+            }`}
+          onClick={onRightIconClick}
+          disabled={disabled}
+        >
+          {rightIcon}
+        </button>
+      )}
     </div>
   );
 };
 
-// Enhanced ForgotPassword Component
 export const ForgotPassword = ({ onBack }) => {
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
+  const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
+  const [userName, setUserName] = useState('');
   const [step, setStep] = useState('email');
   const [verificationCode, setVerificationCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -169,11 +123,9 @@ export const ForgotPassword = ({ onBack }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [timer, setTimer] = useState(0);
 
-  // Global toast
-  const { showSuccess, showError: showToastError } = useToast();
+  const { showSuccess, showError, showInfo } = useToast();
 
   useEffect(() => {
     let interval;
@@ -186,25 +138,27 @@ export const ForgotPassword = ({ onBack }) => {
   }, [step, timer]);
 
   const handleEmailSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setLoading(true);
-    setError('');
 
     try {
       const response = await apiServices.sendPasswordResetOtp({ email });
 
-      if (response.success) {
-        // Excluded showing toast for sending code to keep it minimal
+      // response might vary depending on Axios implementation. Assuming response.data or response directly.
+      const resData = response.data || response;
+
+      if (resData.success || resData.message === 'OTP sent to your email') {
+        if (resData.user_name) {
+          setUserName(resData.user_name);
+        }
         setStep('verify');
-        setTimer(60); // 1 minute timer for professional OTP expiry
+        setTimer(60); // 1 minute professional expiry limit
       } else {
-        setError(response.message || 'Failed to send verification code. Please try again.');
-        showToastError(response.message || 'Failed to send verification code');
+        showError(resData.message || 'Failed to send verification code.');
       }
     } catch (error) {
       console.error('Forgot password error:', error);
-      setError('An error occurred. Please try again later.');
-      showToastError(error.response?.data?.message || 'An error occurred. Please try again later.');
+      showError(error.response?.data?.message || 'Account not found or server error.');
     } finally {
       setLoading(false);
     }
@@ -213,25 +167,20 @@ export const ForgotPassword = ({ onBack }) => {
   const handleVerifyCode = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
 
     try {
-      const response = await apiServices.verifyOtp({
-        email,
-        otp: verificationCode
-      });
+      const response = await apiServices.verifyOtp({ email, otp: verificationCode });
+      const resData = response.data || response;
 
-      if (response.success) {
-        showSuccess('Code verified successfully');
+      if (resData.success || resData.message === 'OTP verified successfully!') {
+        showSuccess('Code verified successfully.');
         setStep('reset');
       } else {
-        setError(response.message || 'Invalid verification code. Please try again.');
-        showToastError(response.message || 'Invalid verification code');
+        showError(resData.message || 'Invalid verification code.');
       }
     } catch (error) {
       console.error('Verify code error:', error);
-      setError('An error occurred. Please try again later.');
-      showToastError(error.response?.data?.message || 'An error occurred. Please try again later.');
+      showError(error.response?.data?.message || 'Invalid verification code or OTP expired.');
     } finally {
       setLoading(false);
     }
@@ -241,13 +190,11 @@ export const ForgotPassword = ({ onBack }) => {
     e.preventDefault();
 
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
-      showToastError('Passwords do not match');
+      showError('Passwords do not match.');
       return;
     }
 
     setLoading(true);
-    setError('');
 
     try {
       const response = await apiServices.resetPassword({
@@ -256,21 +203,36 @@ export const ForgotPassword = ({ onBack }) => {
         password: newPassword,
         password_confirmation: confirmPassword
       });
+      const resData = response.data || response;
 
-      if (response.success) {
-        showSuccess('Password reset successfully! You can now log in.');
+      if (resData.success || resData.message?.includes('successfully')) {
+        showSuccess('Password reset successfully! Redirecting to login...');
         setStep('success');
+        setTimeout(() => {
+          if (onBack) {
+             onBack();
+          } else {
+             navigate('/login');
+          }
+        }, 2000);
       } else {
-        setError(response.message || 'Failed to reset password. Please try again.');
-        showToastError(response.message || 'Failed to reset password');
+        showError(resData.message || 'Failed to reset password.');
       }
     } catch (error) {
       console.error('Reset password error:', error);
-      setError('An error occurred. Please try again later.');
-      showToastError(error.response?.data?.message || 'An error occurred. Please try again later.');
+      showError(error.response?.data?.message || 'An error occurred during reset.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBackToLogin = (e) => {
+      e.preventDefault();
+      if (onBack) {
+          onBack();
+      } else {
+          navigate('/login');
+      }
   };
 
   const passwordsMatch = newPassword === confirmPassword || confirmPassword === '';
@@ -281,132 +243,121 @@ export const ForgotPassword = ({ onBack }) => {
     /[^A-Za-z0-9]/.test(newPassword);
 
   return (
-    <div className={`min-h-screen flex flex-col pt-16 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-white'} relative overflow-hidden`}>
-      {/* Toasts handled by global ToastProvider */}
-
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        {isDarkMode ? (
-          <>
-            <div className="absolute -top-40 -left-40 w-80 h-80 bg-blue-900/20 rounded-full opacity-20"></div>
-            <div className="absolute top-40 -right-20 w-60 h-60 bg-indigo-900/20 rounded-full opacity-10"></div>
-            <div className="absolute bottom-20 left-20 w-40 h-40 bg-blue-900/20 rounded-full opacity-20"></div>
-          </>
-        ) : (
-          <>
-            <div className="absolute -top-40 -left-40 w-80 h-80 bg-blue-50 rounded-full opacity-30"></div>
-            <div className="absolute top-40 -right-20 w-60 h-60 bg-blue-100 rounded-full opacity-20"></div>
-            <div className="absolute bottom-20 left-20 w-40 h-40 bg-blue-50 rounded-full opacity-30"></div>
-          </>
-        )}
+    <div className={`relative flex flex-col pt-20 pb-10 min-h-screen ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-gray-50/30'}`}>
+      
+      {/* Premium Animated Background Layer */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.05, 0.1, 0.05]
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+          className={`absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full blur-[120px] ${isDarkMode ? 'bg-blue-600' : 'bg-blue-300'}`}
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.03, 0.08, 0.03]
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear", delay: 1 }}
+          className={`absolute top-1/2 -right-40 w-[500px] h-[500px] rounded-full blur-[100px] ${isDarkMode ? 'bg-blue-500' : 'bg-blue-200'}`}
+        />
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-4 z-10 overflow-y-auto">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="flex-1 flex items-start justify-center px-4 sm:px-6 lg:px-8 z-10"
+      >
         <div
-          className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-xl p-6 w-full max-w-md`}
-          style={{ boxShadow: isDarkMode ? '0 10px 25px -5px rgba(0, 0, 0, 0.3)' : '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
+          className={`w-full max-w-md overflow-hidden transition-all duration-300
+            ${isDarkMode
+              ? 'bg-[#121212] border border-gray-800'
+              : 'bg-white border border-gray-100 shadow-2xl shadow-blue-500/5'} 
+            rounded-2xl p-6 sm:p-8`}
         >
-          <div className="text-center mb-5">
-            <Logo />
-            <h2 className={`text-xl font-bold mb-1.5 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          <div className="text-center mb-8">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+            >
+              <Logo />
+            </motion.div>
+            <h1 className={`text-2xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
               {step === 'email' && 'Forgot Password'}
-              {step === 'verify' && 'Verify Your Identity'}
+              {step === 'verify' && (userName ? `Hi, ${userName}` : 'Verify Email')}
               {step === 'reset' && 'Create New Password'}
               {step === 'success' && 'Password Reset'}
-            </h2>
-            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              {step === 'email' && "We'll send you a verification code to reset your password"}
-              {step === 'verify' && "Enter the verification code sent to your email"}
-              {step === 'reset' && "Enter a new secure password"}
-              {step === 'success' && "Your password has been reset successfully"}
+            </h1>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              {step === 'email' && "We'll send you a secure OTP to reset your password"}
+              {step === 'verify' && "Enter the 6-digit code sent to your email. Valid for 5 minutes."}
+              {step === 'reset' && "Protect your account with a secure password"}
+              {step === 'success' && "You can now log in securely with your new password"}
             </p>
           </div>
 
-          {step === 'email' && (
-            <form onSubmit={handleEmailSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label htmlFor="email" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Email Address <span className="text-red-500">*</span>
-                </label>
-                <div className="relative group">
-                  <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${isDarkMode
-                    ? 'text-gray-500 group-focus-within:text-gray-300'
-                    : 'text-gray-400 group-focus-within:text-gray-600'
-                    } transition-colors duration-200`}>
-                    <FaEnvelope className="h-4 w-4" />
-                  </div>
-                  <input
+          <div className="space-y-6">
+            {step === 'email' && (
+              <form onSubmit={handleEmailSubmit} className="space-y-4" noValidate>
+                <div className="space-y-2">
+                  <label htmlFor="email" className={`block text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Registered Email Address
+                  </label>
+                  <InputField
                     type="email"
                     id="email"
                     name="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={`block w-full pl-9 pr-10 py-2.5 text-sm rounded-lg shadow-sm transition-all duration-300 ${isDarkMode
-                      ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
-                      : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
-                      }`}
-                    placeholder="you@example.com"
-                    required
+                    placeholder="name@example.com"
+                    autoComplete="email"
+                    disabled={loading}
+                    icon={<Mail size={16} />}
                   />
                 </div>
-                {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-              </div>
 
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={loading || !email}
-                  className={`group w-full py-2.5 px-4 rounded-lg flex items-center justify-center text-white text-sm font-semibold shadow-md transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg relative overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none border ${loading || !email ? '' : ''}`}
-                  style={{
-                    background: (loading || !email)
-                      ? "linear-gradient(135deg, #4a5568 0%, #2d3748 100%)"
-                      : "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 25%, #1a1a1a 50%, #2563eb 75%, #1e40af 100%)",
-                    borderColor: !email ? "#4a5568" : "rgba(59, 130, 246, 0.3)"
-                  }}
-                >
-                  {loading ? (
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  ) : null}
-                  <span className="relative z-10">{loading ? 'Sending...' : 'Send Verification Code'}</span>
-                </button>
-              </div>
+                <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
+                  <Button
+                    type="submit"
+                    loading={loading}
+                    disabled={loading || !email.includes('@')}
+                    className="rounded-xl h-11 mt-2"
+                  >
+                    {loading ? 'Sending OTP...' : 'Send Verification Code'}
+                  </Button>
+                </motion.div>
+                
+                <div className="pt-6 border-t border-gray-100 dark:border-gray-800 text-center">
+                   <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                     Remember your password?{' '}
+                     <button
+                       type="button"
+                       onClick={handleBackToLogin}
+                       disabled={loading}
+                       className="font-bold text-brand-500 hover:text-brand-600 transition-colors focus:outline-none"
+                     >
+                       Sign In
+                     </button>
+                   </p>
+                </div>
+              </form>
+            )}
 
-              <p className={`text-center text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-4`}>
-                Remembered your password?{' '}
-                <button
-                  type="button"
-                  onClick={onBack}
-                  disabled={loading}
-                  className={`font-medium ${isDarkMode ? 'text-white hover:text-gray-300' : 'text-gray-900 hover:text-gray-700'} transition-all duration-200 underline-offset-2 hover:underline focus:outline-none focus:underline disabled:opacity-60 disabled:cursor-not-allowed`}
-                >
-                  Sign in
-                </button>
-              </p>
-            </form>
-          )}
-
-          {step === 'verify' && (
-            <form onSubmit={handleVerifyCode} className="space-y-4">
-              <div className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'} border rounded-lg p-3 mb-4`}>
-                <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  We sent a verification code to <strong>{email}</strong>
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <label htmlFor="code" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Verification Code</label>
+            {step === 'verify' && (
+               <form onSubmit={handleVerifyCode} className="space-y-6">
                 <div className="flex gap-2 justify-center">
                   {[...Array(6)].map((_, i) => (
                     <input
                       key={i}
                       type="text"
                       maxLength="1"
-                      className={`w-10 h-10 text-center text-lg font-bold rounded-md shadow-sm focus:outline-none focus:ring-2 ${isDarkMode
-                        ? 'border border-gray-600 bg-gray-700 text-white focus:ring-gray-500/30 focus:border-gray-500'
-                        : 'border border-gray-300 bg-white text-gray-900 focus:ring-gray-400/30 focus:border-gray-400'
+                      className={`w-12 h-12 text-center text-xl font-bold rounded-xl shadow-sm focus:outline-none transition-all duration-200 ${isDarkMode
+                        ? 'border border-gray-700 bg-gray-800 text-white focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500'
+                        : 'border border-gray-300 bg-gray-50 text-gray-900 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500'
                         }`}
                       value={verificationCode[i] || ''}
                       onChange={(e) => {
@@ -431,186 +382,123 @@ export const ForgotPassword = ({ onBack }) => {
                     />
                   ))}
                 </div>
-                {error && <p className="text-red-500 text-xs mt-1 text-center">{error}</p>}
-              </div>
 
-              <div className="flex items-center justify-between mt-3 h-6">
-                <div className={`flex items-center text-xs font-medium ${timer > 10 ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') : 'text-red-500 animate-pulse'}`}>
-                  <FaClock className="mr-1.5" size={12} />
-                  <span>{timer > 0 ? `Code expires in 00:${timer.toString().padStart(2, '0')}` : 'Code expired'}</span>
+                <div className="flex items-center justify-between text-sm px-1">
+                   {timer > 0 ? (
+                      <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Resend Code in <span className="font-bold text-brand-500">{timer}s</span></span>
+                   ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => handleEmailSubmit(e)}
+                        className="font-bold text-brand-500 hover:text-brand-600 transition-colors"
+                      >
+                         Resend Code Now
+                      </button>
+                   )}
                 </div>
-                {timer === 0 ? (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleEmailSubmit(e);
-                    }}
-                    disabled={loading}
-                    className={`text-xs font-semibold ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'} transition-all duration-200 underline-offset-2 hover:underline focus:outline-none focus:underline disabled:opacity-60 disabled:cursor-not-allowed`}
+
+                <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
+                  <Button
+                    type="submit"
+                    loading={loading}
+                    disabled={loading || verificationCode.length !== 6}
+                    className="rounded-xl h-11"
                   >
-                    Resend code
-                  </button>
-                ) : (
-                  <span className={`text-xs ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
-                    Resend in {timer}s
-                  </span>
-                )}
-              </div>
+                    {loading ? 'Verifying...' : 'Verify Secure Code'}
+                  </Button>
+                </motion.div>
+              </form>
+            )}
 
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={loading || verificationCode.length !== 6}
-                  className={`group w-full py-2.5 px-4 rounded-lg flex items-center justify-center text-white text-sm font-semibold shadow-md transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg relative overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none border`}
-                  style={{
-                    background: (loading || verificationCode.length !== 6)
-                      ? "linear-gradient(135deg, #4a5568 0%, #2d3748 100%)"
-                      : "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 25%, #1a1a1a 50%, #2563eb 75%, #1e40af 100%)",
-                    borderColor: verificationCode.length !== 6 ? "#4a5568" : "rgba(59, 130, 246, 0.3)"
-                  }}
-                >
-                  {loading ? (
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  ) : null}
-                  <span className="relative z-10">{loading ? 'Verifying...' : 'Verify Code'}</span>
-                </button>
-              </div>
-            </form>
-          )}
-
-          {step === 'reset' && (
-            <form onSubmit={handleResetPassword} className="space-y-4">
-              <div className="space-y-1.5">
-                <label htmlFor="new-password" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  New Password <span className="text-red-500">*</span>
-                </label>
-                <div className="relative group">
-                  <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${isDarkMode
-                    ? 'text-gray-500 group-focus-within:text-gray-300'
-                    : 'text-gray-400 group-focus-within:text-gray-600'
-                    } transition-colors duration-200`}>
-                    <FaLock className="h-4 w-4" />
-                  </div>
-                  <input
+            {step === 'reset' && (
+              <form onSubmit={handleResetPassword} className="space-y-4" noValidate>
+                <div className="space-y-2">
+                  <label htmlFor="newPassword" className={`block text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    New Password
+                  </label>
+                  <InputField
                     type={showPassword ? "text" : "password"}
-                    id="new-password"
-                    name="new-password"
+                    id="newPassword"
+                    name="newPassword"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className={`block w-full pl-9 pr-10 py-2.5 text-sm rounded-lg shadow-sm transition-all duration-300 ${isDarkMode
-                      ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
-                      : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
-                      }`}
                     placeholder="••••••••"
-                    required
+                    disabled={loading}
+                    icon={<Lock size={16} />}
+                    rightIcon={showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    onRightIconClick={() => setShowPassword(!showPassword)}
                   />
-                  <button
-                    type="button"
-                    className={`absolute inset-y-0 right-0 pr-3 flex items-center ${isDarkMode
-                      ? 'text-gray-400 hover:text-gray-300'
-                      : 'text-gray-400 hover:text-gray-600'
-                      } transition-colors duration-200`}
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
-                  </button>
+                  
+                  {/* Password requirements hint */}
+                  {newPassword && !isPasswordValid && (
+                    <motion.p
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="text-[10px] font-medium text-brand-500 mt-1"
+                    >
+                      Must be 8+ chars and include a number, uppercase, and special character.
+                    </motion.p>
+                  )}
                 </div>
-                <PasswordRequirements password={newPassword} />
-              </div>
 
-              <div className="space-y-1.5">
-                <label htmlFor="confirm-password" className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Confirm Password <span className="text-red-500">*</span>
-                </label>
-                <div className="relative group">
-                  <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${isDarkMode
-                    ? 'text-gray-500 group-focus-within:text-gray-300'
-                    : 'text-gray-400 group-focus-within:text-gray-600'
-                    } transition-colors duration-200`}>
-                    <FaLock className="h-4 w-4" />
-                  </div>
-                  <input
+                <div className="space-y-2">
+                  <label htmlFor="confirmPassword" className={`block text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Confirm Password
+                  </label>
+                  <InputField
                     type={showConfirmPassword ? "text" : "password"}
-                    id="confirm-password"
-                    name="confirm-password"
+                    id="confirmPassword"
+                    name="confirmPassword"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`block w-full pl-9 pr-10 py-2.5 text-sm rounded-lg shadow-sm transition-all duration-300 ${isDarkMode
-                      ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
-                      : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
-                      }`}
                     placeholder="••••••••"
-                    required
+                    disabled={loading}
+                    icon={<KeyRound size={16} />}
+                    rightIcon={showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    onRightIconClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   />
-                  <button
-                    type="button"
-                    className={`absolute inset-y-0 right-0 pr-3 flex items-center ${isDarkMode
-                      ? 'text-gray-400 hover:text-gray-300'
-                      : 'text-gray-400 hover:text-gray-600'
-                      } transition-colors duration-200`}
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
-                  </button>
+                  {confirmPassword && !passwordsMatch && (
+                     <motion.p
+                     initial={{ opacity: 0, x: -10 }}
+                     animate={{ opacity: 1, x: 0 }}
+                     className="text-[10px] font-bold text-red-500 uppercase tracking-tight"
+                   >
+                     Passwords do not match
+                   </motion.p>
+                  )}
                 </div>
-                {confirmPassword && !passwordsMatch && (
-                  <p className="text-red-500 text-xs mt-1">Passwords do not match</p>
-                )}
-                {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-              </div>
 
-              <div className="pt-1">
-                <button
-                  type="submit"
-                  disabled={loading || !newPassword || !isPasswordValid || !passwordsMatch}
-                  className={`group w-full py-2.5 px-4 rounded-lg flex items-center justify-center text-white text-sm font-semibold shadow-md transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg relative overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none border`}
-                  style={{
-                    background: (loading || !newPassword || !isPasswordValid || !passwordsMatch)
-                      ? "linear-gradient(135deg, #4a5568 0%, #2d3748 100%)"
-                      : "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 25%, #1a1a1a 50%, #2563eb 75%, #1e40af 100%)",
-                    borderColor: !newPassword || !isPasswordValid || !passwordsMatch ? "#4a5568" : "rgba(59, 130, 246, 0.3)"
-                  }}
-                >
-                  {loading ? (
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  ) : null}
-                  <span className="relative z-10">{loading ? 'Resetting...' : 'Reset Password'}</span>
-                </button>
-              </div>
-            </form>
-          )}
+                <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} className="pt-2">
+                  <Button
+                    type="submit"
+                    loading={loading}
+                    disabled={loading || !isPasswordValid || !passwordsMatch || !newPassword}
+                    className="rounded-xl h-11"
+                  >
+                    {loading ? 'Resetting...' : 'Create New Password'}
+                  </Button>
+                </motion.div>
+              </form>
+            )}
 
-          {step === 'success' && (
-            <div className="text-center py-6">
-              <div className={`w-16 h-16 rounded-full ${isDarkMode ? 'bg-green-900/30' : 'bg-green-100'} flex items-center justify-center mb-4 mx-auto`}>
-                <FaCheck className={`${isDarkMode ? 'text-green-400' : 'text-green-500'} text-2xl`} />
+            {step === 'success' && (
+              <div className="text-center py-4">
+                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="text-green-500" size={32} />
+                 </div>
+                 <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} className="mt-8">
+                   <Button
+                     onClick={handleBackToLogin}
+                     className="rounded-xl h-11"
+                   >
+                     Back to Sign In
+                   </Button>
+                 </motion.div>
               </div>
-              <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} mb-1`}>Password Reset Successful!</h3>
-              <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-xs mb-6`}>
-                You can now log in with your new password
-              </p>
-
-              <button
-                onClick={onBack}
-                className={`group w-full py-2.5 px-4 rounded-lg flex items-center justify-center text-white text-sm font-semibold shadow-md transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg relative overflow-hidden border`}
-                style={{
-                  background: "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 25%, #1a1a1a 50%, #2563eb 75%, #1e40af 100%)",
-                  borderColor: "rgba(59, 130, 246, 0.3)"
-                }}
-              >
-                <span className="relative z-10">Back to Sign In</span>
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
