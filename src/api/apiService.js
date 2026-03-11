@@ -2660,6 +2660,41 @@ export const voiceCallAPI = {
   },
 };
 
+/**
+ * Lawyer Service API
+ * Handles operations related to lawyer's professional services and fees.
+ */
+export const lawyerServiceAPI = {
+  /**
+   * Fetch all active services for the logged-in lawyer
+   */
+  getServices: async () => {
+    try {
+      const response = await apiClient.get('/lawyer_admin/services');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching lawyer services:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Bulk sync lawyer services securely
+   * @param {Array} servicesArray - Array of service objects mapping precisely to our DB schema
+   */
+  syncServices: async (servicesArray) => {
+    try {
+      const response = await apiClient.post('/lawyer_admin/services/sync', {
+        services: servicesArray
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error syncing lawyer services:', error.response || error);
+      throw error;
+    }
+  }
+};
+
 export default apiClient;
 // Export wallet and other services safely
 export const { walletAPI: walletServices } = apiServices;

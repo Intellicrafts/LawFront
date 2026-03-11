@@ -1,19 +1,22 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import Lottie from 'react-lottie-player';
 import {
   IndianRupee, Wand2, Sparkles, Clock3, Save, Plus, Trash2,
   FileText, Home, Scale, Briefcase, ChevronDown, Check, X,
   Edit3, ToggleLeft, ToggleRight, AlertCircle, TrendingUp
 } from 'lucide-react';
 import { getAppointmentRatePerMinute, buildAppointmentConsultationFee, normalizeConsultationFeeList, APPOINTMENT_SERVICE_CODE } from '../../utils/consultationFee';
-import { authAPI } from '../../api/apiService';
+import { authAPI, lawyerServiceAPI } from '../../api/apiService';
+import lawyerSearchAnim from '../../assets/animations/lawyer-search.json';
 
 /* ─── Shared UI ────────────────────────────────────────────────────────── */
 const GlassCard = ({ children, className = '', darkMode, hover = true }) => (
   <motion.div
-    whileHover={hover ? { y: -2 } : {}}
-    className={`relative overflow-hidden rounded-[20px] border transition-all duration-300
-      ${darkMode ? 'bg-neutral-900/60 border-white/6 backdrop-blur-xl' : 'bg-white/80 border-slate-200/50 backdrop-blur-lg shadow-sm'}
+    whileHover={hover ? { y: -2, scale: 1.02 } : {}}
+    className={`relative overflow-visible rounded-2xl border transition-all duration-300
+      ${darkMode ? 'bg-[#151515]/80 border-white/10 backdrop-blur-xl shadow-lg shadow-black/40' : 'bg-white/90 border-slate-200/80 backdrop-blur-xl shadow-xl shadow-slate-200/40'}
       ${className}`}
   >
     {children}
@@ -116,40 +119,42 @@ const ServiceCard = ({ service, darkMode, experienceYears, onUpdate, onDelete, o
   return (
     <GlassCard
       darkMode={darkMode}
-      hover={false}
-      className={`p-5 flex flex-col gap-4 transition-all duration-300 stagger-item ${!isActive ? 'opacity-50 grayscale' : ''
-        } ${isLocked ? (darkMode ? 'border-brand-500/20' : 'border-brand-300/40') : ''}`}
+      hover={true}
+      className={`p-4 flex flex-col gap-3 transition-all duration-300 stagger-item ${!isActive ? 'opacity-60 grayscale-[50%]' : ''
+        } ${isLocked ? (darkMode ? 'border-brand-500/40 bg-gradient-to-br from-brand-500/10 to-transparent' : 'border-brand-300/60 bg-gradient-to-br from-brand-500/5 to-white') : ''}`}
     >
       {/* Header Row */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${darkMode ? 'bg-white/8 text-white' : 'bg-slate-100 text-slate-800'
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+        <div className="flex items-center gap-3 w-full sm:w-auto flex-1 min-w-0">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-inner ${darkMode ? 'bg-gradient-to-br from-white/10 to-white/5 text-white border border-white/10' : 'bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800 border border-slate-200/60'
             }`}>
-            <Icon size={18} />
+            <motion.div animate={{ rotate: isActive ? [0, 5, -5, 0] : 0 }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}>
+              <Icon size={18} className={isActive ? 'opacity-100' : 'opacity-70'} />
+            </motion.div>
           </div>
-          <div>
+          <div className="flex-1 min-w-0 pr-2">
             {editing && !isLocked ? (
               <input
-                className={`text-[14px] font-black bg-transparent border-b outline-none w-full pb-0.5 ${darkMode ? 'border-white/20 text-white' : 'border-slate-300 text-slate-900'
+                className={`text-[13px] font-black bg-transparent border-b outline-none w-full pb-0.5 ${darkMode ? 'border-brand-400 text-white focus:border-brand-300' : 'border-brand-500 text-slate-900 focus:border-brand-600'
                   }`}
                 value={localName}
                 onChange={(e) => { setLocalName(e.target.value); markChanged(); }}
                 placeholder="Service name"
               />
             ) : (
-              <p className={`text-[13px] font-black leading-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+              <p className={`text-[13px] sm:text-[14px] font-black leading-tight tracking-tight truncate ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                 {service.service_name}
               </p>
             )}
-            <div className="flex items-center gap-1.5 mt-1">
+            <div className="flex items-center flex-wrap gap-1.5 mt-1">
               <PremiumBadge text={billingMeta.label} type={isActive ? 'info' : 'secondary'} />
               {isLocked && <PremiumBadge text="Core Service" type="success" />}
             </div>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+        {/* Actions - wrap on small screens so it doesn't break out */}
+        <div className="flex items-center gap-1.5 flex-wrap sm:flex-shrink-0 mt-2 sm:mt-0 ml-12 sm:ml-0">
           {!isLocked && (
             <button
               onClick={() => onDelete(service.service_code)}
@@ -192,12 +197,21 @@ const ServiceCard = ({ service, darkMode, experienceYears, onUpdate, onDelete, o
       </div>
 
       {/* Rate Display */}
-      <div className={`flex items-center justify-center py-3 rounded-2xl ${darkMode ? 'bg-white/5' : 'bg-slate-50'}`}>
-        <span className={`text-4xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-          <span className="text-xl align-top mt-1 inline-block mr-1 font-bold text-slate-400">₹</span>
+      <div className={`flex flex-col items-center justify-center py-4 rounded-xl mt-1 relative overflow-hidden transition-all duration-500 ${darkMode ? 'bg-gradient-to-b from-white/[0.04] to-transparent border border-white/5' : 'bg-gradient-to-b from-slate-50 to-transparent border border-slate-100'}`}>
+        {/* Subtle Background Icon Animation */}
+        <motion.div 
+          animate={isActive ? { rotate: 360, scale: [1, 1.05, 1] } : {}} 
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute top-1/2 left-3/4 -translate-y-1/2 opacity-[0.03] pointer-events-none"
+        >
+          <Icon size={90} />
+        </motion.div>
+        
+        <span className={`text-2xl sm:text-3xl font-black tracking-tighter flex items-start z-10 ${darkMode ? 'text-white' : 'text-slate-900'} ${!isActive && 'text-slate-500'}`}>
+          <span className="text-sm align-top mt-1.5 inline-block mr-1 font-bold text-slate-400">₹</span>
           {formatINR(editing ? localRate : service.rate) || '—'}
         </span>
-        <span className={`text-xs font-bold ml-2 mt-2 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+        <span className={`text-[9px] font-black uppercase tracking-[0.15em] mt-1 px-2.5 py-0.5 rounded-md z-10 shadow-sm ${darkMode ? 'bg-white/10 text-slate-300 border border-white/5' : 'bg-white text-slate-500 border border-slate-200'}`}>
           {billingMeta.unit}
         </span>
       </div>
@@ -318,15 +332,15 @@ const AddServiceModal = ({ darkMode, onAdd, onClose, existingCodes }) => {
     });
   };
 
-  return (
+  const modalContent = (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-md"
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      {/* Backdrop Capture */}
+      <div className="absolute inset-0" onClick={onClose} />
 
       <motion.div
         initial={{ y: 40, opacity: 0, scale: 0.97 }}
@@ -433,6 +447,8 @@ const AddServiceModal = ({ darkMode, onAdd, onClose, existingCodes }) => {
       </motion.div>
     </motion.div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 /* ─── Main Component ─────────────────────────────────────────────────────── */
@@ -444,37 +460,64 @@ const LawyerFees = ({ darkMode, userData }) => {
   ), [userData]);
 
   const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
   const [saveErr, setSaveErr] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // Load services directly from API data — no localStorage
+  // Load services from the new API
   useEffect(() => {
-    try {
-      const feeSource = userData?.lawyer_data?.consultation_fee;
-      const list = normalizeConsultationFeeList(feeSource);
+    let isMounted = true;
+    setLoading(true);
+    
+    const fetchServices = async () => {
+      try {
+        const response = await lawyerServiceAPI.getServices();
+        let list = response.data || [];
+        
+        // Always ensure the basic consultation service is present in the UI
+        if (!list.some(s => s.service_code === APPOINTMENT_SERVICE_CODE)) {
+          list.unshift({
+            ...SERVICE_PRESETS[0],
+            rate: getRecommendedRate(experienceYears, 'per_minute'),
+            currency: 'INR',
+            is_active: true,
+          });
+        }
 
-      // Always ensure the consultation service is present
-      if (!list.some(s => s.service_code === APPOINTMENT_SERVICE_CODE)) {
-        list.unshift({
-          ...SERVICE_PRESETS[0],
-          rate: getRecommendedRate(experienceYears, 'per_minute'),
-          currency: 'INR',
-          is_active: true,
-        });
+        // Attach icon + locked metadata from presets (some might come from DB, but preset UI overrides)
+        const mappedList = list.map(s => ({
+          ...s,
+          icon: s.icon || SERVICE_PRESETS.find(p => p.service_code === s.service_code)?.icon || 'Briefcase',
+          locked: SERVICE_PRESETS.find(p => p.service_code === s.service_code)?.locked || false,
+        }));
+        
+        if (isMounted) {
+          setServices(mappedList);
+        }
+      } catch (e) {
+        console.error('Error loading professional services:', e);
+        if (isMounted) {
+          // Fallback to presets if API fails initially
+          setServices([{
+            ...SERVICE_PRESETS[0],
+            rate: getRecommendedRate(experienceYears, 'per_minute'),
+            currency: 'INR',
+            is_active: true,
+            icon: 'Clock3',
+            locked: true
+          }]);
+        }
+      } finally {
+        if (isMounted) setLoading(false);
       }
-
-      // Attach icon + locked metadata from presets
-      setServices(list.map(s => ({
-        ...s,
-        icon: SERVICE_PRESETS.find(p => p.service_code === s.service_code)?.icon || 'Briefcase',
-        locked: SERVICE_PRESETS.find(p => p.service_code === s.service_code)?.locked || false,
-      })));
-    } catch (e) {
-      console.error('Error loading fees:', e);
-    }
-  }, [userData?.lawyer_data?.consultation_fee, experienceYears]);
+    };
+    
+    fetchServices();
+    
+    return () => { isMounted = false; };
+  }, [experienceYears]);
 
   const updateService = useCallback((updated) => {
     setServices(prev => prev.map(s => s.service_code === updated.service_code ? { ...s, ...updated } : s));
@@ -497,21 +540,22 @@ const LawyerFees = ({ darkMode, userData }) => {
     setSaving(true);
     setSaveMsg('');
     setSaveErr('');
-    const payload = services.map(({ icon, locked, ...rest }) => rest);
+    
+    // Prepare the payload strictly for the new DB schema
+    const payload = services.map(({ locked, ...rest }) => ({
+      ...rest,
+      // Ensure specific casts
+      rate: Number(rest.rate) || 0,
+      is_active: Boolean(rest.is_active !== false)
+    }));
+    
     try {
-      // Send full services array as JSON string inside lawyer_data.consultation_fee.
-      // Same pattern as LawyerProfile.jsx — backend will store it.
-      // When the backend column is upgraded to support JSON, it will persist naturally.
-      await authAPI.updateUserProfile({
-        lawyer_data: {
-          consultation_fee: JSON.stringify(payload),
-        },
-      });
-      setSaveMsg(`${payload.length} service${payload.length !== 1 ? 's' : ''} saved successfully.`);
+      await lawyerServiceAPI.syncServices(payload);
+      setSaveMsg(`${payload.length} service${payload.length !== 1 ? 's' : ''} saved to database successfully.`);
       setTimeout(() => setSaveMsg(''), 4000);
     } catch (e) {
-      setSaveErr('Failed to save. Please try again.');
-      console.error('Save fees error:', e);
+      setSaveErr('Failed to save to database. Please try again.');
+      console.error('Save service fees matrix error:', e);
     } finally {
       setSaving(false);
     }
@@ -593,73 +637,124 @@ const LawyerFees = ({ darkMode, userData }) => {
       </AnimatePresence>
 
       {/* ── Summary Strip ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {[
-          { label: 'Active Services', value: String(activeCount), icon: Sparkles, color: 'text-blue-500', bg: darkMode ? 'bg-blue-500/10' : 'bg-blue-50', border: darkMode ? 'border-blue-500/15' : 'border-blue-100' },
-          { label: 'Consultation Rate', value: consultationRate > 0 ? `₹${formatINR(consultationRate)}/min` : 'Not set', icon: Clock3, color: 'text-amber-500', bg: darkMode ? 'bg-amber-500/10' : 'bg-amber-50', border: darkMode ? 'border-amber-500/15' : 'border-amber-100' },
-          { label: 'Est. Monthly (Consultations)', value: estMonthly > 0 ? `₹${formatINR(estMonthly)}` : '—', icon: TrendingUp, color: 'text-emerald-500', bg: darkMode ? 'bg-emerald-500/10' : 'bg-emerald-50', border: darkMode ? 'border-emerald-500/15' : 'border-emerald-100' },
-        ].map((stat, i) => (
-          <div key={i} className={`flex items-center gap-3 p-3 rounded-2xl border ${stat.bg} ${stat.border}`}>
-            <stat.icon size={16} className={stat.color} />
-            <div>
-              <p className="text-[8px] font-black uppercase tracking-widest text-slate-500">{stat.label}</p>
-              <p className={`text-[13px] font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>{stat.value}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Service Cards Grid ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        {services.map((service, idx) => (
-          <ServiceCard
-            key={service.service_code}
-            service={service}
-            darkMode={darkMode}
-            experienceYears={experienceYears}
-            onUpdate={updateService}
-            onDelete={deleteService}
-            onToggle={toggleService}
-          />
-        ))}
-
-        {/* Add Service Empty CTA */}
-        <button
-          onClick={() => setShowAddModal(true)}
-          className={`rounded-[20px] border-2 border-dashed p-5 flex flex-col items-center justify-center gap-2 min-h-[180px] transition-all hover:scale-[1.01] press-scale ${darkMode
-            ? 'border-white/10 text-slate-600 hover:border-white/20 hover:text-slate-400'
-            : 'border-slate-200 text-slate-300 hover:border-slate-300 hover:text-slate-500'
-            }`}
-        >
-          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 border-dashed ${darkMode ? 'border-white/20' : 'border-slate-300'
-            }`}>
-            <Plus size={18} />
-          </div>
-          <p className="text-[11px] font-black uppercase tracking-widest">Add Service</p>
-          <p className="text-[9px] font-bold">Consultation, Drafting, etc.</p>
-        </button>
-      </div>
-
-      {/* ── Market benchmarks ── */}
-      <GlassCard darkMode={darkMode} className="p-5">
-        <h3 className={`text-[11px] font-black uppercase tracking-[0.2em] mb-4 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-          Market Rate Benchmarks · Consultation
-        </h3>
-        <div className="space-y-2">
+      {!loading && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {[
-            { tier: 'Junior (0–2 yrs)', rate: '₹25/min', color: 'text-blue-500', bg: darkMode ? 'bg-blue-500/10' : 'bg-blue-50', border: darkMode ? 'border-blue-500/20' : 'border-blue-100' },
-            { tier: 'Mid (2–5 yrs)', rate: '₹35/min', color: 'text-amber-500', bg: darkMode ? 'bg-amber-500/10' : 'bg-amber-50', border: darkMode ? 'border-amber-500/20' : 'border-amber-100' },
-            { tier: 'Senior (5–10 yrs)', rate: '₹50/min', color: 'text-emerald-500', bg: darkMode ? 'bg-emerald-500/10' : 'bg-emerald-50', border: darkMode ? 'border-emerald-500/20' : 'border-emerald-100' },
-            { tier: 'Expert (10–15 yrs)', rate: '₹65/min', color: 'text-indigo-500', bg: darkMode ? 'bg-indigo-500/10' : 'bg-indigo-50', border: darkMode ? 'border-indigo-500/20' : 'border-indigo-100' },
-            { tier: 'Principal (15+ yrs)', rate: '₹80/min', color: 'text-rose-500', bg: darkMode ? 'bg-rose-500/10' : 'bg-rose-50', border: darkMode ? 'border-rose-500/20' : 'border-rose-100' },
-          ].map((t, i) => (
-            <div key={i} className={`flex items-center justify-between px-4 py-2.5 rounded-xl border ${t.bg} ${t.border}`}>
-              <span className={`text-[11px] font-bold ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{t.tier}</span>
-              <span className={`text-[12px] font-black ${t.color}`}>{t.rate}</span>
+            { label: 'Active Services', value: String(activeCount), icon: Sparkles, color: 'text-blue-500', bg: darkMode ? 'bg-blue-500/10' : 'bg-blue-50', border: darkMode ? 'border-blue-500/15' : 'border-blue-100' },
+            { label: 'Consultation Rate', value: consultationRate > 0 ? `₹${formatINR(consultationRate)}/min` : 'Not set', icon: Clock3, color: 'text-amber-500', bg: darkMode ? 'bg-amber-500/10' : 'bg-amber-50', border: darkMode ? 'border-amber-500/15' : 'border-amber-100' },
+            { label: 'Est. Monthly (Consultations)', value: estMonthly > 0 ? `₹${formatINR(estMonthly)}` : '—', icon: TrendingUp, color: 'text-emerald-500', bg: darkMode ? 'bg-emerald-500/10' : 'bg-emerald-50', border: darkMode ? 'border-emerald-500/15' : 'border-emerald-100' },
+          ].map((stat, i) => (
+            <div key={i} className={`flex items-center gap-3 p-3 rounded-2xl border ${stat.bg} ${stat.border}`}>
+              <stat.icon size={16} className={stat.color} />
+              <div>
+                <p className="text-[8px] font-black uppercase tracking-widest text-slate-500">{stat.label}</p>
+                <p className={`text-[13px] font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>{stat.value}</p>
+              </div>
             </div>
           ))}
         </div>
-      </GlassCard>
+      )}
+
+      {/* ── Content Area: Loading vs Grid ── */}
+      {loading ? (
+        <div className={`w-full min-h-[300px] rounded-3xl border flex flex-col items-center justify-center p-8 transition-all ${darkMode ? 'bg-neutral-900/40 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
+          <div className="relative flex items-center justify-center w-16 h-16">
+            <svg className="animate-spin absolute w-full h-full text-brand-500/20" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" />
+              <path className="opacity-75 text-brand-500" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+            <Briefcase size={20} className={darkMode ? 'text-brand-400 opacity-80' : 'text-brand-600 opacity-80'} />
+          </div>
+          <p className={`mt-4 text-[12px] font-black uppercase tracking-widest ${darkMode ? 'text-white/60' : 'text-slate-500'}`}>
+            Syncing Service Fees
+          </p>
+          <div className="mt-4 flex gap-1">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
+                transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                className={`w-1.5 h-1.5 rounded-full ${darkMode ? 'bg-brand-500' : 'bg-brand-600'}`}
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {services.map((service, idx) => (
+            <ServiceCard
+              key={service.service_code}
+              service={service}
+              darkMode={darkMode}
+              experienceYears={experienceYears}
+              onUpdate={updateService}
+              onDelete={deleteService}
+              onToggle={toggleService}
+            />
+          ))}
+
+          {/* Add Service Lottie CTA */}
+          <motion.button
+            whileHover={{ y: -2, scale: 1.02 }}
+            onClick={() => setShowAddModal(true)}
+            className={`relative overflow-hidden rounded-2xl border flex flex-col items-center justify-center gap-2 min-h-[160px] transition-all duration-300 group ${darkMode
+              ? 'bg-[#151515]/50 border-white/10 text-slate-400 hover:border-brand-500/50 shadow-lg shadow-black/20'
+              : 'bg-white/50 border-slate-200/80 text-slate-500 hover:border-brand-400 shadow-xl shadow-slate-200/40'
+              }`}
+          >
+            {/* Lottie Animation inside the CTA card */}
+            <div className="w-16 h-16 opacity-80 mix-blend-luminosity hover:mix-blend-normal transition-all duration-500 scale-125 group-hover:scale-150">
+              <Lottie
+                loop
+                animationData={lawyerSearchAnim}
+                play
+                style={{ width: '100%', height: '100%' }}
+              />
+            </div>
+            <div className={`absolute top-4 right-4 w-7 h-7 rounded-full flex items-center justify-center border shadow-sm transition-all duration-300 group-hover:rotate-90 group-hover:scale-110 ${darkMode ? 'bg-white/10 border-white/20 text-white' : 'bg-white border-slate-200 text-slate-700'}`}>
+              <Plus size={14} />
+            </div>
+            <div className="z-10 mt-1 flex flex-col items-center">
+              <p className={`text-[11px] font-black uppercase tracking-widest ${darkMode ? 'text-white' : 'text-slate-800'}`}>Add Service</p>
+              <p className="text-[9px] font-bold opacity-70">Consultation, Drafting, etc.</p>
+            </div>
+          </motion.button>
+        </div>
+      )}
+
+      {/* ── Market benchmarks ── */}
+      <div className={`mt-8 p-6 rounded-3xl border transition-all duration-300 ${darkMode ? 'bg-[#121212] border-white/10 shadow-2xl shadow-black/50' : 'bg-slate-50 border-slate-200/80 shadow-inner'}`}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+          <div>
+            <h3 className={`text-[10px] font-black uppercase tracking-[0.25em] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+              Market Rate Analysis
+            </h3>
+            <p className={`text-[12px] font-bold mt-1 ${darkMode ? 'text-white/60' : 'text-slate-600'}`}>
+              Recommended Per-Minute Consultation Fees by Experience
+            </p>
+          </div>
+          <TrendingUp className={darkMode ? 'text-emerald-500/50' : 'text-emerald-500/80'} size={24} />
+        </div>
+        
+        {/* Table layout instead of stacked cards for a more premium, zoomed-out feel */}
+        <div className={`w-full overflow-x-auto rounded-xl border ${darkMode ? 'border-white/5 bg-white/[0.02]' : 'border-slate-200 bg-white'}`}>
+          <div className="flex min-w-[500px]">
+            {[
+              { tier: 'Junior', exp: '0–2 yrs', rate: '₹25', color: 'text-blue-500', bg: darkMode ? 'hover:bg-blue-500/10' : 'hover:bg-blue-50' },
+              { tier: 'Mid', exp: '2–5 yrs', rate: '₹35', color: 'text-amber-500', bg: darkMode ? 'hover:bg-amber-500/10' : 'hover:bg-amber-50' },
+              { tier: 'Senior', exp: '5–10 yrs', rate: '₹50', color: 'text-emerald-500', bg: darkMode ? 'hover:bg-emerald-500/10' : 'hover:bg-emerald-50' },
+              { tier: 'Expert', exp: '10–15 yrs', rate: '₹65', color: 'text-indigo-500', bg: darkMode ? 'hover:bg-indigo-500/10' : 'hover:bg-indigo-50' },
+              { tier: 'Principal', exp: '15+ yrs', rate: '₹80', color: 'text-rose-500', bg: darkMode ? 'hover:bg-rose-500/10' : 'hover:bg-rose-50' },
+            ].map((t, i) => (
+              <div key={i} className={`flex-1 flex flex-col items-center justify-center p-4 border-r last:border-r-0 transition-colors cursor-default ${darkMode ? 'border-white/5' : 'border-slate-100'} ${t.bg}`}>
+                <span className={`text-[12px] font-black tracking-tight ${darkMode ? 'text-slate-300' : 'text-slate-800'}`}>{t.tier}</span>
+                <span className={`text-[9px] font-bold text-slate-500 mb-2`}>{t.exp}</span>
+                <span className={`text-[16px] font-black ${t.color}`}>{t.rate}<span className="text-[10px] ml-0.5 text-slate-400">/min</span></span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* ── Add Service Modal ── */}
       <AnimatePresence>
