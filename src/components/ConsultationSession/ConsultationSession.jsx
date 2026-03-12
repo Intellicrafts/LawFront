@@ -20,6 +20,7 @@ const ConsultationSession = () => {
     const [userType, setUserType] = useState(null);
     const [otherParticipant, setOtherParticipant] = useState(null);
     const [otherJoined, setOtherJoined] = useState(false);
+    const [opponentIsTyping, setOpponentIsTyping] = useState(false);
 
     // UI state
     const [loading, setLoading] = useState(true);
@@ -78,6 +79,11 @@ const ConsultationSession = () => {
         try {
             const data = await consultationAPI.getMessages(sessionToken);
             const newMessages = data.messages || [];
+
+            // Update typing indicator
+            if (data.other_typing !== undefined) {
+                setOpponentIsTyping(data.other_typing);
+            }
 
             // Only update if we have new messages
             if (newMessages.length > 0) {
@@ -368,6 +374,7 @@ const ConsultationSession = () => {
                 onSendMessage={handleSendMessage}
                 onEndSession={() => handleEndSession('completed')}
                 onTyping={handleTyping}
+                opponentIsTyping={opponentIsTyping}
             />
         );
     }

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -118,7 +118,8 @@ const ConsultationChat = ({
     connectionStatus,
     onSendMessage,
     onEndSession,
-    onTyping
+    onTyping,
+    opponentIsTyping
 }) => {
     const dispatch = useDispatch();
     const [newMessage, setNewMessage] = useState('');
@@ -1136,8 +1137,38 @@ const ConsultationChat = ({
                             );
                         })}
 
+                    {/* opponentIsTyping indicator */}
+                    {opponentIsTyping && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                            className="flex justify-start w-full px-2 sm:px-4 lg:px-6 mb-4 mt-2"
+                        >
+                            <div className={`flex items-end gap-2 max-w-[85%] relative`}>
+                                <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 shadow-sm mt-auto relative bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                                    {otherParticipant?.avatar ? (
+                                        <img src={otherParticipant.avatar} alt="avatar" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <User size={13} className="text-white" />
+                                    )}
+                                </div>
+                                <div className={`px-4 py-3 rounded-2xl rounded-bl-[4px] shadow-sm backdrop-blur-md ${isDarkMode
+                                        ? 'bg-white/[0.04] border border-white/[0.04]'
+                                        : 'bg-white border border-slate-200/50'
+                                    }`}>
+                                    <div className="flex items-center gap-1.5 h-4">
+                                        <motion.div animate={{ y: ["0%", "-30%", "0%"], opacity: [0.5, 1, 0.5] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0 }} className={`w-1.5 h-1.5 rounded-full ${isDarkMode ? 'bg-slate-400' : 'bg-slate-500'}`} />
+                                        <motion.div animate={{ y: ["0%", "-30%", "0%"], opacity: [0.5, 1, 0.5] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0.15 }} className={`w-1.5 h-1.5 rounded-full ${isDarkMode ? 'bg-slate-400' : 'bg-slate-500'}`} />
+                                        <motion.div animate={{ y: ["0%", "-30%", "0%"], opacity: [0.5, 1, 0.5] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0.3 }} className={`w-1.5 h-1.5 rounded-full ${isDarkMode ? 'bg-slate-400' : 'bg-slate-500'}`} />
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+
                     {/* Scroll anchor */}
-                    <div ref={messagesEndRef} />
+                    <div ref={messagesEndRef} className="h-4" />
                 </div>
             </div>
 
