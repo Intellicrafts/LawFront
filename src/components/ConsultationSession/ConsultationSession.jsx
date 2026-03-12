@@ -187,7 +187,7 @@ const ConsultationSession = () => {
             } catch {
                 // Handle silently
             }
-        }, 3000); // Poll every 3 seconds
+        }, 1500); // Poll every 1.5 seconds for snappier real-time sync
 
         return () => {
             if (pollIntervalRef.current) {

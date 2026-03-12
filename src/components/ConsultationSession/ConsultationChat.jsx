@@ -760,69 +760,78 @@ const ConsultationChat = ({
             <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-indigo-600/8 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-violet-600/8 rounded-full blur-[120px] pointer-events-none" />
 
-            {/* ============ HEADER ============ */}
-            <div className={`shrink-0 z-40 border-b ${isDarkMode
-                ? 'bg-[#0f1221]/90 border-white/[0.06] shadow-black/20 shadow-sm backdrop-blur-xl'
-                : 'bg-white/90 border-slate-200/60 shadow-slate-200/50 shadow-sm backdrop-blur-xl'
+               {/* ============ HEADER ============ */}
+            <div className={`shrink-0 z-40 border-b relative ${isDarkMode
+                ? 'bg-[#0f1221]/80 border-white/[0.04] shadow-black/10 shadow-sm backdrop-blur-2xl'
+                : 'bg-white/80 border-slate-200/50 shadow-slate-200/30 shadow-sm backdrop-blur-2xl'
                 }`}>
-                <div className="max-w-4xl mx-auto px-3 sm:px-5">
-                    <div className="flex items-center justify-between py-2 sm:py-2.5">
+                {/* Subtle top inner glow */}
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+                <div className="max-w-5xl mx-auto px-2 sm:px-4">
+                    <div className="flex items-center justify-between py-1.5 sm:py-2">
 
                         {/* Left: Participant Info */}
-                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                             {/* Back button (mobile) */}
                             <button
                                 onClick={() => setShowEndModal(true)}
                                 className={`p-1.5 rounded-xl transition-all sm:hidden flex-shrink-0 ${isDarkMode ? 'hover:bg-white/5 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
                             >
-                                <ChevronLeft size={20} />
+                                <ChevronLeft size={18} />
                             </button>
 
                             {/* Avatar with Role Icon */}
                             <div className="relative flex-shrink-0">
-                                <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center text-xs sm:text-sm font-bold shadow-sm ${userType === 'user'
+                                <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-2xl flex items-center justify-center text-[11px] sm:text-xs font-black shadow-sm ${userType === 'user'
                                     ? 'bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-indigo-500/30'
                                     : 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-amber-500/30'
                                     }`}>
                                     {otherInitials}
                                 </div>
                                 {/* Live green dot */}
-                                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-emerald-400 border-2 border-white dark:border-[#0d0d14] shadow-sm shadow-emerald-400/50" />
+                                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-400 border-[1.5px] border-white dark:border-[#0d0d14] shadow-sm shadow-emerald-400/50" />
                             </div>
 
                             {/* Name & Status */}
-                            <div className="min-w-0">
-                                <h3 className={`text-[13px] sm:text-[14px] font-bold tracking-tight truncate ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                            <div className="min-w-0 flex flex-col justify-center">
+                                <h3 className={`text-[12px] sm:text-[13px] font-extrabold tracking-tight truncate flex items-center gap-1.5 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
                                     {otherName}
+                                    {userType !== 'user' && <Shield size={10} className="text-indigo-500 flex-shrink-0" />}
                                 </h3>
-                                <div className="flex items-center gap-1.5 mt-0.5">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                    <span className={`text-[9px] font-bold uppercase tracking-[0.18em] ${isDarkMode ? 'text-emerald-400/80' : 'text-emerald-600/80'}`}>
-                                        {userType === 'user' ? 'Lawyer' : 'Client'} â€¢ In Session
-                                    </span>
+                                <div className="flex items-center gap-1.5 mt-[1px]">
+                                    {opponentIsTyping ? (
+                                        <>
+                                            <div className="flex items-end gap-[2px] h-2">
+                                                <motion.div animate={{ y: ["0%", "-40%", "0%"] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} className={`w-1 h-1 rounded-full ${isDarkMode ? 'bg-indigo-400' : 'bg-indigo-500'}`} />
+                                                <motion.div animate={{ y: ["0%", "-40%", "0%"] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }} className={`w-1 h-1 rounded-full ${isDarkMode ? 'bg-indigo-400' : 'bg-indigo-500'}`} />
+                                                <motion.div animate={{ y: ["0%", "-40%", "0%"] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }} className={`w-1 h-1 rounded-full ${isDarkMode ? 'bg-indigo-400' : 'bg-indigo-500'}`} />
+                                            </div>
+                                            <span className={`text-[10px] font-bold italic tracking-wide ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`}>
+                                                typing...
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                                            <span className={`text-[9px] font-bold uppercase tracking-[0.15em] ${isDarkMode ? 'text-emerald-400/80' : 'text-emerald-600/80'}`}>
+                                                {userType === 'user' ? 'Lawyer' : 'Client'} â€¢ Live
+                                            </span>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
                         {/* Right: Timer & Actions */}
-                        <div className="flex items-center gap-2">
-                            {/* Connection Status */}
-                            <div className={`hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${connectionStatus === 'connected'
-                                ? isDarkMode ? 'bg-slate-500/10 text-slate-400' : 'bg-slate-50 text-slate-600'
-                                : isDarkMode ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-600'
-                                }`}>
-                                {connectionStatus === 'connected' ? <Wifi size={9} /> : <WifiOff size={9} />}
-                                <span className="hidden md:inline">{connectionStatus === 'connected' ? 'Live' : 'Reconnecting'}</span>
-                            </div>
-
+                        <div className="flex items-center gap-1.5 sm:gap-2">
                             {/* Timer */}
                             {timeRemaining !== null && (
-                                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors ${timeRemaining <= 300
+                                <div className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full transition-colors ${timeRemaining <= 300
                                     ? isDarkMode ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-rose-50 text-rose-600 border border-rose-200'
                                     : isDarkMode ? 'bg-white/5 border border-white/5' : 'bg-slate-100 border border-slate-200/50'
                                     }`}>
                                     <Clock size={10} className={timeRemaining <= 300 ? 'text-rose-500 animate-pulse' : ''} />
-                                    <span className={`text-[10px] font-bold tracking-wider font-mono ${timeRemaining <= 300 ? '' : isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                                    <span className={`text-[9px] sm:text-[10px] font-bold tracking-wider font-mono ${timeRemaining <= 300 ? '' : isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
                                         {formatTime(timeRemaining)}
                                     </span>
                                 </div>
@@ -839,28 +848,28 @@ const ConsultationChat = ({
                             {/* Dark mode toggle */}
                             <button
                                 onClick={() => dispatch(toggleTheme())}
-                                className={`p-2 rounded-xl transition-all ${isDarkMode ? 'hover:bg-white/8 text-amber-400 hover:text-amber-300' : 'hover:bg-slate-100 text-slate-500 hover:text-slate-700'}`}
+                                className={`hidden sm:flex p-1.5 rounded-xl transition-all ${isDarkMode ? 'hover:bg-white/8 text-amber-400 hover:text-amber-300' : 'hover:bg-slate-100 text-slate-500 hover:text-slate-700'}`}
                                 title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                             >
-                                {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+                                {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
                             </button>
 
                             {/* End Session */}
                             <button
                                 onClick={() => setShowEndModal(true)}
-                                className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${isDarkMode
+                                className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-extrabold uppercase tracking-widest transition-all shadow-sm ${isDarkMode
                                     ? 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20'
-                                    : 'bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200'
+                                    : 'bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 shadow-rose-500/10'
                                     }`}
                             >
-                                <Phone size={10} className="rotate-[135deg]" />
+                                <Phone size={9} className="rotate-[135deg]" />
                                 End
                             </button>
 
                             {/* Mobile menu button */}
                             <button
                                 onClick={() => setShowEndModal(true)}
-                                className={`sm:hidden p-2 rounded-xl transition-all ${isDarkMode ? 'hover:bg-white/5 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
+                                className={`sm:hidden p-1.5 rounded-xl transition-all ${isDarkMode ? 'hover:bg-white/5 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
                             >
                                 <MoreVertical size={16} />
                             </button>
@@ -1146,11 +1155,15 @@ const ConsultationChat = ({
                             className="flex justify-start w-full px-2 sm:px-4 lg:px-6 mb-4 mt-2"
                         >
                             <div className={`flex items-end gap-2 max-w-[85%] relative`}>
-                                <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 shadow-sm mt-auto relative bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                                <div className={`w-7 h-7 rounded-full overflow-hidden flex-shrink-0 shadow-sm mt-auto relative flex items-center justify-center text-white ${
+                                    userType === 'user' 
+                                        ? 'bg-gradient-to-br from-amber-500 to-orange-500 shadow-amber-500/20' 
+                                        : 'bg-gradient-to-br from-violet-600 to-indigo-600 shadow-indigo-500/20'
+                                    }`}>
                                     {otherParticipant?.avatar ? (
                                         <img src={otherParticipant.avatar} alt="avatar" className="w-full h-full object-cover" />
                                     ) : (
-                                        <User size={13} className="text-white" />
+                                        userType === 'user' ? <Scale size={11} /> : <User size={13} />
                                     )}
                                 </div>
                                 <div className={`px-4 py-3 rounded-2xl rounded-bl-[4px] shadow-sm backdrop-blur-md ${isDarkMode
