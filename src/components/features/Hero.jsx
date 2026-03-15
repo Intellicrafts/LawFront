@@ -12,7 +12,7 @@ import {
   Heart, Share2, Copy, Volume2, Download, CheckCircle,
   Loader2, Brain, BookOpen, PenTool, Zap, ThumbsUp, ThumbsDown, VolumeX,
   PanelLeftClose, PanelLeftOpen, ArrowRight, TrendingUp, Cpu, Target,
-  History, Archive, Star as StarIcon, FileText, Lock
+  History, Archive, Star as StarIcon, FileText, Lock, Paperclip, File
 } from 'lucide-react';
 import { chatbotService, CHAT_STATES, AI_MODELS } from '../../services/chatbotApiService';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -641,9 +641,14 @@ const MessageActions = ({ text, isDark }) => {
   );
 };
 
-// ThoughtAccordion removed in favor of IntelligenceLog
+const FileIcon = ({ type, className }) => {
+  if (type?.includes('pdf')) return <FileText className={`text-red-500 ${className}`} />;
+  if (type?.includes('image')) return <ImageIcon className={`text-blue-500 ${className}`} />;
+  if (type?.includes('word')) return <File className={`text-indigo-500 ${className}`} />;
+  return <File className={`text-slate-500 ${className}`} />;
+};
 
-const MessageBubble = ({ message, thought, isDark, isUser, isStreaming = false, chatState, modelId = 'legal_counsel' }) => {
+const MessageBubble = ({ message, thought, files, isDark, isUser, isStreaming = false, chatState, modelId = 'legal_counsel' }) => {
   const [showLog, setShowLog] = useState(false);
   const agentName = modalOptions.find(opt => opt.id === modelId)?.label || 'LAWYER TIA';
 
@@ -710,13 +715,32 @@ const MessageBubble = ({ message, thought, isDark, isUser, isStreaming = false, 
 
           <div
             className={`relative transition-all duration-300 ${isUser
-              ? `px-3.5 py-2 rounded-[18px] shadow-sm ${isDark
+              ? `px-3.5 py-2 rounded-[20px] shadow-sm ${isDark
                 ? 'bg-gradient-to-br from-[#1e1e1e] to-[#141414] border border-white/10 text-white shadow-xl shadow-black/20'
                 : 'bg-white border border-slate-200 text-slate-700 shadow-lg shadow-slate-200/5'
-              } font-medium text-[14px] leading-relaxed max-w-[85%] sm:max-w-sm`
+              } font-medium text-[14px] leading-relaxed w-full max-w-sm`
               : `w-full ${isDark ? 'text-gray-200' : 'text-slate-800'}`
               }`}
           >
+            {/* File Attachments Grid */}
+            {files && files.length > 0 && (
+              <div className={`grid grid-cols-1 gap-2 mb-3 ${isUser ? 'w-full' : 'max-w-md'}`}>
+                {files.map((file, i) => (
+                  <div key={i} className={`flex items-center gap-3 p-3 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-100'}`}>
+                    <div className={`p-2 rounded-lg ${isDark ? 'bg-white/5' : 'bg-white'}`}>
+                      <FileIcon type={file.type} className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-xs font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{file.name}</p>
+                      <p className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                        {(file.size / 1024).toFixed(1)} KB • {file.type?.split('/')[1]?.toUpperCase() || 'FILE'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {isStreaming && !isUser ? (
               message ? (
                 <StreamingText text={message} isDark={isDark} />
@@ -1116,20 +1140,29 @@ const Hero = () => {
   const [stateMessage, setStateMessage] = useState('');
 
   // Pre-fill query from landing page intake widget navigation state
+  const prefillProcessed = useRef(false);
   useEffect(() => {
-    if (location.state?.prefillQuery) {
+    if (location.state?.prefillQuery && !prefillProcessed.current) {
+      prefillProcessed.current = true;
       const q = location.state.prefillQuery;
+      const initialFiles = location.state.files || [];
+
       setQuery(q);
+      if (initialFiles.length > 0) {
+        setUploadedFiles(initialFiles);
+      }
+
       // Clear state so back-navigation doesn't re-trigger
       navigate(location.pathname, { replace: true, state: {} });
+
       // Auto-submit after a short tick so the UI has rendered
       setTimeout(() => {
         const syntheticEvent = { preventDefault: () => { } };
-        handleSubmit(syntheticEvent, q);
+        handleSubmit(syntheticEvent, q, initialFiles);
       }, 80);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [location.state]);
 
   // Guest query limit (5/day for unauthenticated users)
   const guestLimit = useGuestQueryLimit();
@@ -1349,13 +1382,13 @@ const Hero = () => {
    * Main submission handler for the chatbot.
    * Features: Multi-agent validation, intelligent auto-scroll, and error recovery.
    */
-  const handleSubmit = async (e, overrideQuery) => {
+  const handleSubmit = async (e, overrideQuery, overrideFiles) => {
     e?.preventDefault();
     const userQuery = (overrideQuery ?? query).trim();
-    const allFiles = [...uploadedFiles, ...pendingFiles];
+    const finalFiles = overrideFiles ?? [...uploadedFiles, ...pendingFiles];
 
     // Prevent submission if no input
-    if (!userQuery && allFiles.length === 0) return;
+    if (!userQuery && finalFiles.length === 0) return;
 
     // ── Guest daily query limit check ──────────────────────────────────────
     if (!isAuthenticated) {
@@ -1379,7 +1412,8 @@ const Hero = () => {
     const userMessage = {
       id: messageId,
       role: 'user',
-      content: userQuery || "Uploaded files",
+      content: userQuery || (finalFiles.length > 0 ? t('chat.uploadedFiles', { count: finalFiles.length }) : ""),
+      files: finalFiles, // Attach files to the message object for rendering
       modelId: selectedModal // Persist the agent who received this message
     };
     setMessages(prev => [...prev, userMessage]);
@@ -1707,6 +1741,7 @@ const Hero = () => {
                       key={msg.id || idx}
                       message={msg.content}
                       thought={msg.thought}
+                      files={msg.files}
                       isDark={isDark}
                       isUser={msg.role === 'user'}
                       isStreaming={msg.isRealTime}
@@ -1839,6 +1874,13 @@ const Hero = () => {
 
                     {/* Bottom Utility Bar */}
                     <div className="flex items-center gap-2 pb-0.5">
+                      <input
+                        type="file"
+                        id="file-input"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => handleFileUpload(e.target.files)}
+                      />
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -1847,8 +1889,9 @@ const Hero = () => {
                           ${isDark
                             ? 'bg-slate-800/50 border-white/5 text-slate-400 hover:text-white hover:bg-slate-700'
                             : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+                        title={t('chat.uploadFiles')}
                       >
-                        <Upload size={18} />
+                        <Paperclip size={18} />
                       </motion.button>
 
                       <motion.button
@@ -1890,17 +1933,32 @@ const Hero = () => {
                       exit={{ height: 0, opacity: 0 }}
                       className={`px-4 pb-4 flex flex-wrap gap-2 pt-2 border-t ${isDark ? 'border-white/5' : 'border-slate-100'}`}
                     >
-                      {[...uploadedFiles, ...pendingFiles].map((file, idx) => (
+                      {uploadedFiles.map((file, idx) => (
                         <motion.div
-                          key={idx}
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-[11px] font-bold
-                            ${isDark ? 'bg-white/5 border-white/5 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
+                          key={`uploaded-${idx}`}
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] font-bold shadow-sm backdrop-blur-md
+                            ${isDark ? 'bg-white/5 border-white/10 text-slate-300' : 'bg-white border-slate-200 text-slate-700'}`}
                         >
-                          <FileText size={12} className="text-blue-500" />
+                          <FileIcon type={file.type} className="w-3.5 h-3.5" />
                           <span className="max-w-[120px] truncate">{file.name}</span>
-                          <button onClick={() => removeUploadedFile(idx)} className="hover:text-red-500 transition-colors">
+                          <button onClick={() => removeUploadedFile(idx, false)} className="ml-1 p-0.5 rounded-full hover:bg-red-500/10 hover:text-red-500 transition-colors">
+                            <X size={12} />
+                          </button>
+                        </motion.div>
+                      ))}
+                      {pendingFiles.map((file, idx) => (
+                        <motion.div
+                          key={`pending-${idx}`}
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] font-bold shadow-sm backdrop-blur-md animate-pulse
+                            ${isDark ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-600'}`}
+                        >
+                          <FileIcon type={file.type} className="w-3.5 h-3.5" />
+                          <span className="max-w-[120px] truncate">{file.name}</span>
+                          <button onClick={() => removeUploadedFile(idx, true)} className="ml-1 p-0.5 rounded-full hover:bg-red-500/10 hover:text-red-500 transition-colors">
                             <X size={12} />
                           </button>
                         </motion.div>

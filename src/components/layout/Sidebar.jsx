@@ -21,7 +21,8 @@ import {
   Clock,
   Bot,
   Calendar,
-  Gavel
+  Gavel,
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
@@ -40,17 +41,9 @@ const NAV_ITEMS = [
   { id: 'cases', label: 'Active Cases', icon: Briefcase, color: '#F59E0B' },
 ];
 
-// AI Chat History
-const SAMPLE_CHATS = [
-  { id: 1, title: 'Contract Review Analysis', preview: 'Analyzed employment contract for...', time: '2m' },
-  { id: 2, title: 'Legal Research Query', preview: 'Researched precedents for trademark...', time: '1h' },
-  { id: 3, title: 'Document Drafting', preview: 'Generated NDA template with custom...', time: '3h' },
-  { id: 4, title: 'Case Law Summary', preview: 'Summarized Supreme Court ruling on...', time: '1d' },
-  { id: 5, title: 'Compliance Check', preview: 'Reviewed company policy against GDPR...', time: '2d' },
-  { id: 6, title: 'IP Rights Consultation', preview: 'Discussed patent filing process...', time: '3d' },
-  { id: 7, title: 'Tax Law Inquiry', preview: 'Clarified corporate tax obligations...', time: '4d' },
-  { id: 8, title: 'Employment Law', preview: 'Reviewed termination procedures...', time: '5d' },
-];
+// AI Chat History is now managed dynamically via props
+const SAMPLE_CHATS = [];
+
 
 
 // Professional Animated Sidebar Toggle Icon (Shared logic)
@@ -122,7 +115,8 @@ const Sidebar = ({
     dispatch(toggleSidebar());
   }, [dispatch]);
 
-  const chatHistory = (chatProps.chatHistory && chatProps.chatHistory.length > 0) ? chatProps.chatHistory : SAMPLE_CHATS;
+  const chatHistory = chatProps.chatHistory || [];
+
 
   const filteredChats = chatHistory.filter(chat =>
     (chat.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -294,9 +288,40 @@ const Sidebar = ({
               </button>
             ))
           ) : (
-            <div className="px-4 py-8 text-center">
-              <MessageCircle size={28} className={`mx-auto mb-2 ${isDark ? 'text-gray-700' : 'text-gray-300'}`} />
-              <p className={`text-[10px] ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>No conversations found</p>
+            <div className="px-6 py-12 text-center flex flex-col items-center justify-center animate-in fade-in duration-700">
+              <div className={`relative mb-6 rounded-full p-4 ${isDark ? 'bg-[#151515]' : 'bg-slate-50'}`}>
+                {/* Beautiful Abstract SVG for Empty State */}
+                <svg width="60" height="60" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="32" cy="32" r="30" className={isDark ? "fill-white/5" : "fill-slate-100"} />
+                  <path d="M42 22H22C20.8954 22 20 22.8954 20 24V44L28 36H42C43.1046 36 44 35.1046 44 34V24C44 22.8954 43.1046 22 42 22Z" className={isDark ? "stroke-gray-600" : "stroke-slate-300"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="32" cy="29" r="2" className={isDark ? "fill-gray-600" : "fill-slate-400"} />
+                  <circle cx="38" cy="29" r="2" className={isDark ? "fill-gray-600" : "fill-slate-400"} />
+                  <circle cx="26" cy="29" r="2" className={isDark ? "fill-gray-600" : "fill-slate-400"} />
+                  <path d="M48 40L52 44" className={isDark ? "stroke-indigo-500/50" : "stroke-indigo-400/50"} strokeWidth="2" strokeLinecap="round" />
+                  <path d="M44 14L46 16" className={isDark ? "stroke-blue-500/50" : "stroke-blue-400/50"} strokeWidth="2" strokeLinecap="round" />
+                  <path d="M12 48L16 46" className={isDark ? "stroke-teal-500/50" : "stroke-teal-400/50"} strokeWidth="2" strokeLinecap="round" />
+                </svg>
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 4, repeat: Infinity }}
+                  className="absolute -top-1 -right-1"
+                >
+                  <Sparkles size={16} className="text-indigo-500" />
+                </motion.div>
+              </div>
+              <h4 className={`text-xs font-bold mb-2 ${isDark ? 'text-gray-300' : 'text-slate-800'}`}>No Conversations Yet</h4>
+              <p className={`text-[10px] leading-relaxed max-w-[140px] mx-auto ${isDark ? 'text-gray-600' : 'text-slate-500'}`}>
+                Start a new chat with our AI to get legal guidance and insights.
+              </p>
+              <button
+                onClick={() => handleNavigate({ id: 'chatbot', path: '/' })}
+                className={`mt-6 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${isDark
+                  ? 'bg-white/5 hover:bg-white/10 text-white border border-white/10'
+                  : 'bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20'
+                  }`}
+              >
+                New Chat
+              </button>
             </div>
           )
         )}

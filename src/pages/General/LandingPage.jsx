@@ -1,13 +1,15 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { useSelector } from 'react-redux';
+import OnlineLawyersSlider from '../../components/features/OnlineLawyersSlider';
 import { tokenManager } from '../../api/apiService';
 import {
     Bot, Scale, FileText, Shield, CheckCircle, ArrowRight,
     Phone, Search, Star, Users, Clock, Lock,
     Sparkles, BadgeCheck, Briefcase,
-    IndianRupee, Banknote, Send, ChevronRight, Wallet, MessageSquare, CalendarCheck
+    IndianRupee, Banknote, Send, ChevronRight, Wallet, MessageSquare, CalendarCheck,
+    Paperclip, File, X
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -24,6 +26,7 @@ const LandingPage = () => {
     const isDark = mode === 'dark';
     const heroRef = useRef(null);
     const [intakeQuery, setIntakeQuery] = useState('');
+    const [selectedFiles, setSelectedFiles] = useState([]);
     const [walletBalance, setWalletBalance] = useState(null);
     const [placeholderText, setPlaceholderText] = useState('');
     const [placeholderIndex, setPlaceholderIndex] = useState(0);
@@ -223,10 +226,29 @@ const LandingPage = () => {
       dark:border-brand-700 dark:text-brand-300 dark:hover:border-brand-400 dark:hover:bg-brand-900/20
       transition-all duration-200`;
 
+
+    const handleFileChange = (e) => {
+        if (e.target.files) {
+            const newFiles = Array.from(e.target.files);
+            setSelectedFiles(prev => [...prev, ...newFiles]);
+        }
+    };
+
+    const removeFile = (index) => {
+        setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
     const handleIntakeSubmit = (e) => {
         e.preventDefault();
-        if (intakeQuery.trim()) {
-            navigate(`/chatbot?q=${encodeURIComponent(intakeQuery.trim())}`);
+        const trimmedQuery = intakeQuery.trim();
+        if (trimmedQuery || selectedFiles.length > 0) {
+            // Pass the query and files via React Router state
+            navigate('/chatbot', {
+                state: {
+                    prefillQuery: trimmedQuery,
+                    files: selectedFiles
+                }
+            });
         } else {
             navigate('/chatbot');
         }
@@ -256,21 +278,7 @@ const LandingPage = () => {
 
                 <div className="relative max-w-4xl mx-auto text-center">
                     {/* Eyebrow badge */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4 }}
-                        className="mb-8"
-                    >
-                        <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase
-                            ${isDark
-                                ? 'bg-[#1A1A1A]/60 text-gray-300 border border-[#333] backdrop-blur-[4px]'
-                                : 'bg-white/80 text-gray-600 border border-gray-200 backdrop-blur-[4px]'}`}
-                        >
-                            <BadgeCheck className="h-4 w-4 text-[#F5B041]" />
-                            BAR COUNCIL VERIFIED · AI-ENABLED · TRUST-FIRST
-                        </span>
-                    </motion.div>
+
 
                     {/* Headline */}
                     <motion.h1
@@ -332,19 +340,64 @@ const LandingPage = () => {
                                         <span className="w-0.5 h-4 bg-current ml-[1px] animate-[pulse_1s_ease-in-out_infinite]" style={{ opacity: 0.8 }} />
                                     </div>
                                 )}
-                                <div className="absolute right-2 top-1/2 -translate-y-1/2 z-30">
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 z-30 flex items-center gap-2">
+                                    <input
+                                        type="file"
+                                        id="landing-file-input"
+                                        multiple
+                                        className="hidden"
+                                        onChange={handleFileChange}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => document.getElementById('landing-file-input').click()}
+                                        className={`flex items-center justify-center h-10 w-10 rounded-xl transition-all
+                                            ${isDark ? 'bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
+                                                : 'bg-gray-100 border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-200'}`}
+                                        title={t('chat.uploadFiles')}
+                                    >
+                                        <Paperclip size={18} />
+                                    </button>
                                     <button
                                         type="submit"
-                                        className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-[#00E5FF] to-teal-400 hover:from-cyan-400 hover:to-teal-500 text-teal-950 transition-all shadow-lg hover:shadow-cyan-500/40 hover:scale-105"
+                                        className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-[#00E5FF] to-teal-400 hover:from-cyan-400 hover:to-teal-500 text-teal-950 transition-all shadow-lg hover:shadow-cyan-500/40 hover:scale-105 group"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                            <line x1="12" y1="19" x2="12" y2="5"></line>
-                                            <polyline points="5 12 12 5 19 12"></polyline>
-                                        </svg>
+                                        <ArrowRight size={20} className="transition-transform duration-300 group-hover:translate-x-0.5 group-active:scale-95" strokeWidth={2.5} />
                                     </button>
                                 </div>
                             </div>
                         </form>
+
+                        {/* File Preview Chips for Landing Page */}
+                        <AnimatePresence>
+                            {selectedFiles.length > 0 && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                    className="flex flex-wrap justify-center gap-2 mt-4"
+                                >
+                                    {selectedFiles.map((file, idx) => (
+                                        <motion.div
+                                            key={idx}
+                                            initial={{ scale: 0.8 }}
+                                            animate={{ scale: 1 }}
+                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] font-bold shadow-sm backdrop-blur-md
+                                                ${isDark ? 'bg-white/5 border-white/10 text-slate-300' : 'bg-white/80 border-gray-200 text-slate-700'}`}
+                                        >
+                                            <File size={12} className="text-[#00E5FF]" />
+                                            <span className="max-w-[150px] truncate">{file.name}</span>
+                                            <button
+                                                onClick={() => removeFile(idx)}
+                                                className="ml-1 p-0.5 rounded-full hover:bg-red-500/10 hover:text-red-500 transition-colors"
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        </motion.div>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </motion.div>
 
                     {/* Secondary action pills */}
@@ -376,27 +429,16 @@ const LandingPage = () => {
                         </button>
                     </motion.div>
 
-                    {/* Trust strip */}
+                    {/* Online Lawyers Slider */}
                     <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.6, delay: 0.45 }}
-                        className={`flex flex-col items-center pt-8 border-t w-full max-w-4xl mx-auto
-                            ${isDark ? 'border-gray-800' : 'border-gray-200'}`}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.6, delay: 0.4 }}
+                        className="w-full"
                     >
-                        <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
-                            {[
-                                { icon: CheckCircle, label: 'Bar Council Verified Lawyers', color: 'text-teal-400' },
-                                { icon: Lock, label: 'End-to-End Encrypted', color: 'text-gray-400' },
-                                { icon: Sparkles, label: 'AI-Assisted, Lawyer-Resolved', color: 'text-yellow-500' },
-                            ].map((badge, i) => (
-                                <div key={i} className={`flex items-center gap-2 text-xs font-medium tracking-wide ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                                    <badge.icon className={`h-4 w-4 ${badge.color}`} />
-                                    <span>{badge.label}</span>
-                                </div>
-                            ))}
-                        </div>
+                        <OnlineLawyersSlider />
                     </motion.div>
+
                 </div>
             </motion.section >
 
