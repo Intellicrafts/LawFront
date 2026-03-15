@@ -47,7 +47,7 @@ const resources = {
                 guestQuerySingular: '{{count}} free query left today',
                 dailyLimitReached: 'Daily limit reached',
                 signupUnlimited: 'Sign up for unlimited access',
-                disclaimer: 'MeraBakil provides AI-driven legal guidance. Verify all critical steps with a registered lawyer.',
+                disclaimer: 'vides AI-driven legal guidance. Verify all critical steps with a registered lawyer.',
                 guestDisclaimer: 'AI provides informational assistance only · 5 free queries/day · No account needed',
                 lawyerQuestion: 'Are you a lawyer?',
                 joinPlatform: 'Join our platform →',

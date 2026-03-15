@@ -1738,9 +1738,34 @@ const Hero = () => {
           <motion.div
             layout
             transition={{ duration: 0.3, type: 'spring' }}
-            className={`px-4 pb-6 pt-2 flex-shrink-0 relative z-20 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}
+            className={`px-4 pb-4 pt-2 flex-shrink-0 relative z-20 ${isDark ? 'bg-[#0A0A0A]' : 'bg-white'}`}
           >
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-3xl mx-auto flex flex-col gap-2">
+              {/* Guest query counter moved ABOVE input field */}
+              {!isAuthenticated && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center justify-center gap-2"
+                >
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold border ${guestQueriesRemaining <= 1
+                    ? isDark ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-700'
+                    : isDark ? 'bg-white/5 border-white/10 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-500'
+                    }`}>
+                    <Lock size={9} />
+                    {guestQueriesRemaining > 0
+                      ? t('hero.guestQueriesLeft', { count: guestQueriesRemaining })
+                      : t('hero.dailyLimitReached')}
+                  </span>
+                  <button
+                    onClick={() => navigate('/signup')}
+                    className={`text-[10px] font-semibold underline underline-offset-2 ${isDark ? 'text-brand-400 hover:text-brand-300' : 'text-brand-600 hover:text-brand-700'
+                      }`}
+                  >
+                    {t('hero.signupUnlimited')}
+                  </button>
+                </motion.div>
+              )}
               <motion.div
                 layout
                 className={`relative rounded-3xl border transition-all duration-500 overflow-hidden
@@ -1884,38 +1909,6 @@ const Hero = () => {
                   )}
                 </AnimatePresence>
               </motion.div>
-
-              <div className="mt-3 flex items-center justify-center gap-4">
-                <p className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-slate-700' : 'text-slate-400'}`}>
-                  {t('hero.disclaimer')}
-                </p>
-              </div>
-
-              {/* Guest query counter */}
-              {!isAuthenticated && (
-                <motion.div
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-2 flex items-center justify-center gap-2"
-                >
-                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold border ${guestQueriesRemaining <= 1
-                    ? isDark ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-700'
-                    : isDark ? 'bg-white/5 border-white/10 text-gray-500' : 'bg-gray-50 border-gray-200 text-gray-500'
-                    }`}>
-                    <Lock size={9} />
-                    {guestQueriesRemaining > 0
-                      ? t('hero.guestQueriesLeft', { count: guestQueriesRemaining })
-                      : t('hero.dailyLimitReached')}
-                  </span>
-                  <button
-                    onClick={() => navigate('/signup')}
-                    className={`text-[10px] font-semibold underline underline-offset-2 ${isDark ? 'text-brand-400 hover:text-brand-300' : 'text-brand-600 hover:text-brand-700'
-                      }`}
-                  >
-                    {t('hero.signupUnlimited')}
-                  </button>
-                </motion.div>
-              )}
             </div>
           </motion.div>
         </main>
