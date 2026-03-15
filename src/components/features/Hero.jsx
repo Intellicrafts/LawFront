@@ -12,7 +12,7 @@ import {
   Heart, Share2, Copy, Volume2, Download, CheckCircle,
   Loader2, Brain, BookOpen, PenTool, Zap, ThumbsUp, ThumbsDown, VolumeX,
   PanelLeftClose, PanelLeftOpen, ArrowRight, TrendingUp, Cpu, Target,
-  History, Archive, Star as StarIcon, FileText, Lock, Paperclip, File
+  History, Archive, Star as StarIcon, FileText, Lock, Paperclip, File as LucideFile
 } from 'lucide-react';
 import { chatbotService, CHAT_STATES, AI_MODELS } from '../../services/chatbotApiService';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -642,142 +642,312 @@ const MessageActions = ({ text, isDark }) => {
 };
 
 const FileIcon = ({ type, className }) => {
-  if (type?.includes('pdf')) return <FileText className={`text-red-500 ${className}`} />;
-  if (type?.includes('image')) return <ImageIcon className={`text-blue-500 ${className}`} />;
-  if (type?.includes('word')) return <File className={`text-indigo-500 ${className}`} />;
-  return <File className={`text-slate-500 ${className}`} />;
+  const t = type?.toLowerCase() || '';
+  if (t.includes('pdf')) return <FileText className={`text-red-500 ${className}`} />;
+  if (t.includes('image')) return <ImageIcon className={`text-blue-500 ${className}`} />;
+  if (t.includes('word') || t.includes('doc')) return <LucideFile className={`text-blue-600 ${className}`} />;
+  if (t.includes('sheet') || t.includes('excel') || t.includes('csv')) return <LucideFile className={`text-emerald-500 ${className}`} />;
+  if (t.includes('presentation') || t.includes('powerpoint')) return <LucideFile className={`text-orange-500 ${className}`} />;
+  if (t.includes('zip') || t.includes('rar') || t.includes('tar')) return <LucideFile className={`text-amber-600 ${className}`} />;
+  if (t.includes('text') || t.includes('javascript') || t.includes('json') || t.includes('css') || t.includes('html')) return <FileText className={`text-slate-400 ${className}`} />;
+  return <LucideFile className={`text-slate-500 ${className}`} />;
+};
+
+const FileViewerModal = ({ file, isDark, onClose }) => {
+  const [url, setUrl] = useState(null);
+  const [textContent, setTextContent] = useState(null);
+  const [isReading, setIsReading] = useState(false);
+
+  useEffect(() => {
+    if (file instanceof File) {
+      const u = URL.createObjectURL(file);
+      setUrl(u);
+
+      const isText = file.type?.includes('text') ||
+        file.name.endsWith('.js') ||
+        file.name.endsWith('.css') ||
+        file.name.endsWith('.json') ||
+        file.name.endsWith('.md') ||
+        file.name.endsWith('.csv');
+
+      if (isText && file.size < 1024 * 1024) { // Limit to 1MB for preview
+        setIsReading(true);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setTextContent(e.target.result);
+          setIsReading(false);
+        };
+        reader.readAsText(file);
+      } else {
+        setTextContent(null);
+      }
+
+      return () => {
+        URL.revokeObjectURL(u);
+        setTextContent(null);
+      };
+    }
+  }, [file]);
+
+  if (!file) return null;
+
+  const isImage = file.type?.includes('image');
+  const isPDF = file.type?.includes('pdf');
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          onClick={(e) => e.stopPropagation()}
+          className={`relative max-w-5xl w-full max-h-[90vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col
+            ${isDark ? 'bg-[#1A1A1A] border border-white/10' : 'bg-white border border-slate-200'}`}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-white/10">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className={`p-2 rounded-lg ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+                <FileIcon type={file.type || (file.name.split('.').pop())} className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <p className={`text-sm font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{file.name}</p>
+                <p className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                  {(file.size / 1024).toFixed(1)} KB • {file.type?.toUpperCase() || file.name.split('.').pop()?.toUpperCase()}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className={`p-2 rounded-xl transition-all ${isDark ? 'hover:bg-white/10 text-gray-400' : 'hover:bg-slate-100 text-slate-500'}`}
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Content Wrapper */}
+          <div className={`flex-1 overflow-auto flex items-center justify-center
+            ${isDark ? 'bg-[#0A0A0A]/40' : 'bg-slate-50/50'}`}>
+            {isReading ? (
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>Reading file content...</p>
+              </div>
+            ) : isImage ? (
+              <div className="p-6 w-full h-full flex items-center justify-center">
+                <img src={url} alt={file.name} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" />
+              </div>
+            ) : isPDF ? (
+              <iframe src={url} className="w-full h-full min-h-[70vh] border-0" title={file.name} />
+            ) : textContent ? (
+              <div className="w-full h-full p-6 overflow-auto">
+                <pre className={`p-6 rounded-2xl text-xs font-mono leading-relaxed overflow-auto max-h-full
+                  ${isDark ? 'bg-black/50 text-gray-300 border border-white/5' : 'bg-white text-slate-700 border border-slate-100 shadow-sm'}`}>
+                  {textContent}
+                </pre>
+              </div>
+            ) : (
+              <div className="text-center py-20 px-6">
+                <div className={`w-20 h-20 mx-auto mb-6 rounded-3xl flex items-center justify-center
+                  ${isDark ? 'bg-white/5' : 'bg-white shadow-sm'}`}>
+                  <FileIcon type={file.type} className="w-10 h-10 opacity-40" />
+                </div>
+                <h3 className={`text-lg font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>No Preview Available</h3>
+                <p className={`text-sm max-w-xs mx-auto mb-8 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                  This file type doesn't support direct in-browser previews yet.
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                  <a
+                    href={url}
+                    download={file.name}
+                    className="inline-flex items-center gap-2 px-8 py-3 rounded-2xl bg-blue-600 text-white font-bold text-sm shadow-xl shadow-blue-500/20 hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:translate-y-0"
+                  >
+                    <Download size={18} /> Download File
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
 };
 
 const MessageBubble = ({ message, thought, files, isDark, isUser, isStreaming = false, chatState, modelId = 'legal_counsel' }) => {
   const [showLog, setShowLog] = useState(false);
+  const [fileToView, setFileToView] = useState(null);
   const agentName = modalOptions.find(opt => opt.id === modelId)?.label || 'LAWYER TIA';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{
-        type: 'spring',
-        stiffness: 260,
-        damping: 20,
-        opacity: { duration: 0.4 }
-      }}
-      className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-8 group`}
-    >
-      <div className={`flex items-start gap-2.5 sm:gap-4 max-w-[98%] sm:max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-        {!isUser && <TiaAvatar isStreaming={isStreaming} />}
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{
+          type: 'spring',
+          stiffness: 260,
+          damping: 20,
+          opacity: { duration: 0.4 }
+        }}
+        className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-8 group`}
+      >
+        <div className={`flex items-start gap-2.5 sm:gap-4 max-w-[98%] sm:max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+          {!isUser && <TiaAvatar isStreaming={isStreaming} />}
 
-        <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} flex-1 min-w-0`}>
-          {/* Name and State HUD for AI */}
-          {!isUser && (
-            <div className="flex items-center gap-2 mb-1.5 ml-1">
-              <span className={`text-[11px] font-black tracking-widest opacity-80 uppercase ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                {agentName}
-              </span>
+          <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} flex-1 min-w-0`}>
+            {/* Name and State HUD for AI */}
+            {!isUser && (
+              <div className="flex items-center gap-2 mb-1.5 ml-1">
+                <span className={`text-[11px] font-black tracking-widest opacity-80 uppercase ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  {agentName}
+                </span>
 
-              <div className="flex items-center gap-1.5">
-                {(thought || isStreaming) && (
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => setShowLog(!showLog)}
-                    className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase transition-all
-                      ${showLog
-                        ? (isDark ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-50 text-blue-600 border border-blue-200 shadow-sm')
-                        : 'text-gray-500 hover:text-blue-500 hover:bg-blue-500/5'}`}
-                    title={showLog ? "Hide Logic & Events" : "Show Logic & Events"}
-                  >
-                    <Brain size={11} className={showLog ? "animate-pulse" : ""} />
-                    <span>{showLog ? 'Hide Process' : 'Show Process'}</span>
-                  </motion.button>
-                )}
+                <div className="flex items-center gap-1.5">
+                  {(thought || isStreaming) && (
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setShowLog(!showLog)}
+                      className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase transition-all
+                        ${showLog
+                          ? (isDark ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-50 text-blue-600 border border-blue-200 shadow-sm')
+                          : 'text-gray-500 hover:text-blue-500 hover:bg-blue-500/5'}`}
+                      title={showLog ? "Hide Logic & Events" : "Show Logic & Events"}
+                    >
+                      <Brain size={11} className={showLog ? "animate-pulse" : ""} />
+                      <span>{showLog ? 'Hide Process' : 'Show Process'}</span>
+                    </motion.button>
+                  )}
 
-                {isStreaming && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[8.5px] font-black uppercase tracking-tighter
-                    ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}
-                  >
-                    <div className="w-1 h-1 rounded-full bg-emerald-500 animate-ping" />
-                    <span>{chatState || 'Thinking'}</span>
-                  </motion.div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* The Intelligence Log (Shown only when toggled) */}
-          <AnimatePresence>
-            {!isUser && showLog && (thought || isStreaming) && (
-              <IntelligenceLog thought={thought} isStreaming={isStreaming} isDark={isDark} />
-            )}
-          </AnimatePresence>
-
-          <div
-            className={`relative transition-all duration-300 ${isUser
-              ? `px-3.5 py-2 rounded-[20px] shadow-sm ${isDark
-                ? 'bg-gradient-to-br from-[#1e1e1e] to-[#141414] border border-white/10 text-white shadow-xl shadow-black/20'
-                : 'bg-white border border-slate-200 text-slate-700 shadow-lg shadow-slate-200/5'
-              } font-medium text-[14px] leading-relaxed w-full max-w-sm`
-              : `w-full ${isDark ? 'text-gray-200' : 'text-slate-800'}`
-              }`}
-          >
-            {/* File Attachments Grid */}
-            {files && files.length > 0 && (
-              <div className={`grid grid-cols-1 gap-2 mb-3 ${isUser ? 'w-full' : 'max-w-md'}`}>
-                {files.map((file, i) => (
-                  <div key={i} className={`flex items-center gap-3 p-3 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-100'}`}>
-                    <div className={`p-2 rounded-lg ${isDark ? 'bg-white/5' : 'bg-white'}`}>
-                      <FileIcon type={file.type} className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-xs font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{file.name}</p>
-                      <p className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
-                        {(file.size / 1024).toFixed(1)} KB • {file.type?.split('/')[1]?.toUpperCase() || 'FILE'}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {isStreaming && !isUser ? (
-              message ? (
-                <StreamingText text={message} isDark={isDark} />
-              ) : (
-                <div className="flex gap-1.5 px-3 py-2 bg-white/5 rounded-xl w-fit">
-                  {[1, 2, 3].map(i => (
+                  {isStreaming && (
                     <motion.div
-                      key={i}
-                      animate={{ scale: [1, 1.4, 1], opacity: [0.3, 1, 0.3] }}
-                      transition={{ repeat: Infinity, duration: 1, delay: i * 0.2 }}
-                      className="w-1.5 h-1.5 rounded-full bg-blue-500"
-                    />
-                  ))}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[8.5px] font-black uppercase tracking-tighter
+                      ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}
+                    >
+                      <div className="w-1 h-1 rounded-full bg-emerald-500 animate-ping" />
+                      <span>{chatState || 'Thinking'}</span>
+                    </motion.div>
+                  )}
                 </div>
-              )
-            ) : isUser ? (
-              <span className="leading-relaxed whitespace-pre-wrap">{message}</span>
-            ) : (
-              <div className={`prose-professional ${isDark ? 'text-gray-100' : 'text-slate-900'}`}>
-                <FormattedResponse text={message} isDark={isDark} />
               </div>
+            )}
+
+            {/* The Intelligence Log (Shown only when toggled) */}
+            <AnimatePresence>
+              {!isUser && showLog && (thought || isStreaming) && (
+                <IntelligenceLog thought={thought} isStreaming={isStreaming} isDark={isDark} />
+              )}
+            </AnimatePresence>
+
+            <div
+              className={`relative transition-all duration-300 ${isUser
+                ? `px-3.5 py-2 rounded-[20px] shadow-sm ${isDark
+                  ? 'bg-gradient-to-br from-[#1E1E1E] to-[#141414] border border-white/10 text-white shadow-xl shadow-black/20'
+                  : 'bg-white border border-slate-200 text-slate-700 shadow-lg shadow-slate-200/5'
+                } font-medium text-[14px] leading-relaxed w-full max-w-sm`
+                : `w-full ${isDark ? 'text-gray-200' : 'text-slate-800'}`
+                }`}
+            >
+              {/* File Attachments Grid - Responsive layout for multiple files */}
+              {files && files.length > 0 && (
+                <div className={`grid ${files.length > 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'} gap-2.5 mb-3 ${isUser ? 'w-full' : 'max-w-2xl'}`}>
+                  {files.map((file, i) => {
+                    const isImage = file.type?.includes('image');
+                    const fileUrl = (file instanceof File) ? URL.createObjectURL(file) : null;
+
+                    return (
+                      <motion.div
+                        key={i}
+                        whileHover={{ scale: 1.01 }}
+                        onClick={() => setFileToView(file)}
+                        className={`cursor-pointer group/file relative overflow-hidden rounded-2xl border transition-all
+                          ${isDark ? 'bg-white/5 border-white/10 hover:border-blue-500/50' : 'bg-white border-slate-200 hover:border-blue-500 shadow-sm'}`}
+                      >
+                        {isImage ? (
+                          <div className="aspect-video w-full relative overflow-hidden bg-slate-100">
+                            {fileUrl && <img src={fileUrl} alt={file.name} className="w-full h-full object-cover" />}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/file:opacity-100 transition-opacity flex items-center justify-center">
+                              <div className="p-3 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/30">
+                                <SearchIcon size={20} />
+                              </div>
+                            </div>
+                            <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                              <p className="text-white text-[11px] font-bold truncate pr-6">{file.name}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3 p-3">
+                            <div className={`p-2.5 rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+                              <FileIcon type={file.type} className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-[11px] font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{file.name}</p>
+                              <p className={`text-[9px] ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                                {(file.size / 1024).toFixed(1)} KB
+                              </p>
+                            </div>
+                            <ArrowRight size={14} className="text-blue-500 opacity-0 group-hover/file:opacity-100 transition-opacity flex-shrink-0" />
+                          </div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {isStreaming && !isUser ? (
+                message ? (
+                  <StreamingText text={message} isDark={isDark} />
+                ) : (
+                  <div className="flex gap-1.5 px-3 py-2 bg-white/5 rounded-xl w-fit">
+                    {[1, 2, 3].map(i => (
+                      <motion.div
+                        key={i}
+                        animate={{ scale: [1, 1.4, 1], opacity: [0.3, 1, 0.3] }}
+                        transition={{ repeat: Infinity, duration: 1, delay: i * 0.2 }}
+                        className="w-1.5 h-1.5 rounded-full bg-blue-500"
+                      />
+                    ))}
+                  </div>
+                )
+              ) : isUser ? (
+                <span className="leading-relaxed whitespace-pre-wrap">{message}</span>
+              ) : (
+                <div className={`prose-professional ${isDark ? 'text-gray-100' : 'text-slate-900'}`}>
+                  <FormattedResponse text={message} isDark={isDark} />
+                </div>
+              )}
+            </div>
+
+            {!isUser && !isStreaming && message && (
+              <motion.div
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="mt-1"
+              >
+                <MessageActions text={message} isDark={isDark} />
+              </motion.div>
             )}
           </div>
-
-          {!isUser && !isStreaming && message && (
-            <motion.div
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="mt-1"
-            >
-              <MessageActions text={message} isDark={isDark} />
-            </motion.div>
-          )}
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+
+      <FileViewerModal
+        file={fileToView}
+        isDark={isDark}
+        onClose={() => setFileToView(null)}
+      />
+    </>
   );
 };
 
@@ -1409,10 +1579,14 @@ const Hero = () => {
 
     // Capture current state for the message history
     const messageId = Date.now().toString();
+    const defaultContent = finalFiles.length > 0
+      ? (finalFiles.length === 1 ? finalFiles[0].name : `${finalFiles[0].name} + ${finalFiles.length - 1} more`)
+      : "";
+
     const userMessage = {
       id: messageId,
       role: 'user',
-      content: userQuery || (finalFiles.length > 0 ? t('chat.uploadedFiles', { count: finalFiles.length }) : ""),
+      content: userQuery || defaultContent,
       files: finalFiles, // Attach files to the message object for rendering
       modelId: selectedModal // Persist the agent who received this message
     };
@@ -1931,18 +2105,18 @@ const Hero = () => {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      className={`px-4 pb-4 flex flex-wrap gap-2 pt-2 border-t ${isDark ? 'border-white/5' : 'border-slate-100'}`}
+                      className={`px-4 pb-4 flex overflow-x-auto gap-2 pt-2 border-t scrollbar-hide scroll-smooth ${isDark ? 'border-white/5' : 'border-slate-100'}`}
                     >
                       {uploadedFiles.map((file, idx) => (
                         <motion.div
                           key={`uploaded-${idx}`}
                           initial={{ scale: 0.8, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] font-bold shadow-sm backdrop-blur-md
-                            ${isDark ? 'bg-white/5 border-white/10 text-slate-300' : 'bg-white border-slate-200 text-slate-700'}`}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] font-bold shadow-sm backdrop-blur-md flex-shrink-0
+                            ${isDark ? 'bg-white/10 border-white/20 text-white' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
                         >
                           <FileIcon type={file.type} className="w-3.5 h-3.5" />
-                          <span className="max-w-[120px] truncate">{file.name}</span>
+                          <span className="max-w-[100px] truncate">{file.name}</span>
                           <button onClick={() => removeUploadedFile(idx, false)} className="ml-1 p-0.5 rounded-full hover:bg-red-500/10 hover:text-red-500 transition-colors">
                             <X size={12} />
                           </button>
@@ -1953,11 +2127,11 @@ const Hero = () => {
                           key={`pending-${idx}`}
                           initial={{ scale: 0.8, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] font-bold shadow-sm backdrop-blur-md animate-pulse
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] font-bold shadow-sm backdrop-blur-md animate-pulse flex-shrink-0
                             ${isDark ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-600'}`}
                         >
                           <FileIcon type={file.type} className="w-3.5 h-3.5" />
-                          <span className="max-w-[120px] truncate">{file.name}</span>
+                          <span className="max-w-[100px] truncate">{file.name}</span>
                           <button onClick={() => removeUploadedFile(idx, true)} className="ml-1 p-0.5 rounded-full hover:bg-red-500/10 hover:text-red-500 transition-colors">
                             <X size={12} />
                           </button>

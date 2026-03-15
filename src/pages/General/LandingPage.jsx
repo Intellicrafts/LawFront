@@ -9,7 +9,7 @@ import {
     Phone, Search, Star, Users, Clock, Lock,
     Sparkles, BadgeCheck, Briefcase,
     IndianRupee, Banknote, Send, ChevronRight, Wallet, MessageSquare, CalendarCheck,
-    Paperclip, File, X
+    Paperclip, File as LucideFile, X
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -368,25 +368,25 @@ const LandingPage = () => {
                             </div>
                         </form>
 
-                        {/* File Preview Chips for Landing Page */}
+                        {/* File Preview Chips for Landing Page - Horizontal Scrolling */}
                         <AnimatePresence>
                             {selectedFiles.length > 0 && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: 10 }}
-                                    className="flex flex-wrap justify-center gap-2 mt-4"
+                                    className="flex overflow-x-auto gap-2 mt-4 pb-2 scrollbar-hide max-w-full px-4 justify-start sm:justify-center no-scrollbar"
                                 >
                                     {selectedFiles.map((file, idx) => (
                                         <motion.div
                                             key={idx}
                                             initial={{ scale: 0.8 }}
                                             animate={{ scale: 1 }}
-                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] font-bold shadow-sm backdrop-blur-md
-                                                ${isDark ? 'bg-white/5 border-white/10 text-slate-300' : 'bg-white/80 border-gray-200 text-slate-700'}`}
+                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] font-bold shadow-sm backdrop-blur-md flex-shrink-0
+                                                ${isDark ? 'bg-white/10 border-white/20 text-slate-200' : 'bg-white/80 border-gray-200 text-slate-700'}`}
                                         >
-                                            <File size={12} className="text-[#00E5FF]" />
-                                            <span className="max-w-[150px] truncate">{file.name}</span>
+                                            <LucideFile size={12} className="text-[#00E5FF]" />
+                                            <span className="max-w-[120px] truncate">{file.name}</span>
                                             <button
                                                 onClick={() => removeFile(idx)}
                                                 className="ml-1 p-0.5 rounded-full hover:bg-red-500/10 hover:text-red-500 transition-colors"
