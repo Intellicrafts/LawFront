@@ -128,7 +128,6 @@ const SocialButtons = ({ onSocialLogin, loading, onGoogleLogin }) => {
 
   const googleLogin = useGoogleLogin({
     onSuccess: (tokenResponse) => {
-      console.log('Google signup successful:', tokenResponse);
       if (onGoogleLogin) {
         onGoogleLogin(tokenResponse.access_token);
       }
@@ -139,19 +138,6 @@ const SocialButtons = ({ onSocialLogin, loading, onGoogleLogin }) => {
         onSocialLogin('google', { error: 'Google signup failed. Please try again.' });
       }
     }
-  });
-
-  useGoogleOneTapLogin({
-    onSuccess: (tokenResponse) => {
-      console.log('Google One Tap signup successful:', tokenResponse);
-      if (onGoogleLogin) {
-        onGoogleLogin(tokenResponse.credential);
-      }
-    },
-    onError: (error) => {
-      console.log('Google One Tap signup failed or dismissed:', error);
-    },
-    auto_select: true
   });
 
   const socialButtonClass = `w-full py-2.5 px-4 rounded-lg flex items-center justify-center space-x-3 font-medium transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none ${isDarkMode
