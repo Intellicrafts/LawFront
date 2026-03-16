@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Mail, Lock, Eye, EyeOff, Scale, Check, AlertCircle, CheckCircle, Smartphone, Globe, Shield, ArrowLeft, KeyRound } from 'lucide-react';
-import { useGoogleLogin } from '@react-oauth/google';
+import { useGoogleLogin, useGoogleOneTapLogin } from '@react-oauth/google';
 import { authAPI, tokenManager } from '../../api/apiService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '../../context/ToastContext';
@@ -129,6 +129,20 @@ const SocialButtons = ({ onSocialLogin, loading, onGoogleLogin }) => {
         onSocialLogin('google', { error: 'Google login failed. Please try again.' });
       }
     }
+  });
+
+  useGoogleOneTapLogin({
+    onSuccess: (tokenResponse) => {
+      console.log('Google One Tap login successful:', tokenResponse);
+      if (onGoogleLogin) {
+        // One Tap returns a JWT 'credential'
+        onGoogleLogin(tokenResponse.credential);
+      }
+    },
+    onError: (error) => {
+      console.log('Google One Tap login failed or dismissed:', error);
+    },
+    auto_select: true
   });
 
   const socialButtonClass = `w-full py-2.5 px-4 rounded-lg flex items-center justify-center space-x-3 font-medium transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none ${isDarkMode

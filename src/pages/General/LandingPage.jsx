@@ -294,16 +294,7 @@ const LandingPage = () => {
                         </span>
                     </motion.h1>
 
-                    {/* Subtitle */}
-                    <motion.p
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.2 }}
-                        className={`text-sm md:text-base max-w-xl mx-auto mb-6 md:mb-8 font-medium tracking-wide
-              ${isDark ? 'text-gray-300' : 'text-gray-600'}`}
-                    >
-                        Pick up where you left off, or start something new.
-                    </motion.p>
+
 
                     {/* Unified AI Chat Widget */}
                     <motion.div
@@ -400,31 +391,33 @@ const LandingPage = () => {
                         </AnimatePresence>
                     </motion.div>
 
+
+
                     {/* Secondary action pills */}
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.45, delay: 0.35 }}
-                        className="flex flex-wrap items-center justify-center gap-3 mb-8 md:mb-12"
+                        transition={{ duration: 0.45, delay: 0.45 }}
+                        className="flex flex-wrap items-center justify-center gap-4 mt-12 mb-10 md:mt-16 md:mb-12"
                     >
                         <button
                             onClick={() => navigate('/legal-consoltation')}
-                            className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold border transition-all hover:-translate-y-1 duration-200
-                                ${isDark ? 'bg-white/[0.03] border-gray-700 text-gray-300 hover:border-[#00E5FF]/50 hover:text-white hover:bg-white/[0.05]'
-                                    : 'bg-white border-gray-200 text-gray-700 hover:border-[#00E5FF] hover:text-teal-700 shadow-sm'}`}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold border transition-all hover:-translate-y-1 duration-200 shadow-md hover:shadow-lg
+                                ${isDark ? 'bg-white/[0.05] border-gray-600 text-gray-200 hover:border-[#00E5FF]/60 hover:text-white hover:bg-white/[0.08]'
+                                    : 'bg-white border-gray-300 text-gray-800 hover:border-[#00E5FF] hover:text-teal-800'}`}
                             style={{ backdropFilter: 'blur(8px)' }}
                         >
-                            <Users className="h-4 w-4 text-gray-400" />
+                            <Users className="h-4 w-4 text-cyan-500" />
                             Find a Lawyer
                         </button>
                         <button
                             onClick={() => tokenManager.isAuthenticated() ? navigate('/legal-consoltation?view=appointments') : navigate('/auth')}
-                            className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold border transition-all hover:-translate-y-1 duration-200
-                                ${isDark ? 'bg-white/[0.03] border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white hover:bg-white/[0.05]'
-                                    : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:text-gray-900 shadow-sm'}`}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold border transition-all hover:-translate-y-1 duration-200 shadow-md hover:shadow-lg
+                                ${isDark ? 'bg-white/[0.03] border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white hover:bg-white/[0.08]'
+                                    : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400 hover:text-gray-900'}`}
                             style={{ backdropFilter: 'blur(8px)' }}
                         >
-                            <CalendarCheck className="h-4 w-4 text-gray-400" />
+                            <CalendarCheck className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
                             My Appointments
                         </button>
                     </motion.div>

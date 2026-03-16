@@ -132,23 +132,7 @@ const OnlineLawyersSlider = () => {
     return (
         <div className="w-full overflow-hidden mt-8 mb-12 relative max-w-7xl mx-auto px-4 z-20 touch-pan-y">
 
-            <div className="flex items-center justify-between mb-6 px-2">
-                <div className="flex items-center gap-3">
-                    <div className="relative flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                    </div>
-                    <h3 className={`text-lg font-bold tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                        Online Lawyers Ready to Help
-                    </h3>
-                </div>
-                <button
-                    onClick={() => navigate('/legal-consoltation')}
-                    className={`text-sm font-semibold flex items-center gap-1 transition-colors ${isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-brand-600 hover:text-brand-700'}`}
-                >
-                    View all <ArrowRight size={14} />
-                </button>
-            </div>
+            {/* The previous text header was removed here */}
 
             <div
                 className="w-full overflow-hidden relative"
