@@ -1156,6 +1156,7 @@ const LawyerAdmin = () => {
                   darkMode={isDark}
                   userData={userData}
                   activeSession={activeSession}
+                  initialAppointments={appointmentData}
                 />
               )}
               {activeTab === 'clients' && <LawyerClients darkMode={isDark} />}
