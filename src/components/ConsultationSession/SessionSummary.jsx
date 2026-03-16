@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     CheckCircle, Clock, MessageCircle, Shield, Star,
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { toggleTheme } from '../../redux/themeSlice';
+import { deriveKey, decryptText } from '../../utils/e2ee';
 
 const SessionSummary = ({
     session,
@@ -24,16 +25,62 @@ const SessionSummary = ({
     const [feedbackText, setFeedbackText] = useState('');
     const [showFeedback, setShowFeedback] = useState(false);
     const [activeTab, setActiveTab] = useState('summary');
+    const [e2eKey, setE2eKey] = useState(null);
+    const [decryptedMessages, setDecryptedMessages] = useState([]);
 
     const otherName = otherParticipant?.name || (userType === 'user' ? 'Lawyer' : 'Client');
     const otherInitials = otherName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
     // ── Stats calculations ──
+    useEffect(() => {
+        const initKey = async () => {
+            if (session?.session_token) {
+                const key = await deriveKey(session.session_token, 'meravakil_secure_salt');
+                setE2eKey(key);
+            }
+        };
+        initKey();
+    }, [session?.session_token]);
+
     const realMessages = messages.filter(m =>
         m.sender_type !== 'system' &&
         !m.content?.startsWith('_REACTION_') &&
         !m.content?.startsWith('_REACTION_REMOVE_:')
     );
+
+    useEffect(() => {
+        const decryptAll = async () => {
+            if (!e2eKey || !realMessages) return;
+
+            try {
+                const decrypted = await Promise.all(realMessages.map(async (msg) => {
+                    let plainContent = msg.content;
+                    
+                    if (msg.message_type === 'file') {
+                        plainContent = `📎 ${msg.file_name || 'Attached file'}`;
+                    } else if (msg.content && !msg.content.startsWith('_REACTION_')) {
+                        try {
+                            plainContent = await decryptText(msg.content, e2eKey);
+                        } catch (err) {
+                            console.warn("Could not decrypt message in summary", err);
+                            plainContent = "Message encrypted";
+                        }
+                    }
+
+                    return {
+                        ...msg,
+                        plain_content: plainContent
+                    };
+                }));
+                // Set and sort just in case
+                setDecryptedMessages(decrypted.sort((a,b) => new Date(a.created_at) - new Date(b.created_at)));
+            } catch (error) {
+                console.error("Failed to decrypt summary messages:", error);
+            }
+        };
+
+        decryptAll();
+    }, [messages, e2eKey]);
     const totalMessages = realMessages.length;
     const userMessages = realMessages.filter(m => m.sender_type === 'user').length;
     const lawyerMessages = realMessages.filter(m => m.sender_type === 'lawyer').length;
@@ -65,12 +112,12 @@ const SessionSummary = ({
     };
 
     const downloadTranscript = () => {
-        const textMessages = messages
+        const textMessages = decryptedMessages
             .filter(m => m.sender_type !== 'system' && !m.content?.startsWith('_REACTION_'))
             .map(m => {
                 const time = formatTime(m.created_at);
                 const sender = m.sender_type === 'user' ? '[CLIENT]' : '[LAWYER]';
-                return `[${time}] ${sender}: ${m.content || '[File Attachment]'}`;
+                return `[${time}] ${sender}: ${m.plain_content || '[File Attachment]'}`;
             })
             .join('\n');
 
@@ -516,12 +563,12 @@ const SessionSummary = ({
                                         </div>
                                     </div>
                                     <div className="max-h-[380px] overflow-y-auto px-3 py-2 space-y-1">
-                                        {realMessages.length === 0 ? (
+                                        {decryptedMessages.length === 0 ? (
                                             <div className="text-center py-8">
                                                 <MessageCircle size={24} className={`mx-auto mb-2 ${isDarkMode ? 'text-slate-700' : 'text-slate-300'}`} />
                                                 <p className={`text-[12px] ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>No messages in this session</p>
                                             </div>
-                                        ) : realMessages.map((msg, i) => {
+                                        ) : decryptedMessages.map((msg, i) => {
                                             const isOwn = (userType === 'user' && msg.sender_type === 'user') ||
                                                 (userType === 'lawyer' && msg.sender_type === 'lawyer');
                                             return (
@@ -553,10 +600,7 @@ const SessionSummary = ({
                                                             )}
                                                         </div>
                                                         <p className={`text-[12px] leading-snug break-words ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                                                            {msg.message_type === 'file'
-                                                                ? `📎 ${msg.file_name || 'Attached file'}`
-                                                                : msg.content
-                                                            }
+                                                            {msg.plain_content}
                                                         </p>
                                                     </div>
                                                 </div>
