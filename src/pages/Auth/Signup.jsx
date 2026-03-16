@@ -6,7 +6,7 @@ import {
   Upload, FileText, CheckCircle, ArrowRight, ArrowLeft, Eye, EyeOff, AlertCircle, Smartphone
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGoogleLogin } from '@react-oauth/google';
+import { useGoogleLogin, useGoogleOneTapLogin } from '@react-oauth/google';
 import axios from 'axios';
 import { authAPI, tokenManager, walletAPI } from '../../api/apiService';
 import { useToast } from '../../context/ToastContext';
@@ -128,7 +128,6 @@ const SocialButtons = ({ onSocialLogin, loading, onGoogleLogin }) => {
 
   const googleLogin = useGoogleLogin({
     onSuccess: (tokenResponse) => {
-      console.log('Google signup successful:', tokenResponse);
       if (onGoogleLogin) {
         onGoogleLogin(tokenResponse.access_token);
       }

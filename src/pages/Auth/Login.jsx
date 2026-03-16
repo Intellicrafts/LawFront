@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Mail, Lock, Eye, EyeOff, Scale, Check, AlertCircle, CheckCircle, Smartphone, Globe, Shield, ArrowLeft, KeyRound } from 'lucide-react';
-import { useGoogleLogin } from '@react-oauth/google';
+import { useGoogleLogin, useGoogleOneTapLogin } from '@react-oauth/google';
 import { authAPI, tokenManager } from '../../api/apiService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '../../context/ToastContext';
@@ -118,7 +118,6 @@ const SocialButtons = ({ onSocialLogin, loading, onGoogleLogin }) => {
 
   const googleLogin = useGoogleLogin({
     onSuccess: (tokenResponse) => {
-      console.log('Google login successful:', tokenResponse);
       if (onGoogleLogin) {
         onGoogleLogin(tokenResponse.access_token);
       }
@@ -355,12 +354,12 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
       showWarning('Please enter the complete 6-digit code.');
       return;
     }
-
+    
     setFormState(prev => ({ ...prev, loading: true }));
     try {
       showInfo('Verifying code securely...');
       await authAPI.getCsrfCookie();
-
+      
       const payload = {
         email: formData.email.trim().toLowerCase(),
         otp: otpCode
@@ -425,13 +424,13 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     if (element.nextSibling && element.value !== '') {
       element.nextSibling.focus();
     }
-
+    
     // Auto-submit if all filled
     if (index === 5 && element.value !== '' && newOtp.join('').length === 6) {
       // Small timeout to allow state to update
       setTimeout(() => {
-        // handleVerifyLoginOtp using the latest otp state implicitly or passing it directly isn't perfectly reliable with closure, 
-        // so we rely on the submit button or user pressing enter, but for UX, triggering it is cool. Let's let the user hit Enter or button.
+         // handleVerifyLoginOtp using the latest otp state implicitly or passing it directly isn't perfectly reliable with closure, 
+         // so we rely on the submit button or user pressing enter, but for UX, triggering it is cool. Let's let the user hit Enter or button.
       }, 50);
     }
   };
@@ -448,13 +447,13 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
     e.preventDefault();
     const pastedData = e.clipboardData.getData('text').slice(0, 6).split('');
     if (pastedData.some(isNaN)) return;
-
+    
     const newOtp = [...otp];
     pastedData.forEach((value, index) => {
       if (index < 6) newOtp[index] = value;
     });
     setOtp(newOtp);
-
+    
     // Focus last filled input
     const inputs = document.querySelectorAll('.otp-input-field');
     const focusIndex = Math.min(pastedData.length, 5);
@@ -827,8 +826,8 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                   <button
                     type="button"
                     onClick={() => {
-                      setLoginMethod('password');
-                      setFormState(prev => ({ ...prev, errors: {} }));
+                        setLoginMethod('password');
+                        setFormState(prev => ({ ...prev, errors: {} }));
                     }}
                     disabled={formState.loading}
                     className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${loginMethod === 'password' ? 'bg-white dark:bg-gray-700 shadow-sm text-brand-600 dark:text-brand-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
@@ -838,8 +837,8 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                   <button
                     type="button"
                     onClick={() => {
-                      setLoginMethod('otp');
-                      setFormState(prev => ({ ...prev, errors: {} }));
+                        setLoginMethod('otp');
+                        setFormState(prev => ({ ...prev, errors: {} }));
                     }}
                     disabled={formState.loading}
                     className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${loginMethod === 'otp' ? 'bg-white dark:bg-gray-700 shadow-sm text-brand-600 dark:text-brand-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
@@ -956,16 +955,16 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                         transition={{ duration: 0.2 }}
                         className="pt-2"
                       >
-                        <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
-                          <Button
-                            type="submit"
-                            loading={formState.loading}
-                            disabled={formState.loading || !formData.email}
-                            className="rounded-xl h-11"
-                          >
-                            {formState.loading ? 'Sending Code...' : 'Send Secure OTP'}
-                          </Button>
-                        </motion.div>
+                         <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
+                            <Button
+                              type="submit"
+                              loading={formState.loading}
+                              disabled={formState.loading || !formData.email}
+                              className="rounded-xl h-11"
+                            >
+                              {formState.loading ? 'Sending Code...' : 'Send Secure OTP'}
+                            </Button>
+                         </motion.div>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -976,14 +975,14 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                 <div className="mb-6 p-4 rounded-xl border border-blue-100 bg-blue-50/50 dark:border-blue-900/30 dark:bg-blue-900/10">
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5 text-blue-500 dark:text-blue-400">
-                      <Shield size={18} />
+                       <Shield size={18} />
                     </div>
                     <div>
                       <h4 className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-1`}>
                         Enter Verification Code
                       </h4>
                       <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                        We sent a 6-digit code to <span className="font-semibold text-brand-500">{formData.email}</span>. Valid for 5 minutes.
+                         We sent a 6-digit code to <span className="font-semibold text-brand-500">{formData.email}</span>. Valid for 5 minutes.
                       </p>
                     </div>
                   </div>
@@ -1004,30 +1003,31 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                       onKeyDown={(e) => handleKeyDown(e, index)}
                       onPaste={handlePaste}
                       disabled={formState.loading}
-                      className={`otp-input-field w-10 h-10 sm:w-12 sm:h-14 text-center text-lg sm:text-2xl font-bold rounded-xl outline-none transition-all duration-300 ${isDarkMode
+                      className={`otp-input-field w-10 h-10 sm:w-12 sm:h-14 text-center text-lg sm:text-2xl font-bold rounded-xl outline-none transition-all duration-300 ${
+                        isDarkMode
                           ? 'bg-[#121212] border-gray-700 text-white focus:border-brand-500 focus:bg-[#1e1e1e]'
                           : 'bg-white border-gray-300 text-brand-900 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 shadow-sm'
-                        } border-2 ${digit ? 'border-brand-500 bg-brand-50/10' : ''}`}
+                      } border-2 ${digit ? 'border-brand-500 bg-brand-50/10' : ''}`}
                     />
                   ))}
                 </div>
 
                 <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
                   <Button
-                    onClick={handleVerifyLoginOtp}
-                    loading={formState.loading}
-                    disabled={formState.loading || otp.join('').length !== 6}
-                    className="rounded-xl h-11 w-full mt-6"
-                  >
-                    {formState.loading ? 'Verifying...' : 'Verify Secure Code'}
-                  </Button>
+                     onClick={handleVerifyLoginOtp}
+                     loading={formState.loading}
+                     disabled={formState.loading || otp.join('').length !== 6}
+                     className="rounded-xl h-11 w-full mt-6"
+                   >
+                     {formState.loading ? 'Verifying...' : 'Verify Secure Code'}
+                   </Button>
                 </motion.div>
 
                 <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
                   <button
                     onClick={() => {
-                      setOtpStep('email');
-                      setOtp(['', '', '', '', '', '']);
+                        setOtpStep('email');
+                        setOtp(['', '', '', '', '', '']);
                     }}
                     disabled={formState.loading}
                     className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
@@ -1035,7 +1035,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
                     <ArrowLeft size={16} className="mr-1" />
                     Back
                   </button>
-
+                  
                   <div className="text-sm">
                     {canResend ? (
                       <button
