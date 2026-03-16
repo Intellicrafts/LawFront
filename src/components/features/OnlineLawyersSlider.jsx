@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { motion } from 'framer-motion';
+import { motion, useAnimationFrame, useMotionValue } from 'framer-motion';
 import { Star, MapPin, CheckCircle, ArrowRight } from 'lucide-react';
 import { lawyerAPI, tokenManager } from '../../api/apiService';
 
@@ -65,6 +65,33 @@ const OnlineLawyersSlider = () => {
 
     const [lawyers, setLawyers] = useState(mockOnlineLawyers);
     const [isHovered, setIsHovered] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+
+    const x = useMotionValue(0);
+
+    // Dynamic width calculation
+    const itemWidth = 280;
+    const gap = 16;
+    const singleSetWidth = lawyers.length * (itemWidth + gap);
+
+    useAnimationFrame((t, delta) => {
+        let currentX = x.get();
+        // Wrap for auto-scroll and dragging boundaries
+        if (currentX <= -singleSetWidth * 2) {
+            currentX += singleSetWidth;
+            x.set(currentX); // Set instantly without animation
+        } else if (currentX >= 0) {
+            currentX -= singleSetWidth;
+            x.set(currentX); // Set instantly without animation
+        }
+
+        if (isHovered || isDragging) return;
+        x.set(currentX - 1 * (delta / 16));
+    });
+
+    useEffect(() => {
+        x.set(-singleSetWidth); // Start viewing from the second set
+    }, [singleSetWidth, x]);
 
     useEffect(() => {
         // Attempt to fetch real online lawyers
@@ -98,11 +125,12 @@ const OnlineLawyersSlider = () => {
         }
     };
 
-    // Duplicate lawyers to create a seamless infinite loop
-    const duplicatedLawyers = [...lawyers, ...lawyers, ...lawyers];
+    // Duplicate lawyers heavily to create a seamless infinite loop for dragging
+    // Need at least 4 sets to pad both left and right directions
+    const duplicatedLawyers = [...lawyers, ...lawyers, ...lawyers, ...lawyers];
 
     return (
-        <div className="w-full overflow-hidden mt-8 mb-12 relative max-w-7xl mx-auto px-4 z-20">
+        <div className="w-full overflow-hidden mt-8 mb-12 relative max-w-7xl mx-auto px-4 z-20 touch-pan-y">
 
             <div className="flex items-center justify-between mb-6 px-2">
                 <div className="flex items-center gap-3">
@@ -127,28 +155,23 @@ const OnlineLawyersSlider = () => {
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >
-                {/* Gradients to fade the edges */}
-                <div className={`absolute left-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-r ${isDark ? 'from-[#0A0A0A] to-transparent' : 'from-[rgb(250,250,249)] to-transparent pointer-events-none'}`}></div>
-                <div className={`absolute right-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-l ${isDark ? 'from-[#0A0A0A] to-transparent' : 'from-[rgb(250,250,249)] to-transparent pointer-events-none'}`}></div>
+                {/* Gradients to fade the edges - Ensuring it doesn't trap cursor pointer-events */}
+                <div className={`absolute left-0 top-0 bottom-0 w-16 z-10 pointer-events-none bg-gradient-to-r ${isDark ? 'from-dark-bg to-transparent' : 'from-[rgb(250,250,249)] to-transparent'}`}></div>
+                <div className={`absolute right-0 top-0 bottom-0 w-16 z-10 pointer-events-none bg-gradient-to-l ${isDark ? 'from-dark-bg to-transparent' : 'from-[rgb(250,250,249)] to-transparent'}`}></div>
 
                 <motion.div
-                    animate={{ x: "-33.33%" }}
-                    transition={{
-                        duration: 50, // Reduced speed
-                        ease: "linear",
-                        repeat: Infinity,
-                        repeatType: "loop",
-                        // Control playback based on hover
-                        repeatDelay: 0
-                    }}
                     style={{
+                        x, // attach Framer Motion x value directly
                         display: 'flex',
                         gap: '1rem',
                         width: 'max-content',
                         padding: '0.5rem 0',
-                        animationPlayState: isHovered ? 'paused' : 'running'
                     }}
-                    className="flex gap-4 w-max py-2"
+                    drag="x"
+                    onDragStart={() => setIsDragging(true)}
+                    onDragEnd={() => setIsDragging(false)}
+                    dragElastic={0}
+                    className="flex gap-4 w-max py-2 cursor-grab active:cursor-grabbing"
                 >
                     {duplicatedLawyers.map((lawyer, index) => (
                         <div

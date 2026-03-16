@@ -268,7 +268,7 @@ const LandingPage = () => {
             <motion.section
                 ref={heroRef}
                 style={{ opacity: heroOpacity }}
-                className={`relative pt-24 md:pt-36 pb-12 md:pb-16 px-4 md:px-6 ${isDark
+                className={`relative pt-16 md:pt-28 pb-8 md:pb-12 px-4 md:px-6 ${isDark
                     ? 'bg-dark-bg'
                     : 'bg-[hsl(40,20%,97%)]'
                     }`}
@@ -285,7 +285,7 @@ const LandingPage = () => {
                         initial={{ opacity: 0, y: 24 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.55, delay: 0.1 }}
-                        className={`text-5xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight mb-4
+                        className={`text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight mb-2 md:mb-4
               ${isDark ? 'text-white' : 'text-gray-900'}`}
                     >
                         Your Legal Matters, In<br />
@@ -299,7 +299,7 @@ const LandingPage = () => {
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.2 }}
-                        className={`text-base md:text-lg max-w-xl mx-auto mb-12 font-medium tracking-wide
+                        className={`text-sm md:text-base max-w-xl mx-auto mb-6 md:mb-8 font-medium tracking-wide
               ${isDark ? 'text-gray-300' : 'text-gray-600'}`}
                     >
                         Pick up where you left off, or start something new.
@@ -405,7 +405,7 @@ const LandingPage = () => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.45, delay: 0.35 }}
-                        className="flex flex-wrap items-center justify-center gap-3 mb-16"
+                        className="flex flex-wrap items-center justify-center gap-3 mb-8 md:mb-12"
                     >
                         <button
                             onClick={() => navigate('/legal-consoltation')}
