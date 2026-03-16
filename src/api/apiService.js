@@ -2611,20 +2611,20 @@ export const consultationAPI = {
   },
 
   /**
-   * Send typing indicator
+   * Send action indicator (typing/recording/none)
    * @param {string} sessionToken - The session token
-   * @param {boolean} isTyping - Whether user is typing
+   * @param {string} action - 'typing', 'recording', or 'none'
    */
-  sendTypingIndicator: async (sessionToken, isTyping) => {
+  sendActionIndicator: async (sessionToken, action) => {
     try {
       const response = await apiClient.post(
         `/consultations/${sessionToken}/typing`,
-        { is_typing: isTyping }
+        { action: action }
       );
       return response.data;
     } catch (error) {
       // Don't throw on typing indicator errors
-      console.warn('Error sending typing indicator:', error);
+      console.warn('Error sending action indicator:', error);
     }
   }
 };

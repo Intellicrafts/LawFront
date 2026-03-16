@@ -20,7 +20,7 @@ const ConsultationSession = () => {
     const [userType, setUserType] = useState(null);
     const [otherParticipant, setOtherParticipant] = useState(null);
     const [otherJoined, setOtherJoined] = useState(false);
-    const [opponentIsTyping, setOpponentIsTyping] = useState(false);
+    const [opponentAction, setOpponentAction] = useState('none');
 
     // UI state
     const [loading, setLoading] = useState(true);
@@ -80,9 +80,11 @@ const ConsultationSession = () => {
             const data = await consultationAPI.getMessages(sessionToken);
             const newMessages = data.messages || [];
 
-            // Update typing indicator
-            if (data.other_typing !== undefined) {
-                setOpponentIsTyping(data.other_typing);
+            // Update action indicator
+            if (data.other_action !== undefined && data.other_action !== null) {
+                setOpponentAction(data.other_action);
+            } else {
+                setOpponentAction('none');
             }
 
             // Only update if we have new messages
@@ -136,11 +138,11 @@ const ConsultationSession = () => {
     }, [sessionToken]);
 
     /**
-     * Handle typing indicator
+     * Handle action indicator
      */
-    const handleTyping = useCallback(async (isTyping) => {
+    const handleAction = useCallback(async (actionType) => {
         try {
-            await consultationAPI.sendTypingIndicator(sessionToken, isTyping);
+            await consultationAPI.sendActionIndicator(sessionToken, actionType);
         } catch (err) {
             // Silently fail
         }
@@ -373,8 +375,8 @@ const ConsultationSession = () => {
                 connectionStatus={connectionStatus}
                 onSendMessage={handleSendMessage}
                 onEndSession={() => handleEndSession('completed')}
-                onTyping={handleTyping}
-                opponentIsTyping={opponentIsTyping}
+                onAction={handleAction}
+                opponentAction={opponentAction}
             />
         );
     }

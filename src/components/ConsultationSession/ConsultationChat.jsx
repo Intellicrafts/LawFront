@@ -118,14 +118,15 @@ const ConsultationChat = ({
     connectionStatus,
     onSendMessage,
     onEndSession,
-    onTyping,
-    opponentIsTyping
+    onAction,
+    opponentAction
 }) => {
     const dispatch = useDispatch();
     const [newMessage, setNewMessage] = useState('');
     const [sending, setSending] = useState(false);
     const [showEndModal, setShowEndModal] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
+    const [actionState, setActionState] = useState('none');
     const [selectedFile, setSelectedFile] = useState(null);
     const [showTimeWarning, setShowTimeWarning] = useState(false);
     const [showAttachMenu, setShowAttachMenu] = useState(false);
@@ -488,14 +489,14 @@ const ConsultationChat = ({
         suggestionTimeoutRef.current = setTimeout(() => computeSuggestions(val), 350);
 
         // Send typing indicator
-        if (!isTyping) {
-            setIsTyping(true);
-            onTyping(true);
+        if (actionState !== 'typing') {
+            setActionState('typing');
+            onAction('typing');
         }
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(() => {
-            setIsTyping(false);
-            onTyping(false);
+            setActionState('none');
+            onAction('none');
         }, 2000);
     };
 
@@ -514,8 +515,8 @@ const ConsultationChat = ({
 
         try {
             setSending(true);
-            setIsTyping(false);
-            onTyping(false);
+            setActionState('none');
+            onAction('none');
 
             let rawText = content || (audioBlob ? 'Voice audio message' : (selectedFile ? selectedFile.name : ''));
             let encryptedContent = null;
@@ -617,6 +618,9 @@ const ConsultationChat = ({
             mediaRecorder.start();
             setIsRecording(true);
             setRecordingTime(0);
+            
+            setActionState('recording');
+            onAction('recording');
 
             recordIntervalRef.current = setInterval(() => {
                 setRecordingTime(prev => {
@@ -639,6 +643,8 @@ const ConsultationChat = ({
             mediaRecorderRef.current.stop();
         }
         setIsRecording(false);
+        setActionState('none');
+        onAction('none');
         if (recordIntervalRef.current) clearInterval(recordIntervalRef.current);
     };
 
@@ -799,7 +805,7 @@ const ConsultationChat = ({
                                     {userType !== 'user' && <Shield size={10} className="text-indigo-500 flex-shrink-0" />}
                                 </h3>
                                 <div className="flex items-center gap-1.5 mt-[1px]">
-                                    {opponentIsTyping ? (
+                                    {opponentAction === 'typing' && (
                                         <>
                                             <div className="flex items-end gap-[2px] h-2">
                                                 <motion.div animate={{ y: ["0%", "-40%", "0%"] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} className={`w-1 h-1 rounded-full ${isDarkMode ? 'bg-indigo-400' : 'bg-indigo-500'}`} />
@@ -810,11 +816,22 @@ const ConsultationChat = ({
                                                 typing...
                                             </span>
                                         </>
-                                    ) : (
+                                    )}
+                                    {opponentAction === 'recording' && (
+                                        <>
+                                            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.7, 1, 0.7] }} transition={{ duration: 1.5, repeat: Infinity }} className="flex items-center justify-center">
+                                                <Mic size={10} className={`${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                                            </motion.div>
+                                            <span className={`text-[10px] font-bold italic tracking-wide ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                                                recording audio...
+                                            </span>
+                                        </>
+                                    )}
+                                    {opponentAction !== 'typing' && opponentAction !== 'recording' && (
                                         <>
                                             <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
                                             <span className={`text-[9px] font-bold uppercase tracking-[0.15em] ${isDarkMode ? 'text-emerald-400/80' : 'text-emerald-600/80'}`}>
-                                                {userType === 'user' ? 'Lawyer' : 'Client'} â€¢ Live
+                                                {userType === 'user' ? 'Lawyer' : 'Client'} • Live
                                             </span>
                                         </>
                                     )}
@@ -1146,8 +1163,8 @@ const ConsultationChat = ({
                             );
                         })}
 
-                    {/* opponentIsTyping indicator */}
-                    {opponentIsTyping && (
+                    {/* opponentAction indicator */}
+                    {(opponentAction === 'typing' || opponentAction === 'recording') && (
                         <motion.div
                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -1170,11 +1187,30 @@ const ConsultationChat = ({
                                         ? 'bg-white/[0.04] border border-white/[0.04]'
                                         : 'bg-white border border-slate-200/50'
                                     }`}>
-                                    <div className="flex items-center gap-1.5 h-4">
-                                        <motion.div animate={{ y: ["0%", "-30%", "0%"], opacity: [0.5, 1, 0.5] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0 }} className={`w-1.5 h-1.5 rounded-full ${isDarkMode ? 'bg-slate-400' : 'bg-slate-500'}`} />
-                                        <motion.div animate={{ y: ["0%", "-30%", "0%"], opacity: [0.5, 1, 0.5] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0.15 }} className={`w-1.5 h-1.5 rounded-full ${isDarkMode ? 'bg-slate-400' : 'bg-slate-500'}`} />
-                                        <motion.div animate={{ y: ["0%", "-30%", "0%"], opacity: [0.5, 1, 0.5] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0.3 }} className={`w-1.5 h-1.5 rounded-full ${isDarkMode ? 'bg-slate-400' : 'bg-slate-500'}`} />
-                                    </div>
+                                    
+                                    {opponentAction === 'typing' && (
+                                        <div className="flex items-center gap-1.5 h-4">
+                                            <motion.div animate={{ y: ["0%", "-30%", "0%"], opacity: [0.5, 1, 0.5] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0 }} className={`w-1.5 h-1.5 rounded-full ${isDarkMode ? 'bg-slate-400' : 'bg-slate-500'}`} />
+                                            <motion.div animate={{ y: ["0%", "-30%", "0%"], opacity: [0.5, 1, 0.5] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0.15 }} className={`w-1.5 h-1.5 rounded-full ${isDarkMode ? 'bg-slate-400' : 'bg-slate-500'}`} />
+                                            <motion.div animate={{ y: ["0%", "-30%", "0%"], opacity: [0.5, 1, 0.5] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0.3 }} className={`w-1.5 h-1.5 rounded-full ${isDarkMode ? 'bg-slate-400' : 'bg-slate-500'}`} />
+                                        </div>
+                                    )}
+                                    
+                                    {opponentAction === 'recording' && (
+                                        <div className="flex items-center gap-2 h-4">
+                                            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.7, 1, 0.7] }} transition={{ duration: 1.5, repeat: Infinity }} className="flex items-center justify-center">
+                                                <Mic size={14} className={`${isDarkMode ? 'text-emerald-400' : 'text-emerald-500'}`} />
+                                            </motion.div>
+                                            {/* Micro-waveform animation */}
+                                            <div className="flex items-center gap-[2px] h-3">
+                                                <motion.div animate={{ height: ["40%", "100%", "40%"] }} transition={{ duration: 0.7, repeat: Infinity, delay: 0 }} className={`w-[2px] rounded-full ${isDarkMode ? 'bg-emerald-400/70' : 'bg-emerald-500/70'}`} />
+                                                <motion.div animate={{ height: ["20%", "70%", "20%"] }} transition={{ duration: 0.5, repeat: Infinity, delay: 0.1 }} className={`w-[2px] rounded-full ${isDarkMode ? 'bg-emerald-400/70' : 'bg-emerald-500/70'}`} />
+                                                <motion.div animate={{ height: ["60%", "100%", "60%"] }} transition={{ duration: 0.9, repeat: Infinity, delay: 0.2 }} className={`w-[2px] rounded-full ${isDarkMode ? 'bg-emerald-400/70' : 'bg-emerald-500/70'}`} />
+                                                <motion.div animate={{ height: ["30%", "80%", "30%"] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }} className={`w-[2px] rounded-full ${isDarkMode ? 'bg-emerald-400/70' : 'bg-emerald-500/70'}`} />
+                                            </div>
+                                        </div>
+                                    )}
+                                    
                                 </div>
                             </div>
                         </motion.div>
