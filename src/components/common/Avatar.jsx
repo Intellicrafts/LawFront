@@ -66,11 +66,16 @@ const Avatar = ({ src, alt, className, size, style, name, forceRefresh, ...rest 
       const processedSrc = cleanAvatarUrl(src);
 
       if (processedSrc) {
-        // Add a cache-busting parameter to prevent browser caching
-        const cacheBuster = `_cb=${refreshKey}`;
-        const finalSrc = processedSrc.includes('?')
-          ? `${processedSrc}&${cacheBuster}`
-          : `${processedSrc}?${cacheBuster}`;
+        // External URLs like google/github handle their own caching and might reject unrecognized query params
+        const isExternalCDN = processedSrc.includes('googleusercontent.com') || processedSrc.includes('githubusercontent');
+        
+        let finalSrc = processedSrc;
+        if (!isExternalCDN) {
+          const cacheBuster = `_cb=${refreshKey}`;
+          finalSrc = processedSrc.includes('?')
+            ? `${processedSrc}&${cacheBuster}`
+            : `${processedSrc}?${cacheBuster}`;
+        }
 
         setImageSrc(finalSrc);
         // Don't set isLoading to false here — wait for onLoad/onError
@@ -217,6 +222,8 @@ const Avatar = ({ src, alt, className, size, style, name, forceRefresh, ...rest 
       <img
         src={imageSrc}
         alt={alt || name || 'User avatar'}
+        referrerPolicy="no-referrer"
+        crossOrigin="anonymous"
         style={{
           width: '100%',
           height: '100%',

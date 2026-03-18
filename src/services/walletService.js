@@ -1,19 +1,11 @@
-import axios from 'axios';
+import apiClient from '../api/apiService';
 import config from '../config';
 
-const getAuthHeader = () => {
-    const token = localStorage.getItem('auth_token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
 const walletService = {
-    // Get wallet balance
-    getBalance: async (userId) => {
+    // Get wallet balance (authenticated user)
+    getBalance: async () => {
         try {
-            const url = `${config.WALLET_API_URL}${config.WALLET.GET_BALANCE(userId)}`;
-            const response = await axios.get(url, {
-                headers: getAuthHeader()
-            });
+            const response = await apiClient.get(config.WALLET.GET_BALANCE());
             return response.data;
         } catch (error) {
             throw error.response?.data || error.message;
@@ -24,10 +16,8 @@ const walletService = {
     getTransactions: async (userId, page = 1, limit = 10) => {
         try {
             const skip = (page - 1) * limit;
-            const url = `${config.WALLET_API_URL}${config.WALLET.BASE}/${userId}/transactions`;
-            const response = await axios.get(url, {
-                params: { skip, limit },
-                headers: getAuthHeader()
+            const response = await apiClient.get(config.WALLET.TRANSACTIONS(), {
+                params: { skip, limit, page },
             });
             return response.data;
         } catch (error) {
@@ -38,13 +28,9 @@ const walletService = {
     // Recharge wallet
     recharge: async (userId, amount) => {
         try {
-            const url = `${config.WALLET_API_URL}${config.WALLET.RECHARGE}`;
-            const response = await axios.post(url, {
-                user_id: userId,
+            const response = await apiClient.post(config.WALLET.RECHARGE, {
                 amount: parseFloat(amount),
-                description: "Wallet Recharge"
-            }, {
-                headers: getAuthHeader()
+                description: 'Wallet Recharge',
             });
             return response.data;
         } catch (error) {
@@ -55,13 +41,9 @@ const walletService = {
     // Withdraw funds
     withdraw: async (userId, amount) => {
         try {
-            const url = `${config.WALLET_API_URL}${config.WALLET.BASE}/withdraw`;
-            const response = await axios.post(url, {
-                user_id: userId,
+            const response = await apiClient.post(config.WALLET.WITHDRAW, {
                 amount: parseFloat(amount),
-                description: "Wallet Withdrawal"
-            }, {
-                headers: getAuthHeader()
+                description: 'Wallet Withdrawal',
             });
             return response.data;
         } catch (error) {

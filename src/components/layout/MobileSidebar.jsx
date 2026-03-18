@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
+import { fetchWalletBalance } from '../../redux/walletSlice';
 import Avatar from '../common/Avatar';
 import '../../styles/MobileSidebar.css';
 import {
@@ -10,7 +11,7 @@ import {
   UserPlus, LogIn, LogOut, User, Settings, Bell, Zap, Shield,
   Sparkles, Heart, Compass, Globe, Menu, TrendingUp, Target,
   BookOpen, Phone, Mail, MapPin, Instagram, Facebook, Twitter,
-  Linkedin, Youtube, Coffee, Palette, Headphones, Camera
+  Linkedin, Youtube, Coffee, Palette, Headphones, Camera, Wallet, Plus
 } from 'lucide-react';
 
 const MobileSidebar = ({
@@ -25,6 +26,8 @@ const MobileSidebar = ({
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const { mode } = useSelector((state) => state.theme);
+  const { balance, loading: walletLoading } = useSelector((state) => state.wallet);
+  const dispatch = useDispatch();
   const sidebarRef = useRef(null);
 
   // Toggle dropdown
@@ -95,6 +98,8 @@ const MobileSidebar = ({
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       document.body.style.overflow = 'hidden';
+      // Fetch wallet balance when sidebar opens for an authenticated user
+      if (isAuthenticated) dispatch(fetchWalletBalance());
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -103,7 +108,7 @@ const MobileSidebar = ({
       document.removeEventListener('mousedown', handleClickOutside);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isAuthenticated, dispatch]);
 
   // Animation variants for smooth transitions
   const sidebarVariants = {
@@ -194,7 +199,7 @@ const MobileSidebar = ({
                     <>
                       <div className="relative">
                         <Avatar
-                          src={user?.avatar_url}
+                          src={user?.avatar || user?.profile_picture || user?.picture || user?.avatar_url || user?.professional_data?.avatar_url || user?.professional?.avatar_url}
                           alt={user?.name || 'User'}
                           name={`${user?.name || ''} ${user?.last_name || ''}`.trim() || 'User'}
                           size={48}
@@ -212,15 +217,11 @@ const MobileSidebar = ({
                         <div className="flex items-center justify-between mt-0.5">
                           <div className="flex items-center">
                             <Shield size={10} className="text-emerald-500 mr-1" />
-                            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                              Verified
-                            </span>
+                            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Verified</span>
                           </div>
                           <div className="flex items-center">
                             <Star size={8} className="text-yellow-500 mr-0.5" />
-                            <span className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">
-                              Pro
-                            </span>
+                            <span className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">Pro</span>
                           </div>
                         </div>
                       </div>
@@ -238,22 +239,67 @@ const MobileSidebar = ({
                         />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-semibold text-base text-gray-900 dark:text-white">
-                          Welcome Guest!
-                        </h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Sign in to unlock features
-                        </p>
+                        <h3 className="font-semibold text-base text-gray-900 dark:text-white">Welcome Guest!</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Sign in to unlock features</p>
                         <div className="flex items-center mt-0.5">
                           <LogIn size={10} className="text-blue-500 mr-1" />
-                          <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                            Get Started
-                          </span>
+                          <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">Get Started</span>
                         </div>
                       </div>
                     </>
                   )}
                 </motion.div>
+
+                {/* Wallet Balance Card — only for authenticated users */}
+                {isAuthenticated && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25 }}
+                    className="mb-3"
+                  >
+                    <Link to="/wallet" onClick={onClose} className="block">
+                      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 p-3 shadow-lg">
+                        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, rgba(255,255,255,0.4) 0%, transparent 60%)' }} />
+                        <div className="absolute -top-3 -right-3 w-16 h-16 rounded-full bg-white/10" />
+                        <div className="relative flex items-center justify-between">
+                          <div>
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <Wallet size={10} className="text-emerald-200" />
+                              <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-200">My Wallet</span>
+                            </div>
+                            {walletLoading && balance?.total_balance === 0 ? (
+                              <div className="h-5 w-20 bg-white/20 rounded animate-pulse mt-1" />
+                            ) : (
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-xl font-black text-white">₹{parseFloat(balance?.total_balance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                <span className="text-[9px] text-white/50 font-bold">INR</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <div className="p-1.5 rounded-lg bg-white/15 backdrop-blur-sm">
+                              <Plus size={12} className="text-white" strokeWidth={3} />
+                            </div>
+                            <span className="text-[8px] text-white/60 font-bold">Add Funds</span>
+                          </div>
+                        </div>
+                        <div className="relative flex gap-3 mt-2 pt-2 border-t border-white/15">
+                          <div>
+                            <span className="text-[8px] text-white/60 block font-bold uppercase">Earned</span>
+                            <span className="text-[10px] font-black text-emerald-200">₹{parseFloat(balance?.earned_balance || 0).toLocaleString('en-IN')}</span>
+                          </div>
+                          <div>
+                            <span className="text-[8px] text-white/60 block font-bold uppercase">Promo</span>
+                            <span className="text-[10px] font-black text-purple-200">₹{parseFloat(balance?.promotional_balance || 0).toLocaleString('en-IN')}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  </motion.div>
+                )}
+
+                {/* Quick Actions */}
 
                 {/* Quick Actions */}
                 <motion.div

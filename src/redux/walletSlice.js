@@ -2,11 +2,12 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import walletService from '../services/walletService';
 
 // Async Thunks
+// Note: New backend uses Auth token, no userId needed in the call itself
 export const fetchWalletBalance = createAsyncThunk(
     'wallet/fetchBalance',
-    async (userId, { rejectWithValue }) => {
+    async (_, { rejectWithValue }) => {
         try {
-            return await walletService.getBalance(userId);
+            return await walletService.getBalance();
         } catch (error) {
             return rejectWithValue(error);
         }
@@ -15,9 +16,9 @@ export const fetchWalletBalance = createAsyncThunk(
 
 export const fetchTransactions = createAsyncThunk(
     'wallet/fetchTransactions',
-    async ({ userId, page, limit }, { rejectWithValue }) => {
+    async ({ page = 1, limit = 10 } = {}, { rejectWithValue }) => {
         try {
-            const data = await walletService.getTransactions(userId, page, limit);
+            const data = await walletService.getTransactions(null, page, limit);
             return { data, page };
         } catch (error) {
             return rejectWithValue(error);
@@ -30,8 +31,8 @@ export const rechargeWallet = createAsyncThunk(
     async ({ userId, amount }, { rejectWithValue, dispatch }) => {
         try {
             const result = await walletService.recharge(userId, amount);
-            dispatch(fetchWalletBalance(userId)); // Refresh balance
-            dispatch(fetchTransactions({ userId, page: 1, limit: 10 })); // Refresh transactions
+            dispatch(fetchWalletBalance());
+            dispatch(fetchTransactions({ page: 1, limit: 10 }));
             return result;
         } catch (error) {
             return rejectWithValue(error);
@@ -44,8 +45,8 @@ export const withdrawFunds = createAsyncThunk(
     async ({ userId, amount }, { rejectWithValue, dispatch }) => {
         try {
             const result = await walletService.withdraw(userId, amount);
-            dispatch(fetchWalletBalance(userId)); // Refresh balance
-            dispatch(fetchTransactions({ userId, page: 1, limit: 10 })); // Refresh transactions
+            dispatch(fetchWalletBalance());
+            dispatch(fetchTransactions({ page: 1, limit: 10 }));
             return result;
         } catch (error) {
             return rejectWithValue(error);
@@ -66,7 +67,7 @@ const walletSlice = createSlice({
         error: null,
         transactionLoading: false,
         transactionError: null,
-        hasMoreLocal: true, // For pagination
+        hasMoreLocal: true,
         currentPage: 1
     },
     reducers: {
@@ -100,13 +101,15 @@ const walletSlice = createSlice({
         builder.addCase(fetchTransactions.fulfilled, (state, action) => {
             state.transactionLoading = false;
             const { data, page } = action.payload;
+            // Handle both array response and wrapped { transactions: [] } response
+            const txns = Array.isArray(data) ? data : (data?.transactions || []);
             if (page === 1) {
-                state.transactions = data;
+                state.transactions = txns;
             } else {
-                state.transactions = [...state.transactions, ...data];
+                state.transactions = [...state.transactions, ...txns];
             }
             state.currentPage = page;
-            state.hasMoreLocal = data.length > 0;
+            state.hasMoreLocal = data?.has_more ?? txns.length > 0;
         });
         builder.addCase(fetchTransactions.rejected, (state, action) => {
             state.transactionLoading = false;

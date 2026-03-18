@@ -268,7 +268,7 @@ const LandingPage = () => {
             <motion.section
                 ref={heroRef}
                 style={{ opacity: heroOpacity }}
-                className={`relative pt-16 md:pt-28 pb-8 md:pb-12 px-4 md:px-6 ${isDark
+                className={`relative pt-24 md:pt-36 lg:pt-40 pb-12 md:pb-16 px-4 md:px-6 ${isDark
                     ? 'bg-dark-bg'
                     : 'bg-[hsl(40,20%,97%)]'
                     }`}
@@ -301,7 +301,7 @@ const LandingPage = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.55, delay: 0.25 }}
-                        className="mb-6 w-full max-w-3xl mx-auto"
+                        className="mt-8 md:mt-12 mb-6 w-full max-w-3xl mx-auto"
                     >
                         <form onSubmit={handleIntakeSubmit}>
                             <div className={`relative flex items-center w-full rounded-2xl border transition-all duration-300 shadow-lg hover:shadow-xl
@@ -320,15 +320,15 @@ const LandingPage = () => {
                                     }}
                                     rows={1}
                                     placeholder=""
-                                    className={`w-full bg-transparent pl-6 pr-[64px] py-[18px] text-sm resize-none outline-none leading-relaxed h-[56px] overflow-hidden rounded-2xl z-10
+                                    className={`w-full bg-transparent pl-6 pr-[110px] md:pr-[120px] py-[18px] text-sm resize-none outline-none leading-relaxed h-[56px] overflow-hidden rounded-2xl z-10
                                         ${isDark ? 'text-white font-medium' : 'text-gray-900 font-medium'}`}
                                 />
                                 {/* Animated Placeholder built as absolute underlay/overlay */}
                                 {!intakeQuery && (
-                                    <div className={`absolute left-6 top-[18px] pointer-events-none text-sm font-medium flex items-center z-20
+                                    <div className={`absolute left-6 right-[110px] md:right-[120px] top-[18px] pointer-events-none text-sm font-medium flex items-center z-20 overflow-hidden whitespace-nowrap
                                             ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
-                                        {placeholderText}
-                                        <span className="w-0.5 h-4 bg-current ml-[1px] animate-[pulse_1s_ease-in-out_infinite]" style={{ opacity: 0.8 }} />
+                                        <span className="truncate">{placeholderText}</span>
+                                        <span className="w-0.5 h-4 bg-current ml-[1px] flex-shrink-0 animate-[pulse_1s_ease-in-out_infinite]" style={{ opacity: 0.8 }} />
                                     </div>
                                 )}
                                 <div className="absolute right-2 top-1/2 -translate-y-1/2 z-30 flex items-center gap-2">
@@ -398,27 +398,31 @@ const LandingPage = () => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.45, delay: 0.45 }}
-                        className="flex flex-wrap items-center justify-center gap-4 mt-12 mb-10 md:mt-16 md:mb-12"
+                        className="flex flex-row items-center justify-center gap-2 md:gap-4 mt-14 mb-12 md:mt-20 md:mb-16 w-full max-w-2xl mx-auto px-1"
                     >
                         <button
                             onClick={() => navigate('/legal-consoltation')}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold border transition-all hover:-translate-y-1 duration-200 shadow-md hover:shadow-lg
-                                ${isDark ? 'bg-white/[0.05] border-gray-600 text-gray-200 hover:border-[#00E5FF]/60 hover:text-white hover:bg-white/[0.08]'
-                                    : 'bg-white border-gray-300 text-gray-800 hover:border-[#00E5FF] hover:text-teal-800'}`}
-                            style={{ backdropFilter: 'blur(8px)' }}
+                            className={`flex-1 flex justify-center items-center gap-2 px-2 md:px-6 py-3.5 md:py-3.5 rounded-full text-[13px] md:text-sm font-bold border transition-all hover:-translate-y-1 duration-200 shadow-md hover:shadow-lg
+                                ${isDark ? 'bg-gradient-to-r from-gray-800/80 to-gray-900/80 border-gray-700 text-gray-200 hover:border-[#00E5FF]/60 hover:text-white'
+                                    : 'bg-gradient-to-r from-white to-gray-50 border-gray-200 text-gray-800 hover:border-[#00E5FF] hover:text-teal-800'}`}
+                            style={{ backdropFilter: 'blur(12px)' }}
                         >
-                            <Users className="h-4 w-4 text-cyan-500" />
-                            Find a Lawyer
+                            <div className={`p-1.5 rounded-full ${isDark ? 'bg-[#00E5FF]/10' : 'bg-[#00E5FF]/10'}`}>
+                                <Search className="h-4 w-4 text-[#00E5FF]" strokeWidth={2.5} />
+                            </div>
+                            <span className="whitespace-nowrap">Find a Lawyer</span>
                         </button>
                         <button
                             onClick={() => tokenManager.isAuthenticated() ? navigate('/legal-consoltation?view=appointments') : navigate('/auth')}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold border transition-all hover:-translate-y-1 duration-200 shadow-md hover:shadow-lg
-                                ${isDark ? 'bg-white/[0.03] border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white hover:bg-white/[0.08]'
-                                    : 'bg-white border-gray-300 text-gray-600 hover:border-gray-400 hover:text-gray-900'}`}
-                            style={{ backdropFilter: 'blur(8px)' }}
+                            className={`flex-1 flex justify-center items-center gap-2 px-2 md:px-6 py-3.5 md:py-3.5 rounded-full text-[13px] md:text-sm font-bold border transition-all hover:-translate-y-1 duration-200 shadow-md hover:shadow-lg
+                                ${isDark ? 'bg-gradient-to-r from-gray-800/80 to-gray-900/80 border-gray-700 text-gray-400 hover:border-gray-500 hover:text-white'
+                                    : 'bg-gradient-to-r from-white to-gray-50 border-gray-200 text-gray-600 hover:border-gray-400 hover:text-gray-900'}`}
+                            style={{ backdropFilter: 'blur(12px)' }}
                         >
-                            <CalendarCheck className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
-                            My Appointments
+                            <div className={`p-1.5 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                                <CalendarCheck className={`h-4 w-4 ${isDark ? 'text-gray-300' : 'text-gray-600'}`} strokeWidth={2.5} />
+                            </div>
+                            <span className="whitespace-nowrap">My Appts</span>
                         </button>
                     </motion.div>
 
@@ -427,7 +431,7 @@ const LandingPage = () => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.6, delay: 0.4 }}
-                        className="w-full"
+                        className="w-full mt-6 md:mt-10"
                     >
                         <OnlineLawyersSlider />
                     </motion.div>

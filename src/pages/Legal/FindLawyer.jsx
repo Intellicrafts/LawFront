@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { fetchWalletBalance as syncWalletBalance } from '../../redux/walletSlice';
 import { useToast } from '../../context/ToastContext';
 import config from '../../config';
 import {
@@ -12,11 +13,11 @@ import {
   Laptop, Video, Clock, Star, ArrowRight, ChevronRight,
   Mic, MicOff, PhoneOff, Headphones, Wallet,
   Scale, Shield, Heart, Layout, Sparkles, Zap, Search, Filter,
-  ChevronLeft, Info, CheckCircle
+  ChevronLeft, Info, CheckCircle, Plus
 } from 'lucide-react';
 import { lawyerAPI, apiServices, walletServices } from '../../api/apiService';
 import MyAppointments from '../../components/MyAppointments';
-import { formatRatePerMinuteLabel, buildAppointmentConsultationFee } from '../../utils/consultationFee';
+import { formatRatePerMinuteLabel, buildAppointmentConsultationFee, getAppointmentRatePerMinute } from '../../utils/consultationFee';
 
 // Premium Professional Color Palette matching Hero and Sidebar - Production App
 const colors = {
@@ -277,29 +278,24 @@ const LegalCosultation = () => {
     }
   }, [lawyers, selectedLawyer]);
 
-  // Wallet State
-  const [walletBalance, setWalletBalance] = useState(0);
+  // Wallet State from Redux
+  const dispatch = useDispatch();
+  const { balance: reduxWalletBalance } = useSelector((state) => state.wallet);
+  const totalReduxBalance = (reduxWalletBalance?.earned_balance || 0) + (reduxWalletBalance?.promotional_balance || 0);
+  
+  const [walletBalance, setWalletBalance] = useState(totalReduxBalance);
   const [showRechargeModal, setShowRechargeModal] = useState(false);
+  const [customRechargeAmount, setCustomRechargeAmount] = useState('');
 
-  // Fetch Wallet Balance
+  // Sync local walletBalance with Redux when it changes
   useEffect(() => {
-    const fetchWalletBalance = async () => {
-      // Get user ID from local storage or auth context
-      const userStr = localStorage.getItem('user');
-      const userId = userStr ? JSON.parse(userStr).id : '1'; // Default to '1' for demo
+    setWalletBalance(totalReduxBalance);
+  }, [totalReduxBalance]);
 
-      try {
-        const walletData = await walletServices.getBalance(userId);
-        if (walletData && walletData.balance !== undefined) {
-          setWalletBalance(walletData.balance);
-        }
-      } catch (err) {
-        console.error('Failed to fetch wallet balance', err);
-      }
-    };
-
-    fetchWalletBalance();
-  }, []);
+  // Fetch Wallet Balance on mount
+  useEffect(() => {
+    dispatch(syncWalletBalance());
+  }, [dispatch]);
 
   const bookWithRodgerProsacco = () => {
     // Find Rodger Prosacco in the lawyers list
@@ -1251,26 +1247,26 @@ const LegalCosultation = () => {
         // Show loading state
         setLoading(true);
 
-        // Check wallet balance for consultation fee
-        // const CONSULTATION_FEE = 1500;
-        // if (walletBalance < CONSULTATION_FEE) {
-        //   showError(`Insufficient wallet balance. Consultation fee is ₹${CONSULTATION_FEE}. Please recharge.`);
-        //   setShowRechargeModal(true);
-        //   setLoading(false);
-        //   return;
-        // }
+        // Calculated Consultation Fee
+        const ratePerMinute = getAppointmentRatePerMinute(selectedLawyer.consultation_fee) || 1500;
+        const duration = 1; // For now assuming flat fee or minimum 1 unit for demonstration
+        const TOTAL_FEE = ratePerMinute * duration;
+
+        console.log(`Checking credits: Balance=${walletBalance}, Required=${TOTAL_FEE}`);
+
+        // Credit Guard: Check if user has sufficient balance
+        if (walletBalance < TOTAL_FEE) {
+          showError(`Insufficient wallet balance. Total fee is ₹${TOTAL_FEE.toLocaleString('en-IN')}. Please top up your account.`);
+          setShowRechargeModal(true);
+          setLoading(false);
+          return;
+        }
 
         try {
-          // Process Wallet Payment
-          // await walletServices.processPayment({
-          //   payer_user_id: userId,
-          //   receiver_user_id: selectedLawyer.id,
-          //   amount: CONSULTATION_FEE,
-          //   description: `Consultation with ${selectedLawyer.full_name}`,
-          //   category: "consultation"
-          // });
-          // setWalletBalance(prev => Math.max(0, prev - CONSULTATION_FEE));
-
+          // Process Wallet Payment (Optional: Deduct balance on success)
+          // For production, the backend usually handles deduction during appointment creation
+          // But we can simulate or call a payment API if required.
+          
           // Call the API to book appointment with lawyer
           // Note: lawyer_id is already in appointmentData, but we still pass it separately
           // to the function for clarity and to maintain the API function signature
@@ -1605,45 +1601,9 @@ const LegalCosultation = () => {
 
       return (
         <>
-          {/* Premium Quick Action Cards */}
-          <div className="pt-20 sm:pt-24 mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-3">
-              {[
-                {
-                  label: 'Nearby Experts',
-                  desc: 'Available in your area',
-                  icon: MapPin,
-                  onClick: fetchNearbyLawyers,
-                  loading: nearbyLoading,
-                  color: 'text-blue-500'
-                }
-              ].map((card, i) => (
-                <button
-                  key={i}
-                  onClick={card.onClick}
-                  disabled={card.loading}
-                  className={`group relative overflow-hidden rounded-xl p-3 transition-all duration-300 hover:scale-[1.02] border backdrop-blur-md ${isDarkMode
-                    ? 'bg-white/5 border-[#2A2A2A] hover:bg-white/10'
-                    : 'bg-white border-gray-100 hover:shadow-lg'
-                    }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-white/5' : 'bg-gray-50'}`}>
-                      {card.loading ? <Loader size={14} className="animate-spin text-blue-500" /> : <card.icon size={14} className={card.color} />}
-                    </div>
-                    <div className="text-left">
-                      <h3 className={`font-bold text-xs ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{card.label}</h3>
-                      <p className={`text-[10px] ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>{card.desc}</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Tab Switcher */}
-          <div className="flex justify-center mb-6">
-            <div className={`p-1 rounded-xl flex gap-1 border ${isDarkMode ? 'bg-[#1A1A1A] border-[#2A2A2A]' : 'bg-white border-gray-200 shadow-sm'}`}>
+          {/* Premium Tab Switcher / Navigation */}
+          <div className="pt-24 sm:pt-28 flex justify-center mb-6 sm:mb-8">
+            <div className={`p-1.5 rounded-full flex gap-1 border backdrop-blur-md ${isDarkMode ? 'bg-[#1A1A1A]/80 border-[#2A2A2A]' : 'bg-white/90 border-gray-200 shadow-sm'}`}>
               <button
                 onClick={() => {
                   setActiveTab('experts');
@@ -1652,12 +1612,12 @@ const LegalCosultation = () => {
                   url.searchParams.delete('view');
                   window.history.pushState({}, '', url);
                 }}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 ${activeTab === 'experts'
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                  : isDarkMode ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}
+                className={`flex items-center gap-2 px-5 py-2 rounded-full text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === 'experts'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/20'
+                  : isDarkMode ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
               >
-                <Search size={14} />
-                Find Expert
+                <Search size={14} strokeWidth={2.5} />
+                Find Experts
               </button>
               <button
                 onClick={() => {
@@ -1667,11 +1627,11 @@ const LegalCosultation = () => {
                   url.searchParams.set('view', 'appointments');
                   window.history.pushState({}, '', url);
                 }}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 ${activeTab === 'appointments'
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                  : isDarkMode ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}
+                className={`flex items-center gap-2 px-5 py-2 rounded-full text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === 'appointments'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/20'
+                  : isDarkMode ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
               >
-                <Calendar size={14} />
+                <Calendar size={14} strokeWidth={2.5} />
                 My Appointments
               </button>
             </div>
@@ -1681,12 +1641,12 @@ const LegalCosultation = () => {
             <>
               {/* Professional Search & Filter Interface */}
               <div
-                className={`rounded-2xl transition-all duration-300 backdrop-blur-xl mb-5 overflow-hidden border ${isDarkMode
-                  ? `bg-[#1A1A1A]/80 border-[#2A2A2A] ${isFilterSticky ? 'sticky z-30 shadow-2xl' : ''}`
-                  : `bg-white/90 border-gray-200 ${isFilterSticky ? 'sticky z-30 shadow-xl' : ''}`
+                className={`transition-all duration-300 mb-5 overflow-hidden border ${isDarkMode
+                  ? `bg-[#1A1A1A]/98 backdrop-blur-2xl border-[#2A2A2A] ${isFilterSticky ? 'sticky z-30 shadow-2xl rounded-b-3xl rounded-t-none border-t-0 -mt-2 pt-2' : 'rounded-2xl'}`
+                  : `bg-white/98 backdrop-blur-2xl border-gray-200 ${isFilterSticky ? 'sticky z-30 shadow-xl rounded-b-3xl rounded-t-none border-t-0 -mt-2 pt-2' : 'rounded-2xl'}`
                   }`}
                 style={{
-                  top: isFilterSticky ? '80px' : '0'
+                  top: isFilterSticky ? '64px' : '0',
                 }}
               >
                 {/* Premium Search Header */}
@@ -2182,12 +2142,12 @@ const LegalCosultation = () => {
     } else if (view === 'booking' && selectedLawyer) {
       return (
         <div className="pt-20 sm:pt-24 max-w-3xl mx-auto px-4">
-          <div className={`rounded-2xl overflow-hidden border backdrop-blur-md transition-all duration-300 ${isDarkMode ? 'bg-[#1A1A1A]/80 border-[#2A2A2A]' : 'bg-white border-gray-100 shadow-xl'
-            }`}>
+          <div className={`rounded-2xl overflow-hidden border backdrop-blur-md transition-all duration-300 ${isDarkMode ? 'bg-[#1A1A1A]/80 border-[#2A2A2A]' : 'bg-white border-gray-100 shadow-xl'}`}>
             {bookingComplete ? (
               <div className="p-8 text-center">
-                <div className="w-16 h-16 bg-blue-600/10 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle size={32} />
+                <div className="flex items-center justify-center p-3 mb-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle size={20} className="mr-3" />
+                  <span className="text-xs font-black uppercase tracking-wider">Transaction Successful</span>
                 </div>
                 <h2 className={`text-sm font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Appointment Confirmed!</h2>
                 <p className={`text-[11px] mb-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -2203,28 +2163,20 @@ const LegalCosultation = () => {
                     <span className="text-[11px] text-blue-500 font-bold">Encrypted Video Meeting Link Sent</span>
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                  {/* Primary: go to My Appointments */}
+                <div className="flex items-center justify-center mt-2">
                   <button
                     onClick={() => {
                       setActiveTab('appointments');
-                      setView('list');
+                      setView('lawyers');
+                      // Update URL without reloading
+                      const url = new URL(window.location);
+                      url.searchParams.set('view', 'appointments');
+                      window.history.pushState({}, '', url);
                     }}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all shadow-lg shadow-blue-600/20"
+                    className="flex items-center justify-center gap-3 w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-[15px] font-bold rounded-2xl transition-all shadow-xl shadow-blue-600/20 hover:-translate-y-1"
                   >
-                    <Calendar size={13} />
-                    View My Appointments
-                  </button>
-
-                  {/* Secondary: back to expert list */}
-                  <button
-                    onClick={goBack}
-                    className={`flex items-center gap-2 px-6 py-2.5 text-[10px] font-bold uppercase tracking-wider rounded-lg border transition-all ${isDarkMode
-                      ? 'bg-white/5 hover:bg-white/10 border-[#2A2A2A] text-gray-300'
-                      : 'bg-gray-100 hover:bg-gray-200 border-gray-200 text-gray-700'
-                      }`}
-                  >
-                    Back to Experts
+                    <Calendar size={18} strokeWidth={2.5} />
+                    My Appointments
                   </button>
                 </div>
               </div>
@@ -2412,9 +2364,14 @@ const LegalCosultation = () => {
                       <button
                         type="submit"
                         disabled={loading}
-                        className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all shadow-lg shadow-blue-600/20"
+                        className="flex items-center justify-center gap-2 min-w-[190px] px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-[11px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-blue-600/30 disabled:opacity-80 disabled:cursor-not-allowed disabled:hover:translate-y-0 hover:-translate-y-0.5"
                       >
-                        {loading ? 'Processing...' : 'Schedule Appointment'}
+                        {loading ? (
+                          <>
+                            <Loader size={14} className="animate-spin" />
+                            Processing...
+                          </>
+                        ) : 'Schedule Appointment'}
                       </button>
                     </div>
                   </form>
@@ -2436,59 +2393,207 @@ const LegalCosultation = () => {
       </div>
 
       {/* Recharge Modal */}
+      {/* Premium Professional Recharge Modal */}
       {showRechargeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className={`w-full max-w-md p-6 rounded-2xl shadow-2xl border animate-in fade-in zoom-in duration-300 ${isDarkMode ? 'bg-[#1A1A1A] border-[#2A2A2A] text-white' : 'bg-white border-gray-100 text-gray-900'}`}>
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold">Top Up Wallet</h3>
-              <button
-                onClick={() => setShowRechargeModal(false)}
-                className={`p-2 rounded-full hover:bg-gray-100/10 transition-colors`}
-              >
-                <X size={20} />
-              </button>
-            </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0A0A0A]/80 backdrop-blur-xl p-4 sm:p-6 animate-in fade-in duration-300">
+          <div 
+            className={`relative w-full max-w-md overflow-hidden rounded-[2.5rem] shadow-2xl border transition-all duration-500 animate-in zoom-in-95 slide-in-from-bottom-10 ${
+              isDarkMode 
+                ? 'bg-[#121212] border-white/10 shadow-blue-900/20' 
+                : 'bg-white border-slate-200 shadow-slate-200/50'
+            }`}
+          >
+            {/* Background Accent Gradients */}
+            <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-blue-600/20 via-transparent to-transparent opacity-50" />
+            <div className="absolute bottom-0 right-0 w-48 h-48 bg-gradient-to-tl from-indigo-600/10 via-transparent to-transparent opacity-30 blur-3xl" />
 
-            <div className="mb-6 flex flex-col items-center">
-              <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mb-3">
-                <Wallet size={32} className="text-blue-500" />
-              </div>
-              <p className="text-sm font-medium opacity-60">Current Balance</p>
-              <h2 className="text-3xl font-bold mt-1">₹{walletBalance.toLocaleString('en-IN')}</h2>
-            </div>
-
-            <p className="text-xs font-bold uppercase tracking-wider opacity-60 mb-3">Select Amount</p>
-            <div className="grid grid-cols-3 gap-3 mb-6">
-              {[500, 1000, 2000].map(amount => (
+            <div className="relative p-7 sm:p-9">
+              {/* Modal Header */}
+              <div className="flex justify-between items-center mb-8">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2.5 rounded-2xl ${isDarkMode ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
+                    <Wallet size={20} strokeWidth={2.5} />
+                  </div>
+                  <div>
+                    <h3 className={`text-lg font-black tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                      Wallet Top-up
+                    </h3>
+                    <p className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                      Instant & Secure
+                    </p>
+                  </div>
+                </div>
                 <button
-                  key={amount}
-                  onClick={async () => {
-                    try {
-                      const userStr = localStorage.getItem('user');
-                      const userId = userStr ? JSON.parse(userStr).id : '1';
-                      await walletServices.recharge({
-                        user_id: userId,
-                        amount: amount,
-                        description: "Wallet Recharge"
-                      });
-                      setWalletBalance(prev => prev + amount);
-                      showInfo(`Recharged ₹${amount} successfully!`);
-                      setShowRechargeModal(false);
-                    } catch (err) {
-                      console.error(err);
-                      showToastError('Recharge failed');
-                    }
-                  }}
-                  className={`py-3 rounded-xl border font-bold text-sm transition-all hover:scale-105 ${isDarkMode ? 'border-[#2A2A2A] bg-white/5 hover:bg-white/10' : 'border-gray-200 bg-gray-50 hover:bg-gray-100'}`}
+                  onClick={() => setShowRechargeModal(false)}
+                  className={`p-2 rounded-xl transition-all duration-200 ${
+                    isDarkMode 
+                      ? 'bg-white/5 hover:bg-white/10 text-slate-400' 
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-500'
+                  }`}
                 >
-                  ₹{amount}
+                  <X size={18} strokeWidth={2.5} />
                 </button>
-              ))}
-            </div>
+              </div>
 
-            <p className="text-[10px] text-center opacity-40">
-              Secure payments processed via wallet service.
-            </p>
+              {/* Balance Display Card */}
+              <div className={`mb-8 p-6 rounded-3xl border text-center relative overflow-hidden group ${
+                isDarkMode 
+                  ? 'bg-white/[0.02] border-white/5' 
+                  : 'bg-slate-50 border-slate-100'
+              }`}>
+                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <Sparkles size={40} />
+                </div>
+                <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-2 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                  Available Credits
+                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <span className={`text-4xl font-black font-display tracking-tighter ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    ₹{walletBalance.toLocaleString('en-IN')}
+                  </span>
+                  <Zap size={20} className="text-amber-500 animate-pulse" />
+                </div>
+              </div>
+
+              {/* Insufficient Funds Warning (If applicable) */}
+              {selectedLawyer && walletBalance < (getAppointmentRatePerMinute(selectedLawyer.consultation_fee) || 1500) && (
+                <div className={`mb-6 p-4 rounded-2xl border flex items-start gap-4 animate-bounce-subtle ${
+                  isDarkMode ? 'bg-red-500/5 border-red-500/20 text-red-400' : 'bg-red-50 border-red-100 text-red-600'
+                }`}>
+                  <div className="mt-0.5">
+                    <AlertCircle size={14} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[11px] font-black uppercase tracking-wider">Insufficient Funds</p>
+                    <p className="text-[10px] leading-relaxed opacity-80 font-medium">
+                      You need at least ₹{(getAppointmentRatePerMinute(selectedLawyer.consultation_fee) || 1500).toLocaleString('en-IN')} to book this session.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Amount Selection */}
+              <div className="space-y-6">
+                <div>
+                  <label className={`text-[10px] font-black uppercase tracking-widest mb-4 block ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                    Select Top-up Amount
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[500, 1000, 2500].map(amount => (
+                      <button
+                        key={amount}
+                        onClick={async () => {
+                          try {
+                            setLoading(true);
+                            const userStr = localStorage.getItem('user');
+                            const userId = userStr ? JSON.parse(userStr).id : null;
+                            
+                            if (!userId) {
+                              showError("Session expired. Please login again.");
+                              return;
+                            }
+
+                            const response = await walletServices.recharge({
+                              user_id: userId,
+                              amount: amount,
+                              description: "Wallet Quick Recharge"
+                            });
+
+                            if (response.success || response.status === 'success') {
+                              setWalletBalance(prev => prev + amount);
+                              showSuccess(`₹${amount} added successfully! Your new balance is ₹${(walletBalance + amount).toLocaleString('en-IN')}`);
+                              setShowRechargeModal(false);
+                            } else {
+                              throw new Error(response.message || 'Recharge failed');
+                            }
+                          } catch (err) {
+                            console.error('Recharge error:', err);
+                            showError('Transaction failed. Please try again.');
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                        className={`group relative py-4 rounded-2xl border font-black text-sm transition-all duration-300 hover:-translate-y-1 active:scale-95 ${
+                          isDarkMode 
+                            ? 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-blue-500/30 text-white' 
+                            : 'bg-white border-slate-100 hover:bg-slate-50 hover:border-blue-500/30 text-slate-700 shadow-sm'
+                        }`}
+                      >
+                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Plus size={10} className="text-blue-500" />
+                        </div>
+                        ₹{amount.toLocaleString('en-IN')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom Amount Option */}
+                <div className="relative pt-2">
+                  <div className={`absolute left-4 top-1/2 -translate-y-1/2 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                    <Plus size={14} />
+                  </div>
+                  <input
+                    type="number"
+                    placeholder="Enter custom amount..."
+                    value={customRechargeAmount}
+                    onChange={(e) => setCustomRechargeAmount(e.target.value)}
+                    className={`w-full pl-10 pr-24 py-3.5 text-xs font-bold rounded-2xl border outline-none transition-all duration-300 ${
+                      isDarkMode 
+                        ? 'bg-white/5 border-white/5 focus:border-blue-500/50 text-white placeholder-slate-600' 
+                        : 'bg-slate-50 border-slate-100 focus:border-blue-500/30 text-slate-900 placeholder-slate-400 shadow-inner'
+                    }`}
+                  />
+                  {customRechargeAmount && parseInt(customRechargeAmount) > 0 && (
+                    <button
+                      onClick={async () => {
+                        const amount = parseInt(customRechargeAmount);
+                        try {
+                          setLoading(true);
+                          const userStr = localStorage.getItem('user');
+                          const userId = userStr ? JSON.parse(userStr).id : null;
+                          
+                          const response = await walletServices.recharge({
+                            user_id: userId,
+                            amount: amount,
+                            description: "Wallet Custom Recharge"
+                          });
+
+                          if (response.success || response.status === 'success') {
+                            dispatch(syncWalletBalance());
+                            showSuccess(`₹${amount} added successfully!`);
+                            setShowRechargeModal(false);
+                            setCustomRechargeAmount('');
+                          } else {
+                            throw new Error(response.message || 'Recharge failed');
+                          }
+                        } catch (err) {
+                          showError('Custom recharge failed');
+                        } finally {
+                          setLoading(false);
+                        }
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-blue-600/20"
+                    >
+                      Add
+                    </button>
+                  )}
+                </div>
+
+                {/* Secure Payment Footer */}
+                <div className="flex flex-col items-center gap-4 pt-4">
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/10">
+                    <Shield size={12} className="text-emerald-500" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                      256-bit SSL Secure Payment
+                    </span>
+                  </div>
+                  <p className={`text-[10px] text-center font-medium leading-relaxed opacity-30 px-6 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    By topping up, you agree to our Terms of Service. Funds are instantly credited to your Mera Bakil account.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

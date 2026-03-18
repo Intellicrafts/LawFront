@@ -1108,7 +1108,7 @@ const UserProfile = () => {
                                 />
                               ) : (
                                 <Avatar
-                                  src={userInfo?.avatar_url}
+                                  src={userInfo?.avatar || userInfo?.profile_picture || userInfo?.picture || userInfo?.avatar_url || userInfo?.professional_data?.avatar_url || userInfo?.professional?.avatar_url}
                                   name={`${userInfo?.name || ''} ${userInfo?.last_name || ''}`}
                                   size={96}
                                   forceRefresh={true}

@@ -18,6 +18,7 @@ import {
   Moon,
   ChevronDown,
   Home,
+  Bot,
   Users,
   Clock,
   Briefcase,
@@ -852,20 +853,26 @@ const Navbar = ({ isLandingPage = false }) => {
   };
 
   // NavLink Component for consistent styling
-  const NavLink = ({ to, children, className = "", mobile = false }) => {
+  const NavLink = ({ to, children, className = "", mobile = false, icon: Icon }) => {
     const active = isActiveLink(to);
 
     if (mobile) {
       return (
         <Link
           to={to}
-          className={`block px-4 py-3 rounded-xl text-lg font-medium transition-all duration-200 
+          className={`flex items-center gap-4 px-2 py-3 mb-1 rounded-xl text-[18px] font-medium transition-all duration-300 group
                 ${active
-              ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400'
-              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+              ? 'text-brand-600 dark:text-brand-400'
+              : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
             } ${className}`}
         >
-          {children}
+          {Icon && (
+            <div className={`p-1.5 rounded-lg flex items-center justify-center transition-colors
+                ${active ? 'text-brand-600 dark:text-brand-400' : 'text-gray-400 dark:text-gray-500 group-hover:text-brand-500 dark:group-hover:text-brand-400'}`}>
+                <Icon size={24} strokeWidth={1.5} />
+            </div>
+          )}
+          <span className="tracking-wide">{children}</span>
         </Link>
       );
     }
@@ -1026,7 +1033,7 @@ const Navbar = ({ isLandingPage = false }) => {
                     >
                       <div className="relative rounded-full overflow-hidden">
                         <Avatar
-                          src={user?.avatar_url}
+                          src={user?.avatar || user?.profile_picture || user?.picture || user?.avatar_url || user?.professional_data?.avatar_url || user?.professional?.avatar_url}
                           name={`${user?.name || user?.first_name || ''} ${user?.last_name || ''}`}
                           size={36}
                           forceRefresh={true}
@@ -1088,15 +1095,20 @@ const Navbar = ({ isLandingPage = false }) => {
                             <Link
                               to="/wallet"
                               onClick={() => setUserDropdownOpen(false)}
-                              className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2C2C2C] transition-colors group"
+                              className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2C2C2C] transition-all duration-300 group"
                             >
-                              <div className="p-1.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                              <div className="p-1.5 rounded-md bg-emerald-100/50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-all shadow-sm">
                                 <Wallet size={14} />
                               </div>
                               <div className="flex-1">
-                                <span className="block text-xs font-semibold">Wallet</span>
+                                <span className="block text-xs font-semibold">My Wallet</span>
                               </div>
-                              <ChevronRight size={12} className="text-gray-400 group-hover:text-emerald-500 transition-colors" />
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 rounded-md bg-gradient-to-r from-emerald-500 to-teal-500 text-[10px] font-bold text-white shadow-sm shadow-emerald-500/20">
+                                  ₹{user?.wallet_balance || 0}
+                                </span>
+                                <ChevronRight size={12} className="text-gray-400 group-hover:text-emerald-500 transition-colors" />
+                              </div>
                             </Link>
 
                             <Link
@@ -1208,7 +1220,7 @@ const Navbar = ({ isLandingPage = false }) => {
                   className="relative group focus:outline-none focus:ring-2 focus:ring-brand-500 rounded-full p-0.5"
                 >
                   <Avatar
-                    src={user?.avatar_url}
+                    src={user?.avatar || user?.profile_picture || user?.picture || user?.avatar_url || user?.professional_data?.avatar_url || user?.professional?.avatar_url}
                     name={`${user?.name || user?.first_name || ''} ${user?.last_name || ''}`}
                     size={32}
                     className="border-2 border-transparent group-hover:border-brand-500/50 transition-all duration-300 shadow-md transform group-hover:scale-105"
@@ -1234,63 +1246,72 @@ const Navbar = ({ isLandingPage = false }) => {
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 lg:hidden bg-white/95 dark:bg-[#0A0A0A]/95 backdrop-blur-xl pt-20 px-4 pb-6 overflow-y-auto"
+            initial={{ opacity: 0, scale: 0.98, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: -10 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="fixed inset-0 z-[110] lg:hidden bg-white/70 dark:bg-[#050505]/80 backdrop-blur-2xl pt-20 px-5 pb-8 overflow-y-auto"
           >
             <div className="flex flex-col space-y-2">
-              {/* Theme Toggle in Mobile Menu */}
-              <div className="flex items-center justify-between px-4 py-3 mb-4 rounded-xl bg-gray-50 dark:bg-gray-900">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Appearance</span>
+              {/* Top Menu Bar: Theme Toggle (Left) & Premium Close Button (Right) */}
+              <div className="flex justify-between items-center mb-6 px-2">
                 <button
-                  className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-200 transition-all duration-200
-                                    dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 focus:outline-none"
+                  className="p-3 rounded-full bg-white/40 dark:bg-[#1A1A1A]/60 backdrop-blur-xl border border-gray-200/50 dark:border-gray-800/50 text-gray-600 dark:text-gray-300 shadow-sm transition-all duration-300 hover:scale-105 active:scale-95"
                   onClick={() => dispatch(toggleTheme())}
                 >
-                  {mode === 'dark' ? <Sun size={20} className="text-yellow-300" /> : <Moon size={20} />}
+                  {mode === 'dark' ? <Sun size={22} strokeWidth={1.5} className="text-yellow-400" /> : <Moon size={22} strokeWidth={1.5} className="text-indigo-500" />}
+                </button>
+                <button
+                  className="p-3 rounded-full bg-white/40 dark:bg-[#1A1A1A]/60 backdrop-blur-xl border border-gray-200/50 dark:border-gray-800/50 text-gray-600 dark:text-gray-300 shadow-sm transition-all duration-300 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                  onClick={() => setMobileMenuOpen(false)}
+                  aria-label="Close mobile menu"
+                >
+                  <X size={22} strokeWidth={2} />
                 </button>
               </div>
 
               {/* Unified Mobile Links */}
               {isAuthenticated && user?.user_type === 2 && (
-                <NavLink to="/lawyer-admin" mobile>Dashboard</NavLink>
+                <NavLink to="/lawyer-admin" mobile icon={PanelLeftOpen}>Dashboard</NavLink>
               )}
-              <NavLink to="/chatbot" mobile>AI Assistant</NavLink>
-              <NavLink to="/legal-consoltation" mobile>Find Lawyer</NavLink>
-              <NavLink to="/legal-documents-review" mobile>Documents</NavLink>
-              <NavLink to="/pricing" mobile>Pricing</NavLink>
-              <NavLink to="/contact" mobile>Contact</NavLink>
+              <NavLink to="/chatbot" mobile icon={Bot}>AI Assistant</NavLink>
+              <NavLink to="/legal-consoltation" mobile icon={Search}>Find Lawyer</NavLink>
+              <NavLink to="/legal-documents-review" mobile icon={FileText}>Documents</NavLink>
+              <NavLink to="/pricing" mobile icon={Award}>Pricing</NavLink>
+              <NavLink to="/contact" mobile icon={MessageSquare}>Contact</NavLink>
 
               {isAuthenticated && (
                 <>
-                  <NavLink to="/wallet" mobile>My Wallet</NavLink>
-                  <div className="my-2 border-t border-gray-100 dark:border-gray-800"></div>
-                  <NavLink to="/settings" mobile>Settings</NavLink>
+                  <div className="my-4 border-t border-gray-200/50 dark:border-gray-800/50"></div>
+                  <NavLink to="/wallet" mobile icon={Wallet}>My Wallet</NavLink>
+                  <NavLink to="/settings" mobile icon={Settings}>Settings</NavLink>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center w-full px-4 py-3 rounded-xl text-lg font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
+                    className="flex items-center gap-4 px-2 py-3 mt-2 transition-all duration-300 group text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 w-full text-left"
                   >
-                    <LogOut size={20} className="mr-3" />
-                    Logout
+                    <div className="p-1.5 rounded-lg flex items-center justify-center transition-colors">
+                        <LogOut size={24} strokeWidth={1.5} />
+                    </div>
+                    <span className="text-[18px] font-medium tracking-wide">Logout</span>
                   </button>
                 </>
               )}
 
               {!isAuthenticated && (
-                <div className="pt-6 space-y-3">
+                <div className="pt-8 pb-4 space-y-4 px-2">
                   <Link
                     to="/auth"
-                    className="flex items-center justify-center w-full px-6 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold text-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    className="flex items-center justify-center gap-3 w-full px-6 py-3.5 rounded-full bg-gray-100 dark:bg-[#1A1A1A] text-gray-900 dark:text-white font-semibold text-[16px] transition-all hover:bg-gray-200 dark:hover:bg-[#252525] border border-transparent dark:border-gray-800"
                   >
-                    Login
+                    <LogIn size={20} strokeWidth={2} />
+                    Log In
                   </Link>
                   <Link
                     to="/signup"
-                    className="flex items-center justify-center w-full px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold text-lg hover:bg-brand-700 transition-colors shadow-lg shadow-brand-500/30"
+                    className="flex items-center justify-center gap-3 w-full px-6 py-3.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold text-[16px] transition-all hover:-translate-y-0.5 hover:shadow-lg shadow-gray-900/20 dark:shadow-white/10"
                   >
-                    Sign Up
+                    <UserPlus size={20} strokeWidth={2} />
+                    Sign Up Free
                   </Link>
                 </div>
               )}

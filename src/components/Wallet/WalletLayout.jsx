@@ -27,14 +27,12 @@ const WalletLayout = () => {
     const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
 
     useEffect(() => {
-        if (userId) {
-            dispatch(fetchWalletBalance(userId));
-            dispatch(fetchTransactions({ userId, page: 1, limit: 10 }));
-        }
-    }, [dispatch, userId]);
+        dispatch(fetchWalletBalance());
+        dispatch(fetchTransactions({ page: 1, limit: 10 }));
+    }, [dispatch]);
 
     const handleLoadMore = () => {
-        dispatch(fetchTransactions({ userId, page: currentPage + 1, limit: 10 }));
+        dispatch(fetchTransactions({ page: currentPage + 1, limit: 10 }));
     };
 
     const handleAddFunds = async (amount) => {
@@ -60,15 +58,21 @@ const WalletLayout = () => {
     };
 
     return (
-        <div className={`p-6 pt-24 min-h-screen ${isDark ? 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-[#0A0A0A] to-[#0A0A0A]' : 'bg-gray-50'}`}>
-            <div className="max-w-4xl mx-auto space-y-6">
-                <div>
-                    <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>My Wallet</h1>
-                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Manage your earnings and expenses</p>
+        <div className={`p-4 sm:p-6 pt-20 sm:pt-24 min-h-screen ${isDark ? 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/10 via-[#0A0A0A] to-[#0A0A0A]' : 'bg-gradient-to-br from-emerald-50/40 via-gray-50 to-gray-100'}`}>
+            <div className="max-w-2xl mx-auto space-y-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className={`text-xl font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>My Wallet</h1>
+                        <p className={`text-xs mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Manage your credits and transactions</p>
+                    </div>
+                    <span className="px-3 py-1 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-[10px] font-black text-white shadow shadow-emerald-500/20 uppercase tracking-wider">
+                        INR
+                    </span>
                 </div>
 
                 <WalletBalance
                     balance={balance}
+                    loading={loading}
                     onAddFunds={() => setIsAddFundsOpen(true)}
                     onWithdraw={() => setIsWithdrawOpen(true)}
                     isDark={isDark}
