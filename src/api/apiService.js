@@ -2327,7 +2327,7 @@ export const walletAPI = {
       if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
         return { status: "success", wallet_id: "mock_wallet_" + Date.now() };
       }
-      const response = await axios.post(`${config.WALLET_API_URL}${config.WALLET.CREATE}`, walletData);
+      const response = await axios.post(`${config.KUBERDHAN_API_URL}${config.WALLET.CREATE}`, walletData);
       return response.data;
     } catch (error) {
       console.error('Error creating wallet:', error);
@@ -2349,12 +2349,23 @@ export const walletAPI = {
           status: "active"
         };
       }
-      const response = await apiClient.get(config.WALLET.GET_BALANCE(userId));
-      return response.data;
+      
+      const response = await axios.get(`${config.KUBERDHAN_API_URL}${config.WALLET.GET_BALANCE(userId)}`);
+      
+      // Transform response to match frontend expectations if necessary
+      // Assuming Kuberdhan returns { balance: 100, ... } or similar
+      const data = response.data.data || response.data;
+      
+      return {
+        total_balance: (data.total_balance ?? data.balance ?? 0),
+        earned_balance: (data.earned_balance ?? 0),
+        promotional_balance: (data.promotional_balance ?? 0),
+        currency: data.currency || 'INR'
+      };
     } catch (error) {
-      console.error('Error fetching wallet balance:', error);
+      console.error('Error fetching wallet balance from Kuberdhan:', error);
       // Fallback for demo if API fails
-      return { balance: 0, currency: "INR" };
+      return { total_balance: 0, earned_balance: 0, promotional_balance: 0, currency: "INR" };
     }
   },
 
@@ -2367,7 +2378,7 @@ export const walletAPI = {
       if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
         return { status: "success", transaction_id: "mock_tx_" + Date.now() };
       }
-      const response = await apiClient.post(config.WALLET.PAY, paymentData);
+      const response = await axios.post(`${config.KUBERDHAN_API_URL}${config.WALLET.PAY}`, paymentData);
       return response.data;
     } catch (error) {
       console.error('Error processing wallet payment:', error);
@@ -2384,7 +2395,7 @@ export const walletAPI = {
       if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
         return { status: "success", new_balance: 5000 };
       }
-      const response = await apiClient.post(config.WALLET.RECHARGE, rechargeData);
+      const response = await axios.post(`${config.KUBERDHAN_API_URL}${config.WALLET.RECHARGE(rechargeData.user_id || rechargeData.userId)}`, rechargeData);
       return response.data;
     } catch (error) {
       console.error('Error recharging wallet:', error);
@@ -2401,7 +2412,7 @@ export const walletAPI = {
       if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
         return { status: "success", transaction_id: "mock_wd_" + Date.now() };
       }
-      const response = await apiClient.post(`${config.WALLET.BASE}/withdraw`, withdrawData);
+      const response = await axios.post(`${config.KUBERDHAN_API_URL}${config.WALLET.WITHDRAW(withdrawData.user_id || withdrawData.userId)}`, withdrawData);
       return response.data;
     } catch (error) {
       console.error('Error withdrawing wallet funds:', error);
@@ -2422,7 +2433,7 @@ export const walletAPI = {
           total: 0
         };
       }
-      const response = await apiClient.get(config.WALLET.TRANSACTIONS(userId), {
+      const response = await axios.get(`${config.KUBERDHAN_API_URL}${config.WALLET.TRANSACTIONS(userId)}`, {
         params: { page, limit }
       });
       return response.data;

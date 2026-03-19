@@ -1,13 +1,22 @@
-import apiClient from '../api/apiService';
+import axios from 'axios';
 import config from '../config';
 
 const walletService = {
-    // Get wallet balance (authenticated user)
-    getBalance: async () => {
+    // Get wallet balance for a specific user from Kuberdhan microservice
+    getBalance: async (userId) => {
         try {
-            const response = await apiClient.get(config.WALLET.GET_BALANCE());
-            return response.data;
+            const response = await axios.get(`${config.KUBERDHAN_API_URL}${config.WALLET.GET_BALANCE(userId)}`);
+            
+            // Map the data to the expected format
+            const data = response.data.data || response.data;
+            return {
+                total_balance: (data.total_balance ?? data.balance ?? 0),
+                earned_balance: (data.earned_balance ?? 0),
+                promotional_balance: (data.promotional_balance ?? 0),
+                currency: data.currency || 'INR'
+            };
         } catch (error) {
+            console.error('Error fetching from Kuberdhan:', error);
             throw error.response?.data || error.message;
         }
     },
@@ -15,9 +24,9 @@ const walletService = {
     // Get transaction history with pagination
     getTransactions: async (userId, page = 1, limit = 10) => {
         try {
-            const skip = (page - 1) * limit;
-            const response = await apiClient.get(config.WALLET.TRANSACTIONS(), {
-                params: { skip, limit, page },
+            if (!userId) return { transactions: [] };
+            const response = await axios.get(`${config.KUBERDHAN_API_URL}${config.WALLET.TRANSACTIONS(userId)}`, {
+                params: { page, limit },
             });
             return response.data;
         } catch (error) {
@@ -28,7 +37,7 @@ const walletService = {
     // Recharge wallet
     recharge: async (userId, amount) => {
         try {
-            const response = await apiClient.post(config.WALLET.RECHARGE, {
+            const response = await axios.post(`${config.KUBERDHAN_API_URL}${config.WALLET.RECHARGE(userId)}`, {
                 amount: parseFloat(amount),
                 description: 'Wallet Recharge',
             });
@@ -41,7 +50,7 @@ const walletService = {
     // Withdraw funds
     withdraw: async (userId, amount) => {
         try {
-            const response = await apiClient.post(config.WALLET.WITHDRAW, {
+            const response = await axios.post(`${config.KUBERDHAN_API_URL}${config.WALLET.WITHDRAW(userId)}`, {
                 amount: parseFloat(amount),
                 description: 'Wallet Withdrawal',
             });

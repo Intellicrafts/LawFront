@@ -7,9 +7,16 @@ export const fetchWalletBalance = createAsyncThunk(
     'wallet/fetchBalance',
     async (_, { rejectWithValue }) => {
         try {
-            return await walletService.getBalance();
+            const userStr = localStorage.getItem('user');
+            if (!userStr) return rejectWithValue('User not authenticated');
+            const user = JSON.parse(userStr);
+            const userId = user.id || user.user_id;
+            
+            if (!userId) return rejectWithValue('User ID not found');
+            
+            return await walletService.getBalance(userId);
         } catch (error) {
-            return rejectWithValue(error);
+            return rejectWithValue(error.message || 'Failed to fetch balance');
         }
     }
 );
