@@ -11,9 +11,9 @@ const config = {
     API_BASE_URL: process.env.REACT_APP_API_URL || 'http://localhost:8000',
 
     // Kuberdhan Wallet Microservice
-    // Dev:  http://localhost:8001  (set REACT_APP_KUBERDHAN_API_URL in .env)
-    // Prod: your deployed Kuberdhan URL  (set in .env.production)
-    KUBERDHAN_API_URL: process.env.REACT_APP_KUBERDHAN_API_URL || 'http://localhost:8001',
+    // Dev:  http://localhost:8001  (set REACT_APP_WALLET_API_URL in .env)
+    // Prod: set REACT_APP_WALLET_API_URL in GitHub secrets
+    KUBERDHAN_API_URL: process.env.REACT_APP_WALLET_API_URL || 'http://localhost:8001',
 
     // Lawyer Verification Service (Satyapan)
     VERIFICATION_API_URL: process.env.REACT_APP_VERIFICATION_API_URL || 'https://wgywp2sazh56bc7zg7ydni2uv40xfzji.lambda-url.ap-south-1.on.aws',
