@@ -133,7 +133,7 @@ const walletService = {
      */
     processPayment: async (payerUserId, receiverUserId, amount, commissionAmount, category, description) => {
         try {
-            const response = await walletClient.post('/pay', {
+            const response = await walletClient.post('pay', {
                 payer_user_id: String(payerUserId),
                 receiver_user_id: String(receiverUserId),
                 amount: parseFloat(amount),

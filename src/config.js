@@ -1,25 +1,30 @@
 // LawFront Frontend Configuration
+// Environment variables are injected by Create React App at build time.
+// .env          → local development (npm start)
+// .env.production → production build (npm run build)
+// See .env.example for all available variables.
 
 const config = {
-    // Backend API Base URL
-    // Default to localhost for development as requested
-    // Backend API Base URL
-    // Default to localhost for development as requested
+    // Laravel Backend API
+    // Dev:  http://localhost:8000  (set REACT_APP_API_URL in .env)
+    // Prod: https://chambersapi.logicera.in
     API_BASE_URL: process.env.REACT_APP_API_URL || 'http://localhost:8000',
 
-    // Wallet Microservice URL (Kuberdhan)
+    // Kuberdhan Wallet Microservice
+    // Dev:  http://localhost:8001  (set REACT_APP_KUBERDHAN_API_URL in .env)
+    // Prod: your deployed Kuberdhan URL  (set in .env.production)
     KUBERDHAN_API_URL: process.env.REACT_APP_KUBERDHAN_API_URL || 'http://localhost:8001',
 
     // Lawyer Verification Service (Satyapan)
     VERIFICATION_API_URL: process.env.REACT_APP_VERIFICATION_API_URL || 'https://wgywp2sazh56bc7zg7ydni2uv40xfzji.lambda-url.ap-south-1.on.aws',
 
-    // Wallet Service Endpoints (now on main Laravel API)
+    // Wallet Service Endpoints (Kuberdhan)
     WALLET: {
         BASE: '/api/v1/wallets/',
         CREATE: '/api/v1/wallets/',
         GET_BALANCE: (userId) => `/api/v1/wallets/${userId}`,
-        RECHARGE: (userId) => `/api/v1/wallets/recharge`,
-        WITHDRAW: (userId) => `/api/v1/wallets/withdraw`,
+        RECHARGE: () => `/api/v1/wallets/recharge`,
+        WITHDRAW: () => `/api/v1/wallets/withdraw`,
         PAY: '/api/v1/wallets/pay',
         TRANSACTIONS: (userId) => `/api/v1/wallets/${userId}/transactions`,
     },
@@ -29,5 +34,11 @@ const config = {
         USE_MOCK_WALLET: false,
     }
 };
+
+// Log active URLs in development mode only
+if (process.env.NODE_ENV === 'development') {
+    console.info('[Config] API_BASE_URL      :', config.API_BASE_URL);
+    console.info('[Config] KUBERDHAN_API_URL :', config.KUBERDHAN_API_URL);
+}
 
 export default config;

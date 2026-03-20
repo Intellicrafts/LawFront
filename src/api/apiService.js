@@ -1198,7 +1198,13 @@ export const walletAPI = {
       if (config.FEATURES && config.FEATURES.USE_MOCK_WALLET) {
         return { status: "success", wallet_id: "mock_wallet_" + Date.now() };
       }
-      const response = await axios.post(`${config.KUBERDHAN_API_URL}${config.WALLET.CREATE}`, walletData);
+      const token = localStorage.getItem('auth_token');
+      const response = await axios.post(`${config.KUBERDHAN_API_URL}${config.WALLET.CREATE}`, walletData, {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
       return response.data;
     } catch (error) {
       console.error('Error creating wallet:', error);
