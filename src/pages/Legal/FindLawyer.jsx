@@ -15,7 +15,8 @@ import {
   Scale, Shield, Heart, Layout, Sparkles, Zap, Search, Filter,
   ChevronLeft, Info, CheckCircle, Plus
 } from 'lucide-react';
-import { lawyerAPI, apiServices, walletServices } from '../../api/apiService';
+import { lawyerAPI, apiServices } from '../../api/apiService';
+import walletServices from '../../services/walletService';
 import MyAppointments from '../../components/MyAppointments';
 import { formatRatePerMinuteLabel, buildAppointmentConsultationFee, getAppointmentRatePerMinute } from '../../utils/consultationFee';
 
@@ -2507,11 +2508,7 @@ const LegalCosultation = () => {
                               return;
                             }
 
-                            const response = await walletServices.recharge({
-                              user_id: userId,
-                              amount: amount,
-                              description: "Wallet Quick Recharge"
-                            });
+                            const response = await walletServices.recharge(userId, amount);
 
                             if (response.success || response.status === 'success') {
                               dispatch(syncWalletBalance());
@@ -2567,11 +2564,7 @@ const LegalCosultation = () => {
                           const userStr = localStorage.getItem('user');
                           const userId = userStr ? JSON.parse(userStr).id : null;
                           
-                          const response = await walletServices.recharge({
-                            user_id: userId,
-                            amount: amount,
-                            description: "Wallet Custom Recharge"
-                          });
+                          const response = await walletServices.recharge(userId, amount);
 
                           if (response.success || response.status === 'success') {
                             dispatch(syncWalletBalance());

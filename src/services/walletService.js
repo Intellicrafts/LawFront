@@ -105,14 +105,16 @@ const walletService = {
 
     /**
      * Withdraw funds from wallet.
-     * @param {Object} data - { user_id, amount, description }
+     * @param {string|number} userId - Laravel user ID
+     * @param {number} amount - Amount in INR
+     * @param {string} description - Optional description
      */
-    withdraw: async (data) => {
+    withdraw: async (userId, amount, description = 'Wallet Withdrawal') => {
         try {
             const response = await walletClient.post('withdraw', {
-                user_id: String(data.user_id),
-                amount: parseFloat(data.amount),
-                description: data.description || 'Wallet Withdrawal',
+                user_id: String(userId),
+                amount: parseFloat(amount),
+                description: description,
             });
             return response.data;
         } catch (error) {

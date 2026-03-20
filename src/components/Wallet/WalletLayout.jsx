@@ -83,7 +83,19 @@ const WalletLayout = () => {
             showSuccess('Withdrawal request submitted!');
         } catch (error) {
             console.error('Failed to withdraw:', error);
-            showError(error.detail || 'Withdrawal failed');
+            
+            let errMsg = 'Withdrawal failed';
+            if (error?.detail) {
+                if (typeof error.detail === 'string') {
+                    errMsg = error.detail;
+                } else if (Array.isArray(error.detail) && error.detail.length > 0) {
+                    errMsg = error.detail[0].msg || 'Validation error';
+                }
+            } else if (error?.message) {
+                errMsg = error.message;
+            }
+            
+            showError(errMsg);
         }
     };
 
