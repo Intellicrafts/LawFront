@@ -261,6 +261,7 @@ const LegalCosultation = () => {
       if (!foundLawyer) {
         foundLawyer = {
           id: parseInt(lawyerIdParam),
+          user_id: parseInt(lawyerIdParam),
           full_name: 'Selected Lawyer',
           specialization: 'Legal Counsel',
           consultation_fee: buildAppointmentConsultationFee(1500),
@@ -300,6 +301,7 @@ const LegalCosultation = () => {
 
     const defaultRodgerProsacco = {
       id: 999, // Use a unique ID
+      user_id: 999, // Ensure wallet linking works for mock
       full_name: 'Rodger Prosacco',
       specialization: 'Corporate',
       years_of_experience: 15,
@@ -1271,7 +1273,7 @@ const LegalCosultation = () => {
             
             await dispatch(processServicePayment({
               payerUserId: userId,
-              receiverUserId: selectedLawyer.id,
+              receiverUserId: selectedLawyer.user_id || selectedLawyer.id,
               amount: TOTAL_FEE,
               commissionAmount: commissionAmount,
               category: 'APPOINTMENT_BOOKING_CHARGE',
@@ -1322,7 +1324,7 @@ const LegalCosultation = () => {
 
               // Create notification for the lawyer
               const lawyerNotification = {
-                user_id: selectedLawyer.id, // Lawyer's user ID
+                user_id: selectedLawyer.user_id || selectedLawyer.id, // Lawyer's user ID
                 title: 'New Appointment',
                 description: `A new appointment has been scheduled for ${appointmentDate} at ${appointmentTime}.`,
                 status: 'unread'
