@@ -11,6 +11,7 @@ import LawyerDocuments from '../LawyerAdmin/LawyerDocuments';
 import LawyerFees from '../LawyerAdmin/LawyerFees';
 import LawyerProfile from '../LawyerAdmin/LawyerProfile';
 import LawyerSettings from '../LawyerAdmin/LawyerSettings';
+import WalletLayout from '../Wallet/WalletLayout';
 import WithdrawFundsModal from '../Wallet/WithdrawFundsModal';
 import Sidebar from '../layout/Sidebar';
 import { verificationService } from '../../services/verificationService';
@@ -64,7 +65,8 @@ import {
   Scale,
   Check,
   AlertCircle,
-  ShieldCheck
+  ShieldCheck,
+  Wallet
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -764,6 +766,7 @@ const LawyerAdmin = () => {
       'clients': ['client', 'customer', 'people', 'user', 'vault', 'crm'],
       'cases': ['case', 'legal', 'suit', 'litigation', 'active', 'portfolio'],
       'documents': ['doc', 'file', 'record', 'paper', 'archive', 'bucket'],
+      'wallet': ['wallet', 'earnings', 'funds', 'balance', 'withdraw', 'payout'],
       'fees': ['fee', 'fees', 'price', 'pricing', 'rate', 'service', 'charges'],
       'profile': ['profile', 'academic', 'my info', 'account'],
       'settings': ['settings', 'security', 'preferences', 'config']
@@ -1041,6 +1044,7 @@ const LawyerAdmin = () => {
     { id: 'clients', label: 'Client Center', icon: Users, color: COLORS.primary },
     { id: 'cases', label: 'Active Cases', icon: Briefcase, color: COLORS.primary },
     { id: 'documents', label: 'Knowledge Base', icon: FolderOpen, color: COLORS.primary },
+    { id: 'wallet', label: 'Wallet & Earnings', icon: Wallet, color: COLORS.primary },
     { id: 'fees', label: 'Service Fees', icon: DollarSign, color: COLORS.primary },
     { id: 'profile', label: 'Academic Profile', icon: User, color: COLORS.primary },
     { id: 'settings', label: 'System Settings', icon: Settings, color: COLORS.primary },
@@ -1162,6 +1166,7 @@ const LawyerAdmin = () => {
               {activeTab === 'clients' && <LawyerClients darkMode={isDark} />}
               {activeTab === 'cases' && <LawyerCases darkMode={isDark} />}
               {activeTab === 'documents' && <LawyerDocuments darkMode={isDark} />}
+              {activeTab === 'wallet' && <WalletLayout />}
               {activeTab === 'fees' && <LawyerFees darkMode={isDark} userData={userData} />}
               {activeTab === 'profile' && <LawyerProfile darkMode={isDark} />}
               {activeTab === 'settings' && <LawyerSettings darkMode={isDark} />}

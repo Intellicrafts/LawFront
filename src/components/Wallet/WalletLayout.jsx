@@ -7,6 +7,7 @@ import TransactionHistory from './TransactionHistory';
 import AddFundsModal from './AddFundsModal';
 import WithdrawFundsModal from './WithdrawFundsModal';
 import { useToast } from '../../context/ToastContext';
+import { RefreshCw } from 'lucide-react';
 
 const WalletLayout = () => {
     const dispatch = useDispatch();
@@ -27,9 +28,38 @@ const WalletLayout = () => {
     const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
 
     useEffect(() => {
-        dispatch(fetchWalletBalance());
-        dispatch(fetchTransactions({ page: 1, limit: 10 }));
-    }, [dispatch]);
+        let isMounted = true;
+        
+        const loadInitialData = async () => {
+             if (userId) {
+                 await dispatch(fetchWalletBalance());
+                 await dispatch(fetchTransactions({ page: 1, limit: 10 }));
+             }
+        };
+
+        if (userId) {
+            loadInitialData();
+            // Auto refresh every 30 seconds
+            const interval = setInterval(() => {
+                if (isMounted && userId) {
+                    dispatch(fetchWalletBalance());
+                    dispatch(fetchTransactions({ page: 1, limit: 10 }));
+                }
+            }, 30000);
+            return () => {
+                isMounted = false;
+                clearInterval(interval);
+            };
+        }
+    }, [dispatch, userId]);
+
+    const handleRefresh = async () => {
+        if (userId) {
+            await dispatch(fetchWalletBalance());
+            await dispatch(fetchTransactions({ page: 1, limit: 10 }));
+            showSuccess('Wallet refreshed');
+        }
+    };
 
     const handleLoadMore = () => {
         dispatch(fetchTransactions({ page: currentPage + 1, limit: 10 }));
@@ -58,34 +88,58 @@ const WalletLayout = () => {
     };
 
     return (
-        <div className={`p-4 sm:p-6 pt-20 sm:pt-24 min-h-screen ${isDark ? 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/10 via-[#0A0A0A] to-[#0A0A0A]' : 'bg-gradient-to-br from-emerald-50/40 via-gray-50 to-gray-100'}`}>
-            <div className="max-w-2xl mx-auto space-y-4">
-                <div className="flex items-center justify-between">
+        <div className={`min-h-screen ${isDark ? 'bg-[#050505]' : 'bg-[#f8fafc]'}`}>
+            {/* Ambient Background Glows */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+                <div className={`absolute -top-[20%] -right-[10%] w-[50%] h-[50%] rounded-full blur-[120px] ${isDark ? 'bg-emerald-900/20' : 'bg-emerald-100/50'}`} />
+                <div className={`absolute top-[40%] -left-[10%] w-[40%] h-[40%] rounded-full blur-[120px] ${isDark ? 'bg-blue-900/10' : 'bg-teal-50/50'}`} />
+            </div>
+
+            <div className="relative p-4 sm:p-6 pt-20 sm:pt-24 max-w-xl mx-auto space-y-6">
+                {/* Header Section */}
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
                     <div>
-                        <h1 className={`text-xl font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>My Wallet</h1>
-                        <p className={`text-xs mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Manage your credits and transactions</p>
+                        <h1 className={`text-2xl sm:text-3xl font-light tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                            My <span className="font-semibold">Wallet</span>
+                        </h1>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
+                            Manage your credits and monitor your transactions seamlessly.
+                        </p>
                     </div>
-                    <span className="px-3 py-1 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-[10px] font-black text-white shadow shadow-emerald-500/20 uppercase tracking-wider">
-                        INR
-                    </span>
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                        <button 
+                            onClick={handleRefresh} 
+                            disabled={loading || transactionLoading}
+                            className={`p-2 rounded-xl transition-all duration-300 ${
+                                (loading || transactionLoading) 
+                                ? 'opacity-50 cursor-not-allowed' 
+                                : `hover:-translate-y-0.5 hover:shadow-md active:scale-95 ${isDark ? 'hover:shadow-white/5 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white' : 'hover:shadow-slate-200/50 bg-white border border-slate-200 text-slate-500 hover:text-slate-900'}`
+                            }`}
+                            title="Refresh Wallet"
+                        >
+                            <RefreshCw size={14} className={(loading || transactionLoading) ? 'animate-spin' : ''} />
+                        </button>
+                    </div>
                 </div>
 
-                <WalletBalance
-                    balance={balance}
-                    loading={loading}
-                    onAddFunds={() => setIsAddFundsOpen(true)}
-                    onWithdraw={() => setIsWithdrawOpen(true)}
-                    isDark={isDark}
-                />
+                <div className="space-y-4">
+                    <WalletBalance
+                        balance={balance}
+                        loading={loading}
+                        onAddFunds={() => setIsAddFundsOpen(true)}
+                        onWithdraw={() => setIsWithdrawOpen(true)}
+                        isDark={isDark}
+                    />
 
-                <TransactionHistory
-                    transactions={transactions}
-                    loading={transactionLoading}
-                    hasMore={hasMoreLocal}
-                    onLoadMore={handleLoadMore}
-                    isDark={isDark}
-                    currentPage={currentPage}
-                />
+                    <TransactionHistory
+                        transactions={transactions}
+                        loading={transactionLoading}
+                        hasMore={hasMoreLocal}
+                        onLoadMore={handleLoadMore}
+                        isDark={isDark}
+                        currentPage={currentPage}
+                    />
+                </div>
             </div>
 
             <AddFundsModal

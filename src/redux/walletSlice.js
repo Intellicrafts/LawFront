@@ -1,38 +1,71 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import walletService from '../services/walletService';
 
-// Async Thunks
-// Note: New backend uses Auth token, no userId needed in the call itself
+// ── Helper: get userId from localStorage ──────────────────────────
+const getUserId = () => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return null;
+    try {
+        const user = JSON.parse(userStr);
+        return user.id || user.user_id || null;
+    } catch {
+        return null;
+    }
+};
+
+// ── Async Thunks ──────────────────────────────────────────────────
+
+/**
+ * Create a wallet for the authenticated user (idempotent).
+ * Called after login/registration.
+ */
+export const createUserWallet = createAsyncThunk(
+    'wallet/createWallet',
+    async ({ userId, userType = 'CUSTOMER' }, { rejectWithValue }) => {
+        try {
+            return await walletService.createWallet(userId, userType);
+        } catch (error) {
+            return rejectWithValue(error?.message || 'Failed to create wallet');
+        }
+    }
+);
+
+/**
+ * Fetch wallet balance for the authenticated user.
+ */
 export const fetchWalletBalance = createAsyncThunk(
     'wallet/fetchBalance',
     async (_, { rejectWithValue }) => {
         try {
-            const userStr = localStorage.getItem('user');
-            if (!userStr) return rejectWithValue('User not authenticated');
-            const user = JSON.parse(userStr);
-            const userId = user.id || user.user_id;
-            
-            if (!userId) return rejectWithValue('User ID not found');
-            
+            const userId = getUserId();
+            if (!userId) return rejectWithValue('User not authenticated');
             return await walletService.getBalance(userId);
         } catch (error) {
-            return rejectWithValue(error.message || 'Failed to fetch balance');
+            return rejectWithValue(error?.message || 'Failed to fetch balance');
         }
     }
 );
 
+/**
+ * Fetch transaction history for the authenticated user.
+ */
 export const fetchTransactions = createAsyncThunk(
     'wallet/fetchTransactions',
     async ({ page = 1, limit = 10 } = {}, { rejectWithValue }) => {
         try {
-            const data = await walletService.getTransactions(null, page, limit);
+            const userId = getUserId();
+            if (!userId) return rejectWithValue('User not authenticated');
+            const data = await walletService.getTransactions(userId);
             return { data, page };
         } catch (error) {
-            return rejectWithValue(error);
+            return rejectWithValue(error?.message || 'Failed to fetch transactions');
         }
     }
 );
 
+/**
+ * Recharge wallet (add funds).
+ */
 export const rechargeWallet = createAsyncThunk(
     'wallet/recharge',
     async ({ userId, amount }, { rejectWithValue, dispatch }) => {
@@ -47,6 +80,9 @@ export const rechargeWallet = createAsyncThunk(
     }
 );
 
+/**
+ * Withdraw funds from earned balance.
+ */
 export const withdrawFunds = createAsyncThunk(
     'wallet/withdraw',
     async ({ userId, amount }, { rejectWithValue, dispatch }) => {
@@ -60,6 +96,34 @@ export const withdrawFunds = createAsyncThunk(
         }
     }
 );
+
+/**
+ * Process a service payment with commission split.
+ * Used during appointment booking to debit customer and credit lawyer + platform.
+ */
+export const processServicePayment = createAsyncThunk(
+    'wallet/processPayment',
+    async ({ payerUserId, receiverUserId, amount, commissionAmount, category, description }, { rejectWithValue, dispatch }) => {
+        try {
+            const result = await walletService.processPayment(
+                payerUserId,
+                receiverUserId,
+                amount,
+                commissionAmount,
+                category,
+                description
+            );
+            // Refresh balance and transactions after payment
+            dispatch(fetchWalletBalance());
+            dispatch(fetchTransactions({ page: 1, limit: 10 }));
+            return result;
+        } catch (error) {
+            return rejectWithValue(error);
+        }
+    }
+);
+
+// ── Slice ─────────────────────────────────────────────────────────
 
 const walletSlice = createSlice({
     name: 'wallet',
@@ -75,7 +139,9 @@ const walletSlice = createSlice({
         transactionLoading: false,
         transactionError: null,
         hasMoreLocal: true,
-        currentPage: 1
+        currentPage: 1,
+        paymentLoading: false,
+        paymentError: null,
     },
     reducers: {
         resetWalletState: (state) => {
@@ -83,6 +149,7 @@ const walletSlice = createSlice({
             state.balance = { earned_balance: 0, promotional_balance: 0, total_balance: 0 };
             state.currentPage = 1;
             state.hasMoreLocal = true;
+            state.paymentError = null;
         }
     },
     extraReducers: (builder) => {
@@ -121,6 +188,19 @@ const walletSlice = createSlice({
         builder.addCase(fetchTransactions.rejected, (state, action) => {
             state.transactionLoading = false;
             state.transactionError = action.payload;
+        });
+
+        // Service Payment
+        builder.addCase(processServicePayment.pending, (state) => {
+            state.paymentLoading = true;
+            state.paymentError = null;
+        });
+        builder.addCase(processServicePayment.fulfilled, (state) => {
+            state.paymentLoading = false;
+        });
+        builder.addCase(processServicePayment.rejected, (state, action) => {
+            state.paymentLoading = false;
+            state.paymentError = action.payload;
         });
     }
 });

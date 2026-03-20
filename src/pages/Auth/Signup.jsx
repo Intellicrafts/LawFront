@@ -806,6 +806,23 @@ export const Signup = ({ onSignupSuccess }) => {
           `Welcome${response.data.data.user?.name ? `, ${response.data.data.user.name}` : ''}! Registration successful!`
         );
 
+        // === START: Auto-create Wallet ===
+        try {
+          if (response.data.data.user && response.data.data.user.id) {
+            const gUser = response.data.data.user;
+            const userTypeStr = (gUser.user_type === 2 || gUser.user_type === 'business' || gUser.user_type === 'lawyer' || gUser?.role?.toLowerCase() === 'lawyer') ? 'LAWYER' : 'CUSTOMER';
+            const walletPayload = {
+              user_id: gUser.id.toString(),
+              user_type: userTypeStr,
+              currency: 'INR'
+            };
+            await walletAPI.createWallet(walletPayload);
+          }
+        } catch (walletError) {
+          console.error('Error auto-creating wallet on Google signup:', walletError);
+        }
+        // === END: Auto-create Wallet ===
+
         // Call parent callback if provided
         if (onSignupSuccess) {
           onSignupSuccess(response.data);

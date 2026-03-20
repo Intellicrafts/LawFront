@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { fetchWalletBalance as syncWalletBalance } from '../../redux/walletSlice';
+import { fetchWalletBalance as syncWalletBalance, processServicePayment } from '../../redux/walletSlice';
 import { useToast } from '../../context/ToastContext';
 import config from '../../config';
 import {
@@ -283,14 +283,10 @@ const LegalCosultation = () => {
   const { balance: reduxWalletBalance } = useSelector((state) => state.wallet);
   const totalReduxBalance = (reduxWalletBalance?.earned_balance || 0) + (reduxWalletBalance?.promotional_balance || 0);
   
-  const [walletBalance, setWalletBalance] = useState(totalReduxBalance);
   const [showRechargeModal, setShowRechargeModal] = useState(false);
   const [customRechargeAmount, setCustomRechargeAmount] = useState('');
 
-  // Sync local walletBalance with Redux when it changes
-  useEffect(() => {
-    setWalletBalance(totalReduxBalance);
-  }, [totalReduxBalance]);
+  // Wallet Sync Logic removed - using totalReduxBalance directly
 
   // Fetch Wallet Balance on mount
   useEffect(() => {
@@ -1230,6 +1226,10 @@ const LegalCosultation = () => {
         // Send standardized UTC format derived from our correctly constructed Local object
         const formattedDateTimeStr = dateObj.toISOString().replace('T', ' ').substring(0, 19);
 
+        // Format date and time for display
+        const displayDate = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        const displayTime = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
         // Prepare appointment data according to the sample provided
         const googleMeetLink = "https://meet.google.com/cbx-twdp-qhm"; // Use the provided Google Meet link
         const appointmentData = {
@@ -1252,10 +1252,10 @@ const LegalCosultation = () => {
         const duration = 1; // For now assuming flat fee or minimum 1 unit for demonstration
         const TOTAL_FEE = ratePerMinute * duration;
 
-        console.log(`Checking credits: Balance=${walletBalance}, Required=${TOTAL_FEE}`);
+        console.log(`Checking credits: Balance=${totalReduxBalance}, Required=${TOTAL_FEE}`);
 
         // Credit Guard: Check if user has sufficient balance
-        if (walletBalance < TOTAL_FEE) {
+        if (totalReduxBalance < TOTAL_FEE) {
           showError(`Insufficient wallet balance. Total fee is ₹${TOTAL_FEE.toLocaleString('en-IN')}. Please top up your account.`);
           setShowRechargeModal(true);
           setLoading(false);
@@ -1263,9 +1263,28 @@ const LegalCosultation = () => {
         }
 
         try {
-          // Process Wallet Payment (Optional: Deduct balance on success)
-          // For production, the backend usually handles deduction during appointment creation
-          // But we can simulate or call a payment API if required.
+          // Process Wallet Payment using Kuberdhan
+          try {
+            const commissionRate = 0.10; // 10% platform commission
+            const commissionAmount = TOTAL_FEE * commissionRate;
+            
+            await dispatch(processServicePayment({
+              payerUserId: userId,
+              receiverUserId: selectedLawyer.id,
+              amount: TOTAL_FEE,
+              commissionAmount: commissionAmount,
+              category: 'APPOINTMENT_BOOKING_CHARGE',
+              description: `Booking with ${selectedLawyer.name} for ${displayDate} at ${displayTime}`
+            })).unwrap();
+            
+            // Payment successful, continue to book appointment
+            console.log('Payment processed successfully');
+          } catch (paymentError) {
+            console.error('Payment processing failed:', paymentError);
+            showError(paymentError?.message || 'Payment failed. Please try again.');
+            setLoading(false);
+            return; // Stop booking if payment fails
+          }
           
           // Call the API to book appointment with lawyer
           // Note: lawyer_id is already in appointmentData, but we still pass it separately
@@ -1325,11 +1344,6 @@ const LegalCosultation = () => {
 
             // Save to local storage for "My Appointments" view
             try {
-              // Format date and time for display
-              const dateObj = new Date(appointmentData.appointment_time);
-              const displayDate = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-              const displayTime = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-
               const newAppointment = {
                 id: Date.now(),
                 lawyer: selectedLawyer,
@@ -2449,14 +2463,14 @@ const LegalCosultation = () => {
                 </p>
                 <div className="flex items-center justify-center gap-2">
                   <span className={`text-4xl font-black font-display tracking-tighter ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                    ₹{walletBalance.toLocaleString('en-IN')}
+                    ₹{totalReduxBalance.toLocaleString('en-IN')}
                   </span>
                   <Zap size={20} className="text-amber-500 animate-pulse" />
                 </div>
               </div>
 
               {/* Insufficient Funds Warning (If applicable) */}
-              {selectedLawyer && walletBalance < (getAppointmentRatePerMinute(selectedLawyer.consultation_fee) || 1500) && (
+              {selectedLawyer && totalReduxBalance < (getAppointmentRatePerMinute(selectedLawyer.consultation_fee) || 1500) && (
                 <div className={`mb-6 p-4 rounded-2xl border flex items-start gap-4 animate-bounce-subtle ${
                   isDarkMode ? 'bg-red-500/5 border-red-500/20 text-red-400' : 'bg-red-50 border-red-100 text-red-600'
                 }`}>
@@ -2500,8 +2514,8 @@ const LegalCosultation = () => {
                             });
 
                             if (response.success || response.status === 'success') {
-                              setWalletBalance(prev => prev + amount);
-                              showSuccess(`₹${amount} added successfully! Your new balance is ₹${(walletBalance + amount).toLocaleString('en-IN')}`);
+                              dispatch(syncWalletBalance());
+                              showSuccess(`₹${amount} added successfully! Your new balance is ₹${(totalReduxBalance + amount).toLocaleString('en-IN')}`);
                               setShowRechargeModal(false);
                             } else {
                               throw new Error(response.message || 'Recharge failed');

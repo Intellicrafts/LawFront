@@ -268,30 +268,51 @@ const MobileSidebar = ({
                               <Wallet size={10} className="text-emerald-200" />
                               <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-200">My Wallet</span>
                             </div>
-                            {walletLoading && balance?.total_balance === 0 ? (
-                              <div className="h-5 w-20 bg-white/20 rounded animate-pulse mt-1" />
+                            {walletLoading && (!balance || balance.total_balance === 0) ? (
+                              <div className="mt-1 relative h-6 w-24 overflow-hidden rounded-md bg-white/10">
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]" />
+                              </div>
                             ) : (
                               <div className="flex items-baseline gap-1">
                                 <span className="text-xl font-black text-white">₹{parseFloat(balance?.total_balance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                                <span className="text-[9px] text-white/50 font-bold">INR</span>
+                                <motion.span 
+                                  animate={{ opacity: [0.4, 0.7, 0.4] }}
+                                  transition={{ duration: 2, repeat: Infinity }}
+                                  className="text-[9px] text-white/50 font-bold"
+                                >
+                                  INR
+                                </motion.span>
                               </div>
                             )}
                           </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <div className="p-1.5 rounded-lg bg-white/15 backdrop-blur-sm">
+                          <motion.div 
+                            whileHover={{ scale: 1.1, rotate: 90 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="flex flex-col items-end gap-1"
+                          >
+                            <div className="p-1.5 rounded-lg bg-white/15 backdrop-blur-sm border border-white/20 shadow-sm">
                               <Plus size={12} className="text-white" strokeWidth={3} />
                             </div>
-                            <span className="text-[8px] text-white/60 font-bold">Add Funds</span>
-                          </div>
+                            <span className="text-[8px] text-white/60 font-bold uppercase tracking-tight">Top Up</span>
+                          </motion.div>
                         </div>
-                        <div className="relative flex gap-3 mt-2 pt-2 border-t border-white/15">
+                        <div className="relative flex gap-3 mt-2.5 pt-2.5 border-t border-white/10">
                           <div>
-                            <span className="text-[8px] text-white/60 block font-bold uppercase">Earned</span>
-                            <span className="text-[10px] font-black text-emerald-200">₹{parseFloat(balance?.earned_balance || 0).toLocaleString('en-IN')}</span>
+                            <span className="text-[7px] text-white/40 block font-black uppercase tracking-widest mb-0.5">Earned</span>
+                            {walletLoading ? (
+                               <div className="h-3 w-10 bg-white/5 rounded animate-pulse" />
+                            ) : (
+                               <span className="text-[10px] font-black text-emerald-200">₹{parseFloat(balance?.earned_balance || 0).toLocaleString('en-IN')}</span>
+                            )}
                           </div>
+                          <div className="w-px h-4 bg-white/10 self-center" />
                           <div>
-                            <span className="text-[8px] text-white/60 block font-bold uppercase">Promo</span>
-                            <span className="text-[10px] font-black text-purple-200">₹{parseFloat(balance?.promotional_balance || 0).toLocaleString('en-IN')}</span>
+                            <span className="text-[7px] text-white/40 block font-black uppercase tracking-widest mb-0.5">Promo</span>
+                            {walletLoading ? (
+                               <div className="h-3 w-10 bg-white/5 rounded animate-pulse" />
+                            ) : (
+                               <span className="text-[10px] font-black text-purple-200">₹{parseFloat(balance?.promotional_balance || 0).toLocaleString('en-IN')}</span>
+                            )}
                           </div>
                         </div>
                       </div>

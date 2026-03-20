@@ -15,11 +15,11 @@ const config = {
 
     // Wallet Service Endpoints (now on main Laravel API)
     WALLET: {
-        BASE: '/api/v1/wallets',
-        CREATE: '/api/v1/wallets',
+        BASE: '/api/v1/wallets/',
+        CREATE: '/api/v1/wallets/',
         GET_BALANCE: (userId) => `/api/v1/wallets/${userId}`,
-        RECHARGE: (userId) => `/api/v1/wallets/${userId}/recharge`,
-        WITHDRAW: (userId) => `/api/v1/wallets/${userId}/withdraw`,
+        RECHARGE: (userId) => `/api/v1/wallets/recharge`,
+        WITHDRAW: (userId) => `/api/v1/wallets/withdraw`,
         PAY: '/api/v1/wallets/pay',
         TRANSACTIONS: (userId) => `/api/v1/wallets/${userId}/transactions`,
     },

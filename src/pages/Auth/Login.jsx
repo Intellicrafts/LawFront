@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Mail, Lock, Eye, EyeOff, Scale, Check, AlertCircle, CheckCircle, Smartphone, Globe, Shield, ArrowLeft, KeyRound } from 'lucide-react';
 import { useGoogleLogin, useGoogleOneTapLogin } from '@react-oauth/google';
-import { authAPI, tokenManager } from '../../api/apiService';
+import { authAPI, tokenManager, walletAPI } from '../../api/apiService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '../../context/ToastContext';
 
@@ -397,6 +397,22 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
 
         showSuccess(`Welcome back${generatedUser?.name ? `, ${generatedUser.name}` : ''}!`);
 
+        // === START: Auto-create Wallet ===
+        try {
+          if (generatedUser && generatedUser.id) {
+            const userTypeStr = (generatedUser.user_type === 2 || generatedUser.user_type === 'business' || generatedUser.user_type === 'lawyer' || generatedUser?.role?.toLowerCase() === 'lawyer') ? 'LAWYER' : 'CUSTOMER';
+            const walletPayload = {
+              user_id: generatedUser.id.toString(),
+              user_type: userTypeStr,
+              currency: 'INR'
+            };
+            await walletAPI.createWallet(walletPayload);
+          }
+        } catch (walletError) {
+          console.error('Error auto-creating wallet on OTP login:', walletError);
+        }
+        // === END: Auto-create Wallet ===
+
         if (onLoginSuccess) {
           onLoginSuccess(response);
         }
@@ -604,6 +620,23 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
           `Welcome back${response.data.user?.name ? `, ${response.data.user.name}` : ''}! Redirecting...`
         );
 
+        // === START: Auto-create Wallet ===
+        try {
+          if (response.data.user && response.data.user.id) {
+            const pUser = response.data.user;
+            const userTypeStr = (pUser.user_type === 2 || pUser.user_type === 'business' || pUser.user_type === 'lawyer' || pUser?.role?.toLowerCase() === 'lawyer') ? 'LAWYER' : 'CUSTOMER';
+            const walletPayload = {
+              user_id: pUser.id.toString(),
+              user_type: userTypeStr,
+              currency: 'INR'
+            };
+            await walletAPI.createWallet(walletPayload);
+          }
+        } catch (walletError) {
+          console.error('Error auto-creating wallet on password login:', walletError);
+        }
+        // === END: Auto-create Wallet ===
+
         // Call parent callback if provided
         if (onLoginSuccess) {
           onLoginSuccess(response.data);
@@ -704,6 +737,23 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
         showSuccess(
           `Welcome${response.data.data.user?.name ? `, ${response.data.data.user.name}` : ''}! Redirecting...`
         );
+
+        // === START: Auto-create Wallet ===
+        try {
+          if (response.data.data.user && response.data.data.user.id) {
+            const gUser = response.data.data.user;
+            const userTypeStr = (gUser.user_type === 2 || gUser.user_type === 'business' || gUser.user_type === 'lawyer' || gUser?.role?.toLowerCase() === 'lawyer') ? 'LAWYER' : 'CUSTOMER';
+            const walletPayload = {
+              user_id: gUser.id.toString(),
+              user_type: userTypeStr,
+              currency: 'INR'
+            };
+            await walletAPI.createWallet(walletPayload);
+          }
+        } catch (walletError) {
+          console.error('Error auto-creating wallet on Google login:', walletError);
+        }
+        // === END: Auto-create Wallet ===
 
         // Call parent callback if provided
         if (onLoginSuccess) {

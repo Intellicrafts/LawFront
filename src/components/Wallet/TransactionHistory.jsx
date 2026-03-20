@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowUpRight, ArrowDownLeft, Clock, RefreshCw, ChevronDown, Zap } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, Clock, RefreshCw, ChevronDown, Zap, CheckCircle, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 const TransactionHistory = ({ transactions, loading, hasMore, onLoadMore, isDark }) => {
@@ -11,34 +11,34 @@ const TransactionHistory = ({ transactions, loading, hasMore, onLoadMore, isDark
 
     const getStatusStyle = (status) => {
         switch (status) {
-            case 'SUCCESS': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
-            case 'PENDING': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
-            case 'FAILED': return 'bg-red-500/10 text-red-500 border-red-500/20';
-            default: return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+            case 'SUCCESS': return 'text-emerald-500';
+            case 'PENDING': return 'text-amber-500';
+            case 'FAILED': return 'text-red-500';
+            default: return 'text-slate-500';
         }
     };
 
     return (
-        <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-[#111]/80 border-[#2A2A2A] backdrop-blur-xl' : 'bg-white/80 border-gray-100 backdrop-blur-xl shadow-sm'}`}>
+        <div className={`rounded-[1.5rem] overflow-hidden transition-all duration-500 ${isDark ? 'bg-white/[0.02] border border-white/5 shadow-xl shadow-black/50' : 'bg-white border border-slate-100 shadow-lg shadow-slate-200/50'}`}>
             {/* Header */}
-            <div className={`px-4 py-3 border-b flex items-center justify-between ${isDark ? 'border-[#2A2A2A] bg-white/3' : 'border-gray-100 bg-gray-50/50'}`}>
-                <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-blue-500/10">
-                        <Zap size={12} className="text-blue-500" />
+            <div className={`px-5 py-4 border-b flex flex-col sm:flex-row gap-3 sm:items-center justify-between ${isDark ? 'border-white/5 bg-white/[0.01]' : 'border-slate-100 bg-slate-50/50'}`}>
+                <div className="flex items-center gap-2.5">
+                    <div className={`p-1.5 rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-100 shadow-inner'}`}>
+                        <Zap size={14} className={isDark ? 'text-white/80' : 'text-slate-700'} />
                     </div>
-                    <h3 className={`text-xs font-black uppercase tracking-wider ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    <h3 className={`text-xs font-semibold tracking-wide ${isDark ? 'text-white' : 'text-slate-900'}`}>
                         Transaction History
                     </h3>
                 </div>
-                {/* Filter Tabs */}
-                <div className={`flex items-center gap-1 p-0.5 rounded-lg ${isDark ? 'bg-white/5' : 'bg-gray-100'}`}>
+                {/* Segmented Control Filter Tabs */}
+                <div className={`flex items-center gap-1 p-1 rounded-xl self-start sm:self-auto ${isDark ? 'bg-white/5' : 'bg-slate-100'}`}>
                     {filters.map(f => (
                         <button
                             key={f}
                             onClick={() => setFilter(f)}
-                            className={`px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${filter === f
-                                ? 'bg-blue-600 text-white shadow-sm'
-                                : isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}
+                            className={`px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all duration-300 ${filter === f
+                                ? isDark ? 'bg-white/10 text-white shadow-sm' : 'bg-white text-slate-800 shadow-sm'
+                                : isDark ? 'text-white/40 hover:text-white/70' : 'text-slate-500 hover:text-slate-700'}`}
                         >
                             {f}
                         </button>
@@ -47,30 +47,30 @@ const TransactionHistory = ({ transactions, loading, hasMore, onLoadMore, isDark
             </div>
 
             {/* List */}
-            <div className="divide-y divide-white/5" style={{ maxHeight: '420px', overflowY: 'auto' }}>
+            <div className="divide-y divide-transparent p-2 sm:p-3" style={{ maxHeight: '380px', overflowY: 'auto' }}>
                 {loading && filtered.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 gap-3">
-                        <RefreshCw size={20} className="animate-spin text-blue-500" />
-                        <span className={`text-xs font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Loading transactions...</span>
+                    <div className="flex flex-col items-center justify-center py-12 gap-3">
+                        <RefreshCw size={20} className={`animate-spin ${isDark ? 'text-white/20' : 'text-slate-300'}`} />
+                        <span className={`text-[11px] font-semibold tracking-wide ${isDark ? 'text-white/40' : 'text-slate-400'}`}>Loading ledger...</span>
                     </div>
                 ) : filtered.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 gap-3">
-                        <div className={`p-4 rounded-full ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>
-                            <Clock size={24} className={isDark ? 'text-gray-600' : 'text-gray-300'} />
+                    <div className="flex flex-col items-center justify-center py-12 gap-3">
+                        <div className={`p-4 rounded-full ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+                            <Clock size={24} className={isDark ? 'text-white/20' : 'text-slate-300'} strokeWidth={1.5} />
                         </div>
                         <div className="text-center">
-                            <p className={`text-xs font-bold ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>No transactions yet</p>
-                            <p className={`text-[10px] mt-1 ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>Your activity will appear here</p>
+                            <p className={`text-xs font-medium ${isDark ? 'text-white/60' : 'text-slate-600'}`}>No transactions yet</p>
+                            <p className={`text-[10px] mt-1 tracking-wide ${isDark ? 'text-white/30' : 'text-slate-400'}`}>Your financial activity will appear here.</p>
                         </div>
                     </div>
                 ) : (
                     filtered.map((txn) => (
                         <div key={txn.id}
-                            className={`flex items-center gap-3 px-4 py-3.5 transition-colors ${isDark ? 'hover:bg-white/3' : 'hover:bg-gray-50/70'}`}>
-                            {/* Icon */}
-                            <div className={`flex-shrink-0 p-2 rounded-xl ${txn.type === 'CREDIT'
-                                ? 'bg-emerald-500/10 text-emerald-500'
-                                : 'bg-red-500/10 text-red-500'}`}>
+                            className={`group flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 ${isDark ? 'hover:bg-white/[0.03]' : 'hover:bg-slate-50'}`}>
+                            {/* Icon Focus */}
+                            <div className={`flex-shrink-0 p-2 rounded-xl transition-transform duration-300 group-hover:scale-110 ${txn.type === 'CREDIT'
+                                ? isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
+                                : isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-600'}`}>
                                 {txn.type === 'CREDIT'
                                     ? <ArrowDownLeft size={14} strokeWidth={2.5} />
                                     : <ArrowUpRight size={14} strokeWidth={2.5} />}
@@ -78,14 +78,17 @@ const TransactionHistory = ({ transactions, loading, hasMore, onLoadMore, isDark
 
                             {/* Info */}
                             <div className="flex-1 min-w-0">
-                                <p className={`text-xs font-semibold truncate ${isDark ? 'text-gray-200' : 'text-gray-900'}`}>
+                                <p className={`text-xs font-medium truncate tracking-tight ${isDark ? 'text-white/90' : 'text-slate-800'}`}>
                                     {txn.description || (txn.category || '').replace(/_/g, ' ')}
                                 </p>
-                                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                    <span className={`text-[9px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                                        {format(new Date(txn.created_at), 'dd MMM yyyy, HH:mm')}
+                                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                    <span className={`text-[10px] font-medium tracking-wide ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
+                                        {format(new Date(txn.created_at.includes('T') ? (txn.created_at.endsWith('Z') ? txn.created_at : txn.created_at + 'Z') : (txn.created_at.replace(' ', 'T') + 'Z')), 'dd MMM yyyy, hh:mm a')}
                                     </span>
-                                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-bold ${getStatusStyle(txn.status)}`}>
+                                    <span className={`text-[9px] uppercase font-bold tracking-widest flex items-center gap-1 ${getStatusStyle(txn.status)}`}>
+                                        {txn.status === 'SUCCESS' && <CheckCircle size={8} />}
+                                        {txn.status === 'PENDING' && <Clock size={8} />}
+                                        {txn.status === 'FAILED' && <AlertCircle size={8} />}
                                         {txn.status}
                                     </span>
                                 </div>
@@ -93,11 +96,11 @@ const TransactionHistory = ({ transactions, loading, hasMore, onLoadMore, isDark
 
                             {/* Amount */}
                             <div className="text-right flex-shrink-0">
-                                <p className={`text-sm font-black ${txn.type === 'CREDIT' ? 'text-emerald-500' : 'text-red-400'}`}>
-                                    {txn.type === 'CREDIT' ? '+' : '-'}₹{parseFloat(txn.amount).toLocaleString('en-IN')}
+                                <p className={`text-sm sm:text-base font-light tracking-tight ${txn.type === 'CREDIT' ? (isDark ? 'text-emerald-400' : 'text-emerald-600') : (isDark ? 'text-white/80' : 'text-slate-700')}`}>
+                                    {txn.type === 'CREDIT' ? '+' : '-'}₹{parseFloat(txn.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </p>
-                                <span className={`text-[9px] font-medium ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
-                                    {txn.balance_type}
+                                <span className={`text-[8px] font-bold uppercase tracking-[0.1em] ${isDark ? 'text-white/30' : 'text-slate-400'}`}>
+                                    {txn.balance_type.replace('_BALANCE', '')}
                                 </span>
                             </div>
                         </div>
@@ -106,19 +109,21 @@ const TransactionHistory = ({ transactions, loading, hasMore, onLoadMore, isDark
 
                 {/* Load more */}
                 {hasMore && !loading && (
-                    <button
-                        onClick={onLoadMore}
-                        className={`w-full flex items-center justify-center gap-2 py-3 text-[11px] font-bold uppercase tracking-wider transition-colors ${isDark
-                            ? 'text-blue-400 hover:text-blue-300 hover:bg-white/3'
-                            : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50/50'}`}
-                    >
-                        <ChevronDown size={13} />
-                        Load More
-                    </button>
+                    <div className="pt-3 pb-1 px-3">
+                        <button
+                            onClick={onLoadMore}
+                            className={`w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${isDark
+                                ? 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white'
+                                : 'bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900'}`}
+                        >
+                            <ChevronDown size={12} />
+                            Load Older Transactions
+                        </button>
+                    </div>
                 )}
                 {loading && filtered.length > 0 && (
-                    <div className="py-3 text-center">
-                        <RefreshCw size={14} className={`animate-spin inline-block ${isDark ? 'text-gray-600' : 'text-gray-300'}`} />
+                    <div className="py-4 text-center">
+                        <RefreshCw size={14} className={`animate-spin inline-block ${isDark ? 'text-white/20' : 'text-slate-300'}`} />
                     </div>
                 )}
             </div>

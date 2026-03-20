@@ -10,18 +10,22 @@ const WalletBalance = ({ balance, onAddFunds, onWithdraw, isDark, loading }) => 
 
     if (loading) {
         return (
-            <div className="space-y-4 animate-pulse">
-                {/* Skeleton Hero Card */}
-                <div className={`relative h-48 rounded-2xl ${isDark ? 'bg-gray-800' : 'bg-gray-200'}`}>
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 -translate-x-full animate-[shimmer_2s_infinite]" />
-                    <div className="p-6 sm:p-8">
-                        <div className="w-24 h-3 rounded bg-white/20 mb-3" />
-                        <div className="w-48 h-12 rounded bg-white/20" />
-                        
-                        <div className="grid grid-cols-2 gap-3 mt-6">
-                            <div className="h-16 rounded-xl bg-white/10" />
-                            <div className="h-16 rounded-xl bg-white/10" />
+            <div className="space-y-4">
+                <div className={`p-5 sm:p-6 rounded-[1.5rem] animate-pulse flex flex-col ${isDark ? 'bg-white/[0.02] border border-white/5' : 'bg-slate-50 border border-slate-100'}`}>
+                    <div className="flex items-start justify-between mb-5">
+                        <div>
+                            <div className={`w-24 h-3 rounded-full mb-3 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
+                            <div className={`w-36 h-8 rounded-lg ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
                         </div>
+                        <div className={`w-9 h-9 rounded-xl ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mb-5">
+                        <div className={`h-[84px] rounded-xl ${isDark ? 'bg-white/5' : 'bg-white border border-slate-100'}`} />
+                        <div className={`h-[84px] rounded-xl ${isDark ? 'bg-white/5' : 'bg-white border border-slate-100'}`} />
+                    </div>
+                    <div className="flex gap-3">
+                        <div className={`flex-1 h-[38px] rounded-xl ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
+                        <div className={`flex-1 h-[38px] rounded-xl ${isDark ? 'bg-white/5' : 'bg-slate-200'}`} />
                     </div>
                 </div>
             </div>
@@ -30,69 +34,74 @@ const WalletBalance = ({ balance, onAddFunds, onWithdraw, isDark, loading }) => 
 
     return (
         <div className="space-y-4">
-            {/* Primary Balance Hero Card */}
-            <div className="relative overflow-hidden rounded-2xl">
-                {/* Background gradient */}
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700" />
-                <div className="absolute inset-0 opacity-30"
-                    style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.3) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(0,0,0,0.2) 0%, transparent 50%)' }} />
-                {/* Decorative circles */}
-                <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/5" />
-                <div className="absolute -bottom-12 -left-8 w-48 h-48 rounded-full bg-white/5" />
+            {/* Primary Balance Hero Card - Scaled Down */}
+            <div className={`relative overflow-hidden rounded-[1.5rem] transition-shadow duration-500 hover:shadow-lg ${isDark ? 'shadow-emerald-900/10' : 'shadow-emerald-500/5'}`}>
+                {/* Background base */}
+                <div className={`absolute inset-0 ${isDark ? 'bg-[#0a1512]' : 'bg-[#0f2922]'}`} />
+                
+                {/* Animated organic gradients */}
+                <div className="absolute inset-0 opacity-50">
+                    <div className="absolute top-0 -left-1/4 w-full h-full bg-emerald-600/40 blur-[80px] rounded-full mix-blend-screen" />
+                    <div className="absolute bottom-0 -right-1/4 w-full h-full bg-teal-500/30 blur-[80px] rounded-full mix-blend-screen" />
+                </div>
+                
+                {/* Subtile grid pattern */}
+                <div className="absolute inset-0 opacity-[0.03]" 
+                     style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }} />
 
-                <div className="relative p-6 sm:p-8">
-                    <div className="flex items-start justify-between mb-6">
+                <div className="relative p-5 sm:p-6 flex flex-col h-full z-10">
+                    <div className="flex items-start justify-between mb-5">
                         <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <Sparkles size={12} className="text-emerald-200" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-200">Total Balance</span>
+                            <div className="flex items-center gap-1.5 mb-2">
+                                <Sparkles size={12} className="text-emerald-300/80" />
+                                <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-emerald-100/70">Total Balance</span>
                             </div>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-4xl sm:text-5xl font-black text-white tracking-tight">
-                                    ₹{fmt(total)}
+                            <div className="flex items-baseline gap-1.5">
+                                <span className="text-2xl sm:text-3xl font-light tracking-tight text-white">
+                                    <span className="font-medium text-emerald-400/80">₹</span>{fmt(total)}
                                 </span>
-                                <span className="text-sm font-bold text-white/50">INR</span>
+                                <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40">INR</span>
                             </div>
                         </div>
-                        <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
-                            <Wallet size={22} className="text-white" />
+                        <div className="p-2.5 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+                            <Wallet size={18} className="text-emerald-100" strokeWidth={1.5} />
                         </div>
                     </div>
 
-                    {/* Sub-balances */}
-                    <div className="grid grid-cols-2 gap-3 mb-6">
-                        <div className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/15 p-3.5">
+                    {/* Sub-balances Grid */}
+                    <div className="grid grid-cols-2 gap-3 mb-5">
+                        <div className="group rounded-xl bg-white/[0.03] hover:bg-white/[0.05] backdrop-blur-sm border border-white/5 hover:border-white/10 p-3.5 transition-all duration-300">
                             <div className="flex items-center gap-1.5 mb-1.5">
-                                <TrendingUp size={11} className="text-emerald-300" />
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-white/70">Earned</span>
+                                <TrendingUp size={10} className="text-emerald-400 group-hover:scale-110 transition-transform" />
+                                <span className="text-[9px] font-semibold uppercase tracking-widest text-emerald-100/50">Earned</span>
                             </div>
-                            <p className="text-lg font-black text-white">₹{fmt(earned)}</p>
-                            <p className="text-[9px] text-white/50 mt-0.5">Withdrawable</p>
+                            <p className="text-lg sm:text-xl font-light text-white tracking-tight">₹{fmt(earned)}</p>
+                            <p className="text-[8px] text-white/30 mt-0.5 uppercase tracking-wider">Withdrawable</p>
                         </div>
-                        <div className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/15 p-3.5">
+                        <div className="group rounded-xl bg-white/[0.03] hover:bg-white/[0.05] backdrop-blur-sm border border-white/5 hover:border-white/10 p-3.5 transition-all duration-300">
                             <div className="flex items-center gap-1.5 mb-1.5">
-                                <Gift size={11} className="text-purple-300" />
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-white/70">Promo</span>
+                                <Gift size={10} className="text-purple-400 group-hover:scale-110 transition-transform" />
+                                <span className="text-[9px] font-semibold uppercase tracking-widest text-emerald-100/50">Promo</span>
                             </div>
-                            <p className="text-lg font-black text-white">₹{fmt(promo)}</p>
-                            <p className="text-[9px] text-white/50 mt-0.5">Services only</p>
+                            <p className="text-lg sm:text-xl font-light text-white tracking-tight">₹{fmt(promo)}</p>
+                            <p className="text-[8px] text-white/30 mt-0.5 uppercase tracking-wider">Services only</p>
                         </div>
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 mt-auto">
                         <button
                             onClick={onAddFunds}
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white text-emerald-700 text-xs font-black uppercase tracking-wider shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-white text-[#0f2922] text-[10px] font-bold uppercase tracking-[0.1em] shadow-[0_4px_15px_rgb(0,0,0,0.1)] hover:scale-[1.02] hover:shadow-[0_4px_15px_rgb(255,255,255,0.2)] transition-all duration-300 active:scale-95"
                         >
-                            <Plus size={14} strokeWidth={3} />
+                            <Plus size={14} strokeWidth={2.5} />
                             Add Funds
                         </button>
                         <button
                             onClick={onWithdraw}
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white/15 backdrop-blur-sm border border-white/25 text-white text-xs font-black uppercase tracking-wider hover:bg-white/25 transition-all duration-200"
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-white/[0.03] backdrop-blur-sm border border-white/10 text-white text-[10px] font-bold uppercase tracking-[0.1em] hover:bg-white/10 hover:border-white/20 transition-all duration-300 active:scale-95"
                         >
-                            <ArrowUpRight size={14} strokeWidth={2.5} />
+                            <ArrowUpRight size={14} strokeWidth={2} className="text-emerald-300" />
                             Withdraw
                         </button>
                     </div>
