@@ -1901,9 +1901,9 @@ const LegalCosultation = () => {
                           <div className="flex gap-4 mb-4 items-start">
                             {/* Profile Picture */}
                             <div className="flex-shrink-0 relative">
-                              {lawyer.profile_picture_url && lawyer.profile_picture_url.trim() !== '' ? (
+                              {(lawyer.user_profile_picture && lawyer.user_profile_picture.trim() !== '') || (lawyer.profile_picture_url && lawyer.profile_picture_url.trim() !== '') ? (
                                 <img
-                                  src={lawyer.profile_picture_url}
+                                  src={lawyer.user_profile_picture || lawyer.profile_picture_url}
                                   alt={lawyer.full_name}
                                   className="w-12 h-12 rounded-xl object-cover border border-[#2A2A2A]/50"
                                 />
@@ -2056,7 +2056,7 @@ const LegalCosultation = () => {
                 <div className="flex items-center gap-3">
                   <div className="relative mt-2">
                     <img
-                      src={selectedLawyer.profile_picture_url || "https://t4.ftcdn.net/jpg/03/46/93/61/360_F_346936114_RaxE6OQogOtOt9Wgc91G1oST5p5huzJS.jpg"}
+                      src={selectedLawyer.user_profile_picture || selectedLawyer.profile_picture_url || "https://t4.ftcdn.net/jpg/03/46/93/61/360_F_346936114_RaxE6OQogOtOt9Wgc91G1oST5p5huzJS.jpg"}
                       alt={selectedLawyer.full_name}
                       className={`w-20 h-20 rounded-2xl border-2 object-cover shadow-lg ${isDarkMode ? 'border-[#1A1A1A] shadow-black/50' : 'border-white shadow-slate-200/50'}`}
                     />
