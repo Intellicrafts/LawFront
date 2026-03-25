@@ -448,7 +448,7 @@ const ProfileCompletionWidget = ({ userData, darkMode, onNavigate }) => {
           <circle cx="22" cy="22" r={radius} fill="none" stroke={darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'} strokeWidth="3.5" />
           <motion.circle
             cx="22" cy="22" r={radius} fill="none"
-            stroke={strokeColor}
+            stroke={textColor}
             strokeWidth="3.5" strokeLinecap="round"
             strokeDasharray={circ}
             initial={{ strokeDashoffset: circ }}
