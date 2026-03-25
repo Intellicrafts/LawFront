@@ -153,6 +153,7 @@ const SocialButtons = ({ onSocialLogin, loading, onGoogleLogin }) => {
   return (
     <div className="space-y-2.5">
       <button
+        type="button"
         onClick={() => googleLogin()}
         disabled={loading}
         className={socialButtonClass}
@@ -816,7 +817,7 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
   };
 
   return (
-    <div className={`relative flex flex-col pt-20 pb-10 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-gray-50/30'}`}>
+    <div className={`relative flex flex-col min-h-screen pt-20 pb-10 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-gray-50/30'}`}>
 
       {/* Premium Animated Background Layer */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">

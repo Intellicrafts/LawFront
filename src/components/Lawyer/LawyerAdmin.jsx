@@ -11,6 +11,7 @@ import LawyerDocuments from '../LawyerAdmin/LawyerDocuments';
 import LawyerFees from '../LawyerAdmin/LawyerFees';
 import LawyerProfile from '../LawyerAdmin/LawyerProfile';
 import LawyerSettings from '../LawyerAdmin/LawyerSettings';
+import LawyerVerification from '../LawyerAdmin/LawyerVerification';
 import WalletLayout from '../Wallet/WalletLayout';
 import WithdrawFundsModal from '../Wallet/WithdrawFundsModal';
 import Sidebar from '../layout/Sidebar';
@@ -408,7 +409,6 @@ const useCountUp = (target, duration = 1200, delay = 0) => {
   return value || target;
 };
 
-// Profile Completion Widget
 const ProfileCompletionWidget = ({ userData, darkMode, onNavigate }) => {
   const fields = [
     { label: 'Avatar', done: !!userData?.profileImage },
@@ -421,35 +421,67 @@ const ProfileCompletionWidget = ({ userData, darkMode, onNavigate }) => {
   const radius = 18;
   const circ = 2 * Math.PI * radius;
   const offset = circ - (pct / 100) * circ;
+  
   if (pct === 100) return null; // Hide when complete
+  
+  const textColor = pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444';
+
   return (
-    <button
-      onClick={() => onNavigate('profile')}
-      className={`group flex items-center gap-3 px-3 py-2 rounded-2xl border transition-all hover:scale-[1.02] active:scale-95 ${darkMode ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-        }`}
-      data-tip="Complete Profile"
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => onNavigate('verification')}
+      className={`relative group flex items-center gap-3 px-4 py-2.5 rounded-2xl border transition-all duration-300 overflow-hidden shadow-lg ${
+        darkMode ? 'bg-neutral-900/80 border-white/10 shadow-black/50 backdrop-blur-md' : 'bg-white/90 border-slate-200 shadow-slate-200/50 backdrop-blur-md'
+      }`}
+      title="Complete your professional profile"
     >
-      <svg width="44" height="44" viewBox="0 0 44 44" className="completion-ring flex-shrink-0">
-        <circle cx="22" cy="22" r={radius} fill="none" stroke={darkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'} strokeWidth="3" />
-        <circle
-          cx="22" cy="22" r={radius} fill="none"
-          stroke={pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444'}
-          strokeWidth="3" strokeLinecap="round"
-          strokeDasharray={circ} strokeDashoffset={offset}
-          transform="rotate(-90 22 22)"
-          style={{ transition: 'stroke-dashoffset 1s ease' }}
-        />
-        <text x="22" y="26" textAnchor="middle" fontSize="9" fontWeight="900"
-          fill={darkMode ? '#fff' : '#0f172a'}>{pct}%</text>
-      </svg>
-      <div className="text-left">
-        <p className={`text-[9px] font-black uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Profile</p>
-        <p className={`text-[11px] font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-          {fields.filter(f => !f.done).length} field{fields.filter(f => !f.done).length !== 1 ? 's' : ''} missing
+      {/* Hover Gradient Wash */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        style={{ background: `linear-gradient(to right, ${pct >= 80 ? 'rgba(16,185,129,0.08)' : pct >= 50 ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)'}, transparent)` }}
+      />
+
+      {/* Animated Circular Progress */}
+      <div className="relative z-10 flex items-center justify-center">
+        <svg width="44" height="44" viewBox="0 0 44 44" className="flex-shrink-0" style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx="22" cy="22" r={radius} fill="none" stroke={darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'} strokeWidth="3.5" />
+          <motion.circle
+            cx="22" cy="22" r={radius} fill="none"
+            stroke={strokeColor}
+            strokeWidth="3.5" strokeLinecap="round"
+            strokeDasharray={circ}
+            initial={{ strokeDashoffset: circ }}
+            animate={{ strokeDashoffset: offset }}
+            transition={{ duration: 1.5, ease: 'easeOut', delay: 0.2 }}
+            style={{ filter: `drop-shadow(0 0 3px ${textColor}80)` }}
+          />
+        </svg>
+        <div className="absolute font-black" style={{ fontSize: '10px', color: darkMode ? '#fff' : '#0f172a' }}>
+          {pct}%
+        </div>
+      </div>
+
+      {/* Text Content */}
+      <div className="text-left relative z-10 pr-2">
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: textColor }}>
+            Profile Setup
+          </p>
+          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: textColor, flexShrink: 0 }} />
+        </div>
+        <p className={`text-[12px] font-bold leading-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+          {fields.filter(f => !f.done).length} Action{fields.filter(f => !f.done).length !== 1 ? 's' : ''} Pending
         </p>
       </div>
-      <ChevronRight size={12} className="text-slate-400 group-hover:translate-x-0.5 transition-transform" />
-    </button>
+
+      {/* Action Arrow */}
+      <div className={`ml-auto w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 group-hover:translate-x-1 ${
+        darkMode ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-800'
+      }`}>
+        <ChevronRight size={14} strokeWidth={3} />
+      </div>
+    </motion.button>
   );
 };
 
@@ -587,32 +619,47 @@ const LawyerDashboard = ({ darkMode, userData, onNavigate, handleJoinSession, st
     <div className="space-y-0 max-w-[1600px] mx-auto overflow-hidden">
       <div className="p-4 sm:p-5 space-y-5">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
-          {/* Hero Welcome Card */}
-          <GlassCard darkMode={darkMode} className="lg:col-span-2 p-6 flex flex-col justify-between relative overflow-hidden group">
-            <div className={`absolute top-0 right-0 w-72 h-72 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 transition-colors duration-700 ${darkMode ? 'bg-amber-500/5 group-hover:bg-amber-500/10' : 'bg-amber-400/10 group-hover:bg-amber-400/15'}`} />
-            <div className={`absolute bottom-0 left-0 w-48 h-48 rounded-full blur-[80px] translate-y-1/3 -translate-x-1/4 ${darkMode ? 'bg-blue-500/5' : 'bg-blue-400/8'}`} />
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-4">
-                <PremiumBadge text="Professional Dashboard" />
-                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-widest
-                  ${darkMode ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-emerald-500/30 bg-emerald-50 text-emerald-700'}`}>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Live
+          {/* Enhanced Premium Hero Welcome Card */}
+          <GlassCard darkMode={darkMode} className="lg:col-span-2 p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden group shadow-2xl">
+            {/* Elegant Background Gradients */}
+            <div className={`absolute top-0 right-0 w-96 h-96 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3 transition-colors duration-1000 ${darkMode ? 'bg-amber-500/10 group-hover:bg-amber-500/20' : 'bg-amber-400/20 group-hover:bg-amber-400/30'}`} />
+            <div className={`absolute bottom-0 left-0 w-64 h-64 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/4 transition-colors duration-1000 ${darkMode ? 'bg-blue-600/10 group-hover:bg-blue-600/20' : 'bg-blue-500/15 group-hover:bg-blue-500/25'}`} />
+            
+            <div className="relative z-10 flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <PremiumBadge text="Professional Dashboard" type="primary" />
+                  <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border backdrop-blur-md text-[9px] font-black uppercase tracking-widest shadow-sm
+                    ${darkMode ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse drop-shadow-[0_0_4px_rgba(16,185,129,0.8)]" />
+                    Live System
+                  </div>
+                </div>
+                
+                <h1 className={`font-display text-4xl sm:text-5xl lg:text-[3.5rem] font-black tracking-tight leading-[1.1] mb-2 ${darkMode ? 'text-white drop-shadow-md' : 'text-slate-900 drop-shadow-sm'}`}>
+                  Welcome back,
+                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-600 mt-1 pb-2">
+                    Adv. {userData?.name || 'Bakil'}
+                  </span>
+                </h1>
+                <p className={`text-[11px] font-bold uppercase tracking-[0.25em] mb-6 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Secure Legal Workspace
+                </p>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className={`flex items-center gap-2.5 px-4 py-2 rounded-xl text-[11px] font-bold shadow-sm backdrop-blur-md border transition-transform hover:scale-105 ${darkMode ? 'bg-white/5 border-white/10 text-slate-200' : 'bg-white/90 border-slate-200 text-slate-700'}`}>
+                    <Calendar size={14} className={darkMode ? 'text-blue-400' : 'text-blue-600'} />
+                    <span>{appointmentData?.length || 0} Consultations Today</span>
+                  </div>
+                  <div className={`flex items-center gap-2.5 px-4 py-2 rounded-xl text-[11px] font-bold shadow-sm backdrop-blur-md border transition-transform hover:scale-105 ${darkMode ? 'bg-white/5 border-white/10 text-slate-200' : 'bg-white/90 border-slate-200 text-slate-700'}`}>
+                    <Briefcase size={14} className={darkMode ? 'text-amber-400' : 'text-amber-500'} />
+                    <span>{statsData?.total_cases || 0} Active Cases</span>
+                  </div>
                 </div>
               </div>
-              <p className={`text-[10px] font-black uppercase tracking-[0.25em] mb-2 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Welcome back, Advocate</p>
-              <h1 className={`font-display text-3xl sm:text-[2.6rem] font-bold tracking-tight leading-[1.1] mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                Adv. {userData?.name || 'Bakil'}
-              </h1>
-              <div className="flex flex-wrap items-center gap-3 mt-1">
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold ${darkMode ? 'bg-white/8 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
-                  <Calendar size={12} />
-                  <span>{appointmentData?.length || 0} Active Consultations</span>
-                </div>
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold ${darkMode ? 'bg-white/8 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
-                  <Briefcase size={12} />
-                  <span>{statsData?.total_cases || 0} Open Cases</span>
-                </div>
+
+              {/* Enhanced Profile Completion Widget positioned beautifully to the side/top on web, stacked on mobile */}
+              <div className="lg:mt-0 lg:ml-auto w-full flex-shrink-0 lg:w-auto">
                 <ProfileCompletionWidget userData={userData} darkMode={darkMode} onNavigate={onNavigate} />
               </div>
             </div>
@@ -683,33 +730,216 @@ const LawyerDashboard = ({ darkMode, userData, onNavigate, handleJoinSession, st
           ))}
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <GlassCard darkMode={darkMode} className="xl:col-span-2 p-5 h-[340px] flex flex-col">
-            <h3 className="font-bold mb-4">Performance Analytics</h3>
-            <div className="flex-1">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={performanceTrend}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" />
-                  <YAxis hide />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="value" stroke="#3b82f6" fillOpacity={0.3} fill="#3b82f6" />
-                </AreaChart>
-              </ResponsiveContainer>
+        {/* ═══ Premium Analytics Section ═══ */}
+        <div className={`rounded-3xl border p-1 ${darkMode ? 'bg-neutral-900/50 border-white/5' : 'bg-slate-50/80 border-slate-200/60'}`}>
+          {/* Section Header */}
+          <div className={`flex items-center justify-between px-5 pt-4 pb-3`}>
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-xl ${darkMode ? 'bg-white/5' : 'bg-slate-900/5'}`}>
+                <Activity size={16} className={darkMode ? 'text-slate-300' : 'text-slate-700'} />
+              </div>
+              <div>
+                <h2 className={`text-[15px] font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>Performance Analytics</h2>
+                <p className={`text-[10px] font-bold uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Live Metrics · 7-Day Overview</p>
+              </div>
             </div>
-          </GlassCard>
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${darkMode ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live
+            </div>
+          </div>
 
-          <GlassCard darkMode={darkMode} className="p-5">
-            <h3 className="font-bold mb-4">Active Sessions</h3>
-            <div className="space-y-3">
-              {appointmentData?.slice(0, 3).map((apt, i) => (
-                <div key={i} className="flex justify-between items-center">
-                  <span className="text-sm font-medium">{apt.client_name || 'Client'}</span>
-                  <span className="text-[10px] opacity-50">{apt.case_type}</span>
+          {/* KPI Tiles Row */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 px-3 pb-3">
+            {[
+              {
+                label: 'Appointments',
+                value: appointmentData?.length || 0,
+                suffix: 'total',
+                icon: Calendar,
+                color: 'blue',
+                bg: darkMode ? 'from-blue-500/10 to-transparent' : 'from-blue-50 to-transparent',
+                border: darkMode ? 'border-blue-500/20' : 'border-blue-200',
+                text: darkMode ? 'text-blue-400' : 'text-blue-600',
+                ring: 'bg-blue-500',
+              },
+              {
+                label: 'Active Cases',
+                value: statsData?.total_cases || 0,
+                suffix: 'open',
+                icon: Briefcase,
+                color: 'amber',
+                bg: darkMode ? 'from-amber-500/10 to-transparent' : 'from-amber-50 to-transparent',
+                border: darkMode ? 'border-amber-500/20' : 'border-amber-200',
+                text: darkMode ? 'text-amber-400' : 'text-amber-600',
+                ring: 'bg-amber-500',
+              },
+              {
+                label: 'Live Sessions',
+                value: appointmentData?.filter(a => a.consultation_status === 'in_progress').length || 0,
+                suffix: 'active',
+                icon: Video,
+                color: 'emerald',
+                bg: darkMode ? 'from-emerald-500/10 to-transparent' : 'from-emerald-50 to-transparent',
+                border: darkMode ? 'border-emerald-500/20' : 'border-emerald-200',
+                text: darkMode ? 'text-emerald-400' : 'text-emerald-600',
+                ring: 'bg-emerald-500',
+              },
+              {
+                label: 'Earnings',
+                value: `₹${Number(earningsData?.monthlyCredits || 0).toLocaleString('en-IN')}`,
+                suffix: 'this month',
+                icon: DollarSign,
+                color: 'purple',
+                bg: darkMode ? 'from-purple-500/10 to-transparent' : 'from-purple-50 to-transparent',
+                border: darkMode ? 'border-purple-500/20' : 'border-purple-200',
+                text: darkMode ? 'text-purple-400' : 'text-purple-600',
+                ring: 'bg-purple-500',
+              },
+            ].map((kpi, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.07, duration: 0.4 }}
+                className={`relative overflow-hidden rounded-2xl border p-4 bg-gradient-to-br ${kpi.bg} ${kpi.border} transition-transform hover:scale-[1.02] cursor-default`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`p-2 rounded-xl ${darkMode ? 'bg-white/5' : 'bg-white/80'} shadow-sm`}>
+                    <kpi.icon size={15} className={kpi.text} />
+                  </div>
+                  <span className={`w-2 h-2 rounded-full ${kpi.ring} shadow-[0_0_6px_2px_currentColor] ${kpi.text}`} />
                 </div>
-              ))}
-            </div>
-          </GlassCard>
+                <p className={`text-2xl font-black tracking-tighter mb-0.5 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{kpi.value}</p>
+                <p className={`text-[9px] font-black uppercase tracking-widest ${kpi.text}`}>{kpi.label}</p>
+                <p className={`text-[9px] font-bold mt-0.5 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>{kpi.suffix}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Chart + Sessions Row */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 px-3 pb-3">
+
+            {/* Multi-Line Chart */}
+            <GlassCard darkMode={darkMode} className="xl:col-span-2 p-5 h-[320px] flex flex-col" hover={false}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                    <span className={`text-[10px] font-bold ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Revenue</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                    <span className={`text-[10px] font-bold ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Cases</span>
+                  </div>
+                </div>
+                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${darkMode ? 'bg-white/5 text-slate-500' : 'bg-slate-100 text-slate-400'}`}>
+                  This Week
+                </span>
+              </div>
+              <div className="flex-1">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={performanceTrend} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                    <defs>
+                      <linearGradient id="gradRevenue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={darkMode ? 0.35 : 0.2} />
+                        <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="gradCases" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#f59e0b" stopOpacity={darkMode ? 0.35 : 0.2} />
+                        <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke={darkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)'}
+                    />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 10, fontWeight: 700, fill: darkMode ? '#64748b' : '#94a3b8' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis hide />
+                    <Tooltip
+                      content={({ active, payload, label }) => {
+                        if (!active || !payload?.length) return null;
+                        return (
+                          <div className={`px-4 py-3 rounded-2xl border shadow-2xl ${darkMode ? 'bg-neutral-900/95 border-white/10 text-white' : 'bg-white/95 border-slate-200 text-slate-900'}`} style={{ backdropFilter: 'blur(16px)' }}>
+                            <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{label}</p>
+                            {payload.map((entry, idx) => (
+                              <div key={idx} className="flex items-center gap-2 mb-1">
+                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                                <span className={`text-[11px] font-bold ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>{entry.name}:</span>
+                                <span className="text-[11px] font-black ml-auto pl-4">{entry.value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      }}
+                    />
+                    <Area type="monotone" dataKey="value" name="Revenue" stroke="#3b82f6" strokeWidth={2} fill="url(#gradRevenue)" dot={false} activeDot={{ r: 4, strokeWidth: 0, fill: '#3b82f6' }} />
+                    <Area type="monotone" dataKey="cases" name="Cases" stroke="#f59e0b" strokeWidth={2} fill="url(#gradCases)" dot={false} activeDot={{ r: 4, strokeWidth: 0, fill: '#f59e0b' }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </GlassCard>
+
+            {/* Live Session Feed */}
+            <GlassCard darkMode={darkMode} className="p-5 flex flex-col" hover={false}>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className={`text-[9px] font-black uppercase tracking-widest mb-0.5 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Consultation Feed</p>
+                  <h3 className={`text-[14px] font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>Recent Sessions</h3>
+                </div>
+                <button onClick={() => onNavigate('appointments')} className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all ${darkMode ? 'bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900'}`}>
+                  View All
+                </button>
+              </div>
+
+              <div className="flex-1 space-y-2 overflow-hidden">
+                {(appointmentData?.length > 0) ? appointmentData.slice(0, 5).map((apt, i) => {
+                  const isLive = apt.consultation_status === 'in_progress';
+                  const isUpcoming = apt.status === 'scheduled';
+                  return (
+                    <motion.div
+                      key={apt.id || i}
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className={`flex items-center gap-3 p-3 rounded-xl transition-all hover:scale-[1.01] ${darkMode ? 'bg-white/3 hover:bg-white/6 border border-white/5' : 'bg-slate-50 hover:bg-slate-100 border border-slate-100'}`}
+                    >
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${isLive ? (darkMode ? 'bg-emerald-500/20' : 'bg-emerald-100') : (darkMode ? 'bg-white/5' : 'bg-slate-200')}`}>
+                        {isLive
+                          ? <Video size={13} className="text-emerald-500" />
+                          : <User size={13} className={darkMode ? 'text-slate-400' : 'text-slate-500'} />
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-[11px] font-black truncate ${darkMode ? 'text-white' : 'text-slate-900'}`}>{apt.client_name || 'Client'}</p>
+                        <p className={`text-[9px] font-bold truncate ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>{apt.case_type || 'Legal Consultation'}</p>
+                      </div>
+                      <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded-full flex-shrink-0 ${
+                        isLive
+                          ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30'
+                          : isUpcoming
+                            ? (darkMode ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30' : 'bg-blue-50 text-blue-600 border border-blue-200')
+                            : (darkMode ? 'bg-white/5 text-slate-500 border border-white/10' : 'bg-slate-100 text-slate-400 border border-slate-200')
+                      }`}>
+                        {isLive ? '● Live' : isUpcoming ? 'Upcoming' : 'Done'}
+                      </span>
+                    </motion.div>
+                  );
+                }) : (
+                  <div className="flex flex-col items-center justify-center h-32 text-center">
+                    <Calendar size={24} className={`mb-2 ${darkMode ? 'text-slate-700' : 'text-slate-300'}`} />
+                    <p className={`text-[10px] font-bold ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>No sessions yet</p>
+                  </div>
+                )}
+              </div>
+            </GlassCard>
+          </div>
         </div>
       </div> {/* close inner p-4 div */}
     </div>
@@ -768,6 +998,7 @@ const LawyerAdmin = () => {
       'documents': ['doc', 'file', 'record', 'paper', 'archive', 'bucket'],
       'wallet': ['wallet', 'earnings', 'funds', 'balance', 'withdraw', 'payout'],
       'fees': ['fee', 'fees', 'price', 'pricing', 'rate', 'service', 'charges'],
+      'verification': ['verify', 'verification', 'activate', 'credentials', 'profile setup'],
       'profile': ['profile', 'academic', 'my info', 'account'],
       'settings': ['settings', 'security', 'preferences', 'config']
     };
@@ -1013,10 +1244,10 @@ const LawyerAdmin = () => {
     try {
       await authAPI.logout();
       tokenManager.removeToken();
-      navigate('/auth');
+      window.location.href = '/auth';
     } catch (error) {
       tokenManager.removeToken();
-      navigate('/auth');
+      window.location.href = '/auth';
     }
   };
 
@@ -1038,8 +1269,11 @@ const LawyerAdmin = () => {
     }
   };
 
+  const isVerified = ['Bar Council Verified', 'Admin Verified'].includes(userData?.lawyer_data?.status);
+
   const sidebarItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, color: COLORS.primary },
+    { id: 'verification', label: 'Verification', icon: ShieldCheck, color: COLORS.primary, badge: !isVerified ? 'Pending' : undefined },
     { id: 'appointments', label: 'Consultations', icon: Calendar, color: COLORS.primary },
     { id: 'clients', label: 'Client Center', icon: Users, color: COLORS.primary },
     { id: 'cases', label: 'Active Cases', icon: Briefcase, color: COLORS.primary },
@@ -1140,6 +1374,13 @@ const LawyerAdmin = () => {
               exit={{ opacity: 0, scale: 1.02 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
             >
+              {activeTab === 'verification' && (
+                <LawyerVerification
+                  darkMode={isDark}
+                  userData={userData}
+                  onComplete={initData}
+                />
+              )}
               {activeTab === 'dashboard' && (
                 <LawyerDashboard
                   darkMode={isDark}

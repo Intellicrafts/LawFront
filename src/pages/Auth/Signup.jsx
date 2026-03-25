@@ -162,6 +162,7 @@ const SocialButtons = ({ onSocialLogin, loading, onGoogleLogin }) => {
   return (
     <div className="space-y-2.5">
       <button
+        type="button"
         onClick={() => googleLogin()}
         disabled={loading}
         className={socialButtonClass}
@@ -895,7 +896,7 @@ export const Signup = ({ onSignupSuccess }) => {
   const isDarkMode = mode === 'dark';
 
   return (
-    <div className={`relative flex flex-col pt-20 pb-12 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-gray-50/30'}`}>
+    <div className={`relative flex flex-col min-h-screen pt-20 pb-12 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-gray-50/30'}`}>
       <AnimatePresence mode="wait">
         {/* Toast rendered globally by ToastProvider, referencing locally not needed */}
       </AnimatePresence>

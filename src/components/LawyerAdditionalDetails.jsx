@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { FaFileAlt, FaUpload, FaCheckCircle, FaExclamationCircle, FaShieldAlt, FaIdCard, FaDollarSign, FaGraduationCap, FaUser } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles } from 'lucide-react';
 import { authAPI, tokenManager } from '../api/apiService';
 import { buildAppointmentConsultationFee } from '../utils/consultationFee';
 import { useToast } from '../context/ToastContext';
@@ -9,8 +11,6 @@ import { useToast } from '../context/ToastContext';
 // Toast notification component
 const Toast = ({ message, type = 'success', onClose }) => {
   const [isVisible, setIsVisible] = useState(true);
-
-  // Get theme from Redux
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
 
@@ -26,36 +26,33 @@ const Toast = ({ message, type = 'success', onClose }) => {
     if (isDarkMode) {
       switch (type) {
         case 'success':
-          return 'bg-gradient-to-r from-green-900 to-gray-900 text-green-100 border-l-4 border-green-500';
+          return 'bg-green-900/80 backdrop-blur-md text-green-100 border-l-4 border-green-500 shadow-[0_4px_30px_rgba(34,197,94,0.2)]';
         case 'error':
-          return 'bg-gradient-to-r from-red-900 to-gray-900 text-red-100 border-l-4 border-red-500';
+          return 'bg-red-900/80 backdrop-blur-md text-red-100 border-l-4 border-red-500 shadow-[0_4px_30px_rgba(239,68,68,0.2)]';
         case 'warning':
-          return 'bg-gradient-to-r from-yellow-900 to-gray-900 text-yellow-100 border-l-4 border-yellow-500';
+          return 'bg-yellow-900/80 backdrop-blur-md text-yellow-100 border-l-4 border-yellow-500 shadow-[0_4px_30px_rgba(234,179,8,0.2)]';
         case 'info':
-          return 'bg-gradient-to-r from-blue-900 to-gray-900 text-blue-100 border-l-4 border-blue-500';
         default:
-          return 'bg-gradient-to-r from-gray-800 to-gray-900 text-gray-100 border-l-4 border-gray-500';
+          return 'bg-blue-900/80 backdrop-blur-md text-blue-100 border-l-4 border-blue-500 shadow-[0_4px_30px_rgba(59,130,246,0.2)]';
       }
     } else {
       switch (type) {
         case 'success':
-          return 'bg-gradient-to-r from-green-50 to-white text-green-900 border-l-4 border-green-500';
+          return 'bg-white/90 backdrop-blur-md text-green-900 border-l-4 border-green-500 shadow-[0_4px_30px_rgba(34,197,94,0.1)]';
         case 'error':
-          return 'bg-gradient-to-r from-red-50 to-white text-red-900 border-l-4 border-red-500';
+          return 'bg-white/90 backdrop-blur-md text-red-900 border-l-4 border-red-500 shadow-[0_4px_30px_rgba(239,68,68,0.1)]';
         case 'warning':
-          return 'bg-gradient-to-r from-yellow-50 to-white text-yellow-900 border-l-4 border-yellow-500';
+          return 'bg-white/90 backdrop-blur-md text-yellow-900 border-l-4 border-yellow-500 shadow-[0_4px_30px_rgba(234,179,8,0.1)]';
         case 'info':
-          return 'bg-gradient-to-r from-blue-50 to-white text-blue-900 border-l-4 border-blue-500';
         default:
-          return 'bg-gradient-to-r from-gray-50 to-white text-gray-900 border-l-4 border-gray-500';
+          return 'bg-white/90 backdrop-blur-md text-blue-900 border-l-4 border-blue-500 shadow-[0_4px_30px_rgba(59,130,246,0.1)]';
       }
     }
   };
 
   return (
     <div
-      className={`fixed top-16 right-4 flex items-center p-4 rounded-lg shadow-lg transition-all duration-300 z-50 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
-        } ${getToastStyles()}`}
+      className={`fixed top-16 right-4 flex items-center p-4 rounded-lg transition-all duration-300 z-50 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'} ${getToastStyles()}`}
       role="alert"
       style={{ maxWidth: '90%', width: '400px' }}
     >
@@ -73,14 +70,8 @@ const Toast = ({ message, type = 'success', onClose }) => {
       <div className="ml-3 text-sm font-medium">{message}</div>
       <button
         type="button"
-        onClick={() => {
-          setIsVisible(false);
-          setTimeout(onClose, 300);
-        }}
-        className={`ml-auto -mx-1.5 -my-1.5 ${isDarkMode
-          ? 'bg-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-700'
-          : 'bg-white text-gray-400 hover:text-gray-900 hover:bg-gray-100'
-          } rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 inline-flex items-center justify-center h-8 w-8`}
+        onClick={() => { setIsVisible(false); setTimeout(onClose, 300); }}
+        className={`ml-auto -mx-1.5 -my-1.5 ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-800/50' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'} rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 inline-flex items-center justify-center h-8 w-8 transition-colors`}
       >
         <span className="sr-only">Close</span>
         <svg className="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
@@ -94,15 +85,16 @@ const Toast = ({ message, type = 'success', onClose }) => {
 // Legal strip component at the top
 const LegalStrip = () => {
   return (
-    <div className="w-full py-2 px-4 bg-gradient-to-r from-blue-900 to-blue-800 text-white text-xs font-light flex items-center justify-between">
-      <div className="flex items-center">
-        <FaShieldAlt className="mr-2" />
-        <span>Secure Profile Setup | ISO 27001 Certified</span>
+    <div className="w-full py-2.5 px-6 backdrop-blur-md bg-white/5 border-b border-white/10 text-white text-xs font-medium flex items-center justify-between z-20 shadow-sm relative">
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 via-purple-900/40 to-blue-900/40 pointer-events-none"></div>
+      <div className="flex items-center relative z-10">
+        <FaShieldAlt className="mr-2 text-blue-400" />
+        <span className="opacity-90 tracking-wide">Secure Profile Setup | ISO 27001 Certified</span>
       </div>
-      <div>
-        <button className="hover:underline transition-all duration-200">Privacy Policy</button>
-        <span className="mx-2">|</span>
-        <button className="hover:underline transition-all duration-200">Terms of Service</button>
+      <div className="relative z-10 flex gap-4 hidden sm:flex">
+        <button className="hover:text-blue-300 transition-colors duration-200 opacity-80 hover:opacity-100">Privacy Policy</button>
+        <span className="opacity-30">|</span>
+        <button className="hover:text-blue-300 transition-colors duration-200 opacity-80 hover:opacity-100">Terms of Service</button>
       </div>
     </div>
   );
@@ -110,15 +102,23 @@ const LegalStrip = () => {
 
 // Enhanced Logo component with gradient
 const Logo = () => {
+  const { mode } = useSelector((state) => state.theme);
+  const isDarkMode = mode === 'dark';
   return (
-    <div className="flex justify-center mb-6 animate-fadeIn">
-      <div
-        className="w-20 h-20 rounded-lg flex items-center justify-center text-white text-3xl font-bold shadow-lg transform hover:rotate-3 transition-all duration-300"
-        style={{ background: "linear-gradient(to right, rgb(34, 87, 122), rgb(92, 172, 222))" }}
-      >
-        <span className="drop-shadow-md">M</span>
+    <motion.div 
+      initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 20 }}
+      className="flex justify-center mb-6 lg:mb-8"
+    >
+      <div className="relative group mx-auto">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur-xl opacity-40 group-hover:opacity-60 transition-opacity duration-300"></div>
+        <div className={`relative w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br ${isDarkMode ? 'from-blue-600 via-purple-600 to-pink-600' : 'from-blue-500 via-purple-500 to-pink-500'} rounded-2xl flex items-center justify-center shadow-2xl transform group-hover:scale-105 transition-transform duration-300 border border-white/20`}>
+          <span className="text-white text-3xl font-black drop-shadow-md">M</span>
+        </div>
+        <div className="absolute -top-2 -right-2 w-6 h-6 lg:w-8 lg:h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+          <Sparkles size={14} className="text-white" />
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -128,8 +128,6 @@ const FileUploadField = ({ id, name, label, icon, onChange, required = false, ac
   const [fileName, setFileName] = useState('');
   const [fileSize, setFileSize] = useState('');
   const [hasFile, setHasFile] = useState(false);
-
-  // Get theme from Redux
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
 
@@ -153,45 +151,35 @@ const FileUploadField = ({ id, name, label, icon, onChange, required = false, ac
   };
 
   return (
-    <div className="space-y-1">
-      <label htmlFor={id} className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+    <div className="space-y-2">
+      <label htmlFor={id} className={`block text-sm font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       <div
         onClick={triggerFileInput}
-        className={`relative border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 ${hasFile
-          ? isDarkMode
-            ? 'border-green-600 bg-green-900 bg-opacity-20'
-            : 'border-green-300 bg-green-50'
-          : isDarkMode
-            ? 'border-gray-600 hover:border-blue-600 hover:bg-blue-900 hover:bg-opacity-20'
-            : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
-          }`}
+        className={`relative border-2 border-dashed rounded-xl p-5 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 overflow-hidden group ${
+          hasFile
+            ? isDarkMode ? 'border-green-500/50 bg-green-900/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]' : 'border-green-400 bg-green-50 shadow-[0_0_15px_rgba(34,197,94,0.1)]'
+            : isDarkMode ? 'border-gray-600/60 bg-white/5 hover:border-blue-500/50 hover:bg-blue-900/20 backdrop-blur-md' : 'border-blue-200 bg-white/60 hover:border-blue-400 hover:bg-blue-50 backdrop-blur-md shadow-sm'
+        }`}
       >
-        <input
-          type="file"
-          id={id}
-          name={name}
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          className="hidden"
-          accept={accept}
-          required={required}
-        />
-
+        <input type="file" id={id} name={name} ref={fileInputRef} onChange={handleFileChange} className="hidden" accept={accept} required={required} />
+        
         {hasFile ? (
-          <div className="flex flex-col items-center">
-            <FaFileAlt className={`h-8 w-8 ${isDarkMode ? 'text-green-400' : 'text-green-500'} mb-2`} />
-            <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-center`}>{fileName}</span>
-            <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{fileSize}</span>
+          <div className="flex flex-col items-center relative z-10">
+            <div className={`p-3 rounded-full mb-3 shadow-md ${isDarkMode ? 'bg-green-500/20 text-green-400' : 'bg-green-100 text-green-600'}`}>
+              <FaCheckCircle className="h-6 w-6" />
+            </div>
+            <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-800'} text-center truncate max-w-full px-2`}>{fileName}</span>
+            <span className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{fileSize}</span>
           </div>
         ) : (
-          <div className="flex flex-col items-center">
-            {icon || <FaUpload className={`h-8 w-8 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mb-2`} />}
-            <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Click to upload {label}</span>
-            <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center mt-1`}>
-              PDF, JPG, PNG (Max. 5MB)
-            </span>
+          <div className="flex flex-col items-center relative z-10">
+            <div className={`p-3 rounded-full mb-3 transition-colors duration-300 ${isDarkMode ? 'bg-gray-800 text-gray-400 group-hover:bg-blue-900/50 group-hover:text-blue-400' : 'bg-white shadow-sm text-gray-500 group-hover:bg-blue-100 group-hover:text-blue-600'}`}>
+              {icon || <FaUpload className="h-6 w-6" />}
+            </div>
+            <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} group-hover:text-blue-500 transition-colors`}>Click to browse or drag and drop</span>
+            <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mt-1`}>PDF, JPG, PNG up to 5MB</span>
           </div>
         )}
       </div>
@@ -201,30 +189,21 @@ const FileUploadField = ({ id, name, label, icon, onChange, required = false, ac
 
 // Input Field component
 const InputField = ({ type, id, name, value, onChange, placeholder, icon, required = false }) => {
-  // Get theme from Redux
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
 
   return (
     <div className="relative group">
-      <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ${isDarkMode
-        ? 'text-gray-500 group-focus-within:text-blue-400'
-        : 'text-gray-400 group-focus-within:text-blue-500'
-        } transition-colors duration-200`}>
+      <div className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors duration-300 ${isDarkMode ? 'text-gray-500 group-focus-within:text-blue-400' : 'text-gray-400 group-focus-within:text-blue-500'}`}>
         {icon}
       </div>
       <input
-        id={id}
-        name={name}
-        type={type}
-        value={value}
-        onChange={onChange}
-        className={`block w-full pl-10 pr-4 py-3.5 rounded-lg shadow-sm transition-all duration-300 ${isDarkMode
-          ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
-          : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
-          }`}
-        placeholder={placeholder}
-        required={required}
+        id={id} name={name} type={type} value={value} onChange={onChange} placeholder={placeholder} required={required}
+        className={`block w-full pl-11 pr-4 py-3.5 rounded-xl shadow-sm transition-all duration-300 backdrop-blur-md ${
+          isDarkMode
+            ? 'border-gray-600/60 bg-white/5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 focus:bg-white/10'
+            : 'border-gray-200 bg-white/70 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400 focus:bg-white'
+        }`}
       />
     </div>
   );
@@ -232,23 +211,17 @@ const InputField = ({ type, id, name, value, onChange, placeholder, icon, requir
 
 // Textarea Field component
 const TextareaField = ({ id, name, value, onChange, placeholder, rows = 4, required = false }) => {
-  // Get theme from Redux
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
 
   return (
     <textarea
-      id={id}
-      name={name}
-      value={value}
-      onChange={onChange}
-      rows={rows}
-      className={`block w-full px-4 py-3.5 rounded-lg shadow-sm transition-all duration-300 resize-none ${isDarkMode
-        ? 'border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
-        : 'border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
-        }`}
-      placeholder={placeholder}
-      required={required}
+      id={id} name={name} value={value} onChange={onChange} rows={rows} placeholder={placeholder} required={required}
+      className={`block w-full px-4 py-3.5 rounded-xl shadow-sm transition-all duration-300 resize-none backdrop-blur-md ${
+        isDarkMode
+          ? 'border-gray-600/60 bg-white/5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 focus:bg-white/10'
+          : 'border-gray-200 bg-white/70 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400 focus:bg-white'
+      }`}
     />
   );
 };
@@ -256,7 +229,6 @@ const TextareaField = ({ id, name, value, onChange, placeholder, rows = 4, requi
 // Multi-select component
 const MultiSelectField = ({ id, name, label, options, selectedValues, onChange, required = false }) => {
   const [isOpen, setIsOpen] = useState(false);
-  // Get theme from Redux
   const { mode } = useSelector((state) => state.theme);
   const isDarkMode = mode === 'dark';
 
@@ -269,8 +241,7 @@ const MultiSelectField = ({ id, name, label, options, selectedValues, onChange, 
 
   return (
     <div className="relative">
-      <label htmlFor={id} className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
-        }`}>
+      <label htmlFor={id} className={`block text-sm font-semibold mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
         {label} {required && <span className="text-red-500">*</span>}
       </label>
 
@@ -278,73 +249,72 @@ const MultiSelectField = ({ id, name, label, options, selectedValues, onChange, 
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className={`w-full px-4 py-3.5 text-left rounded-lg shadow-sm transition-all duration-300 ${isDarkMode
-            ? 'border border-gray-600 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500'
-            : 'border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400'
-            }`}
+          className={`w-full px-4 py-3.5 text-left rounded-xl shadow-sm transition-all duration-300 backdrop-blur-md flex items-center justify-between ${
+            isDarkMode
+              ? 'border-gray-600/60 bg-white/5 text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50'
+              : 'border-gray-200 bg-white/70 text-gray-900 hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400'
+          }`}
         >
-          <span className={selectedValues.length === 0 ? 'text-gray-400' : ''}>
-            {selectedValues.length === 0
-              ? `Select ${label}`
-              : `${selectedValues.length} selected`
-            }
+          <span className={`block truncate ${selectedValues.length === 0 ? (isDarkMode ? 'text-gray-400' : 'text-gray-500') : ''}`}>
+            {selectedValues.length === 0 ? `Select ${label}` : `${selectedValues.length} item${selectedValues.length > 1 ? 's' : ''} selected`}
           </span>
-          <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={`w-5 h-5 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''} ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
 
-        {isOpen && (
-          <div className={`absolute z-10 w-full mt-1 rounded-lg shadow-lg ${isDarkMode ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-200'
-            }`}>
-            <div className="max-h-48 overflow-y-auto p-2">
-              {options.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => handleOptionToggle(option)}
-                  className={`w-full text-left px-3 py-2 rounded-md transition-colors duration-200 ${selectedValues.includes(option)
-                    ? isDarkMode
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-blue-100 text-blue-900'
-                    : isDarkMode
-                      ? 'hover:bg-gray-600 text-gray-300'
-                      : 'hover:bg-gray-50 text-gray-700'
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}
+              className={`absolute z-30 w-full mt-2 rounded-xl shadow-xl backdrop-blur-xl border ${
+                isDarkMode ? 'bg-gray-800/95 border-gray-700' : 'bg-white/95 border-gray-200'
+              }`}
+            >
+              <div className="max-h-60 overflow-y-auto p-2 space-y-1">
+                {options.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => handleOptionToggle(option)}
+                    className={`w-full text-left px-4 py-2.5 rounded-lg transition-colors duration-200 flex items-center ${
+                      selectedValues.includes(option)
+                        ? isDarkMode ? 'bg-blue-600/30 text-blue-300' : 'bg-blue-50 text-blue-700 font-medium'
+                        : isDarkMode ? 'hover:bg-white/10 text-gray-300' : 'hover:bg-gray-50 text-gray-700'
                     }`}
-                >
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedValues.includes(option)}
-                      onChange={() => { }}
-                      className="mr-2 text-blue-600"
-                    />
+                  >
+                    <div className={`w-4 h-4 rounded border mr-3 flex items-center justify-center transition-colors ${
+                      selectedValues.includes(option)
+                        ? 'bg-blue-500 border-blue-500'
+                        : isDarkMode ? 'border-gray-500' : 'border-gray-300'
+                    }`}>
+                      {selectedValues.includes(option) && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                    </div>
                     {option}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {selectedValues.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap gap-2">
           {selectedValues.map((value) => (
             <span
               key={value}
-              className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${isDarkMode
-                ? 'bg-blue-900 text-blue-300 border border-blue-700'
-                : 'bg-blue-100 text-blue-800 border border-blue-200'
-                }`}
+              className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium shadow-sm transition-colors ${
+                isDarkMode ? 'bg-blue-900/40 text-blue-300 border border-blue-800/50 hover:bg-blue-800/50' : 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100'
+              }`}
             >
               {value}
               <button
                 type="button"
                 onClick={() => handleOptionToggle(value)}
-                className="ml-2 text-blue-500 hover:text-blue-700"
+                className={`ml-2 rounded-full p-0.5 transition-colors ${isDarkMode ? 'hover:bg-blue-800 text-blue-400' : 'hover:bg-blue-200 text-blue-600'}`}
               >
-                ×
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </span>
           ))}
@@ -530,268 +500,240 @@ const LawyerAdditionalDetails = () => {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode
-      ? 'bg-gray-900 text-gray-100'
-      : 'bg-gradient-to-br from-blue-50 via-white to-indigo-50'
-      }`}>
-      {/* Legal strip */}
-      <LegalStrip />
+    <div className={`relative min-h-screen flex flex-col items-center overflow-x-hidden transition-colors duration-500 ${
+      isDarkMode ? 'bg-[#0A0A0A]' : 'bg-gray-50'
+    }`}>
+      {/* Premium Animated Background Layer */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <motion.div
+          animate={{ scale: [1, 1.2, 1], opacity: [0.05, 0.1, 0.05] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+          className={`absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full blur-[120px] ${isDarkMode ? 'bg-blue-600' : 'bg-blue-300'}`}
+        />
+        <motion.div
+          animate={{ scale: [1, 1.3, 1], opacity: [0.03, 0.08, 0.03] }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear", delay: 1 }}
+          className={`absolute top-1/2 -right-40 w-[500px] h-[500px] rounded-full blur-[100px] ${isDarkMode ? 'bg-purple-600' : 'bg-purple-300'}`}
+        />
+      </div>
 
-      {/* Toasts handled by global ToastProvider */}
+      <div className="relative z-10 w-full flex flex-col min-h-screen">
+        {/* Legal strip */}
+        <LegalStrip />
 
-      <div className="flex items-center justify-center min-h-screen px-4 py-12">
-        <div className={`w-full max-w-2xl transform transition-all duration-1000 ${fadeIn ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-          }`}>
+        {/* Toasts handled by global ToastProvider */}
 
-          {/* Card container */}
-          <div className={`rounded-2xl shadow-2xl overflow-hidden ${isDarkMode
-            ? 'bg-gray-800 border border-gray-700'
-            : 'bg-white'
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 sm:py-12 w-full">
+          <motion.div 
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className={`w-full max-w-4xl transform scale-[0.90] md:scale-95 lg:scale-100 ${
+              isDarkMode ? 'text-white' : 'text-slate-900'
+            }`}
+          >
+            {/* Glassmorphic Card container */}
+            <div className={`rounded-3xl shadow-2xl overflow-hidden backdrop-blur-xl transition-all duration-300 border ${
+              isDarkMode 
+                ? 'bg-gradient-to-br from-blue-950/50 via-gray-900/80 to-purple-950/50 border-white/10 shadow-[0_0_50px_rgba(168,85,247,0.1)]' 
+                : 'bg-white/80 border-white/40 shadow-[0_0_50px_rgba(168,85,247,0.05)]'
             }`}>
 
-            {/* Header */}
-            <div className={`px-8 pt-8 pb-6 ${isDarkMode
-              ? 'bg-gray-800'
-              : 'bg-white'
-              }`}>
-              <Logo />
-
-              <div className="text-center mb-8">
-                <h1 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'
-                  }`}>
-                  Lawyer Professional Details
-                </h1>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
-                  Please provide your professional credentials to complete your lawyer profile
-                </p>
+              {/* Header */}
+              <div className="px-6 py-8 sm:px-10 sm:py-10 border-b border-white/10 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+                <Logo />
+                <div className="text-center relative z-10">
+                  <h1 className="text-3xl md:text-4xl font-black mb-3 tracking-tight">
+                    Lawyer Professional <span className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">Details</span>
+                  </h1>
+                  <p className={`text-sm md:text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Please provide your professional credentials to complete your lawyer profile
+                  </p>
+                </div>
               </div>
 
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Form Content */}
+              <div className="px-6 py-8 sm:px-10">
+                <form onSubmit={handleSubmit} className="space-y-8">
 
-                {/* Basic Information Section */}
-                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-blue-50'}`}>
-                  <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    Basic Professional Information
-                  </h3>
+                  {/* Basic Information Section */}
+                  <div className={`p-6 rounded-2xl border transition-all duration-300 ${
+                    isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:border-blue-500/30' : 'bg-blue-50/50 border-blue-100/50 hover:border-blue-300/50'
+                  }`}>
+                    <h3 className={`text-xl font-bold mb-6 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white shadow-lg">
+                        <FaIdCard size={18} />
+                      </div>
+                      Basic Professional Information
+                    </h3>
 
-                  {/* Enrollment Number */}
-                  <div className="mb-4">
-                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                      }`}>
-                      Bar Council Enrollment Number <span className="text-red-500">*</span>
-                    </label>
-                    <InputField
-                      type="text"
-                      id="enrollmentNo"
-                      name="enrollmentNo"
-                      value={enrollmentNo}
-                      onChange={(e) => setEnrollmentNo(e.target.value)}
-                      placeholder="Enter your enrollment number"
-                      icon={<FaIdCard />}
-                      required
-                    />
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="md:col-span-2">
+                        <label className={`block text-sm font-semibold mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          Bar Council Enrollment Number <span className="text-red-500">*</span>
+                        </label>
+                        <InputField
+                          type="text" id="enrollmentNo" name="enrollmentNo" value={enrollmentNo}
+                          onChange={(e) => setEnrollmentNo(e.target.value)}
+                          placeholder="Enter your enrollment number" icon={<FaIdCard />} required
+                        />
+                      </div>
+                      <div>
+                        <label className={`block text-sm font-semibold mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          Years of Experience <span className="text-red-500">*</span>
+                        </label>
+                        <InputField
+                          type="number" id="experience" name="experience" value={experience}
+                          onChange={(e) => setExperience(e.target.value)}
+                          placeholder="Years of experience" icon={<FaGraduationCap />} required
+                        />
+                      </div>
+                      <div>
+                        <label className={`block text-sm font-semibold mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          Consultation Fee (₹ / min) <span className="text-red-500">*</span>
+                        </label>
+                        <InputField
+                          type="number" id="consultationFee" name="consultationFee" value={consultationFee}
+                          onChange={(e) => setConsultationFee(e.target.value)}
+                          placeholder="Fee per minute" icon={<FaDollarSign />} required
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Years of Experience */}
-                  <div className="mb-4">
-                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                      }`}>
-                      Years of Experience <span className="text-red-500">*</span>
-                    </label>
-                    <InputField
-                      type="number"
-                      id="experience"
-                      name="experience"
-                      value={experience}
-                      onChange={(e) => setExperience(e.target.value)}
-                      placeholder="Enter years of experience"
-                      icon={<FaGraduationCap />}
-                      required
-                    />
+                  {/* Practice Areas and Courts */}
+                  <div className={`p-6 rounded-2xl border transition-all duration-300 ${
+                    isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:border-purple-500/30' : 'bg-purple-50/50 border-purple-100/50 hover:border-purple-300/50'
+                  }`}>
+                    <h3 className={`text-xl font-bold mb-6 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg">
+                        <FaGraduationCap size={18} />
+                      </div>
+                      Practice Details
+                    </h3>
+
+                    <div className="space-y-6">
+                      <MultiSelectField
+                        id="practiceAreas" name="practiceAreas" label="Practice Areas"
+                        options={practiceAreasOptions} selectedValues={practiceAreas}
+                        onChange={setPracticeAreas} required
+                      />
+                      <MultiSelectField
+                        id="courtPractice" name="courtPractice" label="Courts of Practice"
+                        options={courtOptions} selectedValues={courtPractice}
+                        onChange={setCourtPractice} required
+                      />
+                      <MultiSelectField
+                        id="languages" name="languages" label="Languages Spoken"
+                        options={languageOptions} selectedValues={languages}
+                        onChange={setLanguages} required
+                      />
+                    </div>
                   </div>
 
-                  {/* Consultation Fee */}
-                  <div>
-                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                      }`}>
-                      Consultation Fee (₹ / minute) <span className="text-red-500">*</span>
-                    </label>
-                    <InputField
-                      type="number"
-                      id="consultationFee"
-                      name="consultationFee"
-                      value={consultationFee}
-                      onChange={(e) => setConsultationFee(e.target.value)}
-                      placeholder="Enter consultation fee per minute"
-                      icon={<FaDollarSign />}
-                      required
-                    />
-                  </div>
-                </div>
+                  {/* Professional Bio */}
+                  <div className={`p-6 rounded-2xl border transition-all duration-300 ${
+                    isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:border-pink-500/30' : 'bg-pink-50/50 border-pink-100/50 hover:border-pink-300/50'
+                  }`}>
+                    <h3 className={`text-xl font-bold mb-6 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-orange-400 flex items-center justify-center text-white shadow-lg">
+                        <FaUser size={18} />
+                      </div>
+                      Professional Profile
+                    </h3>
 
-                {/* Practice Areas and Courts */}
-                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-green-50'}`}>
-                  <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    Practice Details
-                  </h3>
-
-                  {/* Practice Areas */}
-                  <div className="mb-4">
-                    <MultiSelectField
-                      id="practiceAreas"
-                      name="practiceAreas"
-                      label="Practice Areas"
-                      options={practiceAreasOptions}
-                      selectedValues={practiceAreas}
-                      onChange={setPracticeAreas}
-                      required
-                    />
+                    <div className="space-y-6">
+                      <div>
+                        <label className={`block text-sm font-semibold mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          Professional Bio <span className="text-red-500">*</span>
+                        </label>
+                        <TextareaField
+                          id="bio" name="bio" value={bio}
+                          onChange={(e) => setBio(e.target.value)}
+                          placeholder="Write a brief description about your expertise, achievements, and what makes you unique as a lawyer..."
+                          rows={4} required
+                        />
+                      </div>
+                      <FileUploadField
+                        id="profilePhoto" name="profilePhoto" label="Profile Photo"
+                        icon={<FaUser />} onChange={setProfilePhoto} required={false} accept="image/*"
+                      />
+                    </div>
                   </div>
 
-                  {/* Court Practice */}
-                  <div className="mb-4">
-                    <MultiSelectField
-                      id="courtPractice"
-                      name="courtPractice"
-                      label="Courts of Practice"
-                      options={courtOptions}
-                      selectedValues={courtPractice}
-                      onChange={setCourtPractice}
-                      required
-                    />
+                  {/* Documents Section */}
+                  <div className={`p-6 rounded-2xl border transition-all duration-300 ${
+                    isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:border-green-500/30' : 'bg-green-50/50 border-green-100/50 hover:border-green-300/50'
+                  }`}>
+                    <h3 className={`text-xl font-bold mb-6 flex items-center gap-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-400 flex items-center justify-center text-white shadow-lg">
+                        <FaFileAlt size={18} />
+                      </div>
+                      Required Documents
+                    </h3>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <FileUploadField
+                        id="enrollmentCertificate" name="enrollmentCertificate" label="Certificate of Enrollment"
+                        icon={<FaFileAlt />} onChange={setEnrollmentCertificate} required={false} accept="application/pdf,image/*"
+                      />
+                      <FileUploadField
+                        id="copCertificate" name="copCertificate" label="Certificate of Practice (CoP)"
+                        icon={<FaFileAlt />} onChange={setCopCertificate} required={false} accept="application/pdf,image/*"
+                      />
+                      <div className="md:col-span-2">
+                        <FileUploadField
+                          id="addressProof" name="addressProof" label="Address Proof (Optional)"
+                          icon={<FaFileAlt />} onChange={setAddressProof} required={false} accept="application/pdf,image/*"
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Languages */}
-                  <div>
-                    <MultiSelectField
-                      id="languages"
-                      name="languages"
-                      label="Languages Spoken"
-                      options={languageOptions}
-                      selectedValues={languages}
-                      onChange={setLanguages}
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Professional Bio */}
-                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-purple-50'}`}>
-                  <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    Professional Profile
-                  </h3>
-
-                  <div className="mb-4">
-                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                      }`}>
-                      Professional Bio <span className="text-red-500">*</span>
-                    </label>
-                    <TextareaField
-                      id="bio"
-                      name="bio"
-                      value={bio}
-                      onChange={(e) => setBio(e.target.value)}
-                      placeholder="Write a brief description about your expertise, achievements, and what makes you unique as a lawyer..."
-                      rows={4}
-                      required
-                    />
-                  </div>
-
-                  {/* Profile Photo */}
-                  <FileUploadField
-                    id="profilePhoto"
-                    name="profilePhoto"
-                    label="Profile Photo"
-                    icon={<FaUser />}
-                    onChange={setProfilePhoto}
-                    required={false}
-                    accept="image/*"
-                  />
-                </div>
-
-                {/* Documents Section */}
-                <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-yellow-50'}`}>
-                  <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    Required Documents
-                  </h3>
-
-                  {/* Certificate of Enrollment */}
-                  <div className="mb-4">
-                    <FileUploadField
-                      id="enrollmentCertificate"
-                      name="enrollmentCertificate"
-                      label="Certificate of Enrollment"
-                      icon={<FaFileAlt />}
-                      onChange={setEnrollmentCertificate}
-                      required={false}
-                      accept="application/pdf,image/*"
-                    />
+                  {/* Submit Button */}
+                  <div className="pt-4">
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className={`group w-full py-4 px-6 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg transition-all duration-300 relative overflow-hidden ${
+                        loading ? 'opacity-70 cursor-not-allowed bg-gray-600' : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-[0_0_25px_rgba(124,58,237,0.4)] hover:scale-[1.02]'
+                      }`}
+                    >
+                      <span className="relative z-10 flex items-center gap-3">
+                        {loading ? (
+                          <>
+                            <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Creating Your Profile...
+                          </>
+                        ) : (
+                          <>Complete Lawyer Setup <FaCheckCircle className="transform group-hover:scale-110 transition-transform" /></>
+                        )}
+                      </span>
+                      <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:animate-shine"></div>
+                    </button>
+                    
+                    {/* Skip Link */}
+                    <div className="mt-6 text-center">
+                      <button
+                        type="button"
+                        onClick={() => window.location.href = '/lawyer-admin'}
+                        className={`text-sm font-medium border-b border-transparent pb-0.5 transition-colors duration-200 ${
+                          isDarkMode ? 'text-gray-400 hover:text-white hover:border-white/30' : 'text-gray-500 hover:text-gray-900 hover:border-gray-400'
+                        }`}
+                      >
+                        Complete later &rarr;
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Certificate of Practice (CoP) */}
-                  <div className="mb-4">
-                    <FileUploadField
-                      id="copCertificate"
-                      name="copCertificate"
-                      label="Certificate of Practice (CoP)"
-                      icon={<FaFileAlt />}
-                      onChange={setCopCertificate}
-                      required={false}
-                      accept="application/pdf,image/*"
-                    />
-                  </div>
-
-                  {/* Address Proof (Optional) */}
-                  <FileUploadField
-                    id="addressProof"
-                    name="addressProof"
-                    label="Address Proof (Optional)"
-                    icon={<FaFileAlt />}
-                    onChange={setAddressProof}
-                    required={false}
-                    accept="application/pdf,image/*"
-                  />
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className={`w-full py-3 px-4 rounded-md flex items-center justify-center text-white font-medium shadow-md transition-all duration-300 transform hover:scale-102 hover:shadow-xl relative overflow-hidden ${loading ? 'opacity-70 cursor-not-allowed' : ''
-                    }`}
-                  style={{
-                    background: loading
-                      ? "#64a6db"
-                      : "linear-gradient(to right, rgb(34, 87, 122), rgb(92, 172, 222))"
-                  }}
-                >
-                  <span className="relative z-10 flex items-center">
-                    {loading ? (
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                    ) : null}
-                    {loading ? 'Creating Your Profile...' : 'Complete Lawyer Setup'}
-                  </span>
-                  <div className="absolute top-0 left-0 w-full h-full opacity-0 hover:opacity-20 bg-white transform -translate-x-full hover:translate-x-0 transition-transform duration-500"></div>
-                </button>
-              </form>
-
-              {/* Skip Link */}
-              <div className="mt-6 text-center">
-                <button
-                  onClick={() => window.location.href = '/lawyer-admin'}
-                  className={`text-sm ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-700'
-                    } transition-colors duration-200`}
-                >
-                  Complete later
-                </button>
+                </form>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>

@@ -177,7 +177,17 @@ const Sidebar = ({
                   {item.label}
                 </span>
               </div>
-              {item.count ? (
+              {item.badge ? (
+                <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1.5 ${isActive
+                  ? 'bg-white/20 text-white'
+                  : item.badge === 'Pending' 
+                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20' 
+                    : isDark ? 'bg-[#262626] text-gray-500' : 'bg-gray-200 text-gray-600'
+                  }`}>
+                  {item.badge === 'Pending' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />}
+                  {item.badge}
+                </span>
+              ) : item.count ? (
                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isActive
                   ? 'bg-blue-500 text-white'
                   : isDark ? 'bg-[#262626] text-gray-500' : 'bg-gray-200 text-gray-600'

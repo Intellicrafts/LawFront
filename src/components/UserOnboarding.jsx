@@ -253,83 +253,92 @@ const UserOnboarding = () => {
     }
   }, [validateForm, formData, navigate]);
 
-  // User Type Selection Component (Optimized)
+  // User Type Selection Component (Optimized, Premium Layout)
   const UserTypeSelection = React.memo(() => (
     <motion.div 
-      initial={{ opacity: 0, y: 15 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-4xl mx-auto h-full flex flex-col justify-center"
+      transition={{ duration: 0.5 }}
+      className={`max-w-5xl w-full mx-auto h-full flex flex-col justify-center min-h-[75vh] p-6 lg:p-12 my-6 lg:my-10 rounded-3xl transition-colors duration-500 transform origin-top scale-[0.9] sm:scale-100 ${
+        isDark 
+          ? 'bg-gradient-to-br from-blue-950/60 via-purple-950/60 to-pink-950/60 backdrop-blur-xl border border-purple-500/20 shadow-[0_0_50px_rgba(168,85,247,0.15)] text-white' 
+          : 'bg-gradient-to-br from-blue-50/90 via-purple-50/90 to-pink-50/90 backdrop-blur-xl border border-purple-200/50 shadow-[0_0_50px_rgba(168,85,247,0.1)] text-slate-900'
+      }`}
     >
       {/* Header */}
-      <div className="text-center mb-6 lg:mb-8">
+      <div className="text-center mb-8 lg:mb-12">
         <motion.div 
           initial={{ scale: 0.8 }}
           animate={{ scale: 1 }}
-          className="flex justify-center mb-3 lg:mb-4"
+          transition={{ type: "spring", stiffness: 200, damping: 20 }}
+          className="flex justify-center mb-5 lg:mb-6"
         >
-          <div className="relative">
-            <div className="w-12 h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-lg lg:rounded-xl flex items-center justify-center shadow-md">
-              <UserCheck size={20} className="text-white lg:hidden" />
-              <UserCheck size={24} className="text-white hidden lg:block" />
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur-xl opacity-40 group-hover:opacity-60 transition-opacity duration-300"></div>
+            <div className="relative w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-2xl transform group-hover:scale-105 transition-transform duration-300 border border-white/20">
+              <UserCheck size={32} className="text-white lg:hidden" />
+              <UserCheck size={36} className="text-white hidden lg:block" />
             </div>
-            <div className="absolute -top-1 -right-1 w-4 h-4 lg:w-5 lg:h-5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-              <Sparkles size={8} className="text-white lg:hidden" />
-              <Sparkles size={10} className="text-white hidden lg:block" />
+            <div className="absolute -top-2 -right-2 w-6 h-6 lg:w-8 lg:h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+              <Sparkles size={12} className="text-white lg:hidden" />
+              <Sparkles size={16} className="text-white hidden lg:block" />
             </div>
           </div>
         </motion.div>
         
-        <h1 className={`text-xl md:text-2xl lg:text-3xl font-bold mb-2 lg:mb-3 ${
-          isDark ? 'text-white' : 'text-gray-900'
-        }`}>
-          Welcome to <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">MeraBakil</span>
+        <h1 className="text-3xl md:text-4xl lg:text-5xl font-black mb-3 lg:mb-4 tracking-tight">
+          Welcome to <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent drop-shadow-sm">MeraBakil</span>
         </h1>
-        
-
+        <p className={`text-base md:text-lg max-w-2xl mx-auto ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+          The premier AI-powered legal platform. Please select your account type to proceed with the best experience.
+        </p>
       </div>
 
       {/* User Type Cards */}
-      <div className="grid lg:grid-cols-2 gap-3 lg:gap-5 max-w-4xl mx-auto px-4">
+      <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto px-4 w-full">
         {/* I am a User Card */}
         <motion.div
-          whileHover={{ scale: 1.005, y: -2 }}
-          whileTap={{ scale: 0.995 }}
-          className={`relative overflow-hidden rounded-lg lg:rounded-xl ${
+          whileHover={{ scale: 1.02, y: -5 }}
+          whileTap={{ scale: 0.98 }}
+          className={`group relative overflow-hidden rounded-2xl ${
             isDark 
-              ? 'bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700' 
-              : 'bg-gradient-to-br from-white to-gray-50 border-gray-200'
-          } border shadow-md cursor-pointer transition-all duration-300 hover:shadow-lg`}
+              ? 'bg-gray-900/40 border-gray-700/50 hover:bg-gray-800/80 hover:border-blue-500/50' 
+              : 'bg-white/60 border-gray-200/80 hover:bg-white/90 hover:border-blue-400/50'
+          } border-2 shadow-lg hover:shadow-2xl cursor-pointer transition-all duration-300 backdrop-blur-md`}
           onClick={() => handleUserTypeSelect('user')}
         >
-          <div className="absolute top-0 right-0 w-16 h-16 lg:w-18 lg:h-18 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-full -translate-y-3 translate-x-3 lg:-translate-y-4 lg:translate-x-4" />
+          <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-bl from-blue-500/20 to-cyan-500/0 rounded-full blur-2xl group-hover:bg-blue-500/30 transition-all duration-500" />
           
-          <div className="relative p-3 lg:p-4">
-            <div className="flex items-center justify-between mb-3 lg:mb-4">
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-md lg:rounded-lg flex items-center justify-center shadow-sm">
-                <User size={16} className="text-white lg:hidden" />
-                <User size={20} className="text-white hidden lg:block" />
+          <div className="relative p-6 lg:p-8">
+            <div className="flex items-start justify-between mb-6">
+              <div className="w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 transform group-hover:rotate-6 transition-transform duration-300 border border-white/20">
+                <User size={28} className="text-white" />
               </div>
-              <ArrowRight size={16} className={`${isDark ? 'text-gray-400' : 'text-gray-500'} transition-transform lg:size-5`} />
+              <div className={`p-2 rounded-full ${isDark ? 'bg-gray-800' : 'bg-gray-100'} group-hover:bg-blue-500 transition-colors duration-300`}>
+                <ArrowRight size={20} className={`${isDark ? 'text-gray-400' : 'text-gray-500'} group-hover:text-white transition-colors duration-300`} />
+              </div>
             </div>
             
-            <h3 className={`text-lg lg:text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <h3 className="text-2xl font-bold mb-3">
               I am a User
             </h3>
             
-            <p className={`${isDark ? 'text-gray-300' : 'text-gray-600'} mb-3 lg:mb-4 text-xs lg:text-sm leading-relaxed`}>
-              Access legal services, find lawyers, book consultations, and get expert legal advice.
+            <p className={`${isDark ? 'text-gray-300' : 'text-gray-600'} mb-6 text-sm lg:text-base leading-relaxed h-12`}>
+              Access expert legal services, find top-rated lawyers, and consult with our AI Assistant.
             </p>
             
-            <div className="space-y-1 lg:space-y-1.5">
+            <div className="space-y-3">
               {[
                 'Find Qualified Lawyers',
-                'Book Consultations', 
-                'Document Review',
-                'AI Legal Assistance'
+                'Book Consultations instantly', 
+                'Fast Document Review',
+                '24/7 AI Legal Assistance'
               ].map((feature, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <CheckCircle size={10} className="text-blue-500 flex-shrink-0 lg:size-3" />
-                  <span className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                <div key={index} className="flex items-center space-x-3">
+                  <div className="w-5 h-5 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                    <CheckCircle size={14} className="text-blue-500" />
+                  </div>
+                  <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     {feature}
                   </span>
                 </div>
@@ -340,44 +349,47 @@ const UserOnboarding = () => {
 
         {/* I am a Lawyer Card */}
         <motion.div
-          whileHover={{ scale: 1.005, y: -2 }}
-          whileTap={{ scale: 0.995 }}
-          className={`relative overflow-hidden rounded-lg lg:rounded-xl ${
+          whileHover={{ scale: 1.02, y: -5 }}
+          whileTap={{ scale: 0.98 }}
+          className={`group relative overflow-hidden rounded-2xl ${
             isDark 
-              ? 'bg-gradient-to-br from-purple-900 to-indigo-900 border-purple-700' 
-              : 'bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200'
-          } border shadow-md cursor-pointer transition-all duration-300 hover:shadow-lg`}
+              ? 'bg-purple-900/20 border-purple-800/30 hover:bg-purple-900/40 hover:border-purple-500/50' 
+              : 'bg-purple-50/50 border-purple-200/50 hover:bg-purple-100/50 hover:border-purple-400/50'
+          } border-2 shadow-lg hover:shadow-2xl cursor-pointer transition-all duration-300 backdrop-blur-md`}
           onClick={() => handleUserTypeSelect('lawyer')}
         >
-          <div className="absolute top-0 right-0 w-16 h-16 lg:w-18 lg:h-18 bg-gradient-to-bl from-purple-500/10 to-transparent rounded-full -translate-y-3 translate-x-3 lg:-translate-y-4 lg:translate-x-4" />
+          <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-bl from-purple-500/20 to-pink-500/0 rounded-full blur-2xl group-hover:bg-purple-500/30 transition-all duration-500" />
           
-          <div className="relative p-3 lg:p-4">
-            <div className="flex items-center justify-between mb-3 lg:mb-4">
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-md lg:rounded-lg flex items-center justify-center shadow-sm">
-                <Scale size={16} className="text-white lg:hidden" />
-                <Scale size={20} className="text-white hidden lg:block" />
+          <div className="relative p-6 lg:p-8">
+            <div className="flex items-start justify-between mb-6">
+              <div className="w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20 transform group-hover:-rotate-6 transition-transform duration-300 border border-white/20">
+                <Scale size={28} className="text-white" />
               </div>
-              <ArrowRight size={16} className={`${isDark ? 'text-gray-400' : 'text-gray-500'} transition-transform lg:size-5`} />
+              <div className={`p-2 rounded-full ${isDark ? 'bg-purple-900/50' : 'bg-purple-100'} group-hover:bg-purple-500 transition-colors duration-300`}>
+                <ArrowRight size={20} className={`${isDark ? 'text-purple-300' : 'text-purple-600'} group-hover:text-white transition-colors duration-300`} />
+              </div>
             </div>
             
-            <h3 className={`text-lg lg:text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <h3 className="text-2xl font-bold mb-3">
               I am a Lawyer
             </h3>
             
-            <p className={`${isDark ? 'text-gray-300' : 'text-gray-600'} mb-3 lg:mb-4 text-xs lg:text-sm leading-relaxed`}>
-              Join our platform to expand your practice, connect with clients, and grow your career.
+            <p className={`${isDark ? 'text-purple-200/80' : 'text-gray-600'} mb-6 text-sm lg:text-base leading-relaxed h-12`}>
+              Join the future of legal practice, expand your client base, and connect effortlessly.
             </p>
             
-            <div className="space-y-1 lg:space-y-1.5">
+            <div className="space-y-3">
               {[
-                'Verified Lawyer Profile',
-                'Client Management', 
-                'Automated Scheduling',
-                'Premium Marketing'
+                'Verified Premium Profile',
+                'Advanced Client Management', 
+                'Automated Smart Scheduling',
+                'Exclusive Marketing Insights'
               ].map((feature, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <CheckCircle size={10} className="text-purple-500 flex-shrink-0 lg:size-3" />
-                  <span className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                <div key={index} className="flex items-center space-x-3">
+                  <div className="w-5 h-5 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                    <CheckCircle size={14} className="text-purple-500" />
+                  </div>
+                  <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     {feature}
                   </span>
                 </div>
@@ -391,23 +403,23 @@ const UserOnboarding = () => {
       <motion.div 
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="text-center mt-5 lg:mt-7 px-4"
+        transition={{ delay: 0.4 }}
+        className="text-center mt-10 lg:mt-12 px-4"
       >
-        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-2 lg:mb-3`}>
-          Trusted by 10,000+ users and 500+ verified lawyers across India
+        <p className={`text-sm font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-4 lg:mb-5 tracking-wide uppercase`}>
+          Trusted by 10,000+ users & 500+ verified experts
         </p>
         
-        <div className="flex justify-center space-x-3 lg:space-x-5">
+        <div className="flex flex-wrap justify-center gap-4 lg:gap-8">
           {[
-            { icon: Shield, text: 'Secure' },
-            { icon: Award, text: 'Verified' },
-            { icon: Users, text: 'Trusted' },
-            { icon: Heart, text: 'Reliable' }
+            { icon: Shield, text: 'Secure platform', color: 'text-emerald-500' },
+            { icon: Award, text: 'Verified pros', color: 'text-amber-500' },
+            { icon: Zap, text: 'AI-Powered', color: 'text-blue-500' },
+            { icon: Heart, text: '99% Satisfaction', color: 'text-pink-500' }
           ].map((item, index) => (
-            <div key={index} className="flex items-center space-x-1">
-              <item.icon size={10} className="text-purple-500 lg:size-3" />
-              <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div key={index} className="flex items-center space-x-2 bg-black/5 dark:bg-white/5 px-4 py-2 rounded-full border border-black/5 dark:border-white/5 backdrop-blur-sm">
+              <item.icon size={16} className={item.color} />
+              <span className={`text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                 {item.text}
               </span>
             </div>

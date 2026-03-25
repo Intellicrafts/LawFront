@@ -610,6 +610,46 @@ export const authAPI = {
       throw error;
     }
   },
+
+  // Satyapan Lawyer BCI Verification
+  verifyLawyerSatyapan: async (enrollmentNumber, state) => {
+    try {
+      const baseUrl = 'https://wgywp2sazh56bc7zg7ydni2uv40xfzji.lambda-url.ap-south-1.on.aws';
+      const url = `${baseUrl}/api/v1/verify`;
+      
+      const payload = {
+        enrollment_number: enrollmentNumber,
+        state: state
+      };
+
+      // Since Satyapan requires an external POST without our standard API headers, we might use plain axios or fetch.
+      // But we can just use axios directly.
+      const response = await axios.post(url, payload);
+      
+      const verifyStatus = response?.data?.status;
+      if (verifyStatus !== 'success') {
+        throw new Error(response?.data?.message || 'Satyapan verification failed.');
+      }
+      return response.data;
+    } catch (error) {
+      if (error.response && error.response.data) {
+        const data = error.response.data;
+        let msg = data.detail || data.message || data.error || 'Verification failed. Please check your details.';
+        
+        // Make backend errors more user-friendly
+        if (typeof msg === 'string') {
+          if (msg.toLowerCase().includes('not found') || msg.toLowerCase().includes('invalid')) {
+            msg = 'Invalid BCI Number. Please check your Enrollment Number and State.';
+          }
+        }
+        throw new Error(msg);
+      } else if (error.request) {
+        throw new Error('Network error. Unable to connect to the verification service. Please try again later.');
+      } else {
+        throw new Error(error.message || 'An unexpected error occurred during verification.');
+      }
+    }
+  },
 };
 
 /**
@@ -1168,6 +1208,7 @@ export const tokenManager = {
   removeToken: () => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user');
+    window.dispatchEvent(new CustomEvent('auth-status-changed', { detail: { authenticated: false } }));
   },
 
   setUser: (user) => {
