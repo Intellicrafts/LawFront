@@ -177,13 +177,15 @@ const walletSlice = createSlice({
             const { data, page } = action.payload;
             // Handle both array response and wrapped { transactions: [] } response
             const txns = Array.isArray(data) ? data : (data?.transactions || []);
-            if (page === 1) {
-                state.transactions = txns;
-            } else {
-                state.transactions = [...state.transactions, ...txns];
-            }
+            
+            // Backend doesn't support pagination yet so it always returns ALL transactions.
+            // Always replace the local state, do not append.
+            state.transactions = txns;
             state.currentPage = page;
-            state.hasMoreLocal = data?.has_more ?? txns.length > 0;
+            
+            // Client-side pagination config (10 items per page)
+            const limit = action.meta.arg.limit || 10;
+            state.hasMoreLocal = txns.length > (page * limit);
         });
         builder.addCase(fetchTransactions.rejected, (state, action) => {
             state.transactionLoading = false;

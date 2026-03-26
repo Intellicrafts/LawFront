@@ -227,7 +227,8 @@ const TopNavbar = ({
   handleLogout,
   searchQuery,
   setSearchQuery,
-  setActiveTab
+  setActiveTab,
+  walletBalance
 }) => (
   <header className={`sticky top-0 z-40 w-full transition-all duration-500 ${darkMode
     ? 'bg-black/20 backdrop-blur-3xl shadow-none'
@@ -329,6 +330,7 @@ const TopNavbar = ({
             <div className="p-1.5">
               {[
                 { label: 'Academic Profile', icon: User, tab: 'profile' },
+                { label: `My Wallet: ₹${walletBalance || 0}`, icon: Wallet, tab: 'wallet' },
                 { label: 'System Settings', icon: Settings, tab: 'settings' },
               ].map((item, i) => (
                 <button
@@ -1363,6 +1365,7 @@ const LawyerAdmin = () => {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           setActiveTab={setActiveTab} // Pass setActiveTab to TopNavbar
+          walletBalance={earningsData.totalBalance}
         />
 
         <main className="flex-1 overflow-x-hidden pt-2 scrollbar-hide">

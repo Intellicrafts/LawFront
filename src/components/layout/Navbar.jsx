@@ -264,12 +264,14 @@ const Navbar = ({ isLandingPage = false }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { mode } = useSelector((state) => state.theme);
   const { isOpen: sidebarOpen } = useSelector((state) => state.sidebar);
+  const { balance } = useSelector((state) => state.wallet);
   const dispatch = useDispatch();
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const isFindLawyer = location.pathname === '/legal-consoltation';
   const isWalletPage = location.pathname === '/wallet';
   const isAuthPage = location.pathname === '/auth' || location.pathname === '/signup';
+  const isTypeSelection = location.pathname.includes('/profile-setup');
   const userDropdownRef = useRef(null);
   const notificationsDropdownRef = useRef(null);
 
@@ -910,7 +912,7 @@ const Navbar = ({ isLandingPage = false }) => {
 
             {/* Logo Section - Left Aligned */}
             <div className="flex-1 flex justify-start items-center gap-2">
-              {!isLandingPage && !isFindLawyer && !isWalletPage && !isAuthPage && (
+              {!isLandingPage && !isFindLawyer && !isWalletPage && !isAuthPage && !isTypeSelection && (
                 <button
                   onClick={() => dispatch(toggleSidebar())}
                   className={`p-1.5 rounded-lg transition-all duration-200 group flex items-center
@@ -1105,7 +1107,7 @@ const Navbar = ({ isLandingPage = false }) => {
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="px-2 py-0.5 rounded-md bg-gradient-to-r from-emerald-500 to-teal-500 text-[10px] font-bold text-white shadow-sm shadow-emerald-500/20">
-                                  ₹{user?.wallet_balance || 0}
+                                  ₹{balance?.total_balance || 0}
                                 </span>
                                 <ChevronRight size={12} className="text-gray-400 group-hover:text-emerald-500 transition-colors" />
                               </div>

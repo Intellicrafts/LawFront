@@ -1955,6 +1955,21 @@ const LegalCosultation = () => {
                             {lawyer.bio || `${lawyer.specialization ? `Specialized in ${lawyer.specialization}` : 'Legal professional'}${lawyer.years_of_experience ? ` with ${lawyer.years_of_experience} years of experience` : ''}.`}
                           </p>
 
+                          {/* Featured Review Preview */}
+                          {lawyer.reviews && lawyer.reviews.length > 0 && (
+                            <div className={`mb-4 p-2.5 rounded-xl border flex items-start gap-2 ${isDarkMode ? 'bg-white/[0.02] border-[#2A2A2A]' : 'bg-slate-50 border-slate-100'}`}>
+                              <MessageSquare size={12} className={`mt-0.5 flex-shrink-0 ${isDarkMode ? 'text-teal-500' : 'text-teal-600'}`} />
+                              <div>
+                                <div className="flex items-center gap-1 mb-0.5">
+                                  {renderStars(lawyer.reviews[0].rating)}
+                                </div>
+                                <p className={`text-[10px] italic line-clamp-2 font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                                  "{lawyer.reviews[0].comment}"
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
                           {/* Trust Signals */}
                           <div className="grid grid-cols-2 gap-2 mb-5">
                             <div className={`py-2 px-3 rounded-lg flex items-center gap-2 ${isDarkMode ? 'bg-white/[0.03]' : 'bg-slate-50'}`}>
@@ -2153,6 +2168,52 @@ const LegalCosultation = () => {
                 </div>
               </div>
             </div>
+
+            {/* Client Reviews Section */}
+            {selectedLawyer.reviews && selectedLawyer.reviews.length > 0 && (
+              <div className={`p-4 md:p-6 border-t ${isDarkMode ? 'border-[#2A2A2A] bg-white/[0.01]' : 'border-slate-100 bg-slate-50/50'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                    <MessageSquare size={14} className={isDarkMode ? 'text-teal-500' : 'text-teal-600'} />
+                    Client Reviews <span className={`px-1.5 py-0.5 rounded-md text-[9px] ${isDarkMode ? 'bg-[#2A2A2A] text-slate-300' : 'bg-slate-200 text-slate-700'}`}>{selectedLawyer.reviews_count || selectedLawyer.reviews.length}</span>
+                  </h3>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
+                    <Star size={12} className="text-amber-500 fill-amber-500" />
+                    <span className={`text-[11px] font-black ${isDarkMode ? 'text-amber-400' : 'text-amber-700'}`}>{selectedLawyer.rating || '5.0'} Overall</span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {selectedLawyer.reviews.map((review) => (
+                    <div key={review.id} className={`p-4 rounded-2xl border transition-all hover:shadow-md ${isDarkMode ? 'bg-[#1A1A1A] border-[#2A2A2A] hover:border-slate-700' : 'bg-white border-slate-100 hover:border-slate-200'}`}>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white text-[11px] font-black shadow-inner border border-white/10 ${isDarkMode ? 'bg-gradient-to-br from-slate-700 to-slate-800' : 'bg-gradient-to-br from-slate-300 to-slate-400'}`}>
+                            U{review.user_id || 'C'}
+                          </div>
+                          <div>
+                            <div className="flex gap-0.5 mb-1">
+                              {renderStars(review.rating)}
+                            </div>
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                              {new Date(review.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                            </span>
+                          </div>
+                        </div>
+                        <div className={`p-1.5 rounded-lg ${isDarkMode ? 'bg-white/[0.02]' : 'bg-slate-50'}`}>
+                          <Check size={12} className={isDarkMode ? 'text-teal-500' : 'text-teal-600'} />
+                        </div>
+                      </div>
+                      <p className={`text-xs italic font-medium leading-relaxed relative ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                        <span className="text-2xl absolute -top-2 -left-1 opacity-20 text-blue-500 font-serif">"</span>
+                        <span className="pl-3 relative z-10">{review.comment}</span>
+                        <span className="text-2xl absolute -bottom-4 right-0 opacity-20 text-blue-500 font-serif inline-block rotate-180">"</span>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       );

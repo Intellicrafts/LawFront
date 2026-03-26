@@ -2,12 +2,22 @@ import React, { useState } from 'react';
 import { ArrowUpRight, ArrowDownLeft, Clock, RefreshCw, ChevronDown, Zap, CheckCircle, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
-const TransactionHistory = ({ transactions, loading, hasMore, onLoadMore, isDark }) => {
+const TransactionHistory = ({ transactions, loading, hasMore, onLoadMore, isDark, currentPage = 1 }) => {
     const [filter, setFilter] = useState('ALL');
 
     const filters = ['ALL', 'CREDIT', 'DEBIT'];
 
-    const filtered = filter === 'ALL' ? transactions : transactions.filter(t => t.type === filter);
+    // Client-side pagination limit (10 items per page)
+    const displayLimit = currentPage * 10;
+    
+    // First filter by type
+    const typedTransactions = filter === 'ALL' ? transactions : transactions.filter(t => t.type === filter);
+    
+    // Then limit exactly to visible amount
+    const filtered = typedTransactions.slice(0, displayLimit);
+    
+    // Check if there are more matching transactions to load
+    const actualHasMore = typedTransactions.length > displayLimit;
 
     const getStatusStyle = (status) => {
         switch (status) {
@@ -35,7 +45,9 @@ const TransactionHistory = ({ transactions, loading, hasMore, onLoadMore, isDark
                     {filters.map(f => (
                         <button
                             key={f}
-                            onClick={() => setFilter(f)}
+                            onClick={() => {
+                                setFilter(f);
+                            }}
                             className={`px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all duration-300 ${filter === f
                                 ? isDark ? 'bg-white/10 text-white shadow-sm' : 'bg-white text-slate-800 shadow-sm'
                                 : isDark ? 'text-white/40 hover:text-white/70' : 'text-slate-500 hover:text-slate-700'}`}
@@ -108,7 +120,7 @@ const TransactionHistory = ({ transactions, loading, hasMore, onLoadMore, isDark
                 )}
 
                 {/* Load more */}
-                {hasMore && !loading && (
+                {actualHasMore && !loading && (
                     <div className="pt-3 pb-1 px-3">
                         <button
                             onClick={onLoadMore}

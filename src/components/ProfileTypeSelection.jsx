@@ -125,7 +125,10 @@ const ProfileTypeSelection = () => {
           detail: { authenticated: true, user: updatedUser }
         }));
 
-        showSuccess('Profile type saved successfully!');
+        const welcomeMsg = selectedType === 'personal' 
+          ? 'Welcome to your Client Dashboard! Setting things up...' 
+          : 'Welcome to your Professional Lawyer Dashboard! Setting things up...';
+        showSuccess(welcomeMsg);
 
         setTimeout(() => {
           if (selectedType === 'personal') {

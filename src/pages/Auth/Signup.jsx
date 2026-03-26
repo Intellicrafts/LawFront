@@ -633,6 +633,13 @@ export const Signup = ({ onSignupSuccess }) => {
       // Step 4: Handle successful registration
       if (response.data && (response.data.access_token || response.data.token)) {
 
+        // Store tokens silently first so they are ready for wallet creation
+        const token = response.data.access_token || response.data.token;
+        tokenManager.setToken(token);
+        if (response.data.user) {
+          tokenManager.setUser(response.data.user);
+        }
+
         // === START: Auto-create Wallet ===
         try {
           if (response.data.user && response.data.user.id) {
@@ -643,6 +650,11 @@ export const Signup = ({ onSignupSuccess }) => {
               currency: 'INR'
             };
             await walletAPI.createWallet(walletPayload);
+            
+            // The backend automatically grants 499 INR promotional Welcome Bonus upon creation
+            // We just need to trigger the frontend ceremony
+            sessionStorage.setItem('showPromoCeremony', '499');
+            
             // showSuccess('Wallet initialized successfully'); // Hiding to avoid double-toasts
           }
         } catch (walletError) {
@@ -655,13 +667,6 @@ export const Signup = ({ onSignupSuccess }) => {
           console.warn('Wallet creation failed, but proceeding with login:', errorMsg);
         }
         // === END: Auto-create Wallet ===
-
-        // Store tokens silently first so they are ready
-        const token = response.data.access_token || response.data.token;
-        tokenManager.setToken(token);
-        if (response.data.user) {
-          tokenManager.setUser(response.data.user);
-        }
 
         // Set flag to trigger onboarding tour for new signups
         sessionStorage.setItem('isSignupSession', 'true');
@@ -818,6 +823,9 @@ export const Signup = ({ onSignupSuccess }) => {
               currency: 'INR'
             };
             await walletAPI.createWallet(walletPayload);
+
+            // The backend automatically grants 499 INR promotional Welcome Bonus upon creation
+            sessionStorage.setItem('showPromoCeremony', '499');
           }
         } catch (walletError) {
           console.error('Error auto-creating wallet on Google signup:', walletError);

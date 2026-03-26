@@ -46,6 +46,26 @@ const walletService = {
     },
 
     /**
+     * Add promotional credits to the user's wallet.
+     * @param {string|number} userId - Laravel user ID
+     * @param {number} amount - Amount in INR
+     * @param {string} description - Optional description
+     */
+    addPromotionalCredit: async (userId, amount, description = 'Promotional Credit') => {
+        try {
+            const response = await walletClient.post('promotional-credit', {
+                user_id: String(userId),
+                amount: parseFloat(amount),
+                description: description,
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error adding promotional credit:', error);
+            return null; // Don't throw to prevent breaking flow
+        }
+    },
+
+    /**
      * Get wallet balance for the authenticated user.
      * @param {string|number} userId - Laravel user ID
      */

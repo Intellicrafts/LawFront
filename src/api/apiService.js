@@ -1254,6 +1254,31 @@ export const walletAPI = {
   },
 
   /**
+   * Add promotional credit to wallet
+   */
+  addPromotionalCredit: async (userId, amount, description = "Promotional Credit") => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const payload = {
+        user_id: String(userId),
+        amount: parseFloat(amount),
+        description: description
+      };
+      // Note: Endpoint matching kuberdhan logic
+      const response = await axios.post(`${config.KUBERDHAN_API_URL}/api/v1/wallets/promotional-credit`, payload, {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error adding promotional credit:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Get user wallet balance and details
    */
   getBalance: async (userId) => {

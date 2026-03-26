@@ -43,6 +43,7 @@ import TermsOfService from './components/TermsOfService';
 import LegalDisclaimer from './components/LegalDisclaimer';
 import RefundPolicy from './components/RefundPolicy';
 import VerifyLawyer from './pages/Legal/VerifyLawyer';
+import PromoCeremonyPopup from './components/PromoCeremonyPopup';
 
 import { fetchChatSessions } from './redux/chatSlice';
 
@@ -119,6 +120,7 @@ const AppLayout = ({ children }) => {
       {/* Footer — shown on landing pages; other pages get FloatingThemeToggle */}
       {!isLawyerAdmin && isLandingPage && <Footer />}
       {!isLawyerAdmin && !isLandingPage && !isConsultation && <FloatingThemeToggle />}
+      <PromoCeremonyPopup />
     </>
   );
 };
