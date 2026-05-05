@@ -395,65 +395,23 @@ const FormattedResponse = ({ text, isDark, isStreaming = false, cursorAtEnd = fa
  * Professional Message Actions Component
  * Features: Natural Human Voice synthesis with punctuation pauses, Clipboard Copy, and Feedback.
  */
-// Global reference to prevent garbage collection of active speech
-let activeUtterance = null;
-
 const MessageActions = ({ text, isDark }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isTTSLoading, setIsTTSLoading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [feedback, setFeedback] = useState(null);
-  const [voices, setVoices] = useState([]);
-  const [voicesLoaded, setVoicesLoaded] = useState(false);
+  const audioRef = useRef(null);
 
-  // Ensure voices are loaded properly
-  useEffect(() => {
-    const loadVoices = () => {
-      const availableVoices = window.speechSynthesis.getVoices();
-      console.log('Available voices:', availableVoices.length);
-      if (availableVoices.length > 0) {
-        setVoices(availableVoices);
-        setVoicesLoaded(true);
-      }
-    };
-
-    // Load voices immediately
-    loadVoices();
-
-    // Set up listener for voice changes (needed for some browsers)
-    if (window.speechSynthesis.onvoiceschanged !== undefined) {
-      window.speechSynthesis.onvoiceschanged = loadVoices;
-    }
-
-    // Fallback: try loading again after a short delay
-    const timeout = setTimeout(loadVoices, 100);
-
-    return () => {
-      clearTimeout(timeout);
-      if (window.speechSynthesis.onvoiceschanged !== undefined) {
-        window.speechSynthesis.onvoiceschanged = null;
-      }
-    };
-  }, []);
-
-  const handleReadAloud = () => {
-    // Stop if already speaking
-    if (isSpeaking) {
-      window.speechSynthesis.cancel();
+  const handleReadAloud = async () => {
+    // Stop if already playing
+    if (isSpeaking && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
       setIsSpeaking(false);
       return;
     }
 
-    // Ensure speech synthesis is available
-    if (!window.speechSynthesis) {
-      console.error('Speech synthesis not supported');
-      alert('Text-to-speech is not supported in your browser');
-      return;
-    }
-
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
-
-    // Simplified multi-pass cleaning for speech
+    // Strip markdown and internal status tokens before sending to TTS
     let cleanText = text;
     [
       /Analyzing query\.{1,3}/gi,
@@ -461,106 +419,43 @@ const MessageActions = ({ text, isDark }) => {
       /Generating response/gi,
       /^[a-z_]{2,}(?:\.{1,3}|[:\s!]|(?=[A-Z\s!]))/i,
       /\b[a-z_]{2,}_[a-z_]{2,}\b/gi,
-      /(\*\*|__|#|\*|-|>)/g,
-    ].forEach(pattern => {
-      cleanText = cleanText.replace(pattern, '');
-    });
+      /(\*\*|__|#|\*|-|>|\[|\])/g,
+    ].forEach(p => { cleanText = cleanText.replace(p, ''); });
     cleanText = cleanText.trim();
+    if (!cleanText) return;
 
-    if (!cleanText) {
-      console.warn('No text to speak');
-      return;
-    }
-
-    console.log('Starting speech synthesis for text:', cleanText.substring(0, 50) + '...');
-
-    // Create utterance
-    activeUtterance = new SpeechSynthesisUtterance(cleanText);
-    const utterance = activeUtterance;
-
-    // Set speech parameters for natural flow
-    utterance.rate = 1.15;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-
-    // Select voice (prioritize Indian accent)
-    if (voicesLoaded && voices.length > 0) {
-      const indianVoice = voices.find(v =>
-        (v.lang === 'en-IN' || v.lang === 'hi-IN') ||
-        (v.name.toLowerCase().includes('india') || v.name.toLowerCase().includes('hindi'))
-      );
-
-      const googleEnglishVoice = voices.find(v =>
-        v.name.toLowerCase().includes('google') && v.lang.startsWith('en')
-      );
-
-      const anyEnglishVoice = voices.find(v => v.lang.startsWith('en'));
-
-      if (indianVoice) {
-        utterance.voice = indianVoice;
-        console.log('Using Indian voice:', indianVoice.name);
-      } else if (googleEnglishVoice) {
-        utterance.voice = googleEnglishVoice;
-        console.log('Using Google English voice:', googleEnglishVoice.name);
-      } else if (anyEnglishVoice) {
-        utterance.voice = anyEnglishVoice;
-        console.log('Using English voice:', anyEnglishVoice.name);
-      } else {
-        utterance.voice = voices[0];
-        console.log('Using default voice:', voices[0].name);
-      }
-    }
-
-    // Set up event handlers
-    utterance.onstart = () => {
-      console.log('Speech started');
-      setIsSpeaking(true);
-    };
-
-    utterance.onend = () => {
-      console.log('Speech ended');
-      setIsSpeaking(false);
-      activeUtterance = null;
-    };
-
-    utterance.onerror = (event) => {
-      if (event.error === 'interrupted') {
-        console.log('Speech interrupted as expected');
-      } else {
-        console.error('Speech error:', event.error, event);
-        setIsSpeaking(false);
-        activeUtterance = null;
-        if (event.error === 'not-allowed') {
-          alert('Please allow audio playback in your browser settings');
-        }
-      }
-    };
-
-    utterance.onpause = () => {
-      console.log('Speech paused');
-    };
-
-    utterance.onresume = () => {
-      console.log('Speech resumed');
-    };
-
-    // Start speaking
+    setIsTTSLoading(true);
     try {
-      window.speechSynthesis.speak(utterance);
-      console.log('Speech synthesis started');
-    } catch (error) {
-      console.error('Failed to start speech:', error);
+      const baseUrl = (process.env.REACT_APP_CHATBOT_API_URL || '').replace(/\/$/, '');
+      const response = await fetch(`${baseUrl}/tts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: cleanText, voice: 'nova' }),
+      });
+      if (!response.ok) throw new Error(`TTS ${response.status}`);
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+
+      audio.onplay = () => setIsSpeaking(true);
+      audio.onended = () => { setIsSpeaking(false); URL.revokeObjectURL(url); audioRef.current = null; };
+      audio.onerror = () => { setIsSpeaking(false); URL.revokeObjectURL(url); audioRef.current = null; };
+
+      await audio.play();
+    } catch (err) {
+      console.error('TTS failed:', err);
       setIsSpeaking(false);
-      alert('Failed to start text-to-speech. Please try again.');
+    } finally {
+      setIsTTSLoading(false);
     }
   };
 
-  // Cleanup speech on unmount
+  // Stop audio on unmount
   useEffect(() => {
     return () => {
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
+      if (audioRef.current) audioRef.current.pause();
     };
   }, []);
 
@@ -589,13 +484,21 @@ const MessageActions = ({ text, isDark }) => {
       <motion.button
         whileTap={{ scale: 0.92 }}
         onClick={handleReadAloud}
+        disabled={isTTSLoading}
         className={`p-1 rounded-md transition-all duration-200 flex items-center gap-1 group ${isSpeaking
           ? 'text-blue-500 bg-blue-500/15 ring-1 ring-blue-500/20'
+          : isTTSLoading
+          ? 'text-gray-400 cursor-wait'
           : isDark ? 'text-gray-400 hover:text-blue-400 hover:bg-white/5' : 'text-gray-500 hover:text-blue-600 hover:bg-white'
           }`}
         title={isSpeaking ? "Stop" : "Read Aloud"}
       >
-        {isSpeaking ? <VolumeX size={12} className="animate-pulse" /> : <Volume2 size={12} />}
+        {isTTSLoading
+          ? <Loader2 size={12} className="animate-spin" />
+          : isSpeaking
+          ? <VolumeX size={12} className="animate-pulse" />
+          : <Volume2 size={12} />
+        }
       </motion.button>
 
       <div className={`w-[1px] h-2.5 mx-0.5 ${isDark ? 'bg-white/10' : 'bg-gray-300'}`} />
