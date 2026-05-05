@@ -1752,6 +1752,101 @@ const Hero = () => {
     }
   };
 
+  const handleAudioReady = async (base64Audio, mimeType) => {
+    setShowVoiceModal(false);
+    setIsLoading(true);
+    setChatState(CHAT_STATES.CONNECTING);
+
+    try {
+      const apiModel = getApiModelName(selectedModal);
+      let activeSessionId = sessionId;
+
+      if (messages.length === 0 && !sessionId) {
+        try {
+          const newSession = await chatbotAPI.createSession('Voice message');
+          if (newSession && newSession.success) {
+            activeSessionId = newSession.data.id;
+            setSessionId(activeSessionId);
+            navigate(`/chatbot/${activeSessionId}`, { replace: true });
+            dispatch(fetchChatSessions());
+          }
+        } catch (e) {
+          console.error('Failed to create session for audio message', e);
+          activeSessionId = Date.now().toString();
+          setSessionId(activeSessionId);
+        }
+      }
+
+      // Show a placeholder user message for the voice input
+      setMessages(prev => [...prev, {
+        id: 'user-audio-' + Date.now(),
+        role: 'user',
+        content: '🎤 Voice message',
+      }]);
+
+      const botMessageId = 'bot-' + Date.now().toString();
+      setMessages(prev => [...prev, {
+        id: botMessageId,
+        role: 'assistant',
+        content: '',
+        isRealTime: true,
+        modelId: selectedModal,
+      }]);
+
+      const result = await chatbotService.sendAudioMessage(
+        base64Audio,
+        mimeType,
+        apiModel,
+        handleStateChange,
+        activeSessionId,
+        (chunk) => {
+          setMessages(prev => prev.map(msg => {
+            if (msg.id !== botMessageId) return msg;
+            if (chunk.type === 'thought') {
+              return { ...msg, thought: (msg.thought || '') + chunk.content };
+            }
+            let newContent = msg.content + chunk.content;
+            const techPatterns = /^(Analyzing query\.{0,3}|greeting|cache_hit|routing|thinking)\s*/i;
+            if (newContent.length < 50 && techPatterns.test(newContent)) {
+              return { ...msg, thought: (msg.thought || '') + chunk.content };
+            }
+            return { ...msg, content: newContent };
+          }));
+          const container = document.getElementById('chat-scroll-container');
+          if (container) {
+            const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+            if (isAtBottom) container.scrollTo({ top: container.scrollHeight, behavior: 'auto' });
+          }
+        }
+      );
+
+      if (result.sessionId && result.sessionId !== sessionId) setSessionId(result.sessionId);
+
+      if (!result.success) {
+        setMessages(prev => prev.map(msg =>
+          msg.id === botMessageId
+            ? { ...msg, content: `__System Alert:__ ${result.response}`, isRealTime: false }
+            : msg
+        ));
+      } else {
+        setMessages(prev => prev.map(msg =>
+          msg.id === botMessageId ? { ...msg, isRealTime: false } : msg
+        ));
+        if (activeSessionId) {
+          chatbotAPI.addEvent(activeSessionId, {
+            sender: 'bot',
+            message: result.response,
+            event_type: 'message',
+          }).catch(e => console.error('Failed to save bot audio response', e));
+        }
+      }
+    } catch (error) {
+      handleStateChange(CHAT_STATES.ERROR, t('chat.error'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleFileUpload = (files) => {
     if (files) {
       const newFiles = Array.from(files);
@@ -2161,6 +2256,7 @@ const Hero = () => {
         isVoiceActive={isVoiceActive}
         setIsVoiceActive={setIsVoiceActive}
         onVoiceResult={handleVoiceResult}
+        onAudioReady={handleAudioReady}
       />
     </div>
   );

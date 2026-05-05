@@ -186,11 +186,6 @@ class RequestQueue {
 }
 
 /**
- * Sleep utility
- */
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-/**
  * Main Chatbot API Service
  */
 class ChatbotApiService {
@@ -274,34 +269,46 @@ class ChatbotApiService {
     async sendMessage(message, appName = AI_MODELS.LEGAL_COUNSEL, onStateChange = () => { }, existingSessionId = null, onChunk = null) {
         const userId = this.getUserId();
         const sessionId = existingSessionId || `session_${Date.now()}`;
-        const url = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CHAT}`;
+        const payload = {
+            app_name: appName,
+            user_id: userId,
+            session_id: sessionId,
+            new_message: { role: 'user', parts: [{ text: message }] },
+            streaming: true
+        };
+        onStateChange(CHAT_STATES.CONNECTING, STATE_MESSAGES[CHAT_STATES.CONNECTING]);
+        return this._executeChat(payload, onStateChange, onChunk, existingSessionId);
+    }
 
+    async sendAudioMessage(base64Audio, mimeType, appName = AI_MODELS.LEGAL_COUNSEL, onStateChange = () => { }, existingSessionId = null, onChunk = null) {
+        const userId = this.getUserId();
+        const sessionId = existingSessionId || `session_${Date.now()}`;
         const payload = {
             app_name: appName,
             user_id: userId,
             session_id: sessionId,
             new_message: {
                 role: 'user',
-                parts: [{ text: message }]
+                parts: [{ inline_data: { mime_type: mimeType, data: base64Audio } }]
             },
             streaming: true
         };
-
         onStateChange(CHAT_STATES.CONNECTING, STATE_MESSAGES[CHAT_STATES.CONNECTING]);
+        return this._executeChat(payload, onStateChange, onChunk, existingSessionId);
+    }
 
-        // Helper for smart chunk buffering to prevent markdown flickering
+    async _executeChat(payload, onStateChange, onChunk, existingSessionId = null) {
+        const url = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CHAT}`;
+
+        // Smart chunk buffering to prevent markdown flickering
         let textBuffer = '';
         let lastEmitTime = Date.now();
         const emitBufferedText = (force = false) => {
             if (!textBuffer) return;
-
             const timeSinceEmit = Date.now() - lastEmitTime;
             if (force || textBuffer.length > 15 || timeSinceEmit > 100) {
                 const endsWithMarkdown = /[*_\[\]`#~]$/.test(textBuffer);
-                if (endsWithMarkdown && !force && textBuffer.length < 50) {
-                    return;
-                }
-
+                if (endsWithMarkdown && !force && textBuffer.length < 50) return;
                 if (onChunk) onChunk({ type: 'text', content: textBuffer });
                 textBuffer = '';
                 lastEmitTime = Date.now();
@@ -309,15 +316,14 @@ class ChatbotApiService {
         };
 
         try {
-            await this.initializeBackendSession(appName, userId, sessionId);
+            await this.initializeBackendSession(payload.app_name, payload.user_id, payload.session_id);
 
             if (!API_CONFIG.BASE_URL) {
-                console.error('[ChatbotAPI] Aborting sendMessage: No BASE_URL configured.');
+                console.error('[ChatbotAPI] Aborting: No BASE_URL configured.');
                 throw new Error('CONFIG_ERROR: Chatbot API URL is not configured. Please check environment variables.');
             }
 
-            console.log(`[ChatbotAPI] Sending message to: ${url}`);
-            console.log(`[ChatbotAPI] Payload user_id: ${userId}, session_id: ${sessionId}`);
+            console.log(`[ChatbotAPI] Sending to: ${url} | user: ${payload.user_id} | session: ${payload.session_id}`);
 
             const response = await fetch(url, {
                 method: 'POST',
@@ -358,73 +364,49 @@ class ChatbotApiService {
 
                         console.debug(`[ChatbotAPI] Raw Chunk: ${trimmedLine}`);
 
-                        // Modern unified_chat uses NDJSON (raw JSON objects per line)
-                        // Legacy endpoints use SSE (data: {JSON})
-                        // We handle both by stripping 'data:' only if it exists
                         let data = trimmedLine;
                         if (trimmedLine.startsWith('data:')) {
                             data = trimmedLine.replace('data:', '').trim();
                         }
-
-                        // Remove keep-alive entirely from raw data string before parsing so it's not rendered
                         data = data.replace(/(:\s*keep-alive)+/g, '').trim();
-
                         if (!data || data === '[DONE]') continue;
 
                         try {
                             let contentObj = { text: '', thought: '' };
                             if (data.startsWith('{') || data.startsWith('[')) {
                                 const parsed = JSON.parse(data);
-
-                                // Handle the structured events from the new unified_chat endpoint
                                 if (parsed.type) {
                                     switch (parsed.type) {
                                         case 'agent_event':
                                             if (parsed.payload) {
-                                                // Keep token streaming for better UX, but ignore the final complete block to avoid duplication
-                                                if (parsed.payload.is_final_complete === true) {
-                                                    break;
-                                                }
+                                                if (parsed.payload.is_final_complete === true) break;
                                                 contentObj = this.extractContentFromObject(parsed.payload);
                                             }
                                             break;
                                         case 'message_chunk':
-                                            if (parsed.content) {
-                                                contentObj.text = parsed.content;
-                                            }
+                                            if (parsed.content) contentObj.text = parsed.content;
                                             break;
                                         case 'status':
                                         case 'classification':
                                         case 'cache_hit':
                                         case 'cache_miss':
-                                            // Provide these as thought/status updates instead of main text
-                                            if (parsed.content) {
-                                                contentObj.thought = `[${parsed.type.toUpperCase()}] ${parsed.content}\n`;
-                                            }
+                                            if (parsed.content) contentObj.thought = `[${parsed.type.toUpperCase()}] ${parsed.content}\n`;
                                             break;
                                         case 'error':
-                                            // Provide a nicely formatted error instead of crashing the parser and dumping raw JSON
                                             contentObj.text = `\n\n**⚠️ Error:** ${parsed.content}\n`;
                                             break;
                                         default:
-                                            // Fallback for unknown types
-                                            if (parsed.content) {
-                                                contentObj.text = parsed.content;
-                                            }
+                                            if (parsed.content) contentObj.text = parsed.content;
                                             break;
                                     }
                                 } else {
-                                    // Handle legacy / raw object fallback
                                     contentObj = this.extractContentFromObject(parsed);
                                 }
                             } else {
-                                // If it's not JSON but was prefixed with data:, it's raw text
                                 contentObj.text = data;
                             }
 
-                            if (contentObj.thought && onChunk) {
-                                onChunk({ type: 'thought', content: contentObj.thought });
-                            }
+                            if (contentObj.thought && onChunk) onChunk({ type: 'thought', content: contentObj.thought });
                             if (contentObj.text) {
                                 fullResponseText += contentObj.text;
                                 textBuffer += contentObj.text;
@@ -432,7 +414,6 @@ class ChatbotApiService {
                             }
                         } catch (e) {
                             console.warn('[ChatbotAPI] Chunk parse error:', e);
-                            // Only fallback to raw data if it doesn't look like a JSON object we failed to process
                             if (data && !data.trim().startsWith('{') && !data.trim().startsWith('[')) {
                                 fullResponseText += data;
                                 textBuffer += data;
@@ -442,7 +423,7 @@ class ChatbotApiService {
                     }
                 }
             } finally {
-                emitBufferedText(true); // Force flush any remaining buffer
+                emitBufferedText(true);
                 reader.releaseLock();
             }
 
@@ -450,11 +431,10 @@ class ChatbotApiService {
             return { response: fullResponseText, sessionId: payload.session_id, success: true };
 
         } catch (error) {
-            console.error('[ChatbotAPI] sendMessage error:', error);
-            let errorMessage = error.message.includes('API_ERROR')
+            console.error('[ChatbotAPI] _executeChat error:', error);
+            const errorMessage = error.message.includes('API_ERROR')
                 ? `Server Error (${error.message.split(':')[1]})`
                 : 'Connection failed. The AI service may be temporarily unavailable.';
-
             onStateChange(CHAT_STATES.ERROR, errorMessage);
             return { response: errorMessage, sessionId: null, success: false };
         } finally {

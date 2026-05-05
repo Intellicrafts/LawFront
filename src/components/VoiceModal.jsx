@@ -13,7 +13,7 @@ import { X, Mic, MicOff, Phone, PhoneOff, Upload, Settings, Sparkles } from 'luc
 //   apiServices = null;
 // }
 
-const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceResult }) => {
+const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceResult, onAudioReady }) => {
   // State management
   const [voiceState, setVoiceState] = useState('idle'); // 'idle', 'listening', 'processing', 'speaking'
   // const [audioLevel, setAudioLevel] = useState(0); // Reserved for future audio level visualization
@@ -177,37 +177,46 @@ const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceR
     }
   }, [voiceState, realTimeAudioLevel]);
 
-  // Process voice input (can be extended with API integration)
+  // Convert audio blob to base64 and hand off to parent for sending
   const processVoiceInput = useCallback(async (audioBlob) => {
     try {
       setVoiceState('processing');
-      
-      // Simulate processing time for demo
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Simulate transcript result for demo
-      const simulatedTranscript = "Hello, I need legal advice about my case.";
-      
-      // Call the onVoiceResult callback if provided
-      if (onVoiceResult) {
-        onVoiceResult(simulatedTranscript);
-      }
-      
-      setVoiceState('idle');
-      setIsVoiceActive(false);
-      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        // reader.result is a data URL: "data:<mime>;base64,<data>"
+        const base64 = reader.result.split(',')[1];
+        const mimeType = audioBlob.type || 'audio/webm';
+        if (onAudioReady) {
+          onAudioReady(base64, mimeType);
+        } else if (onVoiceResult) {
+          // Fallback: pass a placeholder so the parent knows audio was sent
+          onVoiceResult('');
+        }
+        setVoiceState('idle');
+        setIsVoiceActive(false);
+        onClose();
+      };
+      reader.onerror = () => {
+        console.error('FileReader failed to read audio blob');
+        setVoiceState('idle');
+        setIsVoiceActive(false);
+      };
+      reader.readAsDataURL(audioBlob);
     } catch (error) {
       console.error('Error processing voice input:', error);
       setVoiceState('idle');
       setIsVoiceActive(false);
     }
-  }, [onVoiceResult, setIsVoiceActive]);
+  }, [onAudioReady, onVoiceResult, setIsVoiceActive, onClose]);
 
   // Start voice recording with audio analysis
   const startVoiceRecording = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
+        : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4'
+        : '';
+      mediaRecorderRef.current = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       audioChunksRef.current = [];
       
       // Setup real-time audio analysis for voice synchronization
@@ -220,7 +229,7 @@ const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceR
       };
       
       mediaRecorderRef.current.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorderRef.current.mimeType || 'audio/webm' });
         // Process the audio if needed
         processVoiceInput(audioBlob);
         
