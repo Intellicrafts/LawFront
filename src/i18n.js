@@ -51,6 +51,13 @@ const resources = {
                 guestDisclaimer: 'AI provides informational assistance only · 5 free queries/day · No account needed',
                 lawyerQuestion: 'Are you a lawyer?',
                 joinPlatform: 'Join our platform →',
+                intakeSubtitle: 'Rich questions, documents, images & voice — processed securely before counsel.',
+                featureDetailedQuery: 'Detailed queries',
+                featureFilesDocs: 'PDFs & documents',
+                featureImages: 'Photos & scans',
+                featurePipeline: 'Live reasoning',
+                featureVoice: 'Voice input',
+                attachFiles: 'Attach files & images',
             },
 
             // ── AI Component Phrases ─────────────────────
@@ -228,6 +235,8 @@ const resources = {
             chat: {
                 welcome: 'Welcome to MeraBakil',
                 tagline: 'Your Intelligent Legal Assistant',
+                assistantLive: 'Live',
+                assistantDrafting: 'Drafting',
                 files: '{{count}} File(s)',
                 changeModel: 'Change model',
                 agentWarning: 'The **{{agent}}** agent is currently in **tuning & training mode** for advanced legal datasets.\n\nFor the best experience with everyday legal tasks and research, please use our flagship **BAKILAT 1.0** agent which is fully optimized and available for production.',
@@ -285,6 +294,13 @@ const resources = {
                 guestDisclaimer: 'AI केवल जानकारी प्रदान करता है · 5 मुफ्त प्रश्न/दिन · खाते की आवश्यकता नहीं',
                 lawyerQuestion: 'क्या आप एक वकील हैं?',
                 joinPlatform: 'हमारे प्लेटफ़ॉर्म से जुड़ें →',
+                intakeSubtitle: 'विस्तृत प्रश्न, दस्तावेज़, छवियाँ और आवाज़ — सुरक्षित रूप से प्रोसेस होकर परामर्श तक पहुँचते हैं।',
+                featureDetailedQuery: 'विस्तृत प्रश्न',
+                featureFilesDocs: 'PDF और दस्तावेज़',
+                featureImages: 'फोटो और स्कैन',
+                featurePipeline: 'लाइव विश्लेषण',
+                featureVoice: 'आवाज़ इनपुट',
+                attachFiles: 'फाइलें और छवियाँ जोड़ें',
             },
 
             // ── AI Component Phrases ─────────────────────
@@ -462,6 +478,8 @@ const resources = {
             chat: {
                 welcome: 'मेराबाकिल में आपका स्वागत है',
                 tagline: 'आपका इंटेलिजेंट कानूनी सहायक',
+                assistantLive: 'लाइव',
+                assistantDrafting: 'मसौदा',
                 files: '{{count}} फाइल(ें)',
                 changeModel: 'मॉडल बदलें',
                 agentWarning: '**{{agent}}** एजेंट वर्तमान में उन्नत कानूनी डेटासेट के लिए **ट्यूनिंग और प्रशिक्षण मोड** में है।\n\nरोजमर्रा के कानूनी कार्यों और शोध के सर्वोत्तम अनुभव के लिए, कृपया हमारे प्रमुख **BAKILAT 1.0** एजेंट का उपयोग करें जो पूरी तरह से अनुकूलित और उत्पादन के लिए उपलब्ध है।',

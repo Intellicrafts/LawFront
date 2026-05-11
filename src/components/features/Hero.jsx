@@ -75,7 +75,7 @@ const IntelligenceLog = ({ thought, isStreaming, isDark }) => {
       initial={{ height: 0, opacity: 0 }}
       animate={{ height: 'auto', opacity: 1 }}
       exit={{ height: 0, opacity: 0 }}
-      className={`mb-6 w-full max-w-sm rounded-2xl overflow-hidden p-[1px] transition-all duration-700 shadow-2xl
+      className={`mb-6 w-full max-w-full sm:max-w-sm rounded-2xl overflow-hidden p-[1px] transition-all duration-700 shadow-2xl
         ${isDark ? 'bg-gradient-to-br from-emerald-500/20 via-blue-500/10 to-transparent' : 'bg-gradient-to-br from-emerald-400/30 via-blue-400/20 to-transparent'}`}
     >
       <div className={`relative px-5 py-4 w-full h-full backdrop-blur-2xl rounded-2xl ${isDark ? 'bg-[#0A0A0E]/95' : 'bg-white/95'}`}>
@@ -159,7 +159,7 @@ const AmbientWaitingState = ({ isDark }) => {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`relative w-full max-w-sm rounded-2xl overflow-hidden p-[1px] mb-6 ${isDark ? 'bg-gradient-to-b from-blue-500/30 to-purple-500/10' : 'bg-gradient-to-b from-blue-400/30 to-indigo-400/10'}`}
+      className={`relative w-full max-w-full sm:max-w-sm rounded-2xl overflow-hidden p-[1px] mb-6 ${isDark ? 'bg-gradient-to-b from-blue-500/30 to-purple-500/10' : 'bg-gradient-to-b from-blue-400/30 to-indigo-400/10'}`}
     >
       <div className={`relative px-5 py-4 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-xl ${isDark ? 'bg-[#0f0f13]/90' : 'bg-white/95'}`}>
 
@@ -391,38 +391,103 @@ const FormattedResponse = ({ text, isDark, isStreaming = false, cursorAtEnd = fa
   );
 };
 
+const stripTextForSpeech = (raw) => {
+  let cleanText = raw;
+  [
+    /Analyzing query\.{1,3}/gi,
+    /Found in Semantic Cache/gi,
+    /Generating response/gi,
+    /^[a-z_]{2,}(?:\.{1,3}|[:\s!]|(?=[A-Z\s!]))/i,
+    /\b[a-z_]{2,}_[a-z_]{2,}\b/gi,
+    /(\*\*|__|#|\*|-|>|\[|\])/g,
+  ].forEach(p => { cleanText = cleanText.replace(p, ''); });
+  return cleanText.trim();
+};
+
 /**
- * Professional Message Actions Component
- * Features: Natural Human Voice synthesis with punctuation pauses, Clipboard Copy, and Feedback.
+ * Message actions: Read aloud uses Web Speech API first for sub-second start; falls back to /tts API.
  */
 const MessageActions = ({ text, isDark }) => {
+  const { i18n } = useTranslation();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isTTSLoading, setIsTTSLoading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const audioRef = useRef(null);
+  const utteranceRef = useRef(null);
 
-  const handleReadAloud = async () => {
-    // Stop if already playing
-    if (isSpeaking && audioRef.current) {
+  const stopAllSpeech = useCallback(() => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
-      setIsSpeaking(false);
+    }
+    utteranceRef.current = null;
+    setIsSpeaking(false);
+  }, []);
+
+  const speakWithBrowser = useCallback((cleanText) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return false;
+
+    const run = () => {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(cleanText);
+      utteranceRef.current = u;
+      const lang = (i18n.language || 'en').split('-')[0];
+      u.lang = lang === 'hi' ? 'hi-IN' : 'en-IN';
+      u.rate = 0.96;
+      u.pitch = 1;
+      const voices = window.speechSynthesis.getVoices();
+      const pick =
+        voices.find(v => v.lang === u.lang) ||
+        voices.find(v => new RegExp(`^${lang}`, 'i').test(v.lang || '')) ||
+        voices.find(v => /en-IN/i.test(v.lang || '')) ||
+        voices.find(v => /^en/i.test(v.lang || ''));
+      if (pick) u.voice = pick;
+
+      u.onstart = () => setIsSpeaking(true);
+      u.onend = () => {
+        setIsSpeaking(false);
+        utteranceRef.current = null;
+      };
+      u.onerror = () => {
+        setIsSpeaking(false);
+        utteranceRef.current = null;
+      };
+      window.speechSynthesis.speak(u);
+    };
+
+    let started = false;
+    const startOnce = () => {
+      if (started) return;
+      started = true;
+      window.speechSynthesis.removeEventListener('voiceschanged', startOnce);
+      run();
+    };
+
+    if (window.speechSynthesis.getVoices().length > 0) {
+      startOnce();
+      return true;
+    }
+    window.speechSynthesis.addEventListener('voiceschanged', startOnce);
+    setTimeout(startOnce, 120);
+    return true;
+  }, [i18n.language]);
+
+  const handleReadAloud = async () => {
+    if (isSpeaking) {
+      stopAllSpeech();
       return;
     }
 
-    // Strip markdown and internal status tokens before sending to TTS
-    let cleanText = text;
-    [
-      /Analyzing query\.{1,3}/gi,
-      /Found in Semantic Cache/gi,
-      /Generating response/gi,
-      /^[a-z_]{2,}(?:\.{1,3}|[:\s!]|(?=[A-Z\s!]))/i,
-      /\b[a-z_]{2,}_[a-z_]{2,}\b/gi,
-      /(\*\*|__|#|\*|-|>|\[|\])/g,
-    ].forEach(p => { cleanText = cleanText.replace(p, ''); });
-    cleanText = cleanText.trim();
+    const cleanText = stripTextForSpeech(text);
     if (!cleanText) return;
+
+    if (speakWithBrowser(cleanText)) {
+      return;
+    }
 
     setIsTTSLoading(true);
     try {
@@ -452,12 +517,12 @@ const MessageActions = ({ text, isDark }) => {
     }
   };
 
-  // Stop audio on unmount
   useEffect(() => {
     return () => {
+      stopAllSpeech();
       if (audioRef.current) audioRef.current.pause();
     };
-  }, []);
+  }, [stopAllSpeech]);
 
   const handleCopy = async () => {
     try {
@@ -478,14 +543,14 @@ const MessageActions = ({ text, isDark }) => {
     <motion.div
       initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`flex items-center gap-0.5 mt-2 ml-0.5 px-1 py-1 rounded-lg w-fit border shadow-sm scale-90 origin-left ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'
-        }`}
+      className={`flex items-center gap-1 mt-2 ml-0 px-1.5 py-1.5 rounded-xl w-fit border shadow-md backdrop-blur-sm origin-left
+        ${isDark ? 'bg-white/[0.06] border-white/10' : 'bg-white border-slate-200/90'}`}
     >
       <motion.button
         whileTap={{ scale: 0.92 }}
         onClick={handleReadAloud}
         disabled={isTTSLoading}
-        className={`p-1 rounded-md transition-all duration-200 flex items-center gap-1 group ${isSpeaking
+        className={`p-2 sm:p-1.5 rounded-lg transition-all duration-200 flex items-center gap-1 group ${isSpeaking
           ? 'text-blue-500 bg-blue-500/15 ring-1 ring-blue-500/20'
           : isTTSLoading
           ? 'text-gray-400 cursor-wait'
@@ -494,50 +559,50 @@ const MessageActions = ({ text, isDark }) => {
         title={isSpeaking ? "Stop" : "Read Aloud"}
       >
         {isTTSLoading
-          ? <Loader2 size={12} className="animate-spin" />
+          ? <Loader2 size={14} className="animate-spin" />
           : isSpeaking
-          ? <VolumeX size={12} className="animate-pulse" />
-          : <Volume2 size={12} />
+          ? <VolumeX size={14} className="animate-pulse" />
+          : <Volume2 size={14} />
         }
       </motion.button>
 
-      <div className={`w-[1px] h-2.5 mx-0.5 ${isDark ? 'bg-white/10' : 'bg-gray-300'}`} />
+      <div className={`w-px h-4 mx-0.5 ${isDark ? 'bg-white/10' : 'bg-gray-300'}`} />
 
       <motion.button
         whileTap={{ scale: 0.92 }}
         onClick={handleCopy}
-        className={`p-1 rounded-md transition-all duration-200 flex items-center gap-1 ${isCopied
+        className={`p-2 sm:p-1.5 rounded-lg transition-all duration-200 flex items-center gap-1 ${isCopied
           ? 'text-emerald-500 bg-emerald-500/15 ring-1 ring-emerald-500/20'
           : isDark ? 'text-gray-400 hover:text-emerald-400 hover:bg-white/5' : 'text-gray-500 hover:text-emerald-600 hover:bg-white'
           }`}
         title="Copy"
       >
-        {isCopied ? <CheckCircle size={12} /> : <Copy size={12} />}
+        {isCopied ? <CheckCircle size={14} /> : <Copy size={14} />}
       </motion.button>
 
-      <div className={`w-[1px] h-2.5 mx-0.5 ${isDark ? 'bg-white/10' : 'bg-gray-300'}`} />
+      <div className={`w-px h-4 mx-0.5 ${isDark ? 'bg-white/10' : 'bg-gray-300'}`} />
 
       <div className="flex items-center">
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={() => setFeedback(feedback === 'like' ? null : 'like')}
-          className={`p-1 rounded-md transition-all duration-200 ${feedback === 'like'
+          className={`p-2 sm:p-1.5 rounded-lg transition-all duration-200 ${feedback === 'like'
             ? 'text-blue-500 bg-blue-500/15'
             : isDark ? 'text-gray-500 hover:text-blue-400 hover:bg-white/5' : 'text-gray-500 hover:text-blue-600 hover:bg-white'
             }`}
         >
-          <ThumbsUp size={12} fill={feedback === 'like' ? 'currentColor' : 'none'} strokeWidth={feedback === 'like' ? 2 : 1.5} />
+          <ThumbsUp size={14} fill={feedback === 'like' ? 'currentColor' : 'none'} strokeWidth={feedback === 'like' ? 2 : 1.5} />
         </motion.button>
 
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={() => setFeedback(feedback === 'dislike' ? null : 'dislike')}
-          className={`p-1 rounded-md transition-all duration-200 ${feedback === 'dislike'
+          className={`p-2 sm:p-1.5 rounded-lg transition-all duration-200 ${feedback === 'dislike'
             ? 'text-red-500 bg-red-500/15'
             : isDark ? 'text-gray-500 hover:text-red-400 hover:bg-white/5' : 'text-gray-500 hover:text-red-600 hover:bg-white'
             }`}
         >
-          <ThumbsDown size={12} fill={feedback === 'dislike' ? 'currentColor' : 'none'} strokeWidth={feedback === 'dislike' ? 2 : 1.5} />
+          <ThumbsDown size={14} fill={feedback === 'dislike' ? 'currentColor' : 'none'} strokeWidth={feedback === 'dislike' ? 2 : 1.5} />
         </motion.button>
       </div>
     </motion.div>
@@ -685,6 +750,7 @@ const FileViewerModal = ({ file, isDark, onClose }) => {
 };
 
 const MessageBubble = ({ message, thought, files, isDark, isUser, isStreaming = false, chatState, modelId = 'legal_counsel' }) => {
+  const { t } = useTranslation();
   const [showLog, setShowLog] = useState(false);
   const [fileToView, setFileToView] = useState(null);
   const agentName = modalOptions.find(opt => opt.id === modelId)?.label || 'LAWYER TIA';
@@ -692,33 +758,43 @@ const MessageBubble = ({ message, thought, files, isDark, isUser, isStreaming = 
   return (
     <>
       <motion.div
-        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+        initial={{ opacity: 0, y: 16, scale: 0.99 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{
           type: 'spring',
-          stiffness: 260,
-          damping: 20,
-          opacity: { duration: 0.4 }
+          stiffness: 280,
+          damping: 24,
+          opacity: { duration: 0.35 }
         }}
-        className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-8 group`}
+        className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-6 sm:mb-8 group`}
       >
-        <div className={`flex items-start gap-2.5 sm:gap-4 max-w-[98%] sm:max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-          {!isUser && <TiaAvatar isStreaming={isStreaming} />}
+        <div
+          className={
+            isUser
+              ? 'flex items-start gap-2.5 sm:gap-3 min-w-0 max-w-[min(100%,22rem)] sm:max-w-md flex-row-reverse'
+              : 'flex items-start gap-2 sm:gap-3 w-full min-w-0 flex-row'
+          }
+        >
+          {!isUser && (
+            <div className="flex-shrink-0 pt-1">
+              <TiaAvatar isStreaming={isStreaming} />
+            </div>
+          )}
 
-          <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} flex-1 min-w-0`}>
+          <div className={`flex flex-col ${isUser ? 'items-end' : 'items-stretch'} flex-1 min-w-0`}>
             {/* Name and State HUD for AI */}
             {!isUser && (
-              <div className="flex items-center gap-2 mb-1.5 ml-1">
-                <span className={`text-[11px] font-black tracking-widest opacity-80 uppercase ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              <div className="flex flex-wrap items-center gap-2 mb-2 w-full pl-0.5 sm:pl-1">
+                <span className={`text-[11px] font-black tracking-widest opacity-90 uppercase ${isDark ? 'text-white' : 'text-slate-900'}`}>
                   {agentName}
                 </span>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   {(thought || isStreaming) && (
                     <motion.button
                       whileTap={{ scale: 0.9 }}
                       onClick={() => setShowLog(!showLog)}
-                      className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[9px] font-bold uppercase transition-all
+                      className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-bold uppercase transition-all
                         ${showLog
                           ? (isDark ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-50 text-blue-600 border border-blue-200 shadow-sm')
                           : 'text-gray-500 hover:text-blue-500 hover:bg-blue-500/5'}`}
@@ -731,13 +807,21 @@ const MessageBubble = ({ message, thought, files, isDark, isUser, isStreaming = 
 
                   {isStreaming && (
                     <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
+                      initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[8.5px] font-black uppercase tracking-tighter
-                      ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}
+                      className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[8.5px] font-black uppercase tracking-tight border
+                      ${isDark ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border-emerald-200/80'}`}
                     >
-                      <div className="w-1 h-1 rounded-full bg-emerald-500 animate-ping" />
-                      <span>{chatState || 'Thinking'}</span>
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                      </span>
+                      <span>{message?.length ? t('chat.assistantDrafting') : t('chat.assistantLive')}</span>
+                      {chatState ? (
+                        <span className={`font-semibold normal-case opacity-80 ${isDark ? 'text-emerald-300/90' : 'text-emerald-800/80'}`}>
+                          · {chatState}
+                        </span>
+                      ) : null}
                     </motion.div>
                   )}
                 </div>
@@ -751,13 +835,18 @@ const MessageBubble = ({ message, thought, files, isDark, isUser, isStreaming = 
               )}
             </AnimatePresence>
 
-            <div
-              className={`relative transition-all duration-300 ${isUser
-                ? `px-3.5 py-2 rounded-[20px] shadow-sm ${isDark
-                  ? 'bg-gradient-to-br from-[#1E1E1E] to-[#141414] border border-white/10 text-white shadow-xl shadow-black/20'
-                  : 'bg-white border border-slate-200 text-slate-700 shadow-lg shadow-slate-200/5'
+            <motion.div
+              layout
+              className={`relative transition-shadow duration-300 ${isUser
+                ? `px-3.5 py-2.5 rounded-[22px] shadow-md ${isDark
+                  ? 'bg-gradient-to-br from-[#1E1E1E] to-[#141414] border border-white/10 text-white shadow-black/25'
+                  : 'bg-white border border-slate-200 text-slate-700 shadow-slate-200/40'
                 } font-medium text-[14px] leading-relaxed w-full max-w-sm`
-                : `w-full ${isDark ? 'text-gray-200' : 'text-slate-800'}`
+                : `w-full min-w-0 pl-3 pr-3 sm:pl-4 sm:pr-5 py-3.5 sm:py-4 rounded-[22px] rounded-tl-md border backdrop-blur-md shadow-lg
+                  ${isDark
+                  ? 'bg-gradient-to-br from-[#131316]/98 to-[#0a0a0c] border-white/[0.07] text-gray-200 shadow-black/40 ring-1 ring-white/[0.04]'
+                  : 'bg-gradient-to-br from-white via-slate-50/90 to-white border-slate-200/95 text-slate-800 shadow-slate-300/25 ring-1 ring-slate-200/40'
+                }`
                 }`}
             >
               {/* File Attachments Grid - Responsive layout for multiple files */}
@@ -811,15 +900,20 @@ const MessageBubble = ({ message, thought, files, isDark, isUser, isStreaming = 
                 message ? (
                   <StreamingText text={message} isDark={isDark} />
                 ) : (
-                  <div className="flex gap-1.5 px-3 py-2 bg-white/5 rounded-xl w-fit">
-                    {[1, 2, 3].map(i => (
-                      <motion.div
-                        key={i}
-                        animate={{ scale: [1, 1.4, 1], opacity: [0.3, 1, 0.3] }}
-                        transition={{ repeat: Infinity, duration: 1, delay: i * 0.2 }}
-                        className="w-1.5 h-1.5 rounded-full bg-blue-500"
-                      />
-                    ))}
+                  <div className={`flex items-center gap-3 w-full min-h-[2.75rem] rounded-xl px-1 ${isDark ? 'bg-white/[0.03]' : 'bg-slate-100/60'}`}>
+                    <div className="flex gap-1.5">
+                      {[1, 2, 3].map(i => (
+                        <motion.div
+                          key={i}
+                          animate={{ scale: [1, 1.35, 1], opacity: [0.35, 1, 0.35] }}
+                          transition={{ repeat: Infinity, duration: 1.1, delay: i * 0.18 }}
+                          className={`w-2 h-2 rounded-full ${isDark ? 'bg-cyan-400' : 'bg-blue-500'}`}
+                        />
+                      ))}
+                    </div>
+                    <span className={`text-[12px] font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {t('chat.assistantLive')}
+                    </span>
                   </div>
                 )
               ) : isUser ? (
@@ -829,14 +923,14 @@ const MessageBubble = ({ message, thought, files, isDark, isUser, isStreaming = 
                   <FormattedResponse text={message} isDark={isDark} />
                 </div>
               )}
-            </div>
+            </motion.div>
 
             {!isUser && !isStreaming && message && (
               <motion.div
-                initial={{ opacity: 0, y: 5 }}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="mt-1"
+                transition={{ delay: 0.08, type: 'spring', stiffness: 400, damping: 28 }}
+                className="mt-2 pl-0.5 w-full max-w-full"
               >
                 <MessageActions text={message} isDark={isDark} />
               </motion.div>
@@ -1857,18 +1951,18 @@ const Hero = () => {
           <div
             id="chat-scroll-container"
             ref={chatContainerRef}
-            className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 scroll-smooth scrollbar-hide"
+            className={`flex-1 overflow-y-auto py-3 scroll-smooth scrollbar-hide ${messages.length > 0 ? 'px-2 sm:px-4' : 'px-3 sm:px-4'}`}
             style={{
               WebkitOverflowScrolling: 'touch',
               touchAction: 'pan-y'
             }}
           >
-            <div className={`max-w-3xl mx-auto w-full pb-32 pt-20 sm:pt-24`}>
+            <div className={`mx-auto w-full pb-32 pt-20 sm:pt-24 ${messages.length > 0 ? 'max-w-[min(100%,42rem)]' : 'max-w-3xl'}`}>
               {messages.length === 0 ? (
-                <div className="absolute inset-0 flex items-center justify-center p-4 pointer-events-none mt-20">
+                <div className="absolute inset-0 flex items-center justify-center p-4 pointer-events-none mt-16 sm:mt-20">
                   <motion.div
                     layout
-                    className="text-center max-w-md pointer-events-auto"
+                    className="text-center max-w-lg pointer-events-auto px-2"
                     initial={{ opacity: 1 }}
                     animate={{ opacity: 1 }}
                   >
@@ -1876,7 +1970,7 @@ const Hero = () => {
                       initial={{ scale: 0, rotate: -180 }}
                       animate={{ scale: 1, rotate: 0 }}
                       transition={{ duration: 0.6, type: 'spring', stiffness: 100 }}
-                      className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 p-1 shadow-xl"
+                      className="w-20 h-20 mx-auto mb-5 rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 p-1 shadow-xl"
                     >
                       <motion.div
                         animate={{ rotate: 360 }}
@@ -1900,10 +1994,37 @@ const Hero = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.4, duration: 0.5 }}
-                      className={`text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
+                      className={`text-sm font-medium mb-4 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
                     >
                       {t('chat.tagline')}
                     </motion.p>
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5, duration: 0.45 }}
+                      className="flex flex-wrap items-center justify-center gap-2 pointer-events-none"
+                    >
+                      {[
+                        { icon: MessageSquare, label: t('hero.featureDetailedQuery') },
+                        { icon: LucideFile, label: t('hero.featureFilesDocs') },
+                        { icon: ImageIcon, label: t('hero.featureImages') },
+                        { icon: Cpu, label: t('hero.featurePipeline') },
+                        { icon: Mic, label: t('hero.featureVoice') },
+                      ].map(({ icon: Icon, label }, i) => (
+                        <motion.span
+                          key={label}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.55 + i * 0.05 }}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-bold border backdrop-blur-md
+                            ${isDark ? 'bg-white/[0.06] border-white/10 text-slate-200' : 'bg-white/90 border-slate-200 text-slate-700 shadow-sm'}`}
+                        >
+                          <Icon size={12} className={isDark ? 'text-cyan-400' : 'text-blue-600'} strokeWidth={2.2} />
+                          {label}
+                        </motion.span>
+                      ))}
+                    </motion.div>
                   </motion.div>
                 </div>
               ) : (
@@ -2108,14 +2229,22 @@ const Hero = () => {
                       {uploadedFiles.map((file, idx) => (
                         <motion.div
                           key={`uploaded-${idx}`}
-                          initial={{ scale: 0.8, opacity: 0 }}
+                          initial={{ scale: 0.85, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] font-bold shadow-sm backdrop-blur-md flex-shrink-0
+                          transition={{ type: 'spring', stiffness: 420, damping: 24 }}
+                          className={`relative overflow-hidden flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] font-bold shadow-md backdrop-blur-md flex-shrink-0
                             ${isDark ? 'bg-white/10 border-white/20 text-white' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
                         >
-                          <FileIcon type={file.type} className="w-3.5 h-3.5" />
-                          <span className="max-w-[100px] truncate">{file.name}</span>
-                          <button onClick={() => removeUploadedFile(idx, false)} className="ml-1 p-0.5 rounded-full hover:bg-red-500/10 hover:text-red-500 transition-colors">
+                          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 overflow-hidden">
+                            <motion.div
+                              className="h-full w-[50%] bg-gradient-to-r from-transparent via-blue-400/90 to-transparent"
+                              animate={{ x: ['-100%', '220%'] }}
+                              transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                            />
+                          </div>
+                          <FileIcon type={file.type} className="w-3.5 h-3.5 relative z-[1]" />
+                          <span className="max-w-[100px] truncate relative z-[1]">{file.name}</span>
+                          <button type="button" onClick={() => removeUploadedFile(idx, false)} className="ml-1 p-0.5 rounded-full hover:bg-red-500/10 hover:text-red-500 transition-colors relative z-[1]">
                             <X size={12} />
                           </button>
                         </motion.div>
@@ -2123,14 +2252,22 @@ const Hero = () => {
                       {pendingFiles.map((file, idx) => (
                         <motion.div
                           key={`pending-${idx}`}
-                          initial={{ scale: 0.8, opacity: 0 }}
+                          initial={{ scale: 0.85, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] font-bold shadow-sm backdrop-blur-md animate-pulse flex-shrink-0
-                            ${isDark ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-600'}`}
+                          transition={{ type: 'spring', stiffness: 420, damping: 24 }}
+                          className={`relative overflow-hidden flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] font-bold shadow-md backdrop-blur-md flex-shrink-0
+                            ${isDark ? 'bg-emerald-500/8 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-600'}`}
                         >
-                          <FileIcon type={file.type} className="w-3.5 h-3.5" />
-                          <span className="max-w-[100px] truncate">{file.name}</span>
-                          <button onClick={() => removeUploadedFile(idx, true)} className="ml-1 p-0.5 rounded-full hover:bg-red-500/10 hover:text-red-500 transition-colors">
+                          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 overflow-hidden">
+                            <motion.div
+                              className="h-full w-[50%] bg-gradient-to-r from-transparent via-emerald-400 to-transparent"
+                              animate={{ x: ['-100%', '220%'] }}
+                              transition={{ duration: 1.25, repeat: Infinity, ease: 'linear' }}
+                            />
+                          </div>
+                          <FileIcon type={file.type} className="w-3.5 h-3.5 relative z-[1]" />
+                          <span className="max-w-[100px] truncate relative z-[1]">{file.name}</span>
+                          <button type="button" onClick={() => removeUploadedFile(idx, true)} className="ml-1 p-0.5 rounded-full hover:bg-red-500/10 hover:text-red-500 transition-colors relative z-[1]">
                             <X size={12} />
                           </button>
                         </motion.div>
