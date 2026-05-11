@@ -1,19 +1,30 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mic, MicOff, Phone, PhoneOff, Upload, Settings, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import {
+  fetchChatbotTtsBlobUrl,
+  stripTextForTts,
+  speakWithBrowserTts,
+  CHATBOT_TTS_VOICE,
+} from '../utils/chatbotTts';
 
-// Import API services for voice functionality (with fallback)
-// Note: Currently using local voice processing, API integration planned for future
-// let apiServices = null;
-// try {
-//   const api = require('../api/apiService');
-//   apiServices = api.apiServices;
-// } catch (error) {
-//   // Silently fallback to local voice processing - no console warning needed
-//   apiServices = null;
-// }
-
-const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceResult, onAudioReady }) => {
+/**
+ * @param {boolean} liveConversation — ChatGPT-style: stay open, send each turn to parent, speak AI reply with TTS
+ * @param {function} onConversationTurn — async (base64, mimeType) => { success, replyText, error? }
+ */
+const VoiceModal = ({
+  isOpen,
+  onClose,
+  isVoiceActive,
+  setIsVoiceActive,
+  onVoiceResult,
+  onAudioReady,
+  liveConversation = false,
+  onConversationTurn,
+  autoListenAfterReply = true,
+}) => {
+  const { i18n, t } = useTranslation();
   // State management
   const [voiceState, setVoiceState] = useState('idle'); // 'idle', 'listening', 'processing', 'speaking'
   // const [audioLevel, setAudioLevel] = useState(0); // Reserved for future audio level visualization
@@ -35,6 +46,13 @@ const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceR
   const audioChunksRef = useRef([]);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
+  const ttsAudioRef = useRef(null);
+  const processVoiceInputRef = useRef(async () => {});
+  const startVoiceRecordingRef = useRef(async () => {});
+  const isOpenRef = useRef(isOpen);
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
 
   // Premium GIF Image URL - Using local background-removed version
   const premiumGifUrl = '/voice-modal.gif';
@@ -177,80 +195,168 @@ const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceR
     }
   }, [voiceState, realTimeAudioLevel]);
 
-  // Convert audio blob to base64 and hand off to parent for sending
-  const processVoiceInput = useCallback(async (audioBlob) => {
-    try {
-      setVoiceState('processing');
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        // reader.result is a data URL: "data:<mime>;base64,<data>"
-        const base64 = reader.result.split(',')[1];
-        const mimeType = audioBlob.type || 'audio/webm';
-        if (onAudioReady) {
-          onAudioReady(base64, mimeType);
-        } else if (onVoiceResult) {
-          // Fallback: pass a placeholder so the parent knows audio was sent
-          onVoiceResult('');
+  const playAssistantReply = useCallback(
+    async (markdownReply) => {
+      if (!stripTextForTts(markdownReply)) {
+        setVoiceState('idle');
+        return;
+      }
+      const lang = i18n.language?.startsWith('hi') ? 'hi-IN' : 'en-IN';
+      let blobUrl = null;
+      try {
+        blobUrl = await fetchChatbotTtsBlobUrl(markdownReply, {
+          voice: CHATBOT_TTS_VOICE,
+        });
+        setVoiceState('speaking');
+        const audio = new Audio(blobUrl);
+        ttsAudioRef.current = audio;
+        await new Promise((resolve, reject) => {
+          audio.onended = () => resolve();
+          audio.onerror = () => reject(new Error('tts_playback'));
+          audio.play().catch(reject);
+        });
+      } catch (e) {
+        console.warn('Voice modal: chatbot TTS failed, using browser speech', e);
+        setVoiceState('speaking');
+        await new Promise((resolve) => {
+          let settled = false;
+          const done = () => {
+            if (settled) return;
+            settled = true;
+            resolve();
+          };
+          speakWithBrowserTts(markdownReply, lang, { onEnd: done, onStart: () => {} });
+          const ms = Math.min(120000, Math.max(8000, stripTextForTts(markdownReply).length * 80));
+          setTimeout(done, ms);
+        });
+      } finally {
+        if (blobUrl) URL.revokeObjectURL(blobUrl);
+        if (ttsAudioRef.current) {
+          ttsAudioRef.current = null;
         }
         setVoiceState('idle');
-        setIsVoiceActive(false);
-        onClose();
-      };
-      reader.onerror = () => {
-        console.error('FileReader failed to read audio blob');
+      }
+    },
+    [i18n.language]
+  );
+
+  const processVoiceInput = useCallback(
+    async (audioBlob) => {
+      try {
+        setVoiceState('processing');
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const base64 = reader.result.split(',')[1];
+          const mimeType = audioBlob.type || 'audio/webm';
+
+          if (liveConversation && typeof onConversationTurn === 'function') {
+            try {
+              const { success, replyText } = await onConversationTurn(base64, mimeType);
+              if (!success || !replyText) {
+                setVoiceState('idle');
+                setIsVoiceActive(false);
+                return;
+              }
+              await playAssistantReply(replyText);
+              if (autoListenAfterReply && isOpenRef.current) {
+                setTimeout(() => {
+                  if (!isOpenRef.current) return;
+                  setIsVoiceActive(true);
+                  startVoiceRecordingRef.current();
+                }, 400);
+              } else {
+                setIsVoiceActive(false);
+              }
+            } catch (err) {
+              console.error('Conversation turn failed', err);
+              setVoiceState('idle');
+              setIsVoiceActive(false);
+            }
+            return;
+          }
+
+          if (onAudioReady) {
+            onAudioReady(base64, mimeType);
+          } else if (onVoiceResult) {
+            onVoiceResult('');
+          }
+          setVoiceState('idle');
+          setIsVoiceActive(false);
+          onClose();
+        };
+        reader.onerror = () => {
+          console.error('FileReader failed to read audio blob');
+          setVoiceState('idle');
+          setIsVoiceActive(false);
+        };
+        reader.readAsDataURL(audioBlob);
+      } catch (error) {
+        console.error('Error processing voice input:', error);
         setVoiceState('idle');
         setIsVoiceActive(false);
-      };
-      reader.readAsDataURL(audioBlob);
-    } catch (error) {
-      console.error('Error processing voice input:', error);
-      setVoiceState('idle');
-      setIsVoiceActive(false);
-    }
-  }, [onAudioReady, onVoiceResult, setIsVoiceActive, onClose]);
+      }
+    },
+    [
+      onAudioReady,
+      onVoiceResult,
+      setIsVoiceActive,
+      onClose,
+      liveConversation,
+      onConversationTurn,
+      playAssistantReply,
+      autoListenAfterReply,
+    ]
+  );
 
-  // Start voice recording with audio analysis
+  useEffect(() => {
+    processVoiceInputRef.current = processVoiceInput;
+  }, [processVoiceInput]);
+
   const startVoiceRecording = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
-        : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4'
-        : '';
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : MediaRecorder.isTypeSupported('audio/mp4')
+          ? 'audio/mp4'
+          : '';
       mediaRecorderRef.current = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       audioChunksRef.current = [];
-      
-      // Setup real-time audio analysis for voice synchronization
+
       await setupAudioAnalysis(stream);
-      
+
       mediaRecorderRef.current.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
-      
+
       mediaRecorderRef.current.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorderRef.current.mimeType || 'audio/webm' });
-        // Process the audio if needed
-        processVoiceInput(audioBlob);
-        
-        // Cleanup audio context
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: mediaRecorderRef.current.mimeType || 'audio/webm',
+        });
+        processVoiceInputRef.current(audioBlob);
+
         if (audioContextRef.current) {
           audioContextRef.current.close();
+          audioContextRef.current = null;
         }
-        
-        // Cleanup stream
-        stream.getTracks().forEach(track => track.stop());
+
+        stream.getTracks().forEach((track) => track.stop());
       };
-      
+
       mediaRecorderRef.current.start();
       setVoiceState('listening');
-      
     } catch (error) {
       console.error('Error starting voice recording:', error);
       setVoiceState('idle');
       setIsVoiceActive(false);
     }
-  }, [setupAudioAnalysis, processVoiceInput, setIsVoiceActive]);
+  }, [setupAudioAnalysis, setIsVoiceActive]);
+
+  useEffect(() => {
+    startVoiceRecordingRef.current = startVoiceRecording;
+  }, [startVoiceRecording]);
 
   // Stop voice recording
   const stopVoiceRecording = useCallback(() => {
@@ -275,17 +381,22 @@ const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceR
 
   // Handle close with proper cleanup
   const handleClose = useCallback(() => {
-    // Stop any ongoing voice recording
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
     }
-    
-    // Reset all states
+    if (ttsAudioRef.current) {
+      try {
+        ttsAudioRef.current.pause();
+      } catch (_) {}
+      ttsAudioRef.current = null;
+    }
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+
     setIsVoiceActive(false);
     setVoiceState('idle');
-    // setTranscript(''); // Reserved for future transcript display
-    
-    // Call parent close handler
+
     onClose();
   }, [onClose, setIsVoiceActive]);
 
@@ -627,6 +738,27 @@ const VoiceModal = ({ isOpen, onClose, isVoiceActive, setIsVoiceActive, onVoiceR
               )}
             </motion.div>
 
+            <div className="absolute bottom-[5.5rem] sm:bottom-[6.5rem] left-1/2 -translate-x-1/2 w-[min(92vw,22rem)] text-center pointer-events-none z-[5] px-2">
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={`${voiceState}-${liveConversation ? 'live' : 'std'}`}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.25 }}
+                  className={`text-sm sm:text-[15px] font-semibold tracking-tight ${
+                    typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
+                      ? 'text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.75)]'
+                      : 'text-slate-800 drop-shadow-sm'
+                  }`}
+                >
+                  {voiceState === 'listening' && t('chat.voiceListening')}
+                  {voiceState === 'processing' && t('chat.voiceProcessing')}
+                  {voiceState === 'speaking' && t('chat.voiceSpeaking')}
+                  {voiceState === 'idle' && liveConversation && t('chat.voiceLiveHint')}
+                </motion.p>
+              </AnimatePresence>
+            </div>
 
 
 

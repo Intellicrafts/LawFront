@@ -295,7 +295,7 @@ const LandingPage = () => {
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.45, delay: 0.05 }}
-                        className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-[11px] md:text-xs font-semibold tracking-wide mb-5 md:mb-6 shadow-sm backdrop-blur-md
+                        className={`inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-1.5 rounded-full border text-[10px] sm:text-[11px] md:text-xs font-semibold tracking-wide mb-5 md:mb-6 shadow-sm backdrop-blur-md max-w-[min(100%,22rem)] mx-auto text-center leading-snug
                             ${isDark ? 'bg-white/5 border-white/10 text-gray-200' : 'bg-white/80 border-gray-200/90 text-gray-700'}`}
                     >
                         <Sparkles className="w-3.5 h-3.5 text-[#00E5FF]" strokeWidth={2.5} />
@@ -306,7 +306,7 @@ const LandingPage = () => {
                         initial={{ opacity: 0, y: 24 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.55, delay: 0.1 }}
-                        className={`text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.12] tracking-tight mb-3 md:mb-5
+                        className={`w-full max-w-4xl mx-auto px-2 sm:px-3 text-balance break-words hyphens-auto text-[clamp(1.65rem,4.2vw,3.65rem)] sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.15] tracking-tight mb-3 md:mb-5
               ${isDark ? 'text-white' : 'text-gray-900'}`}
                     >
                         {t('hero.headline1')}<br />
@@ -328,7 +328,7 @@ const LandingPage = () => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.45, delay: 0.22 }}
-                        className="flex flex-wrap items-center justify-center gap-2 mb-8 md:mb-10 px-1"
+                        className="flex flex-wrap items-center justify-center gap-2 mb-8 md:mb-10 px-2 w-full max-w-full"
                     >
                         {[
                             { icon: MessageSquare, label: t('hero.featureDetailedQuery') },

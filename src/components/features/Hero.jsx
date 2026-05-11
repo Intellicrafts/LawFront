@@ -18,6 +18,12 @@ import { chatbotService, CHAT_STATES, AI_MODELS } from '../../services/chatbotAp
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { chatbotAPI } from '../../api/apiService';
 import { fetchChatSessions } from '../../redux/chatSlice';
+import {
+  fetchChatbotTtsBlobUrl,
+  stripTextForTts,
+  speakWithBrowserTts,
+  CHATBOT_TTS_VOICE,
+} from '../../utils/chatbotTts';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useTranslation } from 'react-i18next';
@@ -391,21 +397,8 @@ const FormattedResponse = ({ text, isDark, isStreaming = false, cursorAtEnd = fa
   );
 };
 
-const stripTextForSpeech = (raw) => {
-  let cleanText = raw;
-  [
-    /Analyzing query\.{1,3}/gi,
-    /Found in Semantic Cache/gi,
-    /Generating response/gi,
-    /^[a-z_]{2,}(?:\.{1,3}|[:\s!]|(?=[A-Z\s!]))/i,
-    /\b[a-z_]{2,}_[a-z_]{2,}\b/gi,
-    /(\*\*|__|#|\*|-|>|\[|\])/g,
-  ].forEach(p => { cleanText = cleanText.replace(p, ''); });
-  return cleanText.trim();
-};
-
 /**
- * Message actions: Read aloud uses Web Speech API first for sub-second start; falls back to /tts API.
+ * Read aloud: chatbot /tts (natural voice, Indian language hint) → browser speech fallback.
  */
 const MessageActions = ({ text, isDark }) => {
   const { i18n } = useTranslation();
@@ -414,7 +407,6 @@ const MessageActions = ({ text, isDark }) => {
   const [isCopied, setIsCopied] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const audioRef = useRef(null);
-  const utteranceRef = useRef(null);
 
   const stopAllSpeech = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -424,57 +416,8 @@ const MessageActions = ({ text, isDark }) => {
       audioRef.current.pause();
       audioRef.current = null;
     }
-    utteranceRef.current = null;
     setIsSpeaking(false);
   }, []);
-
-  const speakWithBrowser = useCallback((cleanText) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return false;
-
-    const run = () => {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(cleanText);
-      utteranceRef.current = u;
-      const lang = (i18n.language || 'en').split('-')[0];
-      u.lang = lang === 'hi' ? 'hi-IN' : 'en-IN';
-      u.rate = 0.96;
-      u.pitch = 1;
-      const voices = window.speechSynthesis.getVoices();
-      const pick =
-        voices.find(v => v.lang === u.lang) ||
-        voices.find(v => new RegExp(`^${lang}`, 'i').test(v.lang || '')) ||
-        voices.find(v => /en-IN/i.test(v.lang || '')) ||
-        voices.find(v => /^en/i.test(v.lang || ''));
-      if (pick) u.voice = pick;
-
-      u.onstart = () => setIsSpeaking(true);
-      u.onend = () => {
-        setIsSpeaking(false);
-        utteranceRef.current = null;
-      };
-      u.onerror = () => {
-        setIsSpeaking(false);
-        utteranceRef.current = null;
-      };
-      window.speechSynthesis.speak(u);
-    };
-
-    let started = false;
-    const startOnce = () => {
-      if (started) return;
-      started = true;
-      window.speechSynthesis.removeEventListener('voiceschanged', startOnce);
-      run();
-    };
-
-    if (window.speechSynthesis.getVoices().length > 0) {
-      startOnce();
-      return true;
-    }
-    window.speechSynthesis.addEventListener('voiceschanged', startOnce);
-    setTimeout(startOnce, 120);
-    return true;
-  }, [i18n.language]);
 
   const handleReadAloud = async () => {
     if (isSpeaking) {
@@ -482,36 +425,34 @@ const MessageActions = ({ text, isDark }) => {
       return;
     }
 
-    const cleanText = stripTextForSpeech(text);
-    if (!cleanText) return;
+    if (!stripTextForTts(text)) return;
 
-    if (speakWithBrowser(cleanText)) {
-      return;
-    }
-
+    const lang = i18n.language?.startsWith('hi') ? 'hi-IN' : 'en-IN';
     setIsTTSLoading(true);
+    let blobUrl = null;
     try {
-      const baseUrl = (process.env.REACT_APP_CHATBOT_API_URL || '').replace(/\/$/, '');
-      const response = await fetch(`${baseUrl}/tts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: cleanText, voice: 'nova' }),
-      });
-      if (!response.ok) throw new Error(`TTS ${response.status}`);
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
+      blobUrl = await fetchChatbotTtsBlobUrl(text, { voice: CHATBOT_TTS_VOICE });
+      const audio = new Audio(blobUrl);
       audioRef.current = audio;
-
       audio.onplay = () => setIsSpeaking(true);
-      audio.onended = () => { setIsSpeaking(false); URL.revokeObjectURL(url); audioRef.current = null; };
-      audio.onerror = () => { setIsSpeaking(false); URL.revokeObjectURL(url); audioRef.current = null; };
-
+      audio.onended = () => {
+        setIsSpeaking(false);
+        if (blobUrl) URL.revokeObjectURL(blobUrl);
+        audioRef.current = null;
+      };
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        if (blobUrl) URL.revokeObjectURL(blobUrl);
+        audioRef.current = null;
+      };
       await audio.play();
     } catch (err) {
-      console.error('TTS failed:', err);
-      setIsSpeaking(false);
+      console.warn('Chatbot TTS failed, browser fallback', err);
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+      speakWithBrowserTts(text, lang, {
+        onStart: () => setIsSpeaking(true),
+        onEnd: () => setIsSpeaking(false),
+      });
     } finally {
       setIsTTSLoading(false);
     }
@@ -1749,8 +1690,32 @@ const Hero = () => {
     }
   };
 
-  const handleAudioReady = async (base64Audio, mimeType) => {
-    setShowVoiceModal(false);
+  /**
+   * Voice conversation turn (ChatGPT-style): same pipeline as legacy audio send, returns text for in-modal TTS.
+   */
+  const runVoiceConversationTurn = async (base64Audio, mimeType) => {
+    if (selectedModal !== 'legal_counsel') {
+      const warn = t('chat.agentWarning', { agent: modalOptions.find((o) => o.id === selectedModal)?.label });
+      const uid = `user-voice-${Date.now()}`;
+      setMessages((prev) => [
+        ...prev,
+        { id: uid, role: 'user', content: '🎤 Voice message', modelId: selectedModal },
+        { id: `bot-warn-${Date.now()}`, role: 'assistant', content: warn, modelId: selectedModal },
+      ]);
+      setChatState(CHAT_STATES.IDLE);
+      return { success: true, replyText: warn };
+    }
+
+    if (!isAuthenticated) {
+      const count = guestLimit.getCount();
+      if (count >= GUEST_LIMIT) {
+        setShowGuestLimitModal(true);
+        return { success: false, replyText: '' };
+      }
+      const newCount = guestLimit.increment();
+      setGuestQueriesRemaining(Math.max(0, GUEST_LIMIT - newCount));
+    }
+
     setIsLoading(true);
     setChatState(CHAT_STATES.CONNECTING);
 
@@ -1774,21 +1739,27 @@ const Hero = () => {
         }
       }
 
-      // Show a placeholder user message for the voice input
-      setMessages(prev => [...prev, {
-        id: 'user-audio-' + Date.now(),
-        role: 'user',
-        content: '🎤 Voice message',
-      }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `user-audio-${Date.now()}`,
+          role: 'user',
+          content: '🎤 Voice message',
+          modelId: selectedModal,
+        },
+      ]);
 
-      const botMessageId = 'bot-' + Date.now().toString();
-      setMessages(prev => [...prev, {
-        id: botMessageId,
-        role: 'assistant',
-        content: '',
-        isRealTime: true,
-        modelId: selectedModal,
-      }]);
+      const botMessageId = `bot-${Date.now()}`;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: botMessageId,
+          role: 'assistant',
+          content: '',
+          isRealTime: true,
+          modelId: selectedModal,
+        },
+      ]);
 
       const result = await chatbotService.sendAudioMessage(
         base64Audio,
@@ -1797,21 +1768,24 @@ const Hero = () => {
         handleStateChange,
         activeSessionId,
         (chunk) => {
-          setMessages(prev => prev.map(msg => {
-            if (msg.id !== botMessageId) return msg;
-            if (chunk.type === 'thought') {
-              return { ...msg, thought: (msg.thought || '') + chunk.content };
-            }
-            let newContent = msg.content + chunk.content;
-            const techPatterns = /^(Analyzing query\.{0,3}|greeting|cache_hit|routing|thinking)\s*/i;
-            if (newContent.length < 50 && techPatterns.test(newContent)) {
-              return { ...msg, thought: (msg.thought || '') + chunk.content };
-            }
-            return { ...msg, content: newContent };
-          }));
+          setMessages((prev) =>
+            prev.map((msg) => {
+              if (msg.id !== botMessageId) return msg;
+              if (chunk.type === 'thought') {
+                return { ...msg, thought: (msg.thought || '') + chunk.content };
+              }
+              let newContent = msg.content + chunk.content;
+              const techPatterns = /^(Analyzing query\.{0,3}|greeting|cache_hit|routing|thinking)\s*/i;
+              if (newContent.length < 50 && techPatterns.test(newContent)) {
+                return { ...msg, thought: (msg.thought || '') + chunk.content };
+              }
+              return { ...msg, content: newContent };
+            })
+          );
           const container = document.getElementById('chat-scroll-container');
           if (container) {
-            const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+            const isAtBottom =
+              container.scrollHeight - container.scrollTop - container.clientHeight < 150;
             if (isAtBottom) container.scrollTo({ top: container.scrollHeight, behavior: 'auto' });
           }
         }
@@ -1820,25 +1794,34 @@ const Hero = () => {
       if (result.sessionId && result.sessionId !== sessionId) setSessionId(result.sessionId);
 
       if (!result.success) {
-        setMessages(prev => prev.map(msg =>
-          msg.id === botMessageId
-            ? { ...msg, content: `__System Alert:__ ${result.response}`, isRealTime: false }
-            : msg
-        ));
-      } else {
-        setMessages(prev => prev.map(msg =>
-          msg.id === botMessageId ? { ...msg, isRealTime: false } : msg
-        ));
-        if (activeSessionId) {
-          chatbotAPI.addEvent(activeSessionId, {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === botMessageId
+              ? { ...msg, content: `__System Alert:__ ${result.response}`, isRealTime: false }
+              : msg
+          )
+        );
+        return { success: true, replyText: result.response || t('chat.error') };
+      }
+
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === botMessageId ? { ...msg, isRealTime: false } : msg))
+      );
+
+      if (activeSessionId) {
+        chatbotAPI
+          .addEvent(activeSessionId, {
             sender: 'bot',
             message: result.response,
             event_type: 'message',
-          }).catch(e => console.error('Failed to save bot audio response', e));
-        }
+          })
+          .catch((e) => console.error('Failed to save bot audio response', e));
       }
+
+      return { success: true, replyText: result.response || '' };
     } catch (error) {
       handleStateChange(CHAT_STATES.ERROR, t('chat.error'));
+      return { success: false, replyText: t('chat.error') };
     } finally {
       setIsLoading(false);
     }
@@ -2182,23 +2165,26 @@ const Hero = () => {
                           ${isDark
                             ? 'bg-slate-800/50 border-white/5 text-slate-400 hover:text-white hover:bg-slate-700'
                             : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
-                        title={t('chat.uploadFiles')}
+                        title={t('hero.attachFiles')}
                       >
                         <Paperclip size={18} />
                       </motion.button>
 
                       <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        data-tour="voice-button"
+                        type="button"
+                        whileHover={{ scale: 1.06 }}
+                        whileTap={{ scale: 0.94 }}
                         onClick={handleVoiceToggle}
-                        className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all
+                        className={`relative w-10 h-10 flex items-center justify-center rounded-xl border transition-all duration-300
                           ${isVoiceActive || showVoiceModal
-                            ? 'bg-red-500 text-white border-red-500 animate-pulse shadow-lg shadow-red-500/20'
+                            ? 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25'
                             : isDark
-                              ? 'bg-slate-800/50 border-white/5 text-slate-400 hover:text-white hover:bg-slate-700'
-                              : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+                              ? 'bg-slate-800/50 border-white/5 text-slate-400 hover:text-white hover:bg-slate-700 hover:border-cyan-500/40 ring-2 ring-cyan-500/15'
+                              : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100 hover:border-blue-300/80 ring-2 ring-blue-400/15'}`}
+                        title="Voice chat"
                       >
-                        <Mic size={18} />
+                        <Mic size={18} className={showVoiceModal || isVoiceActive ? 'animate-pulse' : ''} />
                       </motion.button>
 
                       <motion.button
@@ -2296,7 +2282,9 @@ const Hero = () => {
         isVoiceActive={isVoiceActive}
         setIsVoiceActive={setIsVoiceActive}
         onVoiceResult={handleVoiceResult}
-        onAudioReady={handleAudioReady}
+        liveConversation
+        onConversationTurn={runVoiceConversationTurn}
+        autoListenAfterReply
       />
     </div>
   );
