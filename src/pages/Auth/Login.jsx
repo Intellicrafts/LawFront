@@ -1,1140 +1,370 @@
+/**
+ * Login.jsx
+ * =============================================================================
+ * Unified login screen. Supports FOUR ways to sign in:
+ *
+ *   1. Email + Password   →  authService.loginWithPassword
+ *   2. Email OTP          →  authService.sendLoginOtp + verifyLoginOtp
+ *   3. Google popup       →  authService.loginWithGoogle  (access_token)
+ *   4. Google One Tap     →  authService.loginWithGoogle  (id_token)
+ *
+ * The page is intentionally THIN: every API call goes through `authService`
+ * (which knows the endpoints, CSRF, error normalisation, and token storage)
+ * and every post-success side-effect (wallet, redirect, event) goes through
+ * `runPostAuthActions`. So this file only concerns itself with form UX.
+ *
+ * Refactored from a 1173-line god-component down to ~480 lines, removing:
+ *   - Three duplicate redirect-by-role blocks (now in redirectByRole.js)
+ *   - Three duplicate wallet-create blocks (now in postAuthActions.js)
+ *   - Three duplicate token-store + event-dispatch blocks (now in tokenStorage)
+ *   - An unused LegalStrip component
+ *   - A dead, multi-line block of commented-out CSS at the EOF
+ *   - A no-op auto-submit handler whose own comment said it didn't work
+ * =============================================================================
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Mail, Lock, Eye, EyeOff, Scale, Check, AlertCircle, CheckCircle, Smartphone, Globe, Shield, ArrowLeft, KeyRound } from 'lucide-react';
-import { useGoogleLogin, useGoogleOneTapLogin } from '@react-oauth/google';
-import { authAPI, tokenManager, walletAPI } from '../../api/apiService';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Mail, Lock, Eye, EyeOff, Smartphone, Shield, ArrowLeft } from 'lucide-react';
+
+import authService, { parseAuthError } from '../../api/authService';
+import { tokenStorage } from '../../utils/auth/tokenStorage';
+import { runPostAuthActions } from '../../utils/auth/postAuthActions';
+import { AUTH_ROUTES } from '../../api/endpoints';
 import { useToast } from '../../context/ToastContext';
 
-// Minimal legal strip
-const LegalStrip = () => {
-  return (
-    <div className="relative w-full py-2 px-4 bg-gradient-to-r from-brand-900 via-brand-950 to-brand-900 text-gray-300 text-xs font-light flex items-center justify-between overflow-hidden border-b border-brand-800">
-      <div className="relative z-10 flex items-center gap-2">
-        <Lock className="h-3 w-3 text-brand-400" />
-        <span>Secure · 256-bit Encrypted</span>
-      </div>
-      <div className="relative z-10 flex items-center gap-3">
-        <a href="/privacy-policy" className="hover:text-brand-300 transition-colors">Privacy Policy</a>
-        <span className="text-gray-600">·</span>
-        <a href="/terms-of-service" className="hover:text-brand-300 transition-colors">Terms of Service</a>
-      </div>
-    </div>
-  );
-};
+import { Logo, PrimaryButton, CustomCheckbox, InputField, GoogleAuthButton } from './_components';
 
-// Brand Logo component
-const Logo = () => {
-  const { mode } = useSelector((state) => state.theme);
-  const isDarkMode = mode === 'dark';
-  return (
-    <div className="flex justify-center mb-4">
-      <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${isDarkMode ? 'bg-brand-500/10' : 'bg-brand-50'}`}>
-        <Scale size={22} className="text-brand-500" strokeWidth={2.5} />
-        <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-brand-900'}`}>MeraBakil</span>
-      </div>
-    </div>
-  );
-};
+/* ───────────────────────────── Constants ─────────────────────────────────── */
 
-// Brand Button component
-const Button = ({ children, loading, onClick, type = "button", className = "", disabled = false }) => {
-  return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={loading || disabled}
-      className={`group w-full py-2.5 px-4 rounded-xl flex items-center justify-center text-white text-sm font-semibold shadow-md transition-all duration-200 hover:shadow-lg relative overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed bg-brand-500 hover:bg-brand-600 ${className}`}
-    >
-      <span className="relative z-10 flex items-center tracking-wide">
-        {loading ? (
-          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-        ) : null}
-        {children}
-      </span>
-    </button>
-  );
-};
+const OTP_LENGTH = 6;
+const OTP_RESEND_SECONDS = 60;
+const POST_LOGIN_REDIRECT_DELAY_MS = 1200;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Premium Custom Checkbox Component
-const CustomCheckbox = ({ id, name, checked, onChange, label, disabled = false, isDarkMode }) => {
-  return (
-    <div className="flex items-center">
-      <div className="relative flex items-center">
-        {/* Hidden native checkbox for accessibility */}
-        <input
-          id={id}
-          name={name || id}
-          type="checkbox"
-          checked={checked}
-          onChange={onChange}
-          disabled={disabled}
-          className="sr-only"
-        />
-        {/* Custom checkbox visual */}
-        <label
-          htmlFor={id}
-          className={`flex items-center justify-center w-5 h-5 rounded border-2 transition-all duration-200 cursor-pointer ${disabled ? 'opacity-60 cursor-not-allowed' : 'hover:scale-110'
-            } ${checked
-              ? isDarkMode
-                ? 'bg-white border-white'
-                : 'bg-gray-900 border-gray-900'
-              : isDarkMode
-                ? 'bg-gray-800 border-gray-600 hover:border-gray-500'
-                : 'bg-white border-gray-300 hover:border-gray-400'
-            }`}
-        >
-          {/* Checkmark icon */}
-          {checked && (
-            <Check
-              size={14}
-              className={`${isDarkMode ? 'text-gray-900' : 'text-white'}`}
-              strokeWidth={3}
-            />
-          )}
-        </label>
-      </div>
-      {/* Label text */}
-      <label
-        htmlFor={id}
-        className={`ml-2.5 block text-xs cursor-pointer select-none ${isDarkMode ? 'text-gray-400' : 'text-gray-600'
-          } ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
-      >
-        {label}
-      </label>
-    </div>
-  );
-};
+/* ───────────────────────────── Helpers ───────────────────────────────────── */
 
-// Professional Social Login Buttons
-const SocialButtons = ({ onSocialLogin, loading, onGoogleLogin }) => {
-  // Get theme from Redux
-  const { mode } = useSelector((state) => state.theme);
-  const isDarkMode = mode === 'dark';
+const isValidEmail = (e) => EMAIL_REGEX.test((e || '').trim());
 
-  const googleLogin = useGoogleLogin({
-    onSuccess: (tokenResponse) => {
-      console.log('Google login successful:', tokenResponse);
-      if (onGoogleLogin) {
-        onGoogleLogin(tokenResponse.access_token);
-      }
-    },
-    onError: (error) => {
-      console.error('Google login failed:', error);
-      if (onSocialLogin) {
-        onSocialLogin('google', { error: 'Google login failed. Please try again.' });
-      }
-    }
-  });
+/* ───────────────────────────── Main Component ────────────────────────────── */
 
-  useGoogleOneTapLogin({
-    onSuccess: (tokenResponse) => {
-      console.log('Google One Tap login successful:', tokenResponse);
-      if (onGoogleLogin) {
-        // One Tap returns a JWT 'credential'
-        onGoogleLogin(tokenResponse.credential);
-      }
-    },
-    onError: (error) => {
-      console.log('Google One Tap login failed or dismissed:', error);
-    },
-    auto_select: true
-  });
-
-  const socialButtonClass = `w-full py-2.5 px-4 rounded-lg flex items-center justify-center space-x-3 font-medium transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none ${isDarkMode
-    ? 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 hover:border-gray-500'
-    : 'bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-200 hover:border-gray-300 shadow-sm'
-    }`;
-
-  return (
-    <div className="space-y-2.5">
-      <button
-        type="button"
-        onClick={() => googleLogin()}
-        disabled={loading}
-        className={socialButtonClass}
-        aria-label="Continue with Google"
-      >
-        <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" /><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" /><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" /><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" /></svg>
-        <span className="text-sm">Continue with Google</span>
-      </button>
-
-      {/* <button 
-        onClick={() => onSocialLogin('apple')}
-        disabled={loading}
-        className={socialButtonClass}
-        aria-label="Continue with Apple"
-      >
-        <FaApple className="text-gray-900" size={18} />
-        <span className="text-sm">Continue with Apple</span>
-      </button>
-      
-      <button 
-        onClick={() => onSocialLogin('microsoft')}
-        disabled={loading}
-        className={socialButtonClass}
-        aria-label="Continue with Microsoft"
-      >
-        <FaMicrosoft className="text-blue-600" size={16} />
-        <span className="text-sm">Continue with Microsoft</span>
-      </button>
-      
-      <button 
-        onClick={() => onSocialLogin('facebook')}
-        disabled={loading}
-        className={socialButtonClass}
-        aria-label="Continue with Facebook"
-      >
-        <FaFacebook className="text-blue-600" size={18} />
-        <span className="text-sm">Continue with Facebook</span>
-      </button> */}
-    </div>
-  );
-};
-
-// Enhanced Input Field component with validation states
-const InputField = ({
-  type,
-  id,
-  name,
-  value,
-  onChange,
-  placeholder,
-  icon,
-  rightIcon,
-  onRightIconClick,
-  error = false,
-  disabled = false,
-  autoComplete
-}) => {
-  // Get theme from Redux
-  const { mode } = useSelector((state) => state.theme);
-  const isDarkMode = mode === 'dark';
-
-  return (
-    <div className="relative group">
-      <div className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors duration-200 ${error ? 'text-red-400' : disabled ? 'text-gray-300' : isDarkMode ? 'text-gray-500 group-focus-within:text-gray-300' : 'text-gray-400 group-focus-within:text-gray-600'
-        }`}>
-        {icon}
-      </div>
-      <input
-        id={id}
-        name={name}
-        type={type}
-        value={value}
-        onChange={onChange}
-        disabled={disabled}
-        autoComplete={autoComplete}
-        className={`block w-full pl-9 pr-10 py-2.5 text-sm rounded-lg shadow-sm transition-all duration-300 ${isDarkMode
-          ? `${error
-            ? 'border-2 border-red-500 focus:border-red-400 focus:ring-2 focus:ring-red-900 bg-gray-700 text-white placeholder-gray-400'
-            : disabled
-              ? 'border border-gray-700 bg-gray-800 text-gray-400 cursor-not-allowed placeholder-gray-600'
-              : 'border border-gray-600 bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-gray-500/30 focus:border-gray-500 placeholder-gray-400'
-          }`
-          : `${error
-            ? 'border-2 border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100 placeholder-gray-400'
-            : disabled
-              ? 'border border-gray-200 bg-gray-50 cursor-not-allowed placeholder-gray-400'
-              : 'border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400/30 focus:border-gray-400 placeholder-gray-400'
-          }`
-          }`}
-        placeholder={placeholder}
-        required
-        aria-invalid={error}
-        aria-describedby={error ? `${id}-error` : undefined}
-      />
-      {rightIcon && (
-        <button
-          type="button"
-          className={`absolute inset-y-0 right-0 pr-3 flex items-center transition-colors duration-200 ${disabled
-            ? 'text-gray-300 cursor-not-allowed'
-            : isDarkMode
-              ? 'text-gray-400 hover:text-gray-300'
-              : 'text-gray-400 hover:text-gray-600'
-            }`}
-          onClick={onRightIconClick}
-          disabled={disabled}
-          aria-label={type === 'password' ? 'Toggle password visibility' : 'Toggle input'}
-        >
-          {rightIcon}
-        </button>
-      )}
-    </div>
-  );
-};
-
-// Enhanced Login Component with comprehensive API integration
 export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
-  // Get theme from Redux
-  const { mode } = useSelector((state) => state.theme);
-  const isDarkMode = mode === 'dark';
   const navigate = useNavigate();
+  const { mode } = useSelector((s) => s.theme);
+  const isDarkMode = mode === 'dark';
+  const { showSuccess, showError, showInfo } = useToast();
 
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
-  const [formState, setFormState] = useState({
-    rememberMe: false,
-    loading: false,
-    showPassword: false,
-    errors: {}
-  });
+  /* ── Form state ─────────────────────────────────────────────────────────── */
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
-  // --- OTP Flow State ---
-  const [loginMethod, setLoginMethod] = useState('password'); // 'password' | 'otp'
-  const [otpStep, setOtpStep] = useState('email'); // 'email' | 'verify'
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [canResend, setCanResend] = useState(false);
-  const [userName, setUserName] = useState('');
+  // Which tab is active in the email-based section: 'password' | 'otp'
+  const [method, setMethod] = useState('password');
+  // OTP flow stage: 'send' (we ask for code) | 'verify' (we have one)
+  const [otpStage, setOtpStage] = useState('send');
+  const [otpDigits, setOtpDigits] = useState(Array(OTP_LENGTH).fill(''));
+  const [resendSecondsLeft, setResendSecondsLeft] = useState(0);
 
-  // --- Timer Effect for OTP Resend ---
+  /* ── Redirect already-authenticated users away from /auth ──────────────── */
   useEffect(() => {
-    let timer;
-    if (timeLeft > 0 && otpStep === 'verify') {
-      timer = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (timeLeft === 0 && otpStep === 'verify') {
-      setCanResend(true);
-    }
-    return () => clearInterval(timer);
-  }, [timeLeft, otpStep]);
-
-  const { showSuccess, showError, showInfo, showWarning } = useToast();
-
-  useEffect(() => {
-    // Check if user is already authenticated
-    if (tokenManager.isAuthenticated()) {
-      navigate('/', { replace: true });
+    if (tokenStorage.isAuthenticated()) {
+      navigate(AUTH_ROUTES.HOME, { replace: true });
     }
   }, [navigate]);
 
-  // Input validation functions
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email.trim());
+  /* ── OTP resend countdown ──────────────────────────────────────────────── */
+  useEffect(() => {
+    if (otpStage !== 'verify' || resendSecondsLeft <= 0) return undefined;
+    const t = setInterval(() => setResendSecondsLeft((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(t);
+  }, [otpStage, resendSecondsLeft]);
+
+  /* ════════════════════════════════════════════════════════════════════════
+   * Generic success handler — shared by ALL four login paths.
+   * Saves nothing locally (authService already did that). Just runs the
+   * cross-cutting side-effects and navigates.
+   * ════════════════════════════════════════════════════════════════════════ */
+  const handleAuthSuccess = async (payload, { greeting }) => {
+    const user = payload.user;
+    showSuccess(`${greeting}${user?.name ? `, ${user.name}` : ''}! Redirecting...`);
+
+    const { redirectTo } = await runPostAuthActions({ user });
+
+    onLoginSuccess?.({ ...payload.raw, access_token: payload.token, user });
+
+    setTimeout(() => navigate(redirectTo, { replace: true }), POST_LOGIN_REDIRECT_DELAY_MS);
   };
 
-  const validatePassword = (password) => {
-    // Check all password requirements
-    const hasMinLength = password.length >= 8;
-    const hasUppercase = /[A-Z]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
-    const hasSpecialChar = /[^A-Za-z0-9]/.test(password);
-
-    return hasMinLength && hasUppercase && hasNumber && hasSpecialChar;
+  /* ════════════════════════════════════════════════════════════════════════
+   * 1. EMAIL + PASSWORD
+   * ════════════════════════════════════════════════════════════════════════ */
+  const validatePasswordForm = () => {
+    const e = {};
+    if (!email.trim()) e.email = 'Email address is required.';
+    else if (!isValidEmail(email)) e.email = 'Please enter a valid email address.';
+    if (!password) e.password = 'Password is required.';
+    else if (password.length < 8) e.password = 'Password must be at least 8 characters.';
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
-  // --- OTP Handlers ---
-  const handleSendLoginOtp = async (e) => {
-    e?.preventDefault();
-    if (!formData.email.trim()) {
-      showWarning('Email address is required.');
-      return;
-    }
-    if (!validateEmail(formData.email)) {
-      showWarning('Please enter a valid email address.');
-      return;
-    }
+  const handlePasswordLogin = async (event) => {
+    event?.preventDefault();
+    if (!validatePasswordForm()) return;
 
-    setFormState(prev => ({ ...prev, loading: true }));
+    setLoading(true);
     try {
-      showInfo('Sending security code...');
-      const response = await authAPI.sendLoginOtp({ email: formData.email.trim().toLowerCase() });
-      if (response.success || response.message) {
-        setUserName(response.user_name || 'User');
-        showSuccess('Secure code sent successfully!');
-        setOtpStep('verify');
-        setTimeLeft(60);
-        setCanResend(false);
-      }
-    } catch (error) {
-      console.error('Send OTP Error:', error);
-      showError(parseApiError(error));
+      showInfo('Signing you in securely...');
+      const payload = await authService.loginWithPassword(email, password);
+      await handleAuthSuccess(payload, { greeting: 'Welcome back' });
+    } catch (err) {
+      showError(parseAuthError(err));
+      setPassword(''); // clear sensitive input on failure
     } finally {
-      setFormState(prev => ({ ...prev, loading: false }));
+      setLoading(false);
     }
   };
 
-  const handleVerifyLoginOtp = async (e) => {
-    e?.preventDefault();
-    const otpCode = otp.join('');
-    if (otpCode.length !== 6) {
-      showWarning('Please enter the complete 6-digit code.');
+  /* ════════════════════════════════════════════════════════════════════════
+   * 2. EMAIL OTP (passwordless)
+   * ════════════════════════════════════════════════════════════════════════ */
+  const handleSendOtp = async (event) => {
+    event?.preventDefault();
+    if (!email.trim() || !isValidEmail(email)) {
+      setErrors({ email: 'Enter a valid email to receive a code.' });
       return;
     }
-    
-    setFormState(prev => ({ ...prev, loading: true }));
+    setLoading(true);
     try {
-      showInfo('Verifying code securely...');
-      await authAPI.getCsrfCookie();
-      
-      const payload = {
-        email: formData.email.trim().toLowerCase(),
-        otp: otpCode
-      };
-
-      const response = await authAPI.verifyLoginOtp(payload);
-
-      if (response.access_token || response.token) {
-        const generatedToken = response.access_token || response.token;
-        const generatedUser = response.user;
-
-        tokenManager.setToken(generatedToken);
-        if (generatedUser) {
-          tokenManager.setUser(generatedUser);
-        }
-
-        window.dispatchEvent(new CustomEvent('auth-status-changed', {
-          detail: { authenticated: true, user: generatedUser }
-        }));
-
-        showSuccess(`Welcome back${generatedUser?.name ? `, ${generatedUser.name}` : ''}!`);
-
-        // === START: Auto-create Wallet ===
-        try {
-          if (generatedUser && generatedUser.id) {
-            const userTypeStr = (generatedUser.user_type === 2 || generatedUser.user_type === 'business' || generatedUser.user_type === 'lawyer' || generatedUser?.role?.toLowerCase() === 'lawyer') ? 'LAWYER' : 'CUSTOMER';
-            const walletPayload = {
-              user_id: generatedUser.id.toString(),
-              user_type: userTypeStr,
-              currency: 'INR'
-            };
-            await walletAPI.createWallet(walletPayload);
-          }
-        } catch (walletError) {
-          console.error('Error auto-creating wallet on OTP login:', walletError);
-        }
-        // === END: Auto-create Wallet ===
-
-        if (onLoginSuccess) {
-          onLoginSuccess(response);
-        }
-
-        setTimeout(() => {
-          let redirectUrl = '/';
-          const userType = generatedUser?.user_type;
-          const role = generatedUser?.role?.toLowerCase();
-          const urlRedirectParam = new URLSearchParams(window.location.search).get('redirect');
-
-          if (urlRedirectParam) {
-            redirectUrl = urlRedirectParam;
-          } else if (userType === 2 || userType === 'business' || userType === 'lawyer' || role === 'lawyer') {
-            redirectUrl = '/lawyer-admin';
-          } else if (userType === 1 || userType === 'personal' || userType === 'user' || role === 'user' || role === 'client') {
-            redirectUrl = '/';
-          } else if (userType === null || userType === undefined || userType === 0) {
-            redirectUrl = '/profile-setup/type-selection';
-          }
-
-          navigate(redirectUrl, { replace: true });
-        }, 1500);
-      } else {
-        showWarning('Authentication token was not received. Please try again.');
-      }
-    } catch (error) {
-      showError(parseApiError(error));
+      showInfo('Sending one-time code...');
+      await authService.sendLoginOtp(email);
+      showSuccess('Code sent. Check your inbox.');
+      setOtpDigits(Array(OTP_LENGTH).fill(''));
+      setOtpStage('verify');
+      setResendSecondsLeft(OTP_RESEND_SECONDS);
+    } catch (err) {
+      showError(parseAuthError(err));
     } finally {
-      setFormState(prev => ({ ...prev, loading: false }));
+      setLoading(false);
     }
   };
 
-  const handleOtpChange = (element, index) => {
-    if (isNaN(element.value)) return false;
-    const newOtp = [...otp];
-    newOtp[index] = element.value;
-    setOtp(newOtp);
-
-    // Auto-focus next input
-    if (element.nextSibling && element.value !== '') {
-      element.nextSibling.focus();
+  const handleVerifyOtp = async (event) => {
+    event?.preventDefault();
+    const code = otpDigits.join('');
+    if (code.length !== OTP_LENGTH) {
+      showError('Please enter the complete 6-digit code.');
+      return;
     }
-    
-    // Auto-submit if all filled
-    if (index === 5 && element.value !== '' && newOtp.join('').length === 6) {
-      // Small timeout to allow state to update
-      setTimeout(() => {
-         // handleVerifyLoginOtp using the latest otp state implicitly or passing it directly isn't perfectly reliable with closure, 
-         // so we rely on the submit button or user pressing enter, but for UX, triggering it is cool. Let's let the user hit Enter or button.
-      }, 50);
+    setLoading(true);
+    try {
+      showInfo('Verifying code...');
+      const payload = await authService.verifyLoginOtp(email, code);
+      await handleAuthSuccess(payload, { greeting: 'Welcome back' });
+    } catch (err) {
+      showError(parseAuthError(err));
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleKeyDown = (e, index) => {
-    if (e.key === 'Backspace' && !otp[index] && e.target.previousSibling) {
-      e.target.previousSibling.focus();
-    } else if (e.key === 'Enter' && otp.join('').length === 6) {
-      handleVerifyLoginOtp(e);
+  /* ── OTP input UX: per-digit boxes, paste, backspace nav ───────────────── */
+  const onOtpDigitChange = (idx, raw) => {
+    if (raw && !/^\d$/.test(raw)) return;
+    const next = [...otpDigits];
+    next[idx] = raw;
+    setOtpDigits(next);
+    // Auto-advance focus to the next input on entry.
+    if (raw && idx < OTP_LENGTH - 1) {
+      document.getElementById(`otp-${idx + 1}`)?.focus();
     }
   };
-
-  const handlePaste = (e) => {
+  const onOtpKeyDown = (idx, e) => {
+    if (e.key === 'Backspace' && !otpDigits[idx] && idx > 0) {
+      document.getElementById(`otp-${idx - 1}`)?.focus();
+    } else if (e.key === 'Enter' && otpDigits.join('').length === OTP_LENGTH) {
+      handleVerifyOtp();
+    }
+  };
+  const onOtpPaste = (e) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').slice(0, 6).split('');
-    if (pastedData.some(isNaN)) return;
-    
-    const newOtp = [...otp];
-    pastedData.forEach((value, index) => {
-      if (index < 6) newOtp[index] = value;
-    });
-    setOtp(newOtp);
-    
-    // Focus last filled input
-    const inputs = document.querySelectorAll('.otp-input-field');
-    const focusIndex = Math.min(pastedData.length, 5);
-    if (inputs[focusIndex]) inputs[focusIndex].focus();
+    const pasted = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, OTP_LENGTH);
+    if (!pasted) return;
+    const next = Array(OTP_LENGTH).fill('');
+    [...pasted].forEach((c, i) => (next[i] = c));
+    setOtpDigits(next);
+    document.getElementById(`otp-${Math.min(pasted.length, OTP_LENGTH - 1)}`)?.focus();
   };
 
-  const validateForm = () => {
-    const errors = {};
-
-    if (!formData.email.trim()) {
-      errors.email = 'Email address is required to proceed.';
-      showWarning('Email address is required.');
-    } else if (!validateEmail(formData.email)) {
-      errors.email = 'Please enter a valid professional email address.';
-      showWarning('Invalid email format.');
-    }
-
-    if (!formData.password) {
-      errors.password = 'Password is required for security.';
-      showWarning('Password is required.');
-    } else if (formData.password.length < 8) {
-      errors.password = 'Password must be at least 8 characters long.';
-      showWarning('Password too short.');
-    }
-
-    setFormState(prev => ({ ...prev, errors }));
-    return Object.keys(errors).length === 0;
-  };
-
-  // Handle input changes
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-    // Clear field-specific error when user starts typing
-    if (formState.errors[name]) {
-      setFormState(prev => ({
-        ...prev,
-        errors: {
-          ...prev.errors,
-          [name]: ''
-        }
-      }));
-    }
-  };
-
-  // Handle checkbox change
-  const handleCheckboxChange = (e) => {
-    const { name, checked } = e.target;
-    setFormState(prev => ({
-      ...prev,
-      [name]: checked
-    }));
-  };
-
-  // Parse API error messages
-  const parseApiError = (error) => {
-    if (error.response?.status === 401) {
-      return 'Invalid email or password. Please check your credentials and try again.';
-    } else if (error.response?.status === 422) {
-      // Laravel validation errors
-      const validationErrors = error.response.data.errors;
-      if (validationErrors) {
-        const firstErrorField = Object.keys(validationErrors)[0];
-        const firstErrorMessage = validationErrors[firstErrorField][0];
-        return firstErrorMessage || 'Please check your input and try again.';
-      }
-      return 'Please check your input and try again.';
-    } else if (error.response?.status === 429) {
-      return 'Too many login attempts. Please try again in a few minutes.';
-    } else if (error.response?.status === 403) {
-      return 'Account access denied. Please contact support if this continues.';
-    } else if (error.response?.status >= 500) {
-      return 'Server error occurred. Please try again later.';
-    } else if (error.response?.data?.message) {
-      return error.response.data.message;
-    } else if (error.message === 'Network error. Please check your connection.') {
-      return 'Network error. Please check your internet connection and try again.';
-    } else if (!error.response) {
-      return 'Unable to connect to server. Please check your internet connection.';
-    }
-    return 'Login failed. Please try again.';
-  };
-
-  // Handle login form submission
-  const handleLogin = async (e) => {
-    e.preventDefault();
-
-    // Validate form before submission
-    if (!validateForm()) {
+  /* ════════════════════════════════════════════════════════════════════════
+   * 3 & 4. GOOGLE OAuth (popup access_token OR One Tap id_token)
+   *
+   * Both flows funnel through this ONE handler — the backend tells them apart.
+   * ════════════════════════════════════════════════════════════════════════ */
+  const handleGoogleToken = async (googleToken) => {
+    if (!googleToken) {
+      showError('Google sign-in was cancelled.');
       return;
     }
+    if (loading) return;
 
-    setFormState(prev => ({ ...prev, loading: true }));
-
-    try {
-      // Step 1: Get CSRF cookie for Laravel Sanctum
-      showInfo('Initializing secure connection...');
-      await authAPI.getCsrfCookie();
-
-      // Step 2: Prepare login credentials
-      const loginCredentials = {
-        email: formData.email.trim().toLowerCase(),
-        password: formData.password
-
-      };
-
-      // Step 3: Send login request
-      const response = await authAPI.login(loginCredentials);
-
-      console.log('Login successful:', response.data);
-
-
-      // Handel User Redirection after successful login
-
-      if (response.data.access_token) {
-        // Store authentication data
-        tokenManager.setToken(response.data.access_token);
-
-        if (response.data.user) {
-          tokenManager.setUser(response.data.user);
-        }
-
-        // Dispatch event to notify other components of authentication change
-        window.dispatchEvent(new CustomEvent('auth-status-changed', {
-          detail: { authenticated: true, user: response.data.user }
-        }));
-
-        showSuccess(
-          `Welcome back${response.data.user?.name ? `, ${response.data.user.name}` : ''}! Redirecting...`
-        );
-
-        // === START: Auto-create Wallet ===
-        try {
-          if (response.data.user && response.data.user.id) {
-            const pUser = response.data.user;
-            const userTypeStr = (pUser.user_type === 2 || pUser.user_type === 'business' || pUser.user_type === 'lawyer' || pUser?.role?.toLowerCase() === 'lawyer') ? 'LAWYER' : 'CUSTOMER';
-            const walletPayload = {
-              user_id: pUser.id.toString(),
-              user_type: userTypeStr,
-              currency: 'INR'
-            };
-            await walletAPI.createWallet(walletPayload);
-          }
-        } catch (walletError) {
-          console.error('Error auto-creating wallet on password login:', walletError);
-        }
-        // === END: Auto-create Wallet ===
-
-        // Call parent callback if provided
-        if (onLoginSuccess) {
-          onLoginSuccess(response.data);
-        }
-
-        // Redirect after showing success message
-        setTimeout(() => {
-          // Determine final redirect destination
-          let redirectUrl = '/';
-
-          const user = response?.data?.user;
-          const userType = user?.user_type;
-          const role = user?.role?.toLowerCase();
-
-          // If a redirect URL is explicitly provided in query string, use that
-          const urlRedirectParam = new URLSearchParams(window.location.search).get('redirect');
-
-          if (urlRedirectParam) {
-            redirectUrl = urlRedirectParam;
-          } else if (userType === 2 || userType === 'business' || userType === 'lawyer' || role === 'lawyer') {
-            // Lawyer / Business account - redirect to Lawyer Admin Dashboard
-            redirectUrl = '/lawyer-admin';
-          } else if (userType === 1 || userType === 'personal' || userType === 'user' || role === 'user' || role === 'client') {
-            // Normal user / Client - redirect to homepage
-            redirectUrl = '/';
-          } else if (userType === null || userType === undefined || userType === 0) {
-            // User has no user_type set (null, undefined, or 0), redirect to profile type selection
-            redirectUrl = '/profile-setup/type-selection';
-          } else {
-            // Default fallback
-            redirectUrl = '/';
-          }
-
-          console.log(`Redirecting user (type: ${userType}, role: ${role}) to: ${redirectUrl}`);
-          navigate(redirectUrl, { replace: true });
-        }, 1500);
-
-      } else {
-        showWarning('Login completed but authentication token was not received. Please try again.');
-      }
-
-
-    } catch (error) {
-      console.error('Login error:', error);
-      const errorMessage = parseApiError(error);
-      showError(errorMessage);
-
-      // Clear password on error for security
-      setFormData(prev => ({ ...prev, password: '' }));
-
-    } finally {
-      setFormState(prev => ({ ...prev, loading: false }));
-    }
-  };
-
-  // Handle social login
-  const handleSocialLogin = (provider, error = null) => {
-    if (formState.loading) return;
-
-    if (error) {
-      showError(error.error || 'Social login failed');
-      return;
-    }
-
-    if (provider !== 'google') {
-      showInfo(`${provider.charAt(0).toUpperCase() + provider.slice(1)} login coming soon!`);
-    }
-    // Google login is handled by onGoogleLogin function
-  };
-
-  // Handle Google OAuth login
-  const handleGoogleLogin = async (googleToken) => {
-    if (formState.loading) return;
-
-    setFormState(prev => ({ ...prev, loading: true }));
-
+    setLoading(true);
     try {
       showInfo('Signing in with Google...');
-
-      // Call the Google login API
-      const response = await authAPI.googleLogin(googleToken);
-
-      console.log('Google login successful:', response.data.data);
-
-      if (response.data.data.token) {
-        // Store authentication data
-        tokenManager.setToken(response.data.data.token);
-
-        if (response.data.data.user) {
-          tokenManager.setUser(response.data.data.user);
-        }
-
-        // Dispatch event to notify other components of authentication change
-        window.dispatchEvent(new CustomEvent('auth-status-changed', {
-          detail: { authenticated: true, user: response.data.data.user }
-        }));
-
-        showSuccess(
-          `Welcome${response.data.data.user?.name ? `, ${response.data.data.user.name}` : ''}! Redirecting...`
-        );
-
-        // === START: Auto-create Wallet ===
-        try {
-          if (response.data.data.user && response.data.data.user.id) {
-            const gUser = response.data.data.user;
-            const userTypeStr = (gUser.user_type === 2 || gUser.user_type === 'business' || gUser.user_type === 'lawyer' || gUser?.role?.toLowerCase() === 'lawyer') ? 'LAWYER' : 'CUSTOMER';
-            const walletPayload = {
-              user_id: gUser.id.toString(),
-              user_type: userTypeStr,
-              currency: 'INR'
-            };
-            await walletAPI.createWallet(walletPayload);
-          }
-        } catch (walletError) {
-          console.error('Error auto-creating wallet on Google login:', walletError);
-        }
-        // === END: Auto-create Wallet ===
-
-        // Call parent callback if provided
-        if (onLoginSuccess) {
-          onLoginSuccess(response.data);
-        }
-
-        // Redirect after showing success message
-        setTimeout(() => {
-          // Determine final redirect destination
-          let redirectUrl = '/';
-
-          const user = response?.data?.data?.user;
-          const userType = user?.user_type;
-          const role = user?.role?.toLowerCase();
-
-          // If a redirect URL is explicitly provided in query string, use that
-          const urlRedirectParam = new URLSearchParams(window.location.search).get('redirect');
-
-          if (urlRedirectParam) {
-            redirectUrl = urlRedirectParam;
-          } else if (userType === 2 || userType === 'business' || userType === 'lawyer' || role === 'lawyer') {
-            // Lawyer / Business account - redirect to Lawyer Admin Dashboard
-            redirectUrl = '/lawyer-admin';
-          } else if (userType === 1 || userType === 'personal' || userType === 'user' || role === 'user' || role === 'client') {
-            // Normal user / Client - redirect to homepage
-            redirectUrl = '/';
-          } else if (userType === null || userType === undefined || userType === 0) {
-            // User has no user_type set (null, undefined, or 0), redirect to profile type selection
-            redirectUrl = '/profile-setup/type-selection';
-          } else {
-            // Default fallback
-            redirectUrl = '/';
-          }
-
-          console.log(`Google Login - Redirecting user (type: ${userType}, role: ${role}) to: ${redirectUrl}`);
-          navigate(redirectUrl, { replace: true });
-        }, 1500);
-
-      } else {
-        showWarning('Google login completed but authentication token was not received. Please try again.');
-      }
-
-    } catch (error) {
-      console.error('Google login error:', error);
-      const errorMessage = parseApiError(error);
-      showError(errorMessage);
+      const payload = await authService.loginWithGoogle(googleToken);
+      await handleAuthSuccess(payload, { greeting: 'Welcome' });
+    } catch (err) {
+      showError(parseAuthError(err));
     } finally {
-      setFormState(prev => ({ ...prev, loading: false }));
+      setLoading(false);
     }
   };
 
-  // Handle navigation to register
-  const handleSwitchToRegister = (e) => {
-    e.preventDefault();
-    if (onSwitchToRegister) {
-      onSwitchToRegister();
-    } else {
-      navigate('/register');
-    }
+  /* ════════════════════════════════════════════════════════════════════════
+   * Navigation helpers
+   * ════════════════════════════════════════════════════════════════════════ */
+  const goToRegister = (e) => {
+    e?.preventDefault();
+    if (onSwitchToRegister) onSwitchToRegister();
+    else navigate(AUTH_ROUTES.SIGNUP);
   };
 
+  /* ════════════════════════════════════════════════════════════════════════
+   * Render
+   * ════════════════════════════════════════════════════════════════════════ */
   return (
     <div className={`relative flex flex-col min-h-screen pt-20 pb-10 ${isDarkMode ? 'bg-[#0A0A0A]' : 'bg-gray-50/30'}`}>
-
-      {/* Premium Animated Background Layer */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.05, 0.1, 0.05]
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-          className={`absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full blur-[120px] ${isDarkMode ? 'bg-blue-600' : 'bg-blue-300'}`}
-        />
-        <motion.div
-          animate={{
-            scale: [1, 1.3, 1],
-            opacity: [0.03, 0.08, 0.03]
-          }}
-          transition={{ duration: 15, repeat: Infinity, ease: "linear", delay: 1 }}
-          className={`absolute top-1/2 -right-40 w-[500px] h-[500px] rounded-full blur-[100px] ${isDarkMode ? 'bg-blue-500' : 'bg-blue-200'}`}
-        />
-      </div>
+      {/* Decorative blurred background */}
+      <BackgroundGlow isDarkMode={isDarkMode} />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
         className="flex-1 flex items-start justify-center px-4 sm:px-6 lg:px-8 z-10"
       >
         <div
-          className={`w-full max-w-md overflow-hidden transition-all duration-300
-            ${isDarkMode
-              ? 'bg-[#121212] border border-gray-800'
-              : 'bg-white border border-gray-100 shadow-2xl shadow-blue-500/5'} 
-            rounded-2xl p-6 sm:p-8`}
+          className={`w-full max-w-md overflow-hidden transition-all duration-300 ${
+            isDarkMode ? 'bg-[#121212] border border-gray-800' : 'bg-white border border-gray-100 shadow-2xl shadow-blue-500/5'
+          } rounded-2xl p-6 sm:p-8`}
         >
+          {/* Header */}
           <div className="text-center mb-8">
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-            >
+            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}>
               <Logo />
             </motion.div>
-            <h1 className={`text-2xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
-              Welcome Back
-            </h1>
-            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              Sign in to your MeraBakil account
-            </p>
+            <h1 className={`text-2xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>Welcome Back</h1>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Sign in to your MeraBakil account</p>
           </div>
 
-          <div className="space-y-6">
-            {/* Social Login Section */}
-            <div className="grid gap-3">
-              <SocialButtons
-                onSocialLogin={handleSocialLogin}
-                onGoogleLogin={handleGoogleLogin}
-                loading={formState.loading}
-              />
-            </div>
+          {/* Google block (covers both popup + One Tap) */}
+          <div className="grid gap-3 mb-6">
+            <GoogleAuthButton onGoogleToken={handleGoogleToken} loading={loading} />
+          </div>
 
-            <div className="relative flex items-center">
-              <div className="flex-grow border-t border-gray-200 dark:border-gray-800"></div>
-              <span className="flex-shrink mx-4 text-xs font-medium text-gray-400 dark:text-gray-500">
-                or sign in with email
-              </span>
-              <div className="flex-grow border-t border-gray-200 dark:border-gray-800"></div>
-            </div>
+          <Divider label="or sign in with email" />
 
-            {otpStep === 'email' ? (
-              <>
-                <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl mb-6">
-                  <button
-                    type="button"
-                    onClick={() => {
-                        setLoginMethod('password');
-                        setFormState(prev => ({ ...prev, errors: {} }));
-                    }}
-                    disabled={formState.loading}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${loginMethod === 'password' ? 'bg-white dark:bg-gray-700 shadow-sm text-brand-600 dark:text-brand-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                  >
-                    <Lock size={16} /> Password
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                        setLoginMethod('otp');
-                        setFormState(prev => ({ ...prev, errors: {} }));
-                    }}
-                    disabled={formState.loading}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${loginMethod === 'otp' ? 'bg-white dark:bg-gray-700 shadow-sm text-brand-600 dark:text-brand-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                  >
-                    <Smartphone size={16} /> OTP Code
-                  </button>
-                </div>
+          {otpStage === 'send' ? (
+            <>
+              {/* Method tabs: Password ↔ OTP */}
+              <MethodTabs method={method} setMethod={(m) => { setMethod(m); setErrors({}); }} disabled={loading} />
 
-                <form onSubmit={loginMethod === 'password' ? handleLogin : handleSendLoginOtp} className="space-y-4" noValidate>
-                  <div className="space-y-2">
-                    <label htmlFor="email" className={`block text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      Email Address
-                    </label>
-                    <InputField
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      placeholder="name@example.com"
-                      autoComplete="email"
-                      error={!!formState.errors.email}
-                      disabled={formState.loading}
-                      icon={<Mail size={16} />}
-                    />
-                    {formState.errors.email && (
-                      <motion.p
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="text-[10px] font-bold text-red-500 uppercase tracking-tight"
-                      >
-                        {formState.errors.email}
-                      </motion.p>
-                    )}
-                  </div>
+              <form
+                onSubmit={method === 'password' ? handlePasswordLogin : handleSendOtp}
+                className="space-y-4"
+                noValidate
+              >
+                {/* Email */}
+                <Field label="Email Address" htmlFor="email" error={errors.email}>
+                  <InputField
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); if (errors.email) setErrors((p) => ({ ...p, email: '' })); }}
+                    placeholder="name@example.com"
+                    autoComplete="email"
+                    error={!!errors.email}
+                    disabled={loading}
+                    icon={<Mail size={16} />}
+                  />
+                </Field>
 
-                  <AnimatePresence mode="wait">
-                    {loginMethod === 'password' && (
-                      <motion.div
-                        key="password-field"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <div className="space-y-2 mb-4 mt-4">
-                          <div className="flex justify-between items-center">
-                            <label htmlFor="password" className={`block text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                              Password
-                            </label>
-                            <a
-                              href="/forgot-password"
-                              className="text-xs font-medium text-brand-500 hover:text-brand-600 transition-colors"
-                            >
-                              Forgot Password?
-                            </a>
-                          </div>
-                          <InputField
-                            type={formState.showPassword ? "text" : "password"}
-                            id="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleInputChange}
-                            placeholder="••••••••"
-                            autoComplete="current-password"
-                            error={!!formState.errors.password}
-                            disabled={formState.loading}
-                            icon={<Lock size={16} />}
-                            rightIcon={formState.showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                            onRightIconClick={() => setFormState(prev => ({ ...prev, showPassword: !prev.showPassword }))}
-                          />
-                          {formState.errors.password && (
-                            <motion.p
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              className="text-[10px] font-bold text-red-500 uppercase tracking-tight"
-                            >
-                              {formState.errors.password}
-                            </motion.p>
-                          )}
+                <AnimatePresence mode="wait">
+                  {method === 'password' && (
+                    <motion.div key="pw" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }}>
+                      <div className="space-y-2 mb-4 mt-4">
+                        <div className="flex justify-between items-center">
+                          <label htmlFor="password" className={`block text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Password</label>
+                          <a href={AUTH_ROUTES.FORGOT_PASSWORD} className="text-xs font-medium text-brand-500 hover:text-brand-600 transition-colors">Forgot Password?</a>
                         </div>
+                        <InputField
+                          type={showPassword ? 'text' : 'password'}
+                          id="password"
+                          name="password"
+                          value={password}
+                          onChange={(e) => { setPassword(e.target.value); if (errors.password) setErrors((p) => ({ ...p, password: '' })); }}
+                          placeholder="••••••••"
+                          autoComplete="current-password"
+                          error={!!errors.password}
+                          disabled={loading}
+                          icon={<Lock size={16} />}
+                          rightIcon={showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          onRightIconClick={() => setShowPassword((v) => !v)}
+                        />
+                        {errors.password && <ErrorLine>{errors.password}</ErrorLine>}
+                      </div>
 
-                        <div className="flex items-center justify-between pb-4">
-                          <CustomCheckbox
-                            id="rememberMe"
-                            name="rememberMe"
-                            checked={formState.rememberMe}
-                            onChange={handleCheckboxChange}
-                            label="Remember me"
-                            disabled={formState.loading}
-                            isDarkMode={isDarkMode}
-                          />
-                        </div>
+                      <div className="flex items-center justify-between pb-4">
+                        <CustomCheckbox id="rememberMe" name="rememberMe" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} label="Remember me" disabled={loading} />
+                      </div>
 
-                        <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
-                          <Button
-                            type="submit"
-                            loading={formState.loading}
-                            disabled={formState.loading || !formData.email || !formData.password || !validatePassword(formData.password)}
-                            className="rounded-xl h-11"
-                          >
-                            {formState.loading ? 'Signing in...' : 'Sign In'}
-                          </Button>
-                        </motion.div>
-                      </motion.div>
-                    )}
+                      <PrimaryButton type="submit" loading={loading} disabled={loading || !email || !password || password.length < 8} className="rounded-xl h-11">
+                        {loading ? 'Signing in...' : 'Sign In'}
+                      </PrimaryButton>
+                    </motion.div>
+                  )}
 
-                    {loginMethod === 'otp' && (
-                      <motion.div
-                        key="otp-field"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="pt-2"
-                      >
-                         <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
-                            <Button
-                              type="submit"
-                              loading={formState.loading}
-                              disabled={formState.loading || !formData.email}
-                              className="rounded-xl h-11"
-                            >
-                              {formState.loading ? 'Sending Code...' : 'Send Secure OTP'}
-                            </Button>
-                         </motion.div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </form>
-              </>
-            ) : (
-              <div className="space-y-6">
-                <div className="mb-6 p-4 rounded-xl border border-blue-100 bg-blue-50/50 dark:border-blue-900/30 dark:bg-blue-900/10">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 text-blue-500 dark:text-blue-400">
-                       <Shield size={18} />
-                    </div>
-                    <div>
-                      <h4 className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-1`}>
-                        Enter Verification Code
-                      </h4>
-                      <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                         We sent a 6-digit code to <span className="font-semibold text-brand-500">{formData.email}</span>. Valid for 5 minutes.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                  {method === 'otp' && (
+                    <motion.div key="otp" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }} className="pt-2">
+                      <PrimaryButton type="submit" loading={loading} disabled={loading || !email} className="rounded-xl h-11">
+                        {loading ? 'Sending Code...' : 'Send Secure OTP'}
+                      </PrimaryButton>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </form>
+            </>
+          ) : (
+            <OtpVerifySection
+              email={email}
+              isDarkMode={isDarkMode}
+              loading={loading}
+              digits={otpDigits}
+              onDigitChange={onOtpDigitChange}
+              onKeyDown={onOtpKeyDown}
+              onPaste={onOtpPaste}
+              onSubmit={handleVerifyOtp}
+              onBack={() => { setOtpStage('send'); setOtpDigits(Array(OTP_LENGTH).fill('')); }}
+              canResend={resendSecondsLeft === 0}
+              resendSecondsLeft={resendSecondsLeft}
+              onResend={handleSendOtp}
+            />
+          )}
 
-                <div className="flex justify-between gap-2 sm:gap-4 mb-2">
-                  {otp.map((digit, index) => (
-                    <input
-                      key={index}
-                      type="text"
-                      maxLength="1"
-                      min="0"
-                      max="9"
-                      pattern="[0-9]*"
-                      inputMode="numeric"
-                      value={digit}
-                      onChange={(e) => handleOtpChange(e.target, index)}
-                      onKeyDown={(e) => handleKeyDown(e, index)}
-                      onPaste={handlePaste}
-                      disabled={formState.loading}
-                      className={`otp-input-field w-10 h-10 sm:w-12 sm:h-14 text-center text-lg sm:text-2xl font-bold rounded-xl outline-none transition-all duration-300 ${
-                        isDarkMode
-                          ? 'bg-[#121212] border-gray-700 text-white focus:border-brand-500 focus:bg-[#1e1e1e]'
-                          : 'bg-white border-gray-300 text-brand-900 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 shadow-sm'
-                      } border-2 ${digit ? 'border-brand-500 bg-brand-50/10' : ''}`}
-                    />
-                  ))}
-                </div>
-
-                <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
-                  <Button
-                     onClick={handleVerifyLoginOtp}
-                     loading={formState.loading}
-                     disabled={formState.loading || otp.join('').length !== 6}
-                     className="rounded-xl h-11 w-full mt-6"
-                   >
-                     {formState.loading ? 'Verifying...' : 'Verify Secure Code'}
-                   </Button>
-                </motion.div>
-
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
-                  <button
-                    onClick={() => {
-                        setOtpStep('email');
-                        setOtp(['', '', '', '', '', '']);
-                    }}
-                    disabled={formState.loading}
-                    className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                  >
-                    <ArrowLeft size={16} className="mr-1" />
-                    Back
-                  </button>
-                  
-                  <div className="text-sm">
-                    {canResend ? (
-                      <button
-                        type="button"
-                        onClick={handleSendLoginOtp}
-                        disabled={formState.loading}
-                        className="font-semibold text-brand-500 hover:text-brand-600 transition-colors focus:outline-none"
-                      >
-                        Resend Code
-                      </button>
-                    ) : (
-                      <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        Resend code in <strong className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>{timeLeft}s</strong>
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="pt-6 border-t border-gray-100 dark:border-gray-800 text-center">
-              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                New to MeraBakil?{' '}
-                <button
-                  type="button"
-                  onClick={handleSwitchToRegister}
-                  disabled={formState.loading}
-                  className="font-bold text-brand-500 hover:text-brand-600 transition-colors focus:outline-none"
-                >
-                  Create an Account
-                </button>
-              </p>
-            </div>
+          <div className="pt-6 mt-6 border-t border-gray-100 dark:border-gray-800 text-center">
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              New to MeraBakil?{' '}
+              <button type="button" onClick={goToRegister} disabled={loading} className="font-bold text-brand-500 hover:text-brand-600 transition-colors focus:outline-none">
+                Create an Account
+              </button>
+            </p>
           </div>
         </div>
       </motion.div>
@@ -1142,33 +372,134 @@ export const Login = ({ onLoginSuccess, onSwitchToRegister }) => {
   );
 };
 
-// Add these CSS animations to your global CSS file or styled-components:
-/*
-@keyframes fadeIn {
-  from { 
-    opacity: 0; 
-    transform: translateY(10px); 
-  }
-  to { 
-    opacity: 1; 
-    transform: translateY(0); 
-  }
-}
+/* ───────────────────────────── Sub-components ────────────────────────────── */
 
-.animate-fadeIn {
-  animation: fadeIn 0.6s ease-out forwards;
-}
+const BackgroundGlow = ({ isDarkMode }) => (
+  <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+    <motion.div
+      animate={{ scale: [1, 1.2, 1], opacity: [0.05, 0.1, 0.05] }}
+      transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
+      className={`absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full blur-[120px] ${isDarkMode ? 'bg-blue-600' : 'bg-blue-300'}`}
+    />
+    <motion.div
+      animate={{ scale: [1, 1.3, 1], opacity: [0.03, 0.08, 0.03] }}
+      transition={{ duration: 15, repeat: Infinity, ease: 'linear', delay: 1 }}
+      className={`absolute top-1/2 -right-40 w-[500px] h-[500px] rounded-full blur-[100px] ${isDarkMode ? 'bg-blue-500' : 'bg-blue-200'}`}
+    />
+  </div>
+);
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 0.3;
-  }
-  50% {
-    opacity: 0.1;
-  }
-}
+const Divider = ({ label }) => (
+  <div className="relative flex items-center mb-6">
+    <div className="flex-grow border-t border-gray-200 dark:border-gray-800" />
+    <span className="flex-shrink mx-4 text-xs font-medium text-gray-400 dark:text-gray-500">{label}</span>
+    <div className="flex-grow border-t border-gray-200 dark:border-gray-800" />
+  </div>
+);
 
-.animate-pulse {
-  animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-*/
+const MethodTabs = ({ method, setMethod, disabled }) => (
+  <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl mb-6">
+    {[
+      { key: 'password', label: 'Password', Icon: Lock },
+      { key: 'otp', label: 'OTP Code', Icon: Smartphone },
+    ].map(({ key, label, Icon }) => (
+      <button
+        key={key}
+        type="button"
+        onClick={() => setMethod(key)}
+        disabled={disabled}
+        className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
+          method === key
+            ? 'bg-white dark:bg-gray-700 shadow-sm text-brand-600 dark:text-brand-400'
+            : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+        }`}
+      >
+        <Icon size={16} /> {label}
+      </button>
+    ))}
+  </div>
+);
+
+const Field = ({ label, htmlFor, children, error }) => {
+  const { mode } = useSelector((s) => s.theme);
+  const dark = mode === 'dark';
+  return (
+    <div className="space-y-2">
+      <label htmlFor={htmlFor} className={`block text-xs font-semibold uppercase tracking-wider ${dark ? 'text-gray-400' : 'text-gray-500'}`}>
+        {label}
+      </label>
+      {children}
+      {error && <ErrorLine>{error}</ErrorLine>}
+    </div>
+  );
+};
+
+const ErrorLine = ({ children }) => (
+  <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-[10px] font-bold text-red-500 uppercase tracking-tight">
+    {children}
+  </motion.p>
+);
+
+const OtpVerifySection = ({
+  email, isDarkMode, loading, digits,
+  onDigitChange, onKeyDown, onPaste, onSubmit, onBack,
+  canResend, resendSecondsLeft, onResend,
+}) => (
+  <div className="space-y-6">
+    <div className="mb-2 p-4 rounded-xl border border-blue-100 bg-blue-50/50 dark:border-blue-900/30 dark:bg-blue-900/10">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 text-blue-500 dark:text-blue-400"><Shield size={18} /></div>
+        <div>
+          <h4 className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-1`}>Enter Verification Code</h4>
+          <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            We sent a 6-digit code to <span className="font-semibold text-brand-500">{email}</span>. Valid for 5 minutes.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div className="flex justify-between gap-2 sm:gap-4 mb-2">
+      {digits.map((digit, idx) => (
+        <input
+          key={idx}
+          id={`otp-${idx}`}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={1}
+          value={digit}
+          onChange={(e) => onDigitChange(idx, e.target.value)}
+          onKeyDown={(e) => onKeyDown(idx, e)}
+          onPaste={onPaste}
+          disabled={loading}
+          className={`w-10 h-10 sm:w-12 sm:h-14 text-center text-lg sm:text-2xl font-bold rounded-xl outline-none transition-all duration-300 ${
+            isDarkMode
+              ? 'bg-[#121212] border-gray-700 text-white focus:border-brand-500 focus:bg-[#1e1e1e]'
+              : 'bg-white border-gray-300 text-brand-900 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 shadow-sm'
+          } border-2 ${digit ? 'border-brand-500 bg-brand-50/10' : ''}`}
+        />
+      ))}
+    </div>
+
+    <PrimaryButton onClick={onSubmit} loading={loading} disabled={loading || digits.join('').length !== 6} className="rounded-xl h-11 w-full mt-2">
+      {loading ? 'Verifying...' : 'Verify Secure Code'}
+    </PrimaryButton>
+
+    <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
+      <button onClick={onBack} disabled={loading} className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+        <ArrowLeft size={16} className="mr-1" /> Back
+      </button>
+      <div className="text-sm">
+        {canResend ? (
+          <button type="button" onClick={onResend} disabled={loading} className="font-semibold text-brand-500 hover:text-brand-600 transition-colors focus:outline-none">
+            Resend Code
+          </button>
+        ) : (
+          <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            Resend code in <strong className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>{resendSecondsLeft}s</strong>
+          </span>
+        )}
+      </div>
+    </div>
+  </div>
+);

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Mail, Lock, Eye, EyeOff, Scale, CheckCircle, ArrowLeft, KeyRound } from 'lucide-react';
-import { apiServices } from '../../api/apiService';
+import authService, { parseAuthError } from '../../api/authService';
+import { AUTH_ROUTES } from '../../api/endpoints';
 import { useToast } from '../../context/ToastContext';
 import { motion } from 'framer-motion';
 
@@ -142,10 +143,7 @@ export const ForgotPassword = ({ onBack }) => {
     setLoading(true);
 
     try {
-      const response = await apiServices.sendPasswordResetOtp({ email });
-
-      // response might vary depending on Axios implementation. Assuming response.data or response directly.
-      const resData = response.data || response;
+      const resData = await authService.requestPasswordResetOtp(email);
 
       if (resData.success || resData.message === 'OTP sent to your email') {
         if (resData.user_name) {
@@ -158,7 +156,7 @@ export const ForgotPassword = ({ onBack }) => {
       }
     } catch (error) {
       console.error('Forgot password error:', error);
-      showError(error.response?.data?.message || 'Account not found or server error.');
+      showError(parseAuthError(error));
     } finally {
       setLoading(false);
     }
@@ -169,8 +167,7 @@ export const ForgotPassword = ({ onBack }) => {
     setLoading(true);
 
     try {
-      const response = await apiServices.verifyOtp({ email, otp: verificationCode });
-      const resData = response.data || response;
+      const resData = await authService.verifyPasswordResetOtp(email, verificationCode);
 
       if (resData.success || resData.message === 'OTP verified successfully!') {
         showSuccess('Code verified successfully.');
@@ -180,7 +177,7 @@ export const ForgotPassword = ({ onBack }) => {
       }
     } catch (error) {
       console.error('Verify code error:', error);
-      showError(error.response?.data?.message || 'Invalid verification code or OTP expired.');
+      showError(parseAuthError(error));
     } finally {
       setLoading(false);
     }
@@ -197,13 +194,8 @@ export const ForgotPassword = ({ onBack }) => {
     setLoading(true);
 
     try {
-      const response = await apiServices.resetPassword({
-        email,
-        otp: verificationCode,
-        password: newPassword,
-        password_confirmation: confirmPassword
-      });
-      const resData = response.data || response;
+      const resPayload = await authService.resetPassword(email, verificationCode, newPassword, confirmPassword);
+      const resData = resPayload.raw || { success: true };
 
       if (resData.success || resData.message?.includes('successfully')) {
         showSuccess('Password reset successfully! Redirecting to login...');
@@ -212,7 +204,7 @@ export const ForgotPassword = ({ onBack }) => {
           if (onBack) {
              onBack();
           } else {
-             navigate('/login');
+             navigate(AUTH_ROUTES.LOGIN);
           }
         }, 2000);
       } else {
@@ -220,7 +212,7 @@ export const ForgotPassword = ({ onBack }) => {
       }
     } catch (error) {
       console.error('Reset password error:', error);
-      showError(error.response?.data?.message || 'An error occurred during reset.');
+      showError(parseAuthError(error));
     } finally {
       setLoading(false);
     }
@@ -231,7 +223,7 @@ export const ForgotPassword = ({ onBack }) => {
       if (onBack) {
           onBack();
       } else {
-          navigate('/login');
+          navigate(AUTH_ROUTES.LOGIN);
       }
   };
 

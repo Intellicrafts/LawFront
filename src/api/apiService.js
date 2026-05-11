@@ -1,64 +1,25 @@
-// apiService.js - Centralized API configuration
+// apiService.js - Legacy aggregator.
+//
+// NOTE: As of the auth-module refactor, the canonical auth/HTTP infrastructure
+// lives in:
+//     src/api/httpClient.js   (axios instance, interceptors, CSRF helper)
+//     src/api/authService.js  (one function per auth flow, with JSDoc)
+//     src/api/endpoints.js    (URL constants — single source of truth)
+//     src/utils/auth/tokenStorage.js  (localStorage wrapper)
+//
+// Everything below re-exports those new modules under the OLD names
+// (`apiClient`, `authAPI`, `tokenManager`, `extractAuthPayload`) so existing
+// feature code (lawyerAPI, casesAPI, walletAPI, ...) keeps working unchanged.
+// New code should import directly from the modules above.
 
 import axios from 'axios';
 import config from '../config';
+import { apiClient, API_ORIGIN, getCsrfCookie } from './httpClient';
+import authService, { extractAuthPayload } from './authService';
+import { tokenStorage } from '../utils/auth/tokenStorage';
 
-// Create axios instance with default configuration
-const apiClient = axios.create({
-  baseURL: config.API_BASE_URL,
-  timeout: 10000,
-  withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    // 'X-Requested-With': 'XMLHttpRequest',
-  },
-});
-// const apiClientforscrf = axios.create({
-//   baseURL: 'http://127.0.0.1:8000', // Changed from 127.0.0.1 or for production use the API URL from .env
-//   timeout: 10000,
-//   withCredentials: true,
-//   headers: {
-//     'Content-Type': 'application/json',
-//     'Accept': 'application/json',
-//     'X-Requested-With': 'XMLHttpRequest',
-//   },
-// });
-
-// Request interceptor to add auth token
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Response interceptor for global error handling
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Handle 401 unauthorized - token expired
-    if (error.response?.status === 401) {
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user');
-      // Optionally redirect to login
-      //   window.location.href = '/auth';
-    }
-
-    // Handle network errors
-    if (!error.response) {
-      error.message = 'Network error. Please check your connection.';
-    }
-
-    return Promise.reject(error);
-  }
-);
+// Re-export so legacy `import { extractAuthPayload } from '../api/apiService'` keeps working.
+export { extractAuthPayload, apiClient };
 
 /**
  * Chatbot API Service
@@ -465,40 +426,30 @@ export const lawyerAPI = {
 // API endpoints
 export const authAPI = {
   // Get CSRF cookie for Laravel Sanctum
-  getCsrfCookie: () => apiClient.get('https://chambersapi.logicera.in/sanctum/csrf-cookie'),
+  // Get CSRF cookie for Laravel Sanctum (same origin as login/register)
+  getCsrfCookie: () =>
+    axios.get(`${API_ORIGIN}/sanctum/csrf-cookie`, {
+      withCredentials: true,
+      timeout: 10000,
+      headers: { Accept: 'application/json' },
+    }),
 
-  // Register user
+  // Register / login / logout / google — all delegate to authService so behaviour
+  // is identical regardless of which module the caller imports from.
+  // These wrappers return an axios-like { data } shape for backward compatibility
+  // with code that does `response.data.access_token`.
   register: async (userData) => {
-    try {
-      console.log('Registering user with data:', userData);
-      const response = await apiClient.post('/register', userData);
-      console.log('Registration API response:', response);
-      return response;
-    } catch (error) {
-      console.error('Registration API error:', error.response || error);
-      throw error;
-    }
+    const payload = await authService.register(userData);
+    return { data: payload.raw };
   },
-
-  // Login user
-  login: (credentials) => apiClient.post('/login', credentials),
-
-  // Google OAuth login
+  login: async (credentials) => {
+    const payload = await authService.loginWithPassword(credentials.email, credentials.password);
+    return { data: payload.raw };
+  },
   googleLogin: async (googleToken) => {
-    try {
-      console.log('Google login with token:', googleToken);
-      const response = await apiClient.post('/auth/google', {
-        token: googleToken
-      });
-      console.log('Google login API response:', response);
-      return response;
-    } catch (error) {
-      console.error('Google login API error:', error.response || error);
-      throw error;
-    }
+    const payload = await authService.loginWithGoogle(googleToken);
+    return { data: payload.raw };
   },
-
-  // Logout user
   logout: () => apiClient.post('/logout'),
 
   // Get authenticated user
@@ -592,23 +543,11 @@ export const authAPI = {
     }
   },
 
-  // Login with OTP APIs
-  sendLoginOtp: async (data) => {
-    try {
-      const response = await apiClient.post('/login/send-otp', data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
+  // OTP login (passwordless). Both delegate to authService.
+  sendLoginOtp: async (data) => authService.sendLoginOtp(data.email),
   verifyLoginOtp: async (data) => {
-    try {
-      const response = await apiClient.post('/login/verify-otp', data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const payload = await authService.verifyLoginOtp(data.email, data.otp);
+    return payload.raw;
   },
 
   // Satyapan Lawyer BCI Verification
@@ -1196,33 +1135,16 @@ export const appointmentAPI = {
 };
 
 // Utility functions for token management
+// tokenManager — thin alias over the canonical tokenStorage so legacy callers
+// (Navbar, App.js, Login.jsx, Signup.jsx, route guards, etc.) keep working.
+// New code should import { tokenStorage } from '../utils/auth/tokenStorage'.
 export const tokenManager = {
-  setToken: (token) => {
-    localStorage.setItem('auth_token', token);
-  },
-
-  getToken: () => {
-    return localStorage.getItem('auth_token');
-  },
-
-  removeToken: () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user');
-    window.dispatchEvent(new CustomEvent('auth-status-changed', { detail: { authenticated: false } }));
-  },
-
-  setUser: (user) => {
-    localStorage.setItem('user', JSON.stringify(user));
-  },
-
-  getUser: () => {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
-  },
-
-  isAuthenticated: () => {
-    return !!localStorage.getItem('auth_token');
-  }
+  setToken: (token) => tokenStorage.setToken(token),
+  getToken: () => tokenStorage.getToken(),
+  removeToken: () => tokenStorage.clear({ broadcast: true }),
+  setUser: (user) => tokenStorage.setUser(user),
+  getUser: () => tokenStorage.getUser(),
+  isAuthenticated: () => tokenStorage.isAuthenticated(),
 };
 
 
