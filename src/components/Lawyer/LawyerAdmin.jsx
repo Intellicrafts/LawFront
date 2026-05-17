@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiServices, authAPI, tokenManager, lawyerAPI, casesAPI, consultationAPI, walletServices } from '../../api/apiService';
+import { useRejoin } from '../../context/RejoinContext';
+import { isWithinRejoinWindow } from '../../utils/consultationRejoin';
 import NotificationDropdown from '../NotificationDropdown';
 import Avatar from '../common/Avatar';
 import LawyerAppointments from '../LawyerAdmin/LawyerAppointments';
@@ -523,7 +525,7 @@ const LiveSessionCard = ({ appointment, darkMode, onJoin }) => (
         <div className="absolute inset-0 bg-white/15 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
         <span className="relative z-10 flex items-center gap-2">
           <Video size={14} />
-          {appointment?.status === 'completed' ? 'Resume Consultation' : 'Join Live Chamber'}
+          {appointment?.status === 'completed' ? 'Rejoin Live Chamber' : 'Join Live Chamber'}
         </span>
       </button>
     </div>
@@ -956,6 +958,7 @@ const LawyerAdmin = () => {
   const { isOpen: isSidebarOpen } = useSelector((state) => state.sidebar);
 
   const navigate = useNavigate();
+  const { registerAppointments, requestRejoin } = useRejoin();
   const [searchParams] = useSearchParams();
   // Read ?tab= query param so returning from ConsultationSession lands on the right section
   const initialTab = searchParams.get('tab') || 'dashboard';
@@ -1167,6 +1170,10 @@ const LawyerAdmin = () => {
     initData();
   }, [dispatch, fetchData]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    registerAppointments(appointmentData);
+  }, [appointmentData, registerAppointments]);
+
   // Real-time synchronization polling (every 30 seconds)
   useEffect(() => {
     if (!userData?.id) return;
@@ -1234,11 +1241,24 @@ const LawyerAdmin = () => {
 
     if (!token) return;
 
-    // Smooth "Secure Tunneling" transition effect
+    const shouldRejoin =
+      session?.status === 'completed' ||
+      session?.consultation_status === 'in_progress' ||
+      isWithinRejoinWindow(session);
+
+    if (shouldRejoin && (session?.appointment_id || session?.id)) {
+      try {
+        setLoading(true);
+        await requestRejoin(session);
+        return;
+      } catch (err) {
+        console.warn('Rejoin flow fallback:', err);
+      }
+    }
+
     setLoading(true);
-    // Extra delay for professional "establishing connection" feel
     setTimeout(() => {
-      navigate(`/consultation/${token}`);
+      navigate(`/consultation/${token}${shouldRejoin ? '?rejoin=1' : ''}`);
     }, 1200);
   };
 

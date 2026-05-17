@@ -11,6 +11,7 @@ import {
 import { deriveKey, encryptText, decryptText } from '../../utils/e2ee';
 import { toggleTheme } from '../../redux/themeSlice';
 import VoiceCall from './VoiceCall';
+import { isRejoinRequestMessage } from '../../utils/consultationRejoin';
 
 
 const CustomAudioPlayer = ({ src, isDarkMode, isOwnMessage }) => {
@@ -118,8 +119,11 @@ const ConsultationChat = ({
     connectionStatus,
     onSendMessage,
     onEndSession,
+    onLeave,
     onAction,
-    opponentAction
+    opponentAction,
+    isRejoin = false,
+    partnerPresent = true,
 }) => {
     const dispatch = useDispatch();
     const [newMessage, setNewMessage] = useState('');
@@ -349,7 +353,8 @@ const ConsultationChat = ({
     useEffect(() => {
         const decryptAll = async () => {
             if (!e2eKey || !messages) return;
-            const decrypted = await Promise.all(messages.map(async (msg) => {
+            const visible = messages.filter((msg) => !isRejoinRequestMessage(msg));
+            const decrypted = await Promise.all(visible.map(async (msg) => {
                 if (msg.message_type === 'system' || msg.sender_type === 'system') return msg;
                 if (!msg.content) return msg;
                 try {
@@ -766,6 +771,18 @@ const ConsultationChat = ({
             <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-indigo-600/8 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-violet-600/8 rounded-full blur-[120px] pointer-events-none" />
 
+            {isRejoin && !partnerPresent && (
+                <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`shrink-0 z-50 px-4 py-2 text-center text-[10px] font-bold uppercase tracking-wider ${
+                        isDarkMode ? 'bg-amber-500/15 text-amber-300 border-b border-amber-500/20' : 'bg-amber-50 text-amber-800 border-b border-amber-200'
+                    }`}
+                >
+                    Reconnected to your session — waiting for your partner to enter the chamber
+                </motion.div>
+            )}
+
                {/* ============ HEADER ============ */}
             <div className={`shrink-0 z-40 border-b relative ${isDarkMode
                 ? 'bg-[#0f1221]/80 border-white/[0.04] shadow-black/10 shadow-sm backdrop-blur-2xl'
@@ -780,7 +797,7 @@ const ConsultationChat = ({
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                             {/* Back button (mobile) */}
                             <button
-                                onClick={() => setShowEndModal(true)}
+                                onClick={() => (onLeave ? onLeave() : setShowEndModal(true))}
                                 className={`p-1.5 rounded-xl transition-all sm:hidden flex-shrink-0 ${isDarkMode ? 'hover:bg-white/5 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
                             >
                                 <ChevronLeft size={18} />
@@ -1708,16 +1725,25 @@ const ConsultationChat = ({
                                 <div className={`w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center ${isDarkMode ? 'bg-rose-500/10' : 'bg-rose-50'}`}>
                                     <Phone size={24} className="text-rose-500 rotate-[135deg]" />
                                 </div>
-                                <h3 className={`text-base font-bold tracking-tight mb-1 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>End Consultation?</h3>
+                                <h3 className={`text-base font-bold tracking-tight mb-1 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>Leave or end consultation?</h3>
                                 <p className={`text-xs font-medium mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                                    This will end the session for both participants. Chat history will be saved.
+                                    Leave keeps the chamber open for rejoin until your scheduled slot ends. End closes it for both parties.
                                 </p>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setShowEndModal(false)} className={`flex-1 py-3 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all ${isDarkMode ? 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5' : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200'}`}>
-                                        Continue
+                                <div className="flex flex-col gap-3">
+                                    <button
+                                        onClick={() => {
+                                            setShowEndModal(false);
+                                            if (onLeave) onLeave();
+                                        }}
+                                        className={`w-full py-3 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all ${isDarkMode ? 'bg-white/10 hover:bg-white/15 text-slate-200 border border-white/10' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'}`}
+                                    >
+                                        Leave chamber (rejoin allowed)
                                     </button>
-                                    <button onClick={() => { setShowEndModal(false); onEndSession(); }} className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-600 text-white text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-pink-700 active:scale-[0.98] transition-all">
-                                        End Session
+                                    <button onClick={() => setShowEndModal(false)} className={`w-full py-3 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all ${isDarkMode ? 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5' : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200'}`}>
+                                        Continue session
+                                    </button>
+                                    <button onClick={() => { setShowEndModal(false); onEndSession(); }} className="w-full py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-600 text-white text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-pink-700 active:scale-[0.98] transition-all">
+                                        End for everyone
                                     </button>
                                 </div>
                             </div>

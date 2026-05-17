@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { apiServices, consultationAPI, appointmentAPI } from '../api/apiService';
 import { useToast } from '../context/ToastContext';
 import AppointmentReportModal from './ConsultationSession/AppointmentReportModal';
+import { RejoinButton } from './ConsultationRejoin';
+import { useRejoin } from '../context/RejoinContext';
 import {
     Calendar, Clock, Search, Filter, ArrowLeft,
     Video, Mail, Shield, Hourglass, Briefcase,
@@ -17,6 +19,7 @@ const MyAppointments = ({ onBack }) => {
     const { mode } = useSelector((state) => state.theme);
     const isDarkMode = mode === 'dark';
     const { showSuccess, showError, showWarning, showInfo } = useToast();
+    const { registerAppointments, requestRejoin, rejoiningId } = useRejoin();
 
     const [appointments, setAppointments] = useState([]);
     const [filteredAppointments, setFilteredAppointments] = useState([]);
@@ -94,6 +97,10 @@ const MyAppointments = ({ onBack }) => {
         };
         fetchAppointments();
     }, []);
+
+    useEffect(() => {
+        registerAppointments(appointments);
+    }, [appointments, registerAppointments]);
 
     // Live clock for join button countdown
     useEffect(() => {
@@ -544,26 +551,44 @@ const MyAppointments = ({ onBack }) => {
                                                                     View Report
                                                                 </button>
                                                             )}
-                                                            <button
-                                                                onClick={() => handleJoinConsultation(apt)}
-                                                                disabled={isJoining}
-                                                                className={`relative flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-bold uppercase tracking-wider shadow-xl shadow-black/10 active:scale-[0.98] transition-all overflow-hidden group ${joinState.isResuming ? 'text-[9px]' : ''}`}
-                                                            >
-                                                                {/* Animated glow */}
-                                                                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 animate-pulse" />
-
-                                                                {isJoining ? (
-                                                                    <>
-                                                                        <Loader size={12} className="animate-spin" />
-                                                                        Connecting...
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <Play size={12} strokeWidth={2.5} className="animate-pulse" />
-                                                                        {joinState.isResuming ? 'Resume Session' : 'Enter Secure Chamber'}
-                                                                    </>
-                                                                )}
-                                                            </button>
+                                                            {joinState.isResuming ? (
+                                                                <RejoinButton
+                                                                    appointment={apt}
+                                                                    isDarkMode={isDarkMode}
+                                                                    loading={rejoiningId === apt.id || isJoining}
+                                                                    onRejoin={async () => {
+                                                                        try {
+                                                                            setJoiningId(apt.id);
+                                                                            showInfo('Reconnecting to secure chamber…');
+                                                                            await requestRejoin(apt);
+                                                                            showSuccess('Reconnected to live consultation.');
+                                                                        } catch (err) {
+                                                                            handleJoinConsultation(apt);
+                                                                        } finally {
+                                                                            setJoiningId(null);
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => handleJoinConsultation(apt)}
+                                                                    disabled={isJoining}
+                                                                    className="relative flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-bold uppercase tracking-wider shadow-xl shadow-black/10 active:scale-[0.98] transition-all overflow-hidden group"
+                                                                >
+                                                                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 animate-pulse" />
+                                                                    {isJoining ? (
+                                                                        <>
+                                                                            <Loader size={12} className="animate-spin" />
+                                                                            Connecting...
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <Play size={12} strokeWidth={2.5} className="animate-pulse" />
+                                                                            Enter Secure Chamber
+                                                                        </>
+                                                                    )}
+                                                                </button>
+                                                            )}
                                                         </div>
                                                         <div className="flex items-center justify-center gap-1.5">
                                                             <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />

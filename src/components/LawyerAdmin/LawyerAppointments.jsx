@@ -49,6 +49,9 @@ import { consultationAPI, lawyerAPI } from '../../api/apiService';
 import { useToast } from '../../context/ToastContext';
 import Avatar from '../common/Avatar';
 import AppointmentReportModal from '../ConsultationSession/AppointmentReportModal';
+import { RejoinButton } from '../ConsultationRejoin';
+import { useRejoin } from '../../context/RejoinContext';
+import { isWithinRejoinWindow } from '../../utils/consultationRejoin';
 
 // --- Premium UI Components (Synced with LawyerAdmin) ---
 
@@ -132,6 +135,7 @@ const AppointmentCountdown = ({ apt, darkMode }) => {
 const LawyerAppointments = ({ darkMode, initialAppointments = [], userData, activeSession }) => {
   const { showSuccess, showError, showInfo } = useToast();
   const navigate = useNavigate();
+  const { registerAppointments, requestRejoin, rejoiningId } = useRejoin();
 
   const [appointments, setAppointments] = useState(initialAppointments);
   const [loading, setLoading] = useState(initialAppointments.length === 0);
@@ -145,6 +149,10 @@ const LawyerAppointments = ({ darkMode, initialAppointments = [], userData, acti
     }, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    registerAppointments(appointments);
+  }, [appointments, registerAppointments]);
 
   useEffect(() => {
     // Only fetch if we don't have initial data passed down on first mount
@@ -414,6 +422,33 @@ const LawyerAppointments = ({ darkMode, initialAppointments = [], userData, acti
                       // Can join exactly 1 min before (or let's be lenient on UI: 5 minutes before) but backend uses 1 min
                       // To match user experience and backend, button is disabled if more than 1 minute before.
                       const canJoin = diffMs <= 60000 && !isPastEnded && apt.status === 'scheduled';
+                      const inRejoinWindow = isWithinRejoinWindow(apt, currentTime);
+                      const showRejoin = inRejoinWindow && (apt.status === 'completed' || apt.consultation_status === 'in_progress');
+
+                      if (showRejoin && (apt.status === 'completed' || apt.consultation_status === 'in_progress')) {
+                        return (
+                          <div className="flex-1 min-w-0">
+                            <RejoinButton
+                              appointment={apt}
+                              isDarkMode={darkMode}
+                              compact
+                              loading={rejoiningId === apt.id || actionLoading === apt.id}
+                              onRejoin={async () => {
+                                setActionLoading(apt.id);
+                                try {
+                                  showInfo('Reconnecting to secure chamber…');
+                                  await requestRejoin(apt);
+                                  showSuccess('Reconnected to live consultation.');
+                                } catch (err) {
+                                  showError(err.response?.data?.message || 'Could not rejoin session.');
+                                } finally {
+                                  setActionLoading(null);
+                                }
+                              }}
+                            />
+                          </div>
+                        );
+                      }
 
                       if (apt.status === 'scheduled') {
                         return (

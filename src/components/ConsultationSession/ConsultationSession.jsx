@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { consultationAPI } from '../../api/apiService';
 import ConsultationLobby from './ConsultationLobby';
@@ -7,12 +7,19 @@ import ConsultationChat from './ConsultationChat';
 import SessionSummary from './SessionSummary';
 import { Shield, AlertTriangle, Loader, ArrowLeft, WifiOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+    isSessionTerminallyEnded,
+    shouldSkipLobby,
+    REJOIN_MESSAGE_TAG,
+} from '../../utils/consultationRejoin';
 
 const ConsultationSession = () => {
     const { sessionToken } = useParams();
+    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const { mode } = useSelector((state) => state.theme);
     const isDarkMode = mode === 'dark';
+    const isRejoinRoute = searchParams.get('rejoin') === '1';
 
     // Core state
     const [session, setSession] = useState(null);
@@ -53,9 +60,11 @@ const ConsultationSession = () => {
                 setTimeRemaining(remaining);
             }
 
-            // Check if session has ended
-            if (['completed', 'expired', 'cancelled'].includes(data.session?.status)) {
+            // Only treat as ended when outside the rejoin window (keeps chamber open until scheduled end)
+            if (isSessionTerminallyEnded(data.session)) {
                 setSessionEnded(true);
+            } else {
+                setSessionEnded(false);
             }
 
             return data;
@@ -126,16 +135,38 @@ const ConsultationSession = () => {
     const handleEndSession = useCallback(async (reason = 'completed') => {
         try {
             await consultationAPI.endSession(sessionToken, reason);
-            setSessionEnded(true);
+            const end = session?.scheduled_end_time ? new Date(session.scheduled_end_time) : null;
+            if (!end || new Date() > end) {
+                setSessionEnded(true);
+            }
 
-            // Stop polling
             if (pollIntervalRef.current) {
                 clearInterval(pollIntervalRef.current);
             }
         } catch (err) {
             console.error('Error ending session:', err);
         }
-    }, [sessionToken]);
+    }, [sessionToken, session]);
+
+    const handleLeaveChamber = useCallback(() => {
+        if (userType === 'lawyer') {
+            navigate('/lawyer-admin?tab=appointments');
+        } else {
+            navigate('/legal-consoltation');
+        }
+    }, [navigate, userType]);
+
+    const handleRejoinHandshake = useCallback(async () => {
+        if (!isRejoinRoute || !sessionToken) return;
+        try {
+            await consultationAPI.sendMessage(
+                sessionToken,
+                `${REJOIN_MESSAGE_TAG} Rejoined the secure consultation chamber.`
+            );
+        } catch {
+            /* optional when session not yet active */
+        }
+    }, [isRejoinRoute, sessionToken]);
 
     /**
      * Handle action indicator
@@ -205,14 +236,7 @@ const ConsultationSession = () => {
         if (timeRemaining === null || timeRemaining <= 0 || sessionEnded) return;
 
         timerIntervalRef.current = setInterval(() => {
-            setTimeRemaining(prev => {
-                if (prev <= 1) {
-                    clearInterval(timerIntervalRef.current);
-                    handleEndSession('completed');
-                    return 0;
-                }
-                return prev - 1;
-            });
+            setTimeRemaining(prev => (prev <= 1 ? 0 : prev - 1));
         }, 1000);
 
         return () => {
@@ -220,16 +244,13 @@ const ConsultationSession = () => {
                 clearInterval(timerIntervalRef.current);
             }
         };
-    }, [timeRemaining, sessionEnded, handleEndSession]);
+    }, [timeRemaining, sessionEnded]);
 
-    /**
-     * Terminate the lobby/session automatically if time ends
-     */
     useEffect(() => {
-        if (timeRemaining === 0 && !sessionEnded) {
-            handleEndSession('completed');
+        if (isRejoinRoute && session && !loading) {
+            handleRejoinHandshake();
         }
-    }, [timeRemaining, sessionEnded, handleEndSession]);
+    }, [isRejoinRoute, session, loading, handleRejoinHandshake]);
 
     // ==================== RENDER ====================
 
@@ -340,8 +361,10 @@ const ConsultationSession = () => {
         );
     }
 
-    // Waiting for other participant
-    if (session && !otherJoined) {
+    const skipLobby = shouldSkipLobby(session, messages, isRejoinRoute);
+
+    // First join: waiting lobby. Rejoin: enter chamber directly with history.
+    if (session && !otherJoined && !skipLobby) {
         return (
             <ConsultationLobby
                 session={session}
@@ -350,20 +373,12 @@ const ConsultationSession = () => {
                 isDarkMode={isDarkMode}
                 timeRemaining={timeRemaining}
                 connectionStatus={connectionStatus}
-                onLeave={() => {
-                    if (userType === 'lawyer') {
-                        // Land directly on the Consultations tab in Lawyer Admin
-                        navigate('/lawyer-admin?tab=appointments');
-                    } else {
-                        navigate('/legal-consoltation');
-                    }
-                }}
+                onLeave={handleLeaveChamber}
             />
         );
     }
 
-    // Active chat session
-    if (session && otherJoined) {
+    if (session && (otherJoined || skipLobby)) {
         return (
             <ConsultationChat
                 session={session}
@@ -375,8 +390,11 @@ const ConsultationSession = () => {
                 connectionStatus={connectionStatus}
                 onSendMessage={handleSendMessage}
                 onEndSession={() => handleEndSession('completed')}
+                onLeave={handleLeaveChamber}
                 onAction={handleAction}
                 opponentAction={opponentAction}
+                isRejoin={isRejoinRoute || skipLobby}
+                partnerPresent={otherJoined}
             />
         );
     }
