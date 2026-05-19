@@ -5,7 +5,7 @@ import { apiServices, consultationAPI, appointmentAPI } from '../api/apiService'
 import { useToast } from '../context/ToastContext';
 import AppointmentReportModal from './ConsultationSession/AppointmentReportModal';
 import { RejoinButton } from './ConsultationRejoin';
-import { useRejoin } from '../context/RejoinContext';
+import { needsRejoin, startRejoinSession, showViewReportOnly } from '../utils/consultationRejoin';
 import {
     Calendar, Clock, Search, Filter, ArrowLeft,
     Video, Mail, Shield, Hourglass, Briefcase,
@@ -19,7 +19,6 @@ const MyAppointments = ({ onBack }) => {
     const { mode } = useSelector((state) => state.theme);
     const isDarkMode = mode === 'dark';
     const { showSuccess, showError, showWarning, showInfo } = useToast();
-    const { registerAppointments, requestRejoin, rejoiningId } = useRejoin();
 
     const [appointments, setAppointments] = useState([]);
     const [filteredAppointments, setFilteredAppointments] = useState([]);
@@ -98,10 +97,6 @@ const MyAppointments = ({ onBack }) => {
         fetchAppointments();
     }, []);
 
-    useEffect(() => {
-        registerAppointments(appointments);
-    }, [appointments, registerAppointments]);
-
     // Live clock for join button countdown
     useEffect(() => {
         const interval = setInterval(() => {
@@ -136,7 +131,7 @@ const MyAppointments = ({ onBack }) => {
             const secondsRemaining = Math.floor((msRemaining % (1000 * 60)) / 1000);
             return {
                 state: 'active',
-                isResuming: apt.status === 'completed',
+                needsRejoin: needsRejoin(apt, now),
                 timeInfo: { minutesRemaining, secondsRemaining }
             };
         }
@@ -517,8 +512,8 @@ const MyAppointments = ({ onBack }) => {
                                                 );
                                             }
 
-                                            // Past
-                                            if (joinState.state === 'past' || (apt.status === 'completed' && joinState.state !== 'active')) {
+                            // Past slot or outside rejoin window
+                            if (joinState.state === 'past' || showViewReportOnly(apt, currentTime)) {
                                                 return (
                                                     <motion.button
                                                         whileHover={{ scale: 1.02 }}
@@ -539,8 +534,8 @@ const MyAppointments = ({ onBack }) => {
                                             if (joinState.state === 'active') {
                                                 return (
                                                     <div className="space-y-2">
-                                                        <div className={joinState.isResuming ? "grid grid-cols-2 gap-2" : "w-full"}>
-                                                            {joinState.isResuming && (
+                                                        <div className={joinState.needsRejoin ? "grid grid-cols-2 gap-2" : "w-full"}>
+                                                            {joinState.needsRejoin && (
                                                                 <button
                                                                     onClick={() => setReportAppointment(apt)}
                                                                     disabled={isJoining}
@@ -551,19 +546,20 @@ const MyAppointments = ({ onBack }) => {
                                                                     View Report
                                                                 </button>
                                                             )}
-                                                            {joinState.isResuming ? (
+                                                            {joinState.needsRejoin ? (
                                                                 <RejoinButton
                                                                     appointment={apt}
                                                                     isDarkMode={isDarkMode}
-                                                                    loading={rejoiningId === apt.id || isJoining}
+                                                                    loading={isJoining}
                                                                     onRejoin={async () => {
                                                                         try {
                                                                             setJoiningId(apt.id);
                                                                             showInfo('Reconnecting to secure chamber…');
-                                                                            await requestRejoin(apt);
+                                                                            const { sessionToken } = await startRejoinSession(apt);
                                                                             showSuccess('Reconnected to live consultation.');
+                                                                            navigate(`/consultation/${sessionToken}?rejoin=1`);
                                                                         } catch (err) {
-                                                                            handleJoinConsultation(apt);
+                                                                            showError(err.response?.data?.message || err.message || 'Could not rejoin session.');
                                                                         } finally {
                                                                             setJoiningId(null);
                                                                         }

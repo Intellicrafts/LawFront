@@ -7,7 +7,6 @@ import { initializeTheme } from './utils/theme';
 import WalletLayout from './components/Wallet/WalletLayout';
 import FloatingThemeToggle from './components/common/FloatingThemeToggle';
 import { ToastProvider } from './context/ToastContext';
-import { RejoinProvider } from './context/RejoinContext';
 import './App.css';
 import './index.css';
 import './styles/darkMode.css';
@@ -212,7 +211,6 @@ const App = () => {
     <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
       <Router>
         <ToastProvider>
-          <RejoinProvider>
           <div className="app-container">
             <Routes>
               {/* LawyerAdmin with its own layout (no main Navbar/Footer) */}
@@ -297,7 +295,6 @@ const App = () => {
               } />
             </Routes>
           </div>
-          </RejoinProvider>
         </ToastProvider>
       </Router>
     </GoogleOAuthProvider>

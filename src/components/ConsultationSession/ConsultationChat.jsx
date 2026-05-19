@@ -11,7 +11,6 @@ import {
 import { deriveKey, encryptText, decryptText } from '../../utils/e2ee';
 import { toggleTheme } from '../../redux/themeSlice';
 import VoiceCall from './VoiceCall';
-import { isRejoinRequestMessage } from '../../utils/consultationRejoin';
 
 
 const CustomAudioPlayer = ({ src, isDarkMode, isOwnMessage }) => {
@@ -122,8 +121,9 @@ const ConsultationChat = ({
     onLeave,
     onAction,
     opponentAction,
-    isRejoin = false,
-    partnerPresent = true,
+    chatEnabled = true,
+    waitingMessage = null,
+    isRejoinMode = false,
 }) => {
     const dispatch = useDispatch();
     const [newMessage, setNewMessage] = useState('');
@@ -353,8 +353,7 @@ const ConsultationChat = ({
     useEffect(() => {
         const decryptAll = async () => {
             if (!e2eKey || !messages) return;
-            const visible = messages.filter((msg) => !isRejoinRequestMessage(msg));
-            const decrypted = await Promise.all(visible.map(async (msg) => {
+            const decrypted = await Promise.all(messages.map(async (msg) => {
                 if (msg.message_type === 'system' || msg.sender_type === 'system') return msg;
                 if (!msg.content) return msg;
                 try {
@@ -493,10 +492,11 @@ const ConsultationChat = ({
         if (suggestionTimeoutRef.current) clearTimeout(suggestionTimeoutRef.current);
         suggestionTimeoutRef.current = setTimeout(() => computeSuggestions(val), 350);
 
-        // Send typing indicator
-        if (actionState !== 'typing') {
-            setActionState('typing');
-            onAction('typing');
+        if (chatEnabled) {
+            if (actionState !== 'typing') {
+                setActionState('typing');
+                onAction('typing');
+            }
         }
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(() => {
@@ -507,6 +507,7 @@ const ConsultationChat = ({
 
     // Send message handler
     const handleSend = async () => {
+        if (!chatEnabled) return;
         const content = newMessage.trim();
         if (!content && !selectedFile) return;
 
@@ -770,18 +771,6 @@ const ConsultationChat = ({
             {/* Background Ambient Orbs */}
             <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-indigo-600/8 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-violet-600/8 rounded-full blur-[120px] pointer-events-none" />
-
-            {isRejoin && !partnerPresent && (
-                <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`shrink-0 z-50 px-4 py-2 text-center text-[10px] font-bold uppercase tracking-wider ${
-                        isDarkMode ? 'bg-amber-500/15 text-amber-300 border-b border-amber-500/20' : 'bg-amber-50 text-amber-800 border-b border-amber-200'
-                    }`}
-                >
-                    Reconnected to your session — waiting for your partner to enter the chamber
-                </motion.div>
-            )}
 
                {/* ============ HEADER ============ */}
             <div className={`shrink-0 z-40 border-b relative ${isDarkMode
@@ -1423,10 +1412,24 @@ const ConsultationChat = ({
                         )}
                     </AnimatePresence>
 
-                    {/* â”€â”€ Input Card â€” unified bg, single row â”€â”€ */}
+                    {waitingMessage && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={`mb-2 flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[11px] font-semibold ${isDarkMode
+                                ? 'bg-amber-500/10 border-amber-500/20 text-amber-200'
+                                : 'bg-amber-50 border-amber-200 text-amber-800'
+                                }`}
+                        >
+                            <Loader size={14} className="animate-spin shrink-0 opacity-70" />
+                            <span>{waitingMessage}</span>
+                        </motion.div>
+                    )}
+
+                    {/* Input Card */}
                     <motion.div
                         layout
-                        className={`relative rounded-2xl transition-all duration-200 ${isDarkMode
+                        className={`relative rounded-2xl transition-all duration-200 ${!chatEnabled ? 'opacity-75' : ''} ${isDarkMode
                             ? 'bg-[#151525] border border-white/[0.08] shadow-[0_4px_28px_rgba(0,0,0,0.5)]'
                             : 'bg-white border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.07)]'
                             }`}
@@ -1456,6 +1459,7 @@ const ConsultationChat = ({
                                 <div className="relative">
                                     <button
                                         type="button"
+                                        disabled={!chatEnabled}
                                         onClick={(e) => { e.stopPropagation(); setShowAttachMenu(v => !v); setShowEmojiPicker(false); }}
                                         className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${showAttachMenu
                                             ? isDarkMode ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-600'
@@ -1589,7 +1593,8 @@ const ConsultationChat = ({
                                 onChange={handleInputChange}
                                 onKeyDown={handleKeyDown}
                                 rows={1}
-                                placeholder="Type your message..."
+                                disabled={!chatEnabled}
+                                placeholder={chatEnabled ? 'Type your message...' : (isRejoinMode ? 'Waiting for your partner…' : 'Waiting…')}
                                 className={`flex-1 outline-none border-none ring-0 text-[14px] leading-relaxed font-medium resize-none scrollbar-hide py-1.5 ${isDarkMode
                                     ? 'text-slate-100 placeholder:text-slate-600 caret-indigo-400'
                                     : 'text-slate-800 placeholder:text-slate-400/80 caret-indigo-600'
@@ -1615,7 +1620,9 @@ const ConsultationChat = ({
                                 {(!newMessage.trim() && !selectedFile) ? (
                                     <button
                                         type="button"
+                                        disabled={!chatEnabled}
                                         onClick={() => {
+                                            if (!chatEnabled) return;
                                             if (isRecording) {
                                                 autoSendRef.current = true;
                                                 stopRecording();
@@ -1640,8 +1647,8 @@ const ConsultationChat = ({
                                         onMouseDown={(e) => e.preventDefault()}
                                         onTouchStart={(e) => e.preventDefault()}
                                         onClick={handleSend}
-                                        disabled={sending}
-                                        className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${sending
+                                        disabled={sending || !chatEnabled}
+                                        className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${sending || !chatEnabled
                                             ? 'bg-indigo-400/60 text-white cursor-not-allowed'
                                             : 'bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-105 active:scale-95'
                                             }`}
@@ -1725,25 +1732,16 @@ const ConsultationChat = ({
                                 <div className={`w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center ${isDarkMode ? 'bg-rose-500/10' : 'bg-rose-50'}`}>
                                     <Phone size={24} className="text-rose-500 rotate-[135deg]" />
                                 </div>
-                                <h3 className={`text-base font-bold tracking-tight mb-1 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>Leave or end consultation?</h3>
+                                <h3 className={`text-base font-bold tracking-tight mb-1 ${isDarkMode ? 'text-slate-100' : 'text-slate-800'}`}>End Consultation?</h3>
                                 <p className={`text-xs font-medium mb-6 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                                    Leave keeps the chamber open for rejoin until your scheduled slot ends. End closes it for both parties.
+                                    This will end the session for both participants. Chat history will be saved.
                                 </p>
-                                <div className="flex flex-col gap-3">
-                                    <button
-                                        onClick={() => {
-                                            setShowEndModal(false);
-                                            if (onLeave) onLeave();
-                                        }}
-                                        className={`w-full py-3 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all ${isDarkMode ? 'bg-white/10 hover:bg-white/15 text-slate-200 border border-white/10' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'}`}
-                                    >
-                                        Leave chamber (rejoin allowed)
+                                <div className="flex gap-3">
+                                    <button onClick={() => setShowEndModal(false)} className={`flex-1 py-3 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all ${isDarkMode ? 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5' : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200'}`}>
+                                        Continue
                                     </button>
-                                    <button onClick={() => setShowEndModal(false)} className={`w-full py-3 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all ${isDarkMode ? 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5' : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200'}`}>
-                                        Continue session
-                                    </button>
-                                    <button onClick={() => { setShowEndModal(false); onEndSession(); }} className="w-full py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-600 text-white text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-pink-700 active:scale-[0.98] transition-all">
-                                        End for everyone
+                                    <button onClick={() => { setShowEndModal(false); onEndSession(); }} className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-600 text-white text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-rose-500/20 hover:from-rose-600 hover:to-pink-700 active:scale-[0.98] transition-all">
+                                        End Session
                                     </button>
                                 </div>
                             </div>

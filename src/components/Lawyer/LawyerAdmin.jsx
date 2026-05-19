@@ -2,8 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiServices, authAPI, tokenManager, lawyerAPI, casesAPI, consultationAPI, walletServices } from '../../api/apiService';
-import { useRejoin } from '../../context/RejoinContext';
-import { isWithinRejoinWindow } from '../../utils/consultationRejoin';
+import { needsRejoin, startRejoinSession } from '../../utils/consultationRejoin';
 import NotificationDropdown from '../NotificationDropdown';
 import Avatar from '../common/Avatar';
 import LawyerAppointments from '../LawyerAdmin/LawyerAppointments';
@@ -958,7 +957,6 @@ const LawyerAdmin = () => {
   const { isOpen: isSidebarOpen } = useSelector((state) => state.sidebar);
 
   const navigate = useNavigate();
-  const { registerAppointments, requestRejoin } = useRejoin();
   const [searchParams] = useSearchParams();
   // Read ?tab= query param so returning from ConsultationSession lands on the right section
   const initialTab = searchParams.get('tab') || 'dashboard';
@@ -1170,10 +1168,6 @@ const LawyerAdmin = () => {
     initData();
   }, [dispatch, fetchData]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    registerAppointments(appointmentData);
-  }, [appointmentData, registerAppointments]);
-
   // Real-time synchronization polling (every 30 seconds)
   useEffect(() => {
     if (!userData?.id) return;
@@ -1241,24 +1235,24 @@ const LawyerAdmin = () => {
 
     if (!token) return;
 
-    const shouldRejoin =
-      session?.status === 'completed' ||
-      session?.consultation_status === 'in_progress' ||
-      isWithinRejoinWindow(session);
-
-    if (shouldRejoin && (session?.appointment_id || session?.id)) {
+    if (needsRejoin(session) && (session?.appointment_id || session?.id)) {
       try {
         setLoading(true);
-        await requestRejoin(session);
+        const { sessionToken: rejoinToken } = await startRejoinSession(session);
+        setTimeout(() => {
+          navigate(`/consultation/${rejoinToken}?rejoin=1`);
+          setLoading(false);
+        }, 800);
         return;
       } catch (err) {
         console.warn('Rejoin flow fallback:', err);
+        setLoading(false);
       }
     }
 
     setLoading(true);
     setTimeout(() => {
-      navigate(`/consultation/${token}${shouldRejoin ? '?rejoin=1' : ''}`);
+      navigate(`/consultation/${token}`);
     }, 1200);
   };
 

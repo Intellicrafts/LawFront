@@ -50,8 +50,7 @@ import { useToast } from '../../context/ToastContext';
 import Avatar from '../common/Avatar';
 import AppointmentReportModal from '../ConsultationSession/AppointmentReportModal';
 import { RejoinButton } from '../ConsultationRejoin';
-import { useRejoin } from '../../context/RejoinContext';
-import { isWithinRejoinWindow } from '../../utils/consultationRejoin';
+import { needsRejoin, startRejoinSession, isWithinRejoinWindow } from '../../utils/consultationRejoin';
 
 // --- Premium UI Components (Synced with LawyerAdmin) ---
 
@@ -135,7 +134,6 @@ const AppointmentCountdown = ({ apt, darkMode }) => {
 const LawyerAppointments = ({ darkMode, initialAppointments = [], userData, activeSession }) => {
   const { showSuccess, showError, showInfo } = useToast();
   const navigate = useNavigate();
-  const { registerAppointments, requestRejoin, rejoiningId } = useRejoin();
 
   const [appointments, setAppointments] = useState(initialAppointments);
   const [loading, setLoading] = useState(initialAppointments.length === 0);
@@ -149,10 +147,6 @@ const LawyerAppointments = ({ darkMode, initialAppointments = [], userData, acti
     }, 1000);
     return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    registerAppointments(appointments);
-  }, [appointments, registerAppointments]);
 
   useEffect(() => {
     // Only fetch if we don't have initial data passed down on first mount
@@ -422,35 +416,47 @@ const LawyerAppointments = ({ darkMode, initialAppointments = [], userData, acti
                       // Can join exactly 1 min before (or let's be lenient on UI: 5 minutes before) but backend uses 1 min
                       // To match user experience and backend, button is disabled if more than 1 minute before.
                       const canJoin = diffMs <= 60000 && !isPastEnded && apt.status === 'scheduled';
-                      const inRejoinWindow = isWithinRejoinWindow(apt, currentTime);
-                      const showRejoin = inRejoinWindow && (apt.status === 'completed' || apt.consultation_status === 'in_progress');
-
-                      if (showRejoin && (apt.status === 'completed' || apt.consultation_status === 'in_progress')) {
+                      if (needsRejoin(apt, currentTime)) {
                         return (
-                          <div className="flex-1 min-w-0">
-                            <RejoinButton
-                              appointment={apt}
-                              isDarkMode={darkMode}
-                              compact
-                              loading={rejoiningId === apt.id || actionLoading === apt.id}
-                              onRejoin={async () => {
-                                setActionLoading(apt.id);
-                                try {
-                                  showInfo('Reconnecting to secure chamber…');
-                                  await requestRejoin(apt);
-                                  showSuccess('Reconnected to live consultation.');
-                                } catch (err) {
-                                  showError(err.response?.data?.message || 'Could not rejoin session.');
-                                } finally {
-                                  setActionLoading(null);
-                                }
-                              }}
-                            />
-                          </div>
+                          <motion.div className="flex-1 min-w-0 flex gap-2">
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.97 }}
+                              onClick={() => setReportAppointment(apt)}
+                              className={`flex-1 h-9 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 ${darkMode
+                                ? 'bg-indigo-500/15 border border-indigo-500/25 text-indigo-300'
+                                : 'bg-indigo-50 border border-indigo-200 text-indigo-700'
+                                }`}
+                            >
+                              <FileText size={12} />
+                              Report
+                            </motion.button>
+                            <div className="flex-[1.4] min-w-0">
+                              <RejoinButton
+                                appointment={apt}
+                                isDarkMode={darkMode}
+                                compact
+                                loading={actionLoading === apt.id}
+                                onRejoin={async () => {
+                                  setActionLoading(apt.id);
+                                  try {
+                                    showInfo('Reconnecting to secure chamber…');
+                                    const { sessionToken } = await startRejoinSession(apt);
+                                    showSuccess('Reconnected to live consultation.');
+                                    navigate(`/consultation/${sessionToken}?rejoin=1`);
+                                  } catch (err) {
+                                    showError(err.response?.data?.message || 'Could not rejoin session.');
+                                  } finally {
+                                    setActionLoading(null);
+                                  }
+                                }}
+                              />
+                            </div>
+                          </motion.div>
                         );
                       }
 
-                      if (apt.status === 'scheduled') {
+                      if (apt.status === 'scheduled' && isWithinRejoinWindow(apt, currentTime)) {
                         return (
                           <button
                             onClick={() => handleStartMeeting(apt.id)}
@@ -477,7 +483,7 @@ const LawyerAppointments = ({ darkMode, initialAppointments = [], userData, acti
                             )}
                           </button>
                         );
-                      } else if (apt.status === 'completed' || isPastEnded) {
+                      } else if (isPastEnded || apt.status === 'completed') {
                         return (
                           <motion.button
                             whileHover={{ scale: 1.02 }}

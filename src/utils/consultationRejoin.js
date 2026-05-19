@@ -1,6 +1,6 @@
-/** Rejoin window + session helpers (frontend-only; no backend changes). */
+/** Rejoin window + session helpers */
 
-export const REJOIN_MESSAGE_TAG = '[MV_REJOIN_REQUEST]';
+import { consultationAPI } from '../api/apiService';
 
 export const getAppointmentStart = (appointment) => {
   const raw = appointment?.appointment_time || appointment?.dateObj;
@@ -35,41 +35,42 @@ export const getRejoinTimeRemaining = (appointment, now = new Date()) => {
   };
 };
 
-export const canRejoinAppointment = (appointment, now = new Date()) => {
+/** Session was terminated and can be resumed within the appointment slot. */
+export const needsRejoin = (appointment, now = new Date()) => {
   if (!appointment) return false;
   if (appointment.status === 'cancelled') return false;
-  return isWithinRejoinWindow(appointment, now);
+  if (!isWithinRejoinWindow(appointment, now)) return false;
+  return (
+    appointment.status === 'completed' ||
+    appointment.consultation_status === 'completed'
+  );
 };
 
-export const shouldSkipLobby = (session, messages = [], isRejoinRoute = false) => {
-  if (isRejoinRoute) return true;
+export const showViewReportOnly = (appointment, now = new Date()) => {
+  if (!appointment) return true;
+  if (appointment.status === 'cancelled') return true;
+  return !isWithinRejoinWindow(appointment, now);
+};
+
+/** Skip lobby only on explicit rejoin navigation after a prior session. */
+export const shouldSkipLobbyOnRejoin = (session, messages = [], isRejoinRoute = false) => {
+  if (!isRejoinRoute) return false;
   if (messages?.length > 0) return true;
   return Boolean(session?.user_joined_at && session?.lawyer_joined_at);
 };
 
-export const isSessionTerminallyEnded = (session, now = new Date()) => {
-  if (!session) return true;
-  if (['cancelled', 'expired'].includes(session.status)) return true;
-  const end = session.scheduled_end_time ? new Date(session.scheduled_end_time) : null;
-  if (end && now > end) return true;
-  if (session.status === 'completed' && end && now <= end) return false;
-  if (session.status === 'completed') return true;
-  return false;
-};
-
-export const normalizeAppointmentForRejoin = (apt) => {
-  if (!apt) return null;
-  const start = getAppointmentStart(apt);
-  return {
-    ...apt,
-    id: apt.id || apt.appointment_id,
-    appointment_id: apt.appointment_id || apt.id,
-    dateObj: start,
-    session_token: apt.session_token,
-  };
-};
-
-export const isRejoinRequestMessage = (message) => {
-  const content = message?.content || message?.message || '';
-  return typeof content === 'string' && content.includes(REJOIN_MESSAGE_TAG);
+/**
+ * Start session (reactivates on backend) and return navigation target.
+ */
+export const startRejoinSession = async (appointment) => {
+  const appointmentId = appointment?.id || appointment?.appointment_id;
+  if (!appointmentId) {
+    throw new Error('Invalid appointment');
+  }
+  const result = await consultationAPI.startSession(appointmentId, { rejoin: true });
+  const token = result?.session_token;
+  if (!token) {
+    throw new Error('No session token received');
+  }
+  return { sessionToken: token, result };
 };

@@ -2444,10 +2444,10 @@ export const consultationAPI = {
    * Start/Join a consultation session for an appointment
    * @param {number} appointmentId - The appointment ID
    */
-  startSession: async (appointmentId) => {
+  startSession: async (appointmentId, { rejoin = false } = {}) => {
     try {
       console.log('Starting consultation session for appointment:', appointmentId);
-      const response = await apiClient.post(`/consultations/start/${appointmentId}`);
+      const response = await apiClient.post(`/consultations/start/${appointmentId}`, { rejoin });
       console.log('Consultation session started:', response.data);
       return response.data;
     } catch (error) {
