@@ -157,7 +157,22 @@ const ConsultationSession = () => {
         const init = async () => {
             try {
                 setLoading(true);
-                await loadSession();
+                const data = await loadSession();
+
+                const endedStatuses = ['completed', 'expired'];
+                const sessionStatus = data?.session?.status;
+                const appointmentId =
+                    data?.session?.appointment_id || data?.session?.appointment?.id;
+
+                if (
+                    isRejoinRoute &&
+                    endedStatuses.includes(sessionStatus) &&
+                    appointmentId
+                ) {
+                    await consultationAPI.startSession(appointmentId, { rejoin: true });
+                    await loadSession();
+                }
+
                 await loadMessages();
             } catch {
                 if (!error) {
@@ -174,7 +189,7 @@ const ConsultationSession = () => {
             if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
             if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
         };
-    }, [sessionToken]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [sessionToken, isRejoinRoute]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         if (sessionEnded || error) return;
@@ -196,6 +211,11 @@ const ConsultationSession = () => {
 
     useEffect(() => {
         if (timeRemaining === null || sessionEnded) return;
+
+        const terminalStatuses = ['completed', 'expired', 'cancelled'];
+        if (session?.status !== 'active' || terminalStatuses.includes(session?.status)) {
+            return;
+        }
 
         if (timeRemaining <= 0) {
             if (!timerEndedRef.current) {
@@ -224,11 +244,22 @@ const ConsultationSession = () => {
                 clearInterval(timerIntervalRef.current);
             }
         };
-    }, [timeRemaining, sessionEnded, handleEndSession]);
+    }, [timeRemaining, sessionEnded, session?.status, handleEndSession]);
+
+    useEffect(() => {
+        if (!isRejoinRoute || sessionEnded || error) return;
+
+        handleAction('presence');
+        const presenceInterval = setInterval(() => {
+            handleAction('presence');
+        }, 3000);
+
+        return () => clearInterval(presenceInterval);
+    }, [isRejoinRoute, sessionEnded, error, handleAction]);
 
     useEffect(() => {
         if (!isRejoinRoute) {
-            setPartnerLive(otherJoined);
+            setPartnerLive(session?.status === 'active');
             return;
         }
 
@@ -238,11 +269,12 @@ const ConsultationSession = () => {
             if (m.sender_type !== otherType) return false;
             if (m.message_type === 'system') return false;
             const ts = new Date(m.created_at).getTime();
-            return ts >= since - 10000;
+            return ts >= since - 15000;
         });
-        const liveSignal = opponentAction === 'typing' || opponentAction === 'recording';
-        setPartnerLive(Boolean(otherJoined && (recentFromOpponent || liveSignal)));
-    }, [isRejoinRoute, otherJoined, messages, opponentAction, userType]);
+        const liveSignal = ['typing', 'recording', 'presence', 'rejoin'].includes(opponentAction);
+        const sessionLive = session?.status === 'active';
+        setPartnerLive(Boolean(sessionLive && otherJoined && (recentFromOpponent || liveSignal)));
+    }, [isRejoinRoute, otherJoined, messages, opponentAction, userType, session?.status]);
 
     const viewMode = useMemo(() => {
         if (!session) return 'none';
@@ -252,12 +284,16 @@ const ConsultationSession = () => {
             return 'chat';
         }
 
-        if (session.status === 'waiting' || !otherJoined) {
+        if (session.status === 'active') {
+            return 'chat';
+        }
+
+        if (session.status === 'waiting') {
             return 'lobby';
         }
 
-        return 'chat';
-    }, [session, sessionEnded, isRejoinRoute, otherJoined]);
+        return 'summary';
+    }, [session, sessionEnded, isRejoinRoute]);
 
     const chatEnabled = !isRejoinRoute || partnerLive;
     const waitingMessage = isRejoinRoute && !partnerLive
